@@ -1,0 +1,73 @@
+===============================================================================
+IBM_DB_SA 0.1.0 (2008/02/06) implementing SQLAlchemy version 0.4.0
+===============================================================================
+
+The IBM_DB_SA adapter provides the Python/SQLAlchemy interface to IBM
+Data Servers. The implementation conforms to SQLAlchemy-0.4.0 specification:
+  http://www.sqlalchemy.org/docs/04/index.html
+
+The IBM_DB_SA adapter is packaged as a Python Egg component and is dependent on:
+ - SQLAlchemy-0.4.0
+ - IBM_DB_DBI Python wrapper (ibm_db_dbi)
+ - IBM_DB Python driver (ibm_db)
+ - IBM Data Server Driver for ODBC and CLI (db2cli) version 9
+
+
+Install and Configuration
+=========================
+The IBM_DB_SA Python Egg component (.egg) can be installed using the standard
+setuptools provided by the Python Easy Install through Python Entreprise 
+Application Kit community portal:
+  http://peak.telecommunity.com/DevCenter/EasyInstall
+
+Please follow the steps provided to Install "Easy Install" in the link above
+and follow up with these additional steps to install IBM_DB_SA:
+
+  1. To install IBM_DB_SA egg component available in the remote repositories
+  (pypi.python.org or code.google.com):
+    Windows:
+      > easy_install ibm_db_sa
+    Linux/Unix:
+      $ sudo easy_install ibm_db_sa
+  
+  2. To install IBM_DB_SA egg component from the downloaded .egg file
+    Windows:
+      > easy_install ibm_db_sa-0.1.0-py2.5.egg
+    Linux/Unix:
+      $ sudo easy_install ibm_db_sa-0.1.0-py2.5.egg
+  
+  3. To uninstall IBM_DB_SA egg component:
+    Windows:
+      > easy_install -m ibm_db_sa==0.1.0
+      > rmdir Python25\Lib\site-packages\ibm_db_sa-0.1.0-py2.5.egg
+    Linux/Unix:
+      $ sudo easy_install -m ibm_db_sa==0.1.0   
+      $ sudo rm -rf Python25\Lib\site-packages\ibm_db_sa-0.1.0-py2.5.egg
+
+
+List of Operating Systems tested
+================================
+  - SuSE Linux Server 9 32 bit
+  - Ubuntu Linux 7.04 32 bit
+  - Windows 32 bit
+
+
+Supported Databases
+====================
+  - IBM DB2 Universal Database for Linux/Unix/Windows versions 8, 9 and 9.5
+
+
+Future Supported Databases
+==========================
+Informix (IDS 11 Cheetah)
+Remote connections to i5/OS (iSeries)
+Remote connections to z/OS (DB2 UDB for zOS)
+
+
+Feedback
+========
+  Your feedback is very much appreciated and expected through project ibm-db:
+   - ibm-db project:         http://code.google.com/p/ibm-db/
+   - ibm-db wiki:            http://code.google.com/p/ibm-db/w/list
+   - ibm-db issues reports:  http://code.google.com/p/ibm-db/issues/list
+   - ibm-db developers:      opendev@us.ibm.com

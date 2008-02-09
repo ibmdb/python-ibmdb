@@ -1,0 +1,155 @@
+Python Driver and DBI Wrapper for IBM Databases
+-----------------------------------------------
+The ibm_db driver and ibm_db_dbi wrapper provide a Python interface for IBM 
+databases.  The wrapper conforms to the DBI specification located here:
+  http://www.python.org/dev/peps/pep-0249/
+
+The driver and wrapper have been developed and will be supported by IBM. 
+
+
+Python ibm_db Driver Build and Installation
+-------------------------------------------
+1. Linux 
+    
+  Preparations (specific commands dependent on shell):
+    If you are compiling against a DB2 instance, do the following
+    (paths depend on system):
+      . <path_to_sqllib>/db2profile
+      export IBM_DB_DIR=<path_to_sqllib>
+      export IBM_DB_LIB=<path_to_sqllib>/lib
+  
+  Installation Commands for Linux:
+    python setup.py build
+    python setup.py install 
+  
+2. Windows 
+
+  Preparations:
+    Install Python from:
+      http://python.org
+    Install Visual C++ 2003, Platform SDK (latest), .NET SDK Version
+    1.1 from:
+      http://wiki.tcl.tk/11431
+    Set envrionment:
+      CALL "C:\Program Files\Microsoft Platform SDK for Windows
+        Server 2003 R2\SetEnv.Cmd"
+      CALL "C:\Program Files\Microsoft Visual C++ Toolkit
+        2003\vcvars32.bat"
+      SET LIB=%LIB%;C:\Program Files\Microsoft Visual Studio .NET
+        2003\Vc7\lib 
+      (Use notepad to edit config.py to your DB2 settings)
+      set IBM_DB_DIR=<path_to_sqllib>
+      set IBM_DB_LIB=<path_to_sqllib>\lib
+
+  Installation Commands for Windows:
+    setup.py build
+    setup.yp install
+
+
+Python ibm_db_dbi Wrapper Build and Installation
+------------------------------------------------
+There is no special build required to use the ibm_db_wrapper. However, the 
+wrapper internally uses the driver. So the driver needs to be built and 
+installed before you use the wrapper.
+
+
+Setup to use ibm_db or ibm_db_dbi
+---------------------------------
+For Unix based systems:
+Depending on your shell, source the db2profile or db2chsrc. Be sure to source 
+the profile for the DB2 instance and not the profile under the DB2 product 
+installation. For example:
+  . <path_to_sqllib>/db2profile
+                 or
+  source <path_to_sqllib>/db2chsrc
+
+Import ibm_db or ibm_db_dbi inside your Python application to use the driver or 
+wrapper functionality
+  import ibm_db
+       or
+  import ibm_db_dbi
+
+Note: Please make sure that the directory containing the ibm_db_dbi.py file is 
+added to the PYTHONPATH variable. This will ensure that the DBI wrapper can be 
+accessed in your python applications.
+
+
+List of Operating Systems tested
+--------------------------------
+SuSE Linux Server 9 32 bit
+Ubuntu Linux 7.04 32 bit
+Windows 32 bit
+
+
+Supported Databases
+-------------------
+IBM DB2 Database on Linux, Unix and Windows 8.2 and beyond
+
+
+Future Supported Databases
+--------------------------
+IBM Cloudscape
+Apache Derby
+Remote connections to i5/OS (iSeries)
+Remote connections to z/OS (DB2 UDB for zOS)
+Informix (IDS)
+Native DB2 for i5/OS (iSeries)
+Native DB2 UDB for zOS
+
+
+Testing
+-------
+Tests displaying Python ibm_db driver code examples are located in the tests 
+directory.  These tests can be run by using 'python tests.py' on Unix based 
+systems, and 'tests.py' on Windows based systems. Use vi to edit config.py to 
+your DB2 settings.
+
+The tests that ibm_db driver uses depends on a UTF-8 database.  This can be 
+created by running:
+    CREATE DATABASE mydatabase USING CODESET UTF-8 TERRITORY US
+Some of the tests utilize XML functionality only available in version 9 or 
+later of DB2.  While DB2 v8.x is fully supported, two of the tests 
+(test_195.py and test_52949.py) utilize XML functionality.  These tests will 
+fail on version 8.x of DB2.
+
+Running the driver testsuite on Linux
+  In order to run the entire python driver testsuite on Linux, run this 
+  command at the command prompt:
+    python tests.py
+  To run a single test, set the environment variable, SINGLE_PYTHON_TEST, to 
+  the test filename you would like to run, followed by the previous command.
+    
+Running the driver testsuite on Windows
+  In order to run the entire python driver testsuite on Windows, run this 
+  command at the command prompt:
+    tests.py
+  To run a single test, set the environment variable, SINGLE_PYTHON_TEST, to 
+  the test filename you would like to run, followed by the previous command.
+
+
+Known Limitations for the Python driver
+---------------------------------------
+1. The following tests are expected to fail:
+   test_03a.py: 
+     Fails due to an exception being thrown by the driver and not
+     being caught by the test.
+   test_133.py:
+     Fails due to the None object not being returned by the
+     ibm_db.execute() statement on line 48.
+   test_146.py:
+     Fails due to issues with procedures being called with
+     parameters that have a parameter-type of SQL_PARAM_OUTPUT.
+   test_148.py:
+     Same issue as test_146.py.
+   tests_53494.py:
+     Same issue as test_52949.py.
+
+
+Known Limitations for the Python wrapper
+----------------------------------------
+1. An error is thrown when selecting a row which has a BLOB type
+   column with a null value.
+2. The rowcount for complex select statements can not be generated.
+   The wrapper might throw errors with complex select statement.
+3. Some warnings from the drivers are not caught by the wrapper.
+   As such these might go unnoticed.

@@ -1,0 +1,9 @@
+Change Log
+=============
+
+2007/12/04 (setup.py 0.2.0):
+ - added the ability to create Python Eggs by running: 
+   $ python setup.py bdist_egg
+
+2008/02/08 (setup.py 0.2.5, ibm_db-0.2.5, ibm_db_dbi-0.2.5):
+ - added support for ibm_db_sa-0.1.0 SQLAlchemy-0.4 adapter release
