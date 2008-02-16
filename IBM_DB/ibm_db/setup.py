@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 from distutils.core import setup, Extension
 
 PACKAGE = 'ibm_db'
-VERSION = '0.2.5'
+VERSION = '0.2.6'
 LICENSE = 'Apache License 2.0'
 
 try:
@@ -30,28 +30,29 @@ modules = ['config', 'ibm_db_dbi', 'testfunctions', 'tests']
 setup( name    = PACKAGE, 
        version = VERSION,
        license = LICENSE,
-       description  = 'Python DBI driver for DB2 (LUW, zOS, i5) and IDS',
+       description      = 'Python DBI driver for DB2 (LUW, zOS, i5) and IDS',
+       author           = 'IBM Application Development Team',
+       author_email     = 'opendev@us.ibm.com',
+       url              = 'http://pypi.python.org/pypi/ibm_db/',
+       download_url     = 'http://code.google.com/p/ibm-db/downloads/list',
+       keywords         = 'database DB-API interface IBM Data Servers DB2 Informix IDS',
+       classifiers  = ['Development Status :: 4 - Beta',
+                      'Intended Audience :: Developers',
+                      'License :: OSI Approved :: Apache Software License',
+                      'Operating System :: Microsoft :: Windows :: Windows NT/2000',
+                      'Operating System :: Unix',
+                      'Topic :: Database :: Front-Ends'],
+
+       long_description = '''
+                      This extension is the implementation of Python Database API Specification v2.0
+                      The extension supports DB2 (LUW, zOS, i5) and IDS (Informix Dynamic Server)''',
+       platforms = 'LinuxIA32, Win32',
        ext_modules  = [ibm_db],
        py_modules   = modules,
        packages     = find_packages(),
-       package_dir  = {'': './'},
        package_data = { 'tests': [ '*.png', '*.jpg']},
        data_files=[ ('', ['./README']),
                     ('', ['./CHANGES']),
                     ('', ['./LICENSE']) ],
-       include_package_data = True,
-       author = 'IBM Application Development Team',
-       author_email = 'opendev@us.ibm.com',
-       url = 'http://pypi.python.org/pypi/ibm_db/',
-       download_url = 'http://code.google.com/p/ibm-db/downloads/list',
-       long_description = '''
-  This extension is the implementation of Python Database API Specification v2.0
-  The extension supports DB2 (LUW, zOS, i5) and IDS (Informix Dynamic Server)''',
-       keywords = 'database DB-API interface IBM Data Servers DB2 Informix IDS',
-       classifiers = ['Development Status :: 4 - Beta',
-                      'Intended Audience :: Developers',
-                      'License :: OSI Approved :: Apache License 2.0',
-                      'Operating System :: LinuxIA32, Win32',
-                      'Topic :: Databases :: Front-end, middle-tier'],
-       platforms = 'LinuxIA32, Win32'
+       include_package_data = True
      )

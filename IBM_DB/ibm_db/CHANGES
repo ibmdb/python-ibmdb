@@ -7,3 +7,6 @@ Change Log
 
 2008/02/08 (setup.py 0.2.5, ibm_db-0.2.5, ibm_db_dbi-0.2.5):
  - added support for ibm_db_sa-0.1.0 SQLAlchemy-0.4 adapter release
+ 
+2008/02/15 (setup.py 0.2.6, ibm_db-0.2.5, ibm_db_dbi-0.2.5):
+ - fixed .egg setup loading issue #1 (defect #154259) 
