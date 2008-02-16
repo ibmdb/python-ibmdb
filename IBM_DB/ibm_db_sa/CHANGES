@@ -3,3 +3,7 @@ Change Log
 
 2008/02/08 (IBM_DB_SA adapter 0.1.0):
  - initial alpha release
+
+2008/02/15 (IBM_DB_SA adapter 0.1.1):
+ - fixed .egg setup loading issue #1 (defect #154259)
+ 

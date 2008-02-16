@@ -14,7 +14,7 @@
 # | language governing permissions and limitations under the License.        |
 # +--------------------------------------------------------------------------+
 # | Authors: Alex Pitigoi                                                    |
-# | Version: 0.1.0                                                           |
+# | Version: 0.1.1                                                           |
 # +--------------------------------------------------------------------------+
 
 """
@@ -26,14 +26,13 @@ from sqlalchemy import types as sa_types
 from sqlalchemy.engine import base, default, url
 from sqlalchemy.sql import compiler
 
-import pickle, os.path, re, datetime
+import pickle, os.path, re, datetime, pkg_resources
 
 # Load IBM_DB reserved words associated with supported IBM Data Servers (DB2)
 # ibm_db_reserved is a pickle file expected to share path with current file
-fpath = os.path.join('lib', 'sqlalchemy', 'databases', 'ibm_db_reserved')
-reserved_words_file = open(str(fpath), 'rb')
-RESERVED_WORDS = pickle.load(reserved_words_file)
-reserved_words_file.close()
+RESERVED_WORDS = pickle.load(
+  pkg_resources.resource_stream('ibm_db_sa', 'ibm_db_reserved')
+)
 
 # Override module sqlalchemy.types
 class IBM_DBBinary(sa_types.Binary):
