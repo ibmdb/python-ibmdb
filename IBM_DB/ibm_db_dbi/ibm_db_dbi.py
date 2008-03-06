@@ -14,7 +14,7 @@
 # | language governing permissions and limitations under the License.        |
 # +--------------------------------------------------------------------------+
 # | Authors: Swetha Patel                                                    |
-# | Version: 0.2.5                                                           |
+# | Version: 0.2.7                                                           |
 # +--------------------------------------------------------------------------+
 
 """
@@ -294,7 +294,8 @@ def _get_exception(inst):
                                                       "Sending data failed: ",
                                                             "Fetch Failure: ",
                                                   "SQLNumResultCols failed: ",
-                                                       "SQLRowCount failed: ")
+                                                       "SQLRowCount failed: ",
+                                                 "Statement prepare Failed: ")
 
     operational_exceptions = (          "Connection Resource cannot be found", 
                                                   "Failed to Allocate Memory",

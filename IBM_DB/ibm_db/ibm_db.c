@@ -20,7 +20,7 @@
 +--------------------------------------------------------------------------+
 */
 
-#define MODULE_RELEASE "0.2.5"
+#define MODULE_RELEASE "0.2.7"
 
 #include <Python.h>
 #include "ibm_db.h"
@@ -3205,6 +3205,7 @@ static int _python_ibm_db_do_prepare(SQLHANDLE hdbc, char *stmt_string, stmt_han
 
    if ( rc < SQL_SUCCESS ) {
       _python_ibm_db_check_sql_errors(hdbc, SQL_HANDLE_DBC, rc, 1, NULL, -1, 1);
+      PyErr_SetString(PyExc_Exception, "Statement prepare Failed: ");
       return rc;
    }
 

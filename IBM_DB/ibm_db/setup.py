@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 from distutils.core import setup, Extension
 
 PACKAGE = 'ibm_db'
-VERSION = '0.2.6'
+VERSION = '0.2.7'
 LICENSE = 'Apache License 2.0'
 
 try:

@@ -10,3 +10,6 @@ Change Log
  
 2008/02/15 (setup.py 0.2.6, ibm_db-0.2.5, ibm_db_dbi-0.2.5):
  - fixed .egg setup loading issue #1 (defect #154259) 
+ 
+2008/03/06 (setup.py 0.2.7, ibm_db-0.2.7, ibm_db_dbi-0.2.7):
+ - fixed error handling for execute when connection handle is invalid (defect #151164) 
