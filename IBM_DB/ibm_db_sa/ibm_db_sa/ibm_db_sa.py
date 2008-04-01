@@ -14,7 +14,7 @@
 # | language governing permissions and limitations under the License.        |
 # +--------------------------------------------------------------------------+
 # | Authors: Alex Pitigoi                                                    |
-# | Version: 0.1.1                                                           |
+# | Version: 0.1.5                                                           |
 # +--------------------------------------------------------------------------+
 
 """
@@ -331,24 +331,46 @@ class IBM_DBDialect(default.DefaultDialect):
   # Build DB-API compatible connection arguments.
   def create_connect_args(self, url):
     """ Inputs:  sqlalchemy.engine.url object (attributes parsed from a RFC-1738-style string using
-                 module-level make_url() function - driver://username:password@host:port/database)
+                 module-level make_url() function - driver://username:password@host:port/database or
+                 driver:///?<attrib_1_name>=<attrib_1_value>;<attrib_2_name>=<attrib_2_value>)
         Returns: tuple consisting of a *args/**kwargs suitable to send directly to the dbapi connect function.
                  DBAPI.connect(dsn, user='', password='', host='', database='', conn_options=None)
                  DSN: 'DRIVER={IBM DB2 ODBC DRIVER};DATABASE=db_name;HOSTNAME=host_addr;
                        PORT=50000;PROTOCOL=TCPIP;UID=user_id;PWD=secret'
     """
     conn_args = url.translate_connect_args()
-    dsn_param = ['DRIVER={IBM DB2 ODBC DRIVER}']
-    dsn_param.append( 'DATABASE=%s' % conn_args['database'] )
-    dsn_param.append( 'HOSTNAME=%s' % conn_args['host'] )
-    dsn_param.append( 'PORT=%s' % conn_args['port'] )
-    dsn_param.append( 'PROTOCOL=TCPIP' )
-    dsn_param.append( 'UID=%s' % conn_args['username'] )
-    dsn_param.append( 'PWD=%s' % conn_args['password'] )
-    dsn = ';'.join(dsn_param)
-    dsn += ';'
-    dialect.logger.debug("\n  ***  IBM_DBDialect::create_connect_args: " + str(dsn))
-    return ((dsn, conn_args['username'],'','',''), {})
+
+    # DSN support through CLI configuration (../cfg/db2cli.ini), while 2 connection
+    # attributes are mandatory: database alias and UID (in support to current schema),
+    # all the other connection attributes (protocol, hostname, servicename) are provided
+    # through db2cli.ini database catalog entry.
+    # Example 1: ibm_db_sa:///<database_alias>?UID=db2inst1 or 
+    # Example 2: ibm_db_sa:///?DSN=<database_alias>;UID=db2inst1
+    if str(url).find('///') != -1:
+      dsn, uid, pwd = '', '', ''
+      if 'database' in conn_args and conn_args['database'] is not None:
+        dsn = conn_args['database']
+      else:
+        if 'DSN' in url.query and url.query['DSN'] is not None:
+          dsn = url.query['DSN']
+      if 'UID' in url.query and url.query['UID'] is not None:
+        uid = url.query['UID']
+      if 'PWD' in url.query and url.query['PWD'] is not None:
+        pwd = url.query['PWD']
+      return ((dsn, uid, pwd,'',''), {})
+    else:
+      # Full URL string support for connection to remote data servers
+      dsn_param = ['DRIVER={IBM DB2 ODBC DRIVER}']
+      dsn_param.append( 'DATABASE=%s' % conn_args['database'] )
+      dsn_param.append( 'HOSTNAME=%s' % conn_args['host'] )
+      dsn_param.append( 'PORT=%s' % conn_args['port'] )
+      dsn_param.append( 'PROTOCOL=TCPIP' )
+      dsn_param.append( 'UID=%s' % conn_args['username'] )
+      dsn_param.append( 'PWD=%s' % conn_args['password'] )
+      dsn = ';'.join(dsn_param)
+      dsn += ';'
+      dialect.logger.debug("\n  ***  IBM_DBDialect::create_connect_args: " + str(dsn))
+      return ((dsn, conn_args['username'],'','',''), {})
 
 
   # Builds an execution context
