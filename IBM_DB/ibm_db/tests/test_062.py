@@ -13,7 +13,7 @@ class IbmDbTestCase(unittest.TestCase):
 
   def test_062(self):
     obj = IbmDbTestFunctions()
-    obj.assert_expect(self.run_test_062)
+    obj.assert_expectf(self.run_test_062)
 
   def run_test_062(self):
     conn = ibm_db.connect(config.database, config.user, config.password)
@@ -93,4 +93,4 @@ class IbmDbTestCase(unittest.TestCase):
 #T%s/t2/TABLE%s
 #T%s/t3/TABLE%s
 #T%s/t4/TABLE%s
-#done! 
+#done!

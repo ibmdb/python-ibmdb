@@ -17,6 +17,7 @@ class IbmDbTestCase(unittest.TestCase):
 
   def run_test_054(self):
     conn = ibm_db.connect(config.database, config.user, config.password)
+    serverinfo = ibm_db.server_info( conn )
 
     stmt = ibm_db.exec_immediate(conn, "SELECT * FROM animals")
     val = ibm_db.get_option(stmt, ibm_db.SQL_ATTR_CURSOR_TYPE, 0)
@@ -27,7 +28,10 @@ class IbmDbTestCase(unittest.TestCase):
     val = ibm_db.get_option(stmt, ibm_db.SQL_ATTR_CURSOR_TYPE, 0)
     print val
 
-    op = {ibm_db.SQL_ATTR_CURSOR_TYPE: ibm_db.SQL_CURSOR_KEYSET_DRIVEN}
+    if (serverinfo.DBMS_NAME[0:3] != 'IDS'):
+      op = {ibm_db.SQL_ATTR_CURSOR_TYPE: ibm_db.SQL_CURSOR_KEYSET_DRIVEN}
+    else:
+      op = {ibm_db.SQL_ATTR_CURSOR_TYPE: ibm_db.SQL_CURSOR_STATIC}
     stmt = ibm_db.exec_immediate(conn, "SELECT * FROM animals", op)
     val = ibm_db.get_option(stmt, ibm_db.SQL_ATTR_CURSOR_TYPE, 0)
     print val

@@ -20,7 +20,7 @@
 +--------------------------------------------------------------------------+
 */
 
-#define MODULE_RELEASE "0.2.7"
+#define MODULE_RELEASE "0.2.8"
 
 #include <Python.h>
 #include "ibm_db.h"
@@ -711,7 +711,7 @@ static int _python_ibm_db_bind_column_helper(stmt_handle *stmt_res)
          case SQL_TYPE_TIME:
          case SQL_TYPE_TIMESTAMP:
          case SQL_BIGINT:
-            in_length = stmt_res->column_info[i].size+1;
+            in_length = stmt_res->column_info[i].size+2;
             row_data->str_val = (SQLCHAR *)ALLOC_N(char, in_length);
             if ( row_data->str_val == NULL ) {
                PyErr_SetString(PyExc_Exception, "Failed to Allocate Memory");
@@ -5501,10 +5501,8 @@ static PyObject *_python_ibm_db_bind_fetch_helper(PyObject *args, int op)
             case SQL_TYPE_DATE:
             case SQL_TYPE_TIME:
             case SQL_TYPE_TIMESTAMP:
-            case SQL_BIGINT:
             case SQL_DECIMAL:
             case SQL_NUMERIC:
-
                if ( op & FETCH_ASSOC ) {
                   PyDict_SetItem(return_value, 
                      PyString_FromString((char *)stmt_res->column_info[i].name),
@@ -5516,6 +5514,21 @@ static PyObject *_python_ibm_db_bind_fetch_helper(PyObject *args, int op)
                } else if ( op == FETCH_BOTH ) {
                   PyDict_SetItem(return_value, PyInt_FromLong(i), 
                                 PyString_FromString((char *)row_data->str_val));
+               }
+               break;
+
+            case SQL_BIGINT:
+               if ( op & FETCH_ASSOC ) {
+                  PyDict_SetItem(return_value,
+                     PyString_FromString((char *)stmt_res->column_info[i].name),
+                      PyLong_FromString((char *)row_data->str_val, NULL, 10));
+               }
+               if ( op == FETCH_INDEX ) {
+                  PyTuple_SetItem(return_value, i,
+                     PyLong_FromString((char *)row_data->str_val, NULL, 10));
+               } else if ( op == FETCH_BOTH ) {
+                  PyDict_SetItem(return_value, PyInt_FromLong(i),
+                     PyLong_FromString((char *)row_data->str_val, NULL, 10));
                }
                break;
             case SQL_SMALLINT:

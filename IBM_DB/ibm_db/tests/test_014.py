@@ -17,10 +17,14 @@ class IbmDbTestCase(unittest.TestCase):
 
   def run_test_014(self):
     conn = ibm_db.connect(config.database, config.user, config.password)
+    serverinfo = ibm_db.server_info( conn )
 
     query = 'SELECT * FROM animals ORDER BY name'
 
-    stmt = ibm_db.prepare(conn, query, {ibm_db.SQL_ATTR_CURSOR_TYPE: ibm_db.SQL_CURSOR_KEYSET_DRIVEN})
+    if (serverinfo.DBMS_NAME[0:3] != 'IDS'):
+      stmt = ibm_db.prepare(conn, query, {ibm_db.SQL_ATTR_CURSOR_TYPE: ibm_db.SQL_CURSOR_KEYSET_DRIVEN})
+    else:
+      stmt = ibm_db.prepare(conn, query)
     ibm_db.execute(stmt)
     data = ibm_db.fetch_both( stmt )
     while ( data ):

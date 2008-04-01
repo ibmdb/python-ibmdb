@@ -17,31 +17,29 @@ class IbmDbTestCase(unittest.TestCase):
 
   def run_test_155(self):
     conn = ibm_db.connect(config.database, config.user, config.password)
+    serverinfo = ibm_db.server_info( conn )
     
     result = ibm_db.exec_immediate(conn, "select * from employee where lastname in ('HAAS','THOMPSON', 'KWAN', 'GEYER', 'STERN', 'PULASKI', 'HENDERSON', 'SPENSER', 'LUCCHESSI', 'OCONNELL', 'QUINTANA', 'NICHOLLS', 'ADAMSON', 'PIANKA', 'YOSHIMURA', 'SCOUTTEN', 'WALKER', 'BROWN', 'JONES', 'LUTZ', 'JEFFERSON', 'MARINO', 'SMITH', 'JOHNSON', 'PEREZ', 'SCHNEIDER', 'PARKER', 'SMITH', 'SETRIGHT', 'MEHTA', 'LEE', 'GOUNOT')")
     i=0
     row = ibm_db.fetch_assoc(result)
     while ( row ):
       i += 1
-      #printf("%6s ",row['EMPNO'])
-      #printf("%12s ",row['FIRSTNME'])
-      #printf("%s ",row['MIDINIT'])
-      #printf("%-15s",row['LASTNAME'])
-      #printf("%3s ",row['WORKDEPT'])
-      #printf("%4s ",row['PHONENO'])
-      #printf("%10s ",row['HIREDATE'])
-      #printf("%-8s",row['JOB'])
-      #printf("%4d ",row['EDLEVEL'])
-      #printf("%s",row['SEX'])
-      #printf("%10s ",row['BIRTHDATE'])
-      #printf("%12s ",row['SALARY'])
-      #printf("%12s ",row['BONUS'])
-      #printf("%12s",row['COMM'])
-      if (row['MIDINIT'] == None):
-	row['MIDINIT'] = ''
-      print "%6s %12s %s %-15s%3s %4s %10s %-8s%4d %s%10s %12s %12s %12s" % \
-        (row['EMPNO'], row['FIRSTNME'], row['MIDINIT'], row['LASTNAME'], row['WORKDEPT'], row['PHONENO'], row['HIREDATE'], row['JOB'], row['EDLEVEL'], row['SEX'], row['BIRTHDATE'], row['SALARY'], row['BONUS'], row['COMM'])
-      row = ibm_db.fetch_assoc(result)
+      if (serverinfo.DBMS_NAME[0:3] == 'IDS'):
+        if (row['midinit'] == None):
+          row['midinit'] = ''
+        print "%6s %12s %s %-15s%3s %4s %10s %-8s%4d %s%10s %12s %12s %12s" % \
+          (row['empno'], row['firstnme'], row['midinit'], row['lastname'], row['workdept'], \
+          row['phoneno'], row['hiredate'], row['job'], row['edlevel'], row['sex'], \
+          row['birthdate'], row['salary'], row['bonus'], row['comm'])
+        row = ibm_db.fetch_assoc(result)
+      else:
+        if (row['MIDINIT'] == None):
+          row['MIDINIT'] = ''
+        print "%6s %12s %s %-15s%3s %4s %10s %-8s%4d %s%10s %12s %12s %12s" % \
+          (row['EMPNO'], row['FIRSTNME'], row['MIDINIT'], row['LASTNAME'], row['WORKDEPT'], \
+          row['PHONENO'], row['HIREDATE'], row['JOB'], row['EDLEVEL'], row['SEX'], \
+          row['BIRTHDATE'], row['SALARY'], row['BONUS'], row['COMM'])
+        row = ibm_db.fetch_assoc(result)
     print "%d record(s) selected." % i
 
 #__END__
@@ -161,7 +159,7 @@ class IbmDbTestCase(unittest.TestCase):
 #000100     THEODORE Q SPENSER        E21 0972 1980-06-19 MANAGER   14 M1956-12-18     26150.00       500.00      2092.00
 #000110     VINCENZO G LUCCHESSI      A00 3490 1958-05-16 SALESREP  19 M1929-11-05     46500.00       900.00      3720.00
 #000120         SEAN   OCONNELL       A00 2167 1963-12-05 CLERK     14 M1942-10-18     29250.00       600.00      2340.00
-#000130      D%cLORES M QUINTANA      C01 4578 1971-07-28 ANALYST   16 F1925-09-15     23800.00       500.00      1904.00
+#000130      DOLORES M QUINTANA       C01 4578 1971-07-28 ANALYST   16 F1925-09-15     23800.00       500.00      1904.00
 #000140      HEATHER A NICHOLLS       C01 1793 1976-12-15 ANALYST   18 F1946-01-19     28420.00       600.00      2274.00
 #000150        BRUCE   ADAMSON        D11 4510 1972-02-12 DESIGNER  16 M1947-05-17     25280.00       500.00      2022.00
 #000160    ELIZABETH R PIANKA         D11 3782 1977-10-11 DESIGNER  17 F1955-04-12     22250.00       400.00      1780.00

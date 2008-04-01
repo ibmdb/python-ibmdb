@@ -6,4 +6,9 @@ Change Log
 
 2008/02/15 (IBM_DB_SA adapter 0.1.1):
  - fixed .egg setup loading issue #1 (defect #154259)
- 
+
+2008/03/28 (IBM_DB_SA adapter 0.1.5):
+ - fixed BIGINT driver return issue #5 (defect #150638)
+ - fixed autocommit default issue #6 (defect #156919)
+ - fixed _get_exception() tuple issue #8 (defect #156925)
+ - fixed create_engine DSN support issue (defect #156930)

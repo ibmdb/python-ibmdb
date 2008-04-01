@@ -22,7 +22,7 @@ class IbmDbTestCase(unittest.TestCase):
 
     if conn:
       if (server.DBMS_NAME[0:3] == 'IDS'):
-        result = ibm_db.columns(conn,None,user,"emp_photo");    
+        result = ibm_db.columns(conn,None,config.user,"emp_photo");    
       else:
         result = ibm_db.columns(conn,None,None,"EMP_PHOTO");    
 

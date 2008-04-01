@@ -22,6 +22,11 @@ class IbmDbTestCase(unittest.TestCase):
     conn = ibm_db.connect(config.database, config.user, config.password)
   
     if conn:
+      serverinfo = ibm_db.server_info( conn )
+
+      if (serverinfo.DBMS_NAME[0:3] == 'IDS'):
+        options1 = options2
+
       stmt = ibm_db.prepare(conn, "SELECT name FROM animals WHERE weight < 10.0", options2)
       ibm_db.execute(stmt)
       data = ibm_db.fetch_both(stmt)
@@ -30,13 +35,13 @@ class IbmDbTestCase(unittest.TestCase):
 	data = ibm_db.fetch_both(stmt)
       
       print ""
-    
+
       stmt = ibm_db.prepare(conn, "SELECT name FROM animals WHERE weight < 10.0", options1)
       ibm_db.execute(stmt)
       data = ibm_db.fetch_both(stmt)
       while ( data ):
         print data[0]
-	data = ibm_db.fetch_both(stmt)
+        data = ibm_db.fetch_both(stmt)
     
       ibm_db.close(conn)
     else:

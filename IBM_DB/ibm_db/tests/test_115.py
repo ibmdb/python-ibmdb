@@ -48,7 +48,10 @@ class IbmDbTestCase(unittest.TestCase):
       
       row = Row()
       ibm_db.fetch_row(stmt, 0)
-      row.DATA = ibm_db.result(stmt, 'DATA')
+      if (server.DBMS_NAME[0:3] != 'IDS'):
+        row.DATA = ibm_db.result(stmt, 'DATA')
+      else:
+        row.DATA = ibm_db.result(stmt, 'data')
       print row.DATA
 
       insert = "UPDATE numericliteral SET data = '@@@@@@@@@@' WHERE id = '12'"
@@ -59,7 +62,10 @@ class IbmDbTestCase(unittest.TestCase):
       
 #      row = ibm_db.fetch_object(stmt, 0)
       ibm_db.fetch_row(stmt, 0)
-      row.DATA = ibm_db.result(stmt, 'DATA')
+      if (server.DBMS_NAME[0:3] != 'IDS'):
+        row.DATA = ibm_db.result(stmt, 'DATA')
+      else:
+        row.DATA = ibm_db.result(stmt, 'data')
       print row.DATA
     else:
       print "Connection failed."

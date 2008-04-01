@@ -17,12 +17,19 @@ class IbmDbTestCase(unittest.TestCase):
 
   def run_test_039(self):
     conn = ibm_db.connect(config.database, config.user, config.password)
+    serverinfo = ibm_db.server_info( conn )
 
-    result = ibm_db.prepare(conn, "SELECT * FROM animals", {ibm_db.SQL_ATTR_CURSOR_TYPE: ibm_db.SQL_CURSOR_KEYSET_DRIVEN})
+    if (serverinfo.DBMS_NAME[0:3] != 'IDS'):
+      result = ibm_db.prepare(conn, "SELECT * FROM animals", {ibm_db.SQL_ATTR_CURSOR_TYPE: ibm_db.SQL_CURSOR_KEYSET_DRIVEN})
+    else:
+      result = ibm_db.prepare(conn, "SELECT * FROM animals")
     ibm_db.execute(result)
     row = ibm_db.fetch_row(result)
     while ( row ):
-      result2 = ibm_db.prepare(conn, "SELECT * FROM animals", {ibm_db.SQL_ATTR_CURSOR_TYPE: ibm_db.SQL_CURSOR_KEYSET_DRIVEN})
+      if (serverinfo.DBMS_NAME[0:3] != 'IDS'):
+        result2 = ibm_db.prepare(conn, "SELECT * FROM animals", {ibm_db.SQL_ATTR_CURSOR_TYPE: ibm_db.SQL_CURSOR_KEYSET_DRIVEN})
+      else:
+        result2 = ibm_db.prepare(conn, "SELECT * FROM animals")
       ibm_db.execute(result2)
       while (ibm_db.fetch_row(result2)):
         print "%s : %s : %s : %s" % (ibm_db.result(result2, 0), \

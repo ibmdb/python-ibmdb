@@ -269,31 +269,31 @@ class IbmDbTestCase(unittest.TestCase):
 #Sweater         
 #__IDS_EXPECTED__
 #Fetching first result set
-#Sweater         
+#Sweater
 #6
 #llama
 #150.00
-#Smarty          
+#Smarty
 #2
 #horse
 #350.00
-#Rickety Ride    
+#Rickety Ride
 #5
 #goat
 #9.70
-#Pook            
+#Pook
 #0
 #cat
 #3.20
-#Peaches         
+#Peaches
 #1
 #dog
 #12.30
-#Gizmo           
+#Gizmo
 #4
 #budgerigar
 #0.20
-#Bubbles         
+#Bubbles
 #3
 #gold fish
 #0.10

@@ -22,7 +22,7 @@ class IbmDbTestCase(unittest.TestCase):
 
     if conn:
       if (server.DBMS_NAME[0:3] == 'IDS'):
-        result = ibm_db.columns(conn,None,user,"employee")
+        result = ibm_db.columns(conn,None,config.user,"employee")
       else:
         result = ibm_db.columns(conn,None,None,"EMPLOYEE")
 

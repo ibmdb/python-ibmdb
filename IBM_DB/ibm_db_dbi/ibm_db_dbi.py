@@ -14,7 +14,7 @@
 # | language governing permissions and limitations under the License.        |
 # +--------------------------------------------------------------------------+
 # | Authors: Swetha Patel                                                    |
-# | Version: 0.2.7                                                           |
+# | Version: 0.2.8                                                           |
 # +--------------------------------------------------------------------------+
 
 """
@@ -245,7 +245,7 @@ def _get_exception(inst):
     # These tuple are used to determine the type of exceptions that are
     # thrown by the database.  They store the SQLSTATE code and the
     # SQLSTATE class code(the 2 digit prefix of the SQLSTATE code)  
-    warning_error_tuple=('01')
+    warning_error_tuple=('01', )
     data_error_tuple=('02', '22', '10601', '10603', '10605', '10901', '10902', 
                                                                '38552', '54')
 
@@ -253,7 +253,7 @@ def _get_exception(inst):
                           '38503', '38553', '38H01', '38H02', '38H03', '38H04',
                                    '38H05', '38H06', '38H07', '38H09', '38H0A')
 
-    integrity_error_tuple = ('23')
+    integrity_error_tuple = ('23', )
 
     internal_error_tuple = ('24', '25', '26', '2D', '51', '57')
 
@@ -387,9 +387,9 @@ def connect(dsn,user='',password='',host='',database='',conn_options=None):
             raise InterfaceError("connect expects the sixth argument"
                                  " (conn_options) to be of type dict")
         if not SQL_ATTR_AUTOCOMMIT in conn_options:
-            conn_options[SQL_ATTR_AUTOCOMMIT] = SQL_AUTOCOMMIT_ON
+            conn_options[SQL_ATTR_AUTOCOMMIT] = SQL_AUTOCOMMIT_OFF
     else:
-        conn_options = {SQL_ATTR_AUTOCOMMIT : SQL_AUTOCOMMIT_ON}
+        conn_options = {SQL_ATTR_AUTOCOMMIT : SQL_AUTOCOMMIT_OFF}
 
     # If the dsn does not contain port and protocal adding database
     # and hostname is no good.  Add these when required, that is,
@@ -493,21 +493,35 @@ class Connection(object):
     # Sets connection attribute values
     def set_option(self, attr_dict):
         """Input: connection attribute dictionary
-           Return: connection attribute value
+           Return: True on success or False on failure
         """
         return ibm_db.set_option(self.conn_handler, attr_dict, 1)
 
     # Retrieves connection attributes values
     def get_option(self, attr_key):
         """Input: connection attribute key
-           Return: connection attribute value
+           Return: current setting of the resource attribute requested
         """
         return ibm_db.get_option(self.conn_handler, attr_key, 1)
+
+    # Sets connection AUTOCOMMIT attribute
+    def set_autocommit(self, is_on):
+        """Input: connection attribute: true if AUTOCOMMIT ON, false otherwise (i.e. OFF)
+           Return: True on success or False on failure
+        """
+        try:
+          if is_on:
+            is_set = ibm_db.set_option(self.conn_handler, {SQL_ATTR_AUTOCOMMIT : SQL_AUTOCOMMIT_ON}, 1)
+          else:
+            is_set = ibm_db.set_option(self.conn_handler, {SQL_ATTR_AUTOCOMMIT : SQL_AUTOCOMMIT_OFF}, 1)
+        except Exception, inst:
+          raise _get_exception(inst)
+        return is_set
 
     # Sets connection attribute values
     def set_current_schema(self, schema_name):
         """Input: connection attribute dictionary
-           Return: connection attribute value
+           Return: True on success or False on failure
         """
         self.current_schema = schema_name
         try:
@@ -518,8 +532,7 @@ class Connection(object):
 
     # Retrieves connection attributes values
     def get_current_schema(self):
-        """Input: connection attribute key
-           Return: connection attribute value
+        """Return: current setting of the schema attribute
         """
         try:
           conn_schema = ibm_db.get_option(self.conn_handler, SQL_ATTR_CURRENT_SCHEMA, 1)

@@ -12,4 +12,9 @@ Change Log
  - fixed .egg setup loading issue #1 (defect #154259) 
  
 2008/03/06 (setup.py 0.2.7, ibm_db-0.2.7, ibm_db_dbi-0.2.7):
- - fixed error handling for execute when connection handle is invalid (defect #151164) 
+ - fixed error handling for execute when connection handle is invalid (defect #151164)
+
+2008/03/28 (setup.py 0.2.8, ibm_db-0.2.8, ibm_db_dbi-0.2.8):
+ - fixed BIGINT return handling issue #5 (defect #150638)
+ - fixed autocommit default issue #6 (defect #156919)
+ - fixed _get_exception() tuple issue #8 (defect #156925)

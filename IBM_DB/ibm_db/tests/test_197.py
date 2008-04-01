@@ -30,7 +30,7 @@ class IbmDbTestCase(unittest.TestCase):
 
       print "Test first index table:"
       if (server.DBMS_NAME[0:3] == 'IDS'):
-        result = ibm_db.statistics(conn,None,user,"index_test",True)
+        result = ibm_db.statistics(conn,None,config.user,"index_test",True)
       else:
         result = ibm_db.statistics(conn,None,None,"INDEX_TEST",True)
       row = ibm_db.fetch_tuple(result)
@@ -48,7 +48,7 @@ class IbmDbTestCase(unittest.TestCase):
 
       print "Test second index table:"
       if (server.DBMS_NAME[0:3] == 'IDS'):
-        result = ibm_db.statistics(conn,None,user,"index_test2",True)
+        result = ibm_db.statistics(conn,None,config.user,"index_test2",True)
       else:
         result = ibm_db.statistics(conn,None,None,"INDEX_TEST2",True)
       row = ibm_db.fetch_tuple(result)
@@ -59,7 +59,7 @@ class IbmDbTestCase(unittest.TestCase):
 
       print "Test non-existent table:"
       if (server.DBMS_NAME[0:3] == 'IDS'):
-        result = ibm_db.statistics(conn,None,user,"non_existent_table",True)
+        result = ibm_db.statistics(conn,None,config.user,"non_existent_table",True)
       else:
         result = ibm_db.statistics(conn,None,None,"NON_EXISTENT_TABLE",True)
       row = ibm_db.fetch_tuple(result)

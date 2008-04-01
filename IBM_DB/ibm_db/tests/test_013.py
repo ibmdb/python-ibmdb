@@ -19,7 +19,11 @@ class IbmDbTestCase(unittest.TestCase):
     conn = ibm_db.connect(config.database, config.user, config.password)
       
     if conn:
-      stmt = ibm_db.prepare(conn, "SELECT name FROM animals WHERE weight < 10.0", {ibm_db.SQL_ATTR_CURSOR_TYPE: ibm_db.SQL_CURSOR_KEYSET_DRIVEN})
+      serverinfo = ibm_db.server_info( conn )
+      if (serverinfo.DBMS_NAME[0:3] != 'IDS'):
+        stmt = ibm_db.prepare(conn, "SELECT name FROM animals WHERE weight < 10.0", {ibm_db.SQL_ATTR_CURSOR_TYPE: ibm_db.SQL_CURSOR_KEYSET_DRIVEN})
+      else:
+        stmt = ibm_db.prepare(conn, "SELECT name FROM animals WHERE weight < 10.0")
       ibm_db.execute(stmt)
       data = ibm_db.fetch_both( stmt )
       while (data):

@@ -21,6 +21,10 @@ class IbmDbTestCase(unittest.TestCase):
     conn = ibm_db.pconnect(config.database, config.user, config.password)
       
     if conn:
+      serverinfo = ibm_db.server_info( conn )
+      if (serverinfo.DBMS_NAME[0:3] == 'IDS'):
+        options1 = options2
+
       stmt = ibm_db.prepare(conn, "SELECT name FROM animals WHERE weight < 10.0", options2)
       ibm_db.execute(stmt)
       data = ibm_db.fetch_both(stmt)

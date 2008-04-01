@@ -59,4 +59,4 @@ class IbmDbTestCase(unittest.TestCase):
 #col: 0
 #affected row: 1
 #col: 0
-#affected row: 1 
+#affected row: 1

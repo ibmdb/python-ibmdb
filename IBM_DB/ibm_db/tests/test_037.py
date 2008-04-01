@@ -17,12 +17,16 @@ class IbmDbTestCase(unittest.TestCase):
 
   def run_test_037(self):
     conn = ibm_db.connect(config.database, config.user, config.password)
-      
+    serverinfo = ibm_db.server_info( conn )
+
     result = ibm_db.exec_immediate(conn, "SELECT * FROM staff WHERE id < 101")
     
     row = ibm_db.fetch_row(result)
     while ( row ):
-      result2 = ibm_db.prepare(conn, "SELECT * FROM staff WHERE id < 101", {ibm_db.SQL_ATTR_CURSOR_TYPE: ibm_db.SQL_CURSOR_KEYSET_DRIVEN})
+      if (serverinfo.DBMS_NAME[0:3] != 'IDS'):
+        result2 = ibm_db.prepare(conn, "SELECT * FROM staff WHERE id < 101", {ibm_db.SQL_ATTR_CURSOR_TYPE: ibm_db.SQL_CURSOR_KEYSET_DRIVEN})
+      else:
+        result2 = ibm_db.prepare(conn, "SELECT * FROM staff WHERE id < 101")
       ibm_db.execute(result2)
       row2 = ibm_db.fetch_row(result2)
       while ( row2 ):

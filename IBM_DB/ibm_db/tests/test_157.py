@@ -21,7 +21,10 @@ class IbmDbTestCase(unittest.TestCase):
 
     if conn:
       sql = "SELECT id, name, breed, weight FROM animals ORDER BY breed"
-      result = ibm_db.exec_immediate(conn, sql, {ibm_db.SQL_ATTR_CURSOR_TYPE: ibm_db.SQL_CURSOR_KEYSET_DRIVEN})
+      if (server.DBMS_NAME[0:3] != 'IDS'):
+        result = ibm_db.exec_immediate(conn, sql, {ibm_db.SQL_ATTR_CURSOR_TYPE: ibm_db.SQL_CURSOR_KEYSET_DRIVEN})
+      else:
+        result = ibm_db.exec_immediate(conn, sql, {ibm_db.SQL_ATTR_CURSOR_TYPE: ibm_db.SQL_CURSOR_STATIC})
 
       i = 2
       row = ibm_db.fetch_assoc(result, i)

@@ -13,7 +13,7 @@ class IbmDbTestCase(unittest.TestCase):
 
   def test_065(self):
     obj = IbmDbTestFunctions()
-    obj.assert_expect(self.run_test_065)
+    obj.assert_expectf(self.run_test_065)
 
   def run_test_065(self):
     conn = ibm_db.connect(config.database, config.user, config.password)
@@ -90,4 +90,4 @@ class IbmDbTestCase(unittest.TestCase):
 #__IDS_EXPECTED__
 #table_cat, table_schem, table_name, table_type, remarks, 
 #
-#, %sT%s, t3, TABLE%s, , 
+#, %sT%s, t3, TABLE%s, ,

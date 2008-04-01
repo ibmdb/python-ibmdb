@@ -41,7 +41,7 @@ class IbmDbTestCase(unittest.TestCase):
       result = ibm_db.exec_immediate(conn, statement)
       
       if (server.DBMS_NAME[0:3] == 'IDS'):
-        stmt = ibm_db.primary_keys(conn, None, user, 'test_primary_keys')
+        stmt = ibm_db.primary_keys(conn, None, config.user, 'test_primary_keys')
       else:
         stmt = ibm_db.primary_keys(conn, None, None, 'TEST_PRIMARY_KEYS')
       row = ibm_db.fetch_tuple(stmt)

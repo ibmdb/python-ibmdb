@@ -32,7 +32,10 @@ class IbmDbTestCase(unittest.TestCase):
          print "string(%d) \"%s\"" % (len(name), name)
     
          # following field does not exist in result set
-         name = ibm_db.result(stmt, "PASSPORT")
+         if (server.DBMS_NAME[0:3] == 'IDS'):
+           name = ibm_db.result(stmt, "passport")
+         else:
+           name = ibm_db.result(stmt, "PASSPORT")
          print name
       ibm_db.close(conn)
       

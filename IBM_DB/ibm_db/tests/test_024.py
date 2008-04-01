@@ -52,7 +52,7 @@ class IbmDbTestCase(unittest.TestCase):
       result = ibm_db.exec_immediate(conn, statement)
 
       if (server.DBMS_NAME[0:3] == 'IDS'):
-        stmt = ibm_db.foreign_keys(conn, None, user, 'test_primary_keys')
+        stmt = ibm_db.foreign_keys(conn, None, config.user, 'test_primary_keys')
       else:
         stmt = ibm_db.foreign_keys(conn, None, None, 'TEST_PRIMARY_KEYS')
       row = ibm_db.fetch_tuple(stmt)
@@ -62,7 +62,7 @@ class IbmDbTestCase(unittest.TestCase):
       print row[7]
 
       if (server.DBMS_NAME[0:3] == 'IDS'):
-        stmt = ibm_db.foreign_keys(conn, None, None, None, None, user, 'test_keys')
+        stmt = ibm_db.foreign_keys(conn, None, None, None, None, config.user, 'test_keys')
       else:
         stmt = ibm_db.foreign_keys(conn, None, None, None, None, None, 'TEST_KEYS')
       row = ibm_db.fetch_tuple(stmt)
@@ -72,7 +72,7 @@ class IbmDbTestCase(unittest.TestCase):
       print row[7]
 
       if (server.DBMS_NAME[0:3] == 'IDS'):
-        stmt = ibm_db.foreign_keys(conn, None, user, 'test_keys', None, None, None)
+        stmt = ibm_db.foreign_keys(conn, None, config.user, 'test_keys', None, None, None)
       else:
         stmt = ibm_db.foreign_keys(conn, None, None, 'TEST_KEYS', None, None, None)
       row = ibm_db.fetch_tuple(stmt)
@@ -82,7 +82,7 @@ class IbmDbTestCase(unittest.TestCase):
       print row[7]
 
       if (server.DBMS_NAME[0:3] == 'IDS'):
-        stmt = ibm_db.foreign_keys(conn, None, user, 'test_keys', None, user, 'test_foreign_keys')
+        stmt = ibm_db.foreign_keys(conn, None, config.user, 'test_keys', None, config.user, 'test_foreign_keys')
       else:
         stmt = ibm_db.foreign_keys(conn, None, None, 'TEST_KEYS', None, None, 'TEST_FOREIGN_KEYS')
       row = ibm_db.fetch_tuple(stmt)
@@ -99,7 +99,7 @@ class IbmDbTestCase(unittest.TestCase):
           print ibm_db.stmt_errormsg()
 
       if (server.DBMS_NAME[0:3] == 'IDS'):
-        stmt = ibm_db.foreign_keys(conn, None, user, 'test_keys', None, user)
+        stmt = ibm_db.foreign_keys(conn, None, config.user, 'test_keys', None, config.user)
       else:
         stmt = ibm_db.foreign_keys(conn, None, None, 'TEST_KEYS', None, config.user)
       row = ibm_db.fetch_tuple(stmt)
