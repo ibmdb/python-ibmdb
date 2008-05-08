@@ -83,7 +83,8 @@ Windows 32 bit
 
 Supported Databases
 -------------------
-IBM DB2 Database on Linux, Unix and Windows 8.2 and beyond
+IBM DB2 Database on Linux, Unix and Windows 8.2 and onwards
+Informix(IDS) Cheetah version 11.10 onwards
 
 
 Future Supported Databases
@@ -92,7 +93,6 @@ IBM Cloudscape
 Apache Derby
 Remote connections to i5/OS (iSeries)
 Remote connections to z/OS (DB2 UDB for zOS)
-Informix (IDS)
 Native DB2 for i5/OS (iSeries)
 Native DB2 UDB for zOS
 
