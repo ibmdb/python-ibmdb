@@ -18,3 +18,9 @@ Change Log
  - fixed BIGINT return handling issue #5 (defect #150638)
  - fixed autocommit default issue #6 (defect #156919)
  - fixed _get_exception() tuple issue #8 (defect #156925)
+
+ 2008/05/08 (setup.py 0.2.9, ibm_db-0.2.9, ibm_db_dbi-0.2.9):
+ - fixed fetch first N rows
+only optimize for N rows issue #2 (defect #154260)
+ - fixed extra count() query issue #7 (defect #156926)
+ - fixed setup.py exit issue if env not set (defect #158296)

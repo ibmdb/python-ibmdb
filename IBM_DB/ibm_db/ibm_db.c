@@ -20,7 +20,7 @@
 +--------------------------------------------------------------------------+
 */
 
-#define MODULE_RELEASE "0.2.8"
+#define MODULE_RELEASE "0.2.9"
 
 #include <Python.h>
 #include "ibm_db.h"
@@ -1068,6 +1068,7 @@ static void _python_ibm_db_clear_conn_err_cache(void)
  * ibm_db.next_result
  * ibm_db.num_fields
  * ibm_db.num_rows
+ * ibm_db.get_num_result
  * ibm_db.field_name
  * ibm_db.field_display_size
  * ibm_db.field_num
@@ -4479,6 +4480,55 @@ static PyObject *ibm_db_num_rows(PyObject *self, PyObject *args)
    return Py_False;
 }
 
+/*!# ibm_db.get_num_result 
+ *
+ * ===Description
+ * int ibm_db.num_rows ( resource stmt )
+ *
+ * Returns the number of rows in a current open non-dynamic scrollable cursor.
+ *
+ * ===Parameters
+ *
+ * ====stmt
+ *       A valid stmt resource containing a result set.
+ *
+ * ===Return Values
+ *
+ * True on success or False on failure.
+ */
+static PyObject *ibm_db_get_num_result(PyObject *self, PyObject *args)
+{
+   stmt_handle *stmt_res;
+   int rc = 0;
+   SQLINTEGER count = 0;
+   char error[DB2_MAX_ERR_MSG_LEN];
+   SQLSMALLINT strLenPtr;
+
+   if (!PyArg_ParseTuple(args, "O", &stmt_res))
+      return NULL;
+
+   if (!NIL_P(stmt_res)) {
+      rc = SQLGetDiagField(SQL_HANDLE_STMT, stmt_res->hstmt, 0,
+                            SQL_DIAG_CURSOR_ROW_COUNT, &count, SQL_IS_INTEGER,
+                            &strLenPtr);
+      if ( rc == SQL_ERROR ) {
+         _python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, rc,
+                                         1, NULL, -1, 1);
+         sprintf(error, "SQLGetDiagField failed: %s",
+                 IBM_DB_G(__python_stmt_err_msg));
+         PyErr_SetString(PyExc_Exception, error);
+         Py_INCREF(Py_False);
+         return Py_False;
+      }
+      return PyInt_FromLong(count);
+   } else {
+      PyErr_SetString(PyExc_Exception, "Supplied parameter is invalid");
+      return NULL;
+   }
+   Py_INCREF(Py_False);
+   return Py_False;
+}
+
 /* static int _python_ibm_db_get_column_by_name(stmt_handle *stmt_res, char *col_name, int col)
  */
 static int _python_ibm_db_get_column_by_name(stmt_handle *stmt_res, char *col_name, int col)
@@ -7150,6 +7200,7 @@ static PyMethodDef ibm_db_Methods[] = {
 	{"next_result", (PyCFunction)ibm_db_next_result , METH_VARARGS, "Requests the next result set from a stored procedure"},
 	{"num_fields", (PyCFunction)ibm_db_num_fields , METH_VARARGS, "Returns the number of fields contained in a result set"},
 	{"num_rows", (PyCFunction)ibm_db_num_rows , METH_VARARGS, "Returns the number of rows affected by an SQL statement"},
+   {"get_num_result", (PyCFunction)ibm_db_get_num_result, METH_VARARGS, "Returns the number of rows in a current open non-dynamic scrollable cursor"},
 	{"primary_keys", (PyCFunction)ibm_db_primary_keys , METH_VARARGS, "Returns a result set listing primary keys for a table"},
 	{"procedure_columns", (PyCFunction)ibm_db_procedure_columns , METH_VARARGS, "Returns a result set listing the parameters for one or more stored procedures."},
 	{"procedures", (PyCFunction)ibm_db_procedures , METH_VARARGS, "Returns a result set listing the stored procedures registered in a database"},

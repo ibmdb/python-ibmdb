@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 from distutils.core import setup, Extension
 
 PACKAGE = 'ibm_db'
-VERSION = '0.2.8'
+VERSION = '0.2.9'
 LICENSE = 'Apache License 2.0'
 
 try:
@@ -13,7 +13,7 @@ try:
 	ibm_db_lib = os.environ['IBM_DB_LIB']
 except (KeyError):
 	print 'IBM DataServer environment not set. Please refer to the README for more information on building the driver'
-	quit()
+	sys.exit()
 
 library = ['db2']
 if (sys.platform[0:3] == 'win'):

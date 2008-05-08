@@ -14,7 +14,7 @@
 # | language governing permissions and limitations under the License.        |
 # +--------------------------------------------------------------------------+
 # | Authors: Swetha Patel                                                    |
-# | Version: 0.2.8                                                           |
+# | Version: 0.2.9                                                           |
 # +--------------------------------------------------------------------------+
 
 """
@@ -295,6 +295,7 @@ def _get_exception(inst):
                                                             "Fetch Failure: ",
                                                   "SQLNumResultCols failed: ",
                                                        "SQLRowCount failed: ",
+                                                   "SQLGetDiagField failed: ",
                                                  "Statement prepare Failed: ")
 
     operational_exceptions = (          "Connection Resource cannot be found", 
@@ -302,7 +303,7 @@ def _get_exception(inst):
                                                     "Describe Param Failed: ",
                                                  "Statement Execute Failed: ",
                                                       "Sending data failed: ", 
-                                     "Failed to Allocate Memory for XML Data", 
+                                     "Failed to Allocate Memory for XML Data",
                                      "Failed to Allocate Memory for LOB Data")
 
     # First check if the exception is from the database.  If it is 
@@ -837,6 +838,7 @@ class Cursor(object):
         self.__description = None
         self.conn_handler = conn_handler
         self.stmt_handler = None
+        self._is_scrollable_cursor = False
 
     # This method closes the statemente associated with the cursor object.
     # It takes no argument.
@@ -892,6 +894,35 @@ class Cursor(object):
         except Exception, inst:
             raise _get_exception(inst)
 
+    # Helper for preparing an SQL statement.
+    def _set_cursor_helper(self):
+        self._result_set_produced = False
+        try:
+            ibm_db.set_option(self.stmt_handler, 
+                 {ibm_db.SQL_ATTR_CURSOR_TYPE: ibm_db.SQL_CURSOR_STATIC}, 0)
+        except Exception, inst:
+            raise _get_exception(inst)
+        try:
+            num_columns = ibm_db.num_fields(self.stmt_handler)
+        except Exception, inst:
+            raise _get_exception(inst)
+        if not num_columns:
+            return True 
+        self._is_scrollable_cursor = True
+        self._result_set_produced = True
+        if ibm_db.server_info(self.conn_handler).DBMS_NAME[0:3] != 'IDS':
+            for column_index in range(num_columns):
+                try:
+                    type = ibm_db.field_type(self.stmt_handler, column_index)
+                except Exception, inst:
+                    raise _get_exception(inst)
+                if type == "xml" or type == "clob" or type == "blob":
+                    self._is_scrollable_cursor = False
+                    print Warning("rowcount could not be updated because "
+                     "select includes xml, clob and/or blob type column(s)")
+                    return True
+        return True
+
     # Helper for executing an SQL statement.
     def _execute_helper(self, rows_counter, parameters=None):
         logger.debug('_execute_helper( '+str(rows_counter)+', '+repr(parameters)+' )')
@@ -935,43 +966,23 @@ class Cursor(object):
 
     # This method is used to set the rowcount after executing an SQL 
     # statement. 
-    def _set_rowcount(self, operation, parameters=None):
-        logger.debug('_set_rowcount( '+str(operation)+', '+str(parameters)+' )')
-        queryType = operation[0 : 6]
-        if queryType.lower() == 'select' and \
-           operation.lower().find('from') != -1:
-            temp_operation = 'select count(*) from (' + operation + ') as t'
+    def _set_rowcount(self):
+        logger.debug('_set_rowcount()')
+        self.__rowcount = 0
+        if not self._result_set_produced:
             try:
-                stmt_handler = ibm_db.prepare(self.conn_handler, temp_operation)
-                if parameters is not None:
-                    parameters = tuple(parameters)
-                    return_value = ibm_db.execute(stmt_handler, parameters)
-                    if not return_value:
-                        if ibm_db.conn_errormsg() is not None:
-                            raise Error(str(ibm_db.conn_errormsg()))
-                        if ibm_db.stmt_errormsg() is not None:
-                            raise Error(str(ibm_db.stmt_errormsg()))
-                else:
-                    return_value = ibm_db.execute(stmt_handler)
-                    if not return_value:
-                        if ibm_db.conn_errormsg() is not None:
-                            raise Error(str(ibm_db.conn_errormsg()))
-                        if ibm_db.stmt_errormsg() is not None:
-                            raise Error(str(ibm_db.stmt_errormsg()))
-                count_row_tuple = ibm_db.fetch_tuple(stmt_handler)
+                counter = ibm_db.num_rows(self.stmt_handler)
             except Exception, inst:
                 raise _get_exception(inst)
-
-            self.__rowcount = count_row_tuple[0]
-            self._result_set_produced = True
-            return True
-        else:
+            self.__rowcount = counter
+        elif self._is_scrollable_cursor:
             try:
-                return_value = ibm_db.num_rows(self.stmt_handler)
+                counter = ibm_db.get_num_result(self.stmt_handler)
             except Exception, inst:
                 raise _get_exception(inst)
-            self.__rowcount = return_value
-            return True
+            if counter >= 0:
+                self.__rowcount = counter
+        return True
 
     # Retrieves the last generated identity value from the DB2 catalog
     def _get_last_identity_val(self):
@@ -1020,8 +1031,9 @@ class Cursor(object):
         self.__description = None
         self._all_stmt_handlers = []
         self._prepare_helper(operation)
+        self._set_cursor_helper()
         self._execute_helper(None, parameters)
-        return self._set_rowcount(operation, parameters)
+        return self._set_rowcount()
 
 
     def executemany(self, operation, seq_parameters):
