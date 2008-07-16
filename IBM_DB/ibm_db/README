@@ -104,6 +104,18 @@ directory.  These tests can be run by using 'python tests.py' on Unix based
 systems, and 'tests.py' on Windows based systems. Use vi to edit config.py to 
 your DB2 settings.
 
+The default config.py contains:
+
+test_dir =      'tests'         # Location of testsuite file (relative to current directory)
+
+database =      'test'          # Database to connect to
+user     =      'db2inst1'      # User ID to connect with
+password =      'password'      # Password for given User ID
+hostname =      'localhost'     # Hostname
+port     =      50000           # Port Number
+
+Point the database to mydatabase as created by the following command.
+
 The tests that ibm_db driver uses depends on a UTF-8 database.  This can be 
 created by running:
     CREATE DATABASE mydatabase USING CODESET UTF-8 TERRITORY US

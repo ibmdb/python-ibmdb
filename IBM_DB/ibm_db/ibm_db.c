@@ -20,7 +20,7 @@
 +--------------------------------------------------------------------------+
 */
 
-#define MODULE_RELEASE "0.2.9"
+#define MODULE_RELEASE "0.2.9.1"
 
 #include <Python.h>
 #include "ibm_db.h"
@@ -7286,7 +7286,6 @@ initibm_db(void) {
    PyModule_AddIntConstant(m, "SQL_DBCLOB", SQL_DBCLOB);
    PyModule_AddIntConstant(m, "SQL_DBCLOB_LOCATOR", SQL_DBCLOB_LOCATOR);
    PyModule_AddIntConstant(m, "SQL_DECIMAL", SQL_DECIMAL);
-   PyModule_AddIntConstant(m, "SQL_DECFLOAT", SQL_DECFLOAT);
    PyModule_AddIntConstant(m, "SQL_DECFLOAT", SQL_DECFLOAT);
    PyModule_AddIntConstant(m, "SQL_DOUBLE", SQL_DOUBLE);
    PyModule_AddIntConstant(m, "SQL_FLOAT", SQL_FLOAT);

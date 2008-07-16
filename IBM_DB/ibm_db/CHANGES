@@ -24,3 +24,6 @@ Change Log
 only optimize for N rows issue #2 (defect #154260)
  - fixed extra count() query issue #7 (defect #156926)
  - fixed setup.py exit issue if env not set (defect #158296)
+
+ 2008/07/16 (setup.py 0.2.9.1, ibm_db-0.2.9.1, ibm_db_dbi-0.2.9.1):
+ - fixed Compilation fail on DB2 versions < 9 due to SQL_DECFLOAT declaration ( defect #162728)
