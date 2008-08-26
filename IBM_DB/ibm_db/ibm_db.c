@@ -14,13 +14,13 @@
 | KIND, either express or implied. See the License for the specific        |
 | language governing permissions and limitations under the License.        |
 +--------------------------------------------------------------------------+
-| Authors: Manas Dadarkar, Salvador Ledezma, Sushant Koduru,               |
+| Authors: Manas Dadarkar, Salvador Ledezma, Sushant Koduru,                   |
 |          Lynh Nguyen, Kanchana Padmanabhan, Dan Scott, Helmut Tessarek,  |
-|          Sam Ruby, Kellen Bombardier, Tony Cairns                        |
+|          Sam Ruby, Kellen Bombardier, Tony Cairns, Abhigyan Agrawal           |
 +--------------------------------------------------------------------------+
 */
 
-#define MODULE_RELEASE "0.2.9.1"
+#define MODULE_RELEASE "0.3.0"
 
 #include <Python.h>
 #include "ibm_db.h"
@@ -536,7 +536,8 @@ static int _python_ibm_db_parse_options ( PyObject *options, int type, void *han
    PyObject *keys = NULL;
    PyObject *key = NULL; /* Holds the Option Index Key */
    PyObject *data = NULL;
-	int rc = 0;
+   PyObject *tc_pass = NULL;
+   int rc = 0;
 
    if ( !NIL_P(options) ) {
       keys = PyDict_Keys(options);
@@ -546,12 +547,21 @@ static int _python_ibm_db_parse_options ( PyObject *options, int type, void *han
          key = PyList_GetItem(keys,i);
          data = PyDict_GetItem(options,key);
 
-         /* Assign options to handle. */
-         /* Sets the options in the handle with CLI/ODBC calls */
-         rc = _python_ibm_db_assign_options(handle, type, NUM2LONG(key), data);
-			if (rc)
-			   return SQL_ERROR;
+		 if(NUM2LONG(key) == SQL_ATTR_TRUSTED_CONTEXT_PASSWORD) {
+			 tc_pass = data;
+		 } else {
+			 /* Assign options to handle. */
+			 /* Sets the options in the handle with CLI/ODBC calls */
+			 rc = _python_ibm_db_assign_options(handle, type, NUM2LONG(key), data);
+		 }
+		 if (rc)
+			 return SQL_ERROR;
       }
+	  if (!NIL_P(tc_pass) ) {
+		  rc = _python_ibm_db_assign_options(handle, type, SQL_ATTR_TRUSTED_CONTEXT_PASSWORD, tc_pass);
+	  }
+	  if (rc)
+		  return SQL_ERROR;
    }
    return SQL_SUCCESS;
 }
@@ -4102,8 +4112,9 @@ static PyObject *ibm_db_conn_errormsg(PyObject *self, PyObject *args)
          PyErr_SetString(PyExc_Exception, "Connection is not active");
       }
 
-      return_str = ALLOC_N(char, SQL_SQLSTATE_SIZE + 1);
+      return_str = ALLOC_N(char, DB2_MAX_ERR_MSG_LEN);
 
+      memset(return_str, 0, DB2_MAX_ERR_MSG_LEN);
 
       _python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, -1, 0, 
                                       return_str, DB2_ERRMSG, 
@@ -7317,6 +7328,9 @@ initibm_db(void) {
    PyModule_AddIntConstant(m, "SQL_ATTR_INFO_WRKSTNNAME", SQL_ATTR_INFO_WRKSTNNAME);
    PyModule_AddIntConstant(m, "SQL_ATTR_INFO_ACCTSTR", SQL_ATTR_INFO_ACCTSTR);
    PyModule_AddIntConstant(m, "SQL_ATTR_INFO_APPLNAME", SQL_ATTR_INFO_APPLNAME);
+   PyModule_AddIntConstant(m, "SQL_ATTR_USE_TRUSTED_CONTEXT", SQL_ATTR_USE_TRUSTED_CONTEXT);
+   PyModule_AddIntConstant(m, "SQL_ATTR_TRUSTED_CONTEXT_USERID", SQL_ATTR_TRUSTED_CONTEXT_USERID);
+   PyModule_AddIntConstant(m, "SQL_ATTR_TRUSTED_CONTEXT_PASSWORD", SQL_ATTR_TRUSTED_CONTEXT_PASSWORD);
 
 
    Py_INCREF(&stmt_handleType);

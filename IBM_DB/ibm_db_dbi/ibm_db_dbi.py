@@ -14,7 +14,7 @@
 # | language governing permissions and limitations under the License.        |
 # +--------------------------------------------------------------------------+
 # | Authors: Swetha Patel                                                    |
-# | Version: 0.2.9.1                                                           |
+# | Version: 0.3.0                                                           |
 # +--------------------------------------------------------------------------+
 
 """
