@@ -14,13 +14,13 @@
 | KIND, either express or implied. See the License for the specific        |
 | language governing permissions and limitations under the License.        |
 +--------------------------------------------------------------------------+
-| Authors: Manas Dadarkar, Salvador Ledezma, Sushant Koduru,                   |
+| Authors: Manas Dadarkar, Salvador Ledezma, Sushant Koduru,               |
 |          Lynh Nguyen, Kanchana Padmanabhan, Dan Scott, Helmut Tessarek,  |
-|          Sam Ruby, Kellen Bombardier, Tony Cairns, Abhigyan Agrawal           |
+|          Sam Ruby, Kellen Bombardier, Tony Cairns, Abhigyan Agrawal      |
 +--------------------------------------------------------------------------+
 */
 
-#define MODULE_RELEASE "0.3.0"
+#define MODULE_RELEASE "0.4.0"
 
 #include <Python.h>
 #include "ibm_db.h"
@@ -132,6 +132,7 @@ typedef struct _ibm_db_result_set_info_struct {
    SQLINTEGER lob_loc;
    SQLINTEGER loc_ind;
    SQLSMALLINT loc_type;
+   unsigned char *mem_alloc;  /* Mem free */
 } ibm_db_result_set_info;
 
 typedef struct _row_hash_struct {
@@ -323,6 +324,10 @@ static void _python_ibm_db_free_result_struct(stmt_handle* handle) {
       if ( handle->column_info ) {
          for (i=0; i<handle->num_columns; i++) {
             PyMem_Del(handle->column_info[i].name);
+			/* Mem free */
+			if(handle->column_info[i].mem_alloc){
+				PyMem_Del(handle->column_info[i].mem_alloc);
+			}
          }
          PyMem_Del(handle->column_info);
          handle->column_info = NULL;
@@ -5402,14 +5407,17 @@ static PyObject *ibm_db_result(PyObject *self, PyObject *args)
 */
 static PyObject *_python_ibm_db_bind_fetch_helper(PyObject *args, int op)
 {
-   int rc = -1, i;
-   SQLINTEGER row_number=-1;
+   int rc = -1;
+   int column_number;
+   SQLINTEGER row_number = -1;
    stmt_handle *stmt_res = NULL;
    SQLSMALLINT column_type, lob_bind_type = SQL_C_BINARY;
    ibm_db_row_data_type *row_data;
    SQLINTEGER out_length, tmp_length;
    unsigned char *out_ptr;
    PyObject *return_value = NULL;
+   PyObject *key = NULL;
+   PyObject *value = NULL;
    char error[DB2_MAX_ERR_MSG_LEN];
 
 	if (!PyArg_ParseTuple(args, "O|i", &stmt_res, &row_number))
@@ -5471,7 +5479,7 @@ static PyObject *_python_ibm_db_bind_fetch_helper(PyObject *args, int op)
    }
 
    if (rc == SQL_NO_DATA_FOUND) {
-		Py_INCREF(Py_False);
+	  Py_INCREF(Py_False);
       return Py_False;
    } else if ( rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
       _python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, rc, 1, 
@@ -5487,33 +5495,29 @@ static PyObject *_python_ibm_db_bind_fetch_helper(PyObject *args, int op)
          return_value = PyTuple_New(stmt_res->num_columns);
    }
 
-   for (i=0; i<stmt_res->num_columns; i++) {
-      column_type = stmt_res->column_info[i].type;
-      row_data = &stmt_res->row_data[i].data;
-      out_length = stmt_res->row_data[i].out_length;
+   for (column_number = 0; column_number < stmt_res->num_columns; column_number++) {
+      column_type = stmt_res->column_info[column_number].type;
+      row_data = &stmt_res->row_data[column_number].data;
+      out_length = stmt_res->row_data[column_number].out_length;
 
       switch(stmt_res->s_case_mode) {
          case CASE_LOWER:
-            stmt_res->column_info[i].name = (SQLCHAR*)strtolower((char*)stmt_res->column_info[i].name, strlen((char*)stmt_res->column_info[i].name));
+            stmt_res->column_info[column_number].name = 
+				(SQLCHAR*)strtolower((char*)stmt_res->column_info[column_number].name, 
+				strlen((char*)stmt_res->column_info[column_number].name));
             break;
          case CASE_UPPER:
-            stmt_res->column_info[i].name = (SQLCHAR*)strtoupper((char*)stmt_res->column_info[i].name, strlen((char*)stmt_res->column_info[i].name));
+            stmt_res->column_info[column_number].name = 
+				(SQLCHAR*)strtoupper((char*)stmt_res->column_info[column_number].name, 
+				strlen((char*)stmt_res->column_info[column_number].name));
             break;
          case CASE_NATURAL:
          default:
             break;
       }
       if (out_length == SQL_NULL_DATA) {
-         if ( op & FETCH_ASSOC ) {
-            PyDict_SetItem(return_value, 
-                      PyString_FromString((char*)stmt_res->column_info[i].name),
-                      Py_None);
-         }
-         if ( op == FETCH_INDEX ) {
-				PyTuple_SetItem(return_value, i, Py_None);
-         } else if ( op == FETCH_BOTH ) {
-            PyDict_SetItem(return_value, PyInt_FromLong(i), Py_None);
-         }
+         Py_INCREF(Py_None);
+		 value = Py_None;
       } else {
          switch(column_type) {
             case SQL_CHAR:
@@ -5522,41 +5526,26 @@ static PyObject *_python_ibm_db_bind_fetch_helper(PyObject *args, int op)
             case SQL_LONGVARCHAR:
 #else /* PASE */
                /* i5/OS will xlate from EBCIDIC to ASCII (via SQLGetData) */
-               tmp_length = stmt_res->column_info[i].size;
-               out_ptr = (SQLPOINTER)malloc(tmp_length+1);
-               memset(out_ptr,0,tmp_length+1);
+               tmp_length = stmt_res->column_info[column_number].size;
+               out_ptr = (SQLPOINTER)malloc(tmp_length + 1);
                if ( out_ptr == NULL ) {
                   PyErr_SetString(PyExc_Exception, "Failed to Allocate Memory");
                   return NULL;
                }
-               rc = _python_ibm_db_get_data(stmt_res, i+1, SQL_C_CHAR, out_ptr,
-                                            tmp_length+1, &out_length);
+			   /*  _python_ibm_db_get_data null terminates all output. */
+               rc = _python_ibm_db_get_data(stmt_res, column_number + 1, SQL_C_CHAR, out_ptr,
+                                            tmp_length + 1, &out_length);
                if ( rc == SQL_ERROR ) {
                   free(out_ptr);
                   return NULL;
                }
                if (out_length == SQL_NULL_DATA) {
-                  if ( op & FETCH_ASSOC ) {
-                     PyDict_SetItem(return_value, 
-                      PyString_FromString((char*)stmt_res->column_info[i].name),
-                      Py_None);
-                  }
-                  if ( op & FETCH_INDEX ) {
-                     PyTuple_SetItem(return_value, i, Py_None);
-                  }
+				  Py_INCREF(Py_None);
+                  value = Py_None;
                } else {
-                  out_ptr[tmp_length] = '\0';
-                  if ( op & FETCH_ASSOC ) {
-                     PyDict_SetItem(return_value, 
-                     PyString_FromString((char *)stmt_res->column_info[i].name),
-                     PyString_FromString((char *)out_ptr));
-                  }
-                  if ( op & FETCH_INDEX ) {
-                     PyTuple_SetItem(return_value, i, 
-                                     PyString_FromString((char *)out_ptr));
-                  }
+                  value = PyString_FromString((char *)out_ptr);
                }
-	            free(out_ptr);
+	           free(out_ptr);
                break;
 #endif /* PASE */
             case SQL_TYPE_DATE:
@@ -5564,92 +5553,28 @@ static PyObject *_python_ibm_db_bind_fetch_helper(PyObject *args, int op)
             case SQL_TYPE_TIMESTAMP:
             case SQL_DECIMAL:
             case SQL_NUMERIC:
-               if ( op & FETCH_ASSOC ) {
-                  PyDict_SetItem(return_value, 
-                     PyString_FromString((char *)stmt_res->column_info[i].name),
-                     PyString_FromString((char *)row_data->str_val));
-               }
-               if ( op == FETCH_INDEX ) {
-                  PyTuple_SetItem(return_value, i, 
-                                PyString_FromString((char *)row_data->str_val));
-               } else if ( op == FETCH_BOTH ) {
-                  PyDict_SetItem(return_value, PyInt_FromLong(i), 
-                                PyString_FromString((char *)row_data->str_val));
-               }
+               value = PyString_FromString((char *)row_data->str_val);
                break;
 
             case SQL_BIGINT:
-               if ( op & FETCH_ASSOC ) {
-                  PyDict_SetItem(return_value,
-                     PyString_FromString((char *)stmt_res->column_info[i].name),
-                      PyLong_FromString((char *)row_data->str_val, NULL, 10));
-               }
-               if ( op == FETCH_INDEX ) {
-                  PyTuple_SetItem(return_value, i,
-                     PyLong_FromString((char *)row_data->str_val, NULL, 10));
-               } else if ( op == FETCH_BOTH ) {
-                  PyDict_SetItem(return_value, PyInt_FromLong(i),
-                     PyLong_FromString((char *)row_data->str_val, NULL, 10));
-               }
+               value = PyLong_FromString((char *)row_data->str_val, NULL, 10);
                break;
+
             case SQL_SMALLINT:
-               if ( op & FETCH_ASSOC ) {
-                  PyDict_SetItem(return_value, 
-                      PyString_FromString((char*)stmt_res->column_info[i].name),
-                      PyInt_FromLong(row_data->s_val));
-               }
-               if ( op == FETCH_INDEX ) {
-                  PyTuple_SetItem(return_value, i, 
-                                  PyInt_FromLong(row_data->s_val));
-               } else if ( op == FETCH_BOTH ) {
-                  PyDict_SetItem(return_value, PyInt_FromLong(i), 
-                                 PyInt_FromLong(row_data->s_val));
-               }
+               value = PyInt_FromLong(row_data->s_val);
                break;
+
             case SQL_INTEGER:
-               if ( op & FETCH_ASSOC ) {
-                  PyDict_SetItem(return_value, 
-                      PyString_FromString((char*)stmt_res->column_info[i].name),
-                      PyLong_FromLong(row_data->i_val));
-               }
-               if ( op == FETCH_INDEX ) {
-                  PyTuple_SetItem(return_value, i, 
-                                  PyLong_FromLong(row_data->i_val));
-               } else if ( op == FETCH_BOTH ) {
-                  PyDict_SetItem(return_value, PyInt_FromLong(i), 
-                                 PyLong_FromLong(row_data->i_val));
-               }
+               value = PyLong_FromLong(row_data->i_val);
                break;
 
             case SQL_REAL:
             case SQL_FLOAT:
-               if ( op & FETCH_ASSOC ) {
-                  PyDict_SetItem(return_value, 
-                      PyString_FromString((char*)stmt_res->column_info[i].name),
-                      PyFloat_FromDouble(row_data->f_val));
-               }
-               if ( op == FETCH_INDEX ) {
-                  PyTuple_SetItem(return_value, i, 
-                                  PyFloat_FromDouble(row_data->f_val));
-               } else if ( op == FETCH_BOTH ) {
-                  PyDict_SetItem(return_value, PyInt_FromLong(i), 
-                                 PyFloat_FromDouble(row_data->f_val));
-               }
+               value = PyFloat_FromDouble(row_data->f_val);
                break;
 
             case SQL_DOUBLE:
-               if ( op & FETCH_ASSOC ) {
-                  PyDict_SetItem(return_value, 
-                      PyString_FromString((char*)stmt_res->column_info[i].name),
-                      PyFloat_FromDouble(row_data->d_val));
-               }
-               if ( op == FETCH_INDEX ) {
-                  PyTuple_SetItem(return_value, i, 
-                                  PyFloat_FromDouble(row_data->d_val));
-               } else if ( op == FETCH_BOTH ) {
-                  PyDict_SetItem(return_value, PyInt_FromLong(i), 
-                                 PyFloat_FromDouble(row_data->d_val));
-               }
+               value = PyFloat_FromDouble(row_data->d_val);
                break;
 
             case SQL_BINARY:
@@ -5658,64 +5583,25 @@ static PyObject *_python_ibm_db_bind_fetch_helper(PyObject *args, int op)
 #endif /* PASE */
             case SQL_VARBINARY:
                if ( stmt_res->s_bin_mode == PASSTHRU ) {
-                  if ( op & FETCH_ASSOC ) {
-                     PyDict_SetItem(return_value, 
-                      PyString_FromString((char*)stmt_res->column_info[i].name),
-                      PyString_FromStringAndSize("",0));
-                  }
-                  if ( op == FETCH_INDEX ) {
-                     PyTuple_SetItem(return_value, i, 
-                                     PyString_FromStringAndSize("",0));
-                  } else if ( op == FETCH_BOTH ) {
-                     PyDict_SetItem(return_value, PyInt_FromLong(i), 
-                                    PyString_FromStringAndSize("",0));
-                  }
+                  value = PyString_FromStringAndSize("", 0);
                } else {
-                  if ( op & FETCH_ASSOC ) {
-                     PyDict_SetItem(return_value, 
-                      PyString_FromString((char*)stmt_res->column_info[i].name),
-                      PyString_FromString((char *)row_data->str_val));
-                  }
-                  if ( op == FETCH_INDEX ) {
-                     PyTuple_SetItem(return_value, i, 
-                                PyString_FromString((char *)row_data->str_val));
-                  } else if ( op == FETCH_BOTH ) {
-                     PyDict_SetItem(return_value, PyInt_FromLong(i), 
-                                PyString_FromString((char *)row_data->str_val));
-                  }
+                  value = PyString_FromString((char *)row_data->str_val);
                }
                break;
 
             case SQL_BLOB:
                out_ptr = NULL;
-               rc=_python_ibm_db_get_length(stmt_res, i+1, &tmp_length);
+               rc=_python_ibm_db_get_length(stmt_res, column_number + 1, &tmp_length);
 
                if (tmp_length == SQL_NULL_DATA) {
-                  if ( op & FETCH_ASSOC ) {
-                     PyDict_SetItem(return_value, 
-                      PyString_FromString((char*)stmt_res->column_info[i].name),
-                      Py_None);
-                  }
-                  if ( op == FETCH_INDEX ) {
-                     PyTuple_SetItem(return_value, i, Py_None);
-                  } else if ( op == FETCH_BOTH ) {
-                     PyDict_SetItem(return_value, PyInt_FromLong(i), Py_None);
-                  }
+                  Py_INCREF(Py_None);
+				  value = Py_None; 
                } else {
                   if (rc == SQL_ERROR) tmp_length = 0;
                   switch (stmt_res->s_bin_mode) {
                      case PASSTHRU:
-                        if ( op & FETCH_ASSOC ) {
-                              PyDict_SetItem(return_value, 
-                      PyString_FromString((char*)stmt_res->column_info[i].name),
-                      Py_None);
-                        }
-                        if ( op == FETCH_INDEX ) {
-                              PyTuple_SetItem(return_value, i, Py_None);
-                        } else if ( op == FETCH_BOTH ) {
-                              PyDict_SetItem(return_value, PyInt_FromLong(i), 
-                                             Py_None);
-                        }
+                        value = Py_None; 
+						Py_INCREF(Py_None);
                         break;
 
                      case CONVERT:
@@ -5729,28 +5615,16 @@ static PyObject *_python_ibm_db_bind_fetch_helper(PyObject *args, int op)
                            PyErr_SetString(PyExc_Exception, "Failed to Allocate Memory");
                            return NULL;
                         }
-                        rc = _python_ibm_db_get_data2(stmt_res, i+1, 
+                        rc = _python_ibm_db_get_data2(stmt_res, column_number + 1, 
                                                       lob_bind_type, 
                                                       (char *)out_ptr, 
                                                       tmp_length, &out_length);
                         if (rc == SQL_ERROR) {
-			                  PyMem_Del(out_ptr);
+			               PyMem_Del(out_ptr);
                            out_length = 0;
                         }
-
-                        if ( op & FETCH_ASSOC ) {
-                           PyDict_SetItem(return_value, 
-                      PyString_FromString((char*)stmt_res->column_info[i].name),
-                      PyString_FromStringAndSize((char*)out_ptr, out_length));
-                        }
-                        if ( op == FETCH_INDEX ) {
-                           PyTuple_SetItem(return_value, i, 
-								              PyString_FromStringAndSize((char*)out_ptr,
-                                                                  out_length));
-                        } else if ( op == FETCH_BOTH ) {
-                           PyDict_SetItem(return_value, PyInt_FromLong(i), 
-                        PyString_FromStringAndSize((char*)out_ptr, out_length));
-                        }
+                        value = PyString_FromStringAndSize((char*)out_ptr, out_length);
+						stmt_res->column_info[column_number].mem_alloc = out_ptr; 
                         break;
                      default:
                         break;
@@ -5760,7 +5634,7 @@ static PyObject *_python_ibm_db_bind_fetch_helper(PyObject *args, int op)
 
             case SQL_XML:
                out_ptr = NULL;
-               rc = _python_ibm_db_get_data(stmt_res, i+1, SQL_C_BINARY, NULL, 
+               rc = _python_ibm_db_get_data(stmt_res, column_number + 1, SQL_C_BINARY, NULL, 
                                             0, (SQLINTEGER *)&tmp_length);
                if ( rc == SQL_ERROR ) {
                   sprintf(error, "Failed to Determine XML Size: %s", 
@@ -5770,16 +5644,8 @@ static PyObject *_python_ibm_db_bind_fetch_helper(PyObject *args, int op)
                }
 
                if (tmp_length == SQL_NULL_DATA) {
-                  if ( op & FETCH_ASSOC ) {
-                     PyDict_SetItem(return_value, 
-                     PyString_FromString((char *)stmt_res->column_info[i].name),
-                     Py_None);
-                  }
-                  if ( op & FETCH_INDEX ) {
-                     PyTuple_SetItem(return_value, i, Py_None);
-                  } else if ( op == FETCH_BOTH) {
-                     PyDict_SetItem(return_value, PyInt_FromLong(i), Py_None);
-                  }
+                  Py_INCREF(Py_None);
+				  value = Py_None;
                } else {
                   out_ptr = (SQLPOINTER)ALLOC_N(char, tmp_length);
 
@@ -5788,56 +5654,33 @@ static PyObject *_python_ibm_db_bind_fetch_helper(PyObject *args, int op)
                                      "Failed to Allocate Memory for XML Data");
                      return NULL;
                   }
-                  rc = _python_ibm_db_get_data(stmt_res, i+1, SQL_C_BINARY, 
+                  rc = _python_ibm_db_get_data(stmt_res, column_number + 1, SQL_C_BINARY, 
                                               out_ptr, tmp_length, &out_length);
                   if (rc == SQL_ERROR) {
-		               PyMem_Del(out_ptr);
+		             PyMem_Del(out_ptr);
                      return NULL;
                   }
-
-                  if ( op & FETCH_ASSOC ) {
-                     PyDict_SetItem(return_value, 
-                     PyString_FromString((char *)stmt_res->column_info[i].name),
-                     PyString_FromStringAndSize((char *)out_ptr, out_length));
-                  }
-                  if ( op == FETCH_INDEX ) {
-                     PyTuple_SetItem(return_value, i, 
-                                     PyString_FromStringAndSize((char *)out_ptr,
-                                                                out_length));
-                  } else if ( op == FETCH_BOTH ) {
-                     PyDict_SetItem(return_value, PyInt_FromLong(i), 
-                       PyString_FromStringAndSize((char *)out_ptr, out_length));
-                  }
+                  value = PyString_FromStringAndSize((char *)out_ptr, out_length);
+				  stmt_res->column_info[column_number].mem_alloc = out_ptr;
                }
                break;
 
             case SQL_CLOB:
                out_ptr = NULL;
-               rc = _python_ibm_db_get_length(stmt_res, i+1, &tmp_length);
-
+               rc = _python_ibm_db_get_length(stmt_res, column_number + 1, &tmp_length);
                if (tmp_length == SQL_NULL_DATA) {
-                  if ( op & FETCH_ASSOC ) {
-                     PyDict_SetItem(return_value, 
-                      PyString_FromString((char*)stmt_res->column_info[i].name),
-                      Py_None);
-                  }
-                  if ( op == FETCH_INDEX ) {
-                     PyTuple_SetItem(return_value, i, Py_None);
-                  } else if ( op == FETCH_BOTH ) {
-                     PyDict_SetItem(return_value, PyInt_FromLong(i), Py_None);
-                  }
+                  Py_INCREF(Py_None);
+				  value = Py_None; 
                } else {
                   if (rc == SQL_ERROR) tmp_length = 0;
-                  out_ptr = (SQLPOINTER)ALLOC_N(char, tmp_length+1);
-
+                  out_ptr = (SQLPOINTER)ALLOC_N(char, tmp_length + 1);
                   if ( out_ptr == NULL ) {
                      PyErr_SetString(PyExc_Exception, 
                                      "Failed to Allocate Memory for LOB Data");
                      return NULL;
                   }
-
-                  rc = _python_ibm_db_get_data2(stmt_res, i+1, SQL_C_CHAR, 
-                                                out_ptr, tmp_length+1, 
+                  rc = _python_ibm_db_get_data2(stmt_res, column_number + 1, SQL_C_CHAR, 
+			                                    out_ptr, tmp_length+1, 
                                                 &out_length);
                   if (rc == SQL_ERROR) {
                      PyMem_Del(out_ptr);
@@ -5845,26 +5688,30 @@ static PyObject *_python_ibm_db_bind_fetch_helper(PyObject *args, int op)
                   } else {
                      out_ptr[tmp_length] = '\0';
                   }
-
-                  if ( op & FETCH_ASSOC ) {
-                     PyDict_SetItem(return_value, 
-                      PyString_FromString((char*)stmt_res->column_info[i].name),
-                      PyString_FromStringAndSize((char*)out_ptr, tmp_length));
-                  }
-                  if ( op == FETCH_INDEX ) {
-                     PyTuple_SetItem(return_value, i, 
-                                     PyString_FromStringAndSize((char*)out_ptr, 
-                                                                tmp_length));
-                  } else if ( op == FETCH_BOTH ) {
-                     PyDict_SetItem(return_value, PyInt_FromLong(i), 
-                        PyString_FromStringAndSize((char*)out_ptr, tmp_length));
-                  }
+                  value = PyString_FromStringAndSize((char*)out_ptr, tmp_length);
+				  stmt_res->column_info[column_number].mem_alloc = out_ptr;
                }
                break;
 
             default:
                break;
          }
+      }
+	  if (op & FETCH_ASSOC) {
+          key = PyString_FromString((char*)stmt_res->column_info[column_number].name);
+          PyDict_SetItem(return_value, key, value);
+          Py_DECREF(key);
+      }
+      if (op == FETCH_INDEX) {
+		  /* No need to call Py_DECREF as PyTuple_SetItem steals the reference */
+          PyTuple_SetItem(return_value, column_number, value);
+      } else {
+          if (op == FETCH_BOTH) {
+              key = PyInt_FromLong(column_number);
+              PyDict_SetItem(return_value, key, value);
+              Py_DECREF(key);
+          }
+          Py_DECREF(value);
       }
    }
    return return_value;
@@ -7264,24 +7111,22 @@ initibm_db(void) {
    Py_INCREF(&conn_handleType);
    PyModule_AddObject(m, "IBM_DBConnection", (PyObject *)&conn_handleType);
 
-	PyModule_AddIntConstant(m, "SQL_AUTOCOMMIT_ON", SQL_AUTOCOMMIT_ON);
-	PyModule_AddIntConstant(m, "SQL_AUTOCOMMIT_OFF", SQL_AUTOCOMMIT_OFF);
-	PyModule_AddIntConstant(m, "SQL_ATTR_AUTOCOMMIT", SQL_ATTR_AUTOCOMMIT);
-	PyModule_AddIntConstant(m, "ATTR_CASE", ATTR_CASE);
-	PyModule_AddIntConstant(m, "CASE_NATURAL", CASE_NATURAL);
-	PyModule_AddIntConstant(m, "CASE_LOWER", CASE_LOWER);
-	PyModule_AddIntConstant(m, "CASE_UPPER", CASE_UPPER);
-	PyModule_AddIntConstant(m, "SQL_ATTR_CURSOR_TYPE", SQL_ATTR_CURSOR_TYPE);
-	PyModule_AddIntConstant(m, "SQL_CURSOR_FORWARD_ONLY", 
-                           SQL_CURSOR_FORWARD_ONLY);
-	PyModule_AddIntConstant(m, "SQL_CURSOR_KEYSET_DRIVEN", 
-                           SQL_CURSOR_KEYSET_DRIVEN);
-	PyModule_AddIntConstant(m, "SQL_CURSOR_DYNAMIC", SQL_CURSOR_DYNAMIC);
-	PyModule_AddIntConstant(m, "SQL_CURSOR_STATIC", SQL_CURSOR_STATIC);
-	PyModule_AddIntConstant(m, "SQL_PARAM_INPUT", SQL_PARAM_INPUT);
-	PyModule_AddIntConstant(m, "SQL_PARAM_OUTPUT", SQL_PARAM_OUTPUT);
-	PyModule_AddIntConstant(m, "SQL_PARAM_INPUT_OUTPUT", SQL_PARAM_INPUT_OUTPUT);
-	PyModule_AddIntConstant(m, "PARAM_FILE", PARAM_FILE);
+   PyModule_AddIntConstant(m, "SQL_AUTOCOMMIT_ON", SQL_AUTOCOMMIT_ON);
+   PyModule_AddIntConstant(m, "SQL_AUTOCOMMIT_OFF", SQL_AUTOCOMMIT_OFF);
+   PyModule_AddIntConstant(m, "SQL_ATTR_AUTOCOMMIT", SQL_ATTR_AUTOCOMMIT);
+   PyModule_AddIntConstant(m, "ATTR_CASE", ATTR_CASE);
+   PyModule_AddIntConstant(m, "CASE_NATURAL", CASE_NATURAL);
+   PyModule_AddIntConstant(m, "CASE_LOWER", CASE_LOWER);
+   PyModule_AddIntConstant(m, "CASE_UPPER", CASE_UPPER);
+   PyModule_AddIntConstant(m, "SQL_ATTR_CURSOR_TYPE", SQL_ATTR_CURSOR_TYPE);
+   PyModule_AddIntConstant(m, "SQL_CURSOR_FORWARD_ONLY", SQL_CURSOR_FORWARD_ONLY);
+   PyModule_AddIntConstant(m, "SQL_CURSOR_KEYSET_DRIVEN", SQL_CURSOR_KEYSET_DRIVEN);
+   PyModule_AddIntConstant(m, "SQL_CURSOR_DYNAMIC", SQL_CURSOR_DYNAMIC);
+   PyModule_AddIntConstant(m, "SQL_CURSOR_STATIC", SQL_CURSOR_STATIC);
+   PyModule_AddIntConstant(m, "SQL_PARAM_INPUT", SQL_PARAM_INPUT);
+   PyModule_AddIntConstant(m, "SQL_PARAM_OUTPUT", SQL_PARAM_OUTPUT);
+   PyModule_AddIntConstant(m, "SQL_PARAM_INPUT_OUTPUT", SQL_PARAM_INPUT_OUTPUT);
+   PyModule_AddIntConstant(m, "PARAM_FILE", PARAM_FILE);
 
    PyModule_AddIntConstant(m, "SQL_BIGINT", SQL_BIGINT);
    PyModule_AddIntConstant(m, "SQL_BINARY", SQL_BINARY);
@@ -7339,7 +7184,7 @@ initibm_db(void) {
    Py_INCREF(&client_infoType);
    PyModule_AddObject(m, "IBM_DBClientInfo", (PyObject *)&client_infoType);
 
-	Py_INCREF(&server_infoType);
+   Py_INCREF(&server_infoType);
    PyModule_AddObject(m, "IBM_DBServerInfo", (PyObject *)&server_infoType);
 }
 

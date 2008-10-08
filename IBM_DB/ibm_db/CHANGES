@@ -28,5 +28,12 @@ only optimize for N rows issue #2 (defect #154260)
 2008/07/16 (setup.py 0.2.9.1, ibm_db-0.2.9.1, ibm_db_dbi-0.2.9.1):
  - fixed Compilation fail on DB2 versions < 9 due to SQL_DECFLOAT declaration ( defect #162728)
  
-2008/08/26 (setup.py 0.3.0, ibm_db-0.3.0, ibm_db_dbi-0.3.0):
+2008/08/24 (setup.py 0.3.0, ibm_db-0.3.0, ibm_db_dbi-0.3.0):
  - Added trusted context support in driver.
+ 
+2008/10/08 (setup.py 0.4.0, ibm_db-0.4.0, ibm_db_dbi-0.4.0):
+ - fixed memory leak in fetch_assoc issue #13 (defect idsdb00165205)
+ - fixed reference counting errors in _python_ibm_db_bind_fetch_helper issue #14 (defect #167122)
+ - fixed ibm_db_dbi.Connection.tables() returning empty list issue #16 (defect #167059)
+ - adjusted error message if IBM DS environment variables not set.
+

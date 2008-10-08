@@ -13,8 +13,8 @@
 # | KIND, either express or implied. See the License for the specific        |
 # | language governing permissions and limitations under the License.        |
 # +--------------------------------------------------------------------------+
-# | Authors: Swetha Patel                                                    |
-# | Version: 0.3.0                                                           |
+# | Authors: Swetha Patel, Abhigyan Agrawal                                  |
+# | Version: 0.4.0                                                           |
 # +--------------------------------------------------------------------------+
 
 """
@@ -567,12 +567,12 @@ class Connection(object):
         logger.debug('tables( '+str(schema_name)+', '+str(table_name)+' )')
         result = []
         if schema_name is not None:
-            schema_name = self.set_case("DB2_LUW", schema_name)
+            schema_name = str(self.set_case("DB2_LUW", schema_name))
         if table_name is not None:
-            table_name = self.set_case("DB2_LUW", table_name)
+            table_name = str(self.set_case("DB2_LUW", table_name))
 
         try:      
-          stmt = ibm_db.tables(self.conn_handler, None, str(schema_name), str(table_name))
+          stmt = ibm_db.tables(self.conn_handler, None, schema_name, table_name)
           row = ibm_db.fetch_assoc(stmt)
           i = 0
           while (row):

@@ -1,6 +1,6 @@
-test_dir	=	'tests'		# Location of testsuite file (relative to current directory)
+test_dir	=	'tests'		# Location of testsuite file (relative to current directory) (Don't change this.)
 
-database	=	'sample'	# Database to connect to
+database	=	'sample'	# Database to connect to. Please use an empty database for best results.
 user		=	'db2inst1'	# User ID to connect with
 password	=	'password'	# Password for given User ID
 hostname	=	'localhost'	# Hostname

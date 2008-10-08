@@ -155,6 +155,9 @@ Known Limitations for the Python driver
      Same issue as test_146.py.
    tests_53494.py:
      Same issue as test_52949.py.
+     
+   In addition to these, if trusted context is not set up,
+   there will be additional two failures related to trusted context.
 
 
 Known Limitations for the Python wrapper

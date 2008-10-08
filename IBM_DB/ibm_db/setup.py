@@ -5,14 +5,19 @@ from setuptools import setup, find_packages
 from distutils.core import setup, Extension
 
 PACKAGE = 'ibm_db'
-VERSION = '0.3.0'
+VERSION = '0.4.0'
 LICENSE = 'Apache License 2.0'
 
 try:
 	ibm_db_dir = os.environ['IBM_DB_DIR']
 	ibm_db_lib = os.environ['IBM_DB_LIB']
 except (KeyError):
-	print 'IBM DataServer environment not set. Please refer to the README for more information on building the driver'
+	print '''IBM DataServer environment not set. 
+Please set IBM_DB_DIR to path to sqllib,
+and set IBM_DB_LIB to lib directory under sqllib
+e.g. export IBM_DB_DIR=/home/db2inst1/sqllib
+     export IBM_DB_LIB=/home/db2inst1/sqllib/lib
+'''
 	sys.exit()
 
 library = ['db2']
