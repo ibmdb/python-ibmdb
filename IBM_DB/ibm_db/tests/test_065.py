@@ -86,7 +86,7 @@ class IbmDbTestCase(unittest.TestCase):
 #__SYSTEMI_EXPECTED__
 #TABLE_CAT, TABLE_SCHEM, TABLE_NAME, TABLE_TYPE, REMARKS, 
 #
-#, %sT, T3, TABLE, , 
+#, T, T3, TABLE, , 
 #__IDS_EXPECTED__
 #table_cat, table_schem, table_name, table_type, remarks, 
 #

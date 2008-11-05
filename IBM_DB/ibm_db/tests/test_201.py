@@ -30,11 +30,11 @@ class IbmDbTestCase(unittest.TestCase):
            DEFINE p_weight NUMERIC(7,2);
            
            FOREACH c1 FOR
-          	SELECT name, id, breed, weight
-          	INTO p_name, p_id, p_breed, p_weight
-          	FROM animals
-          	ORDER BY name DESC
-          	RETURN p_name, p_id, p_breed, p_weight WITH RESUME;
+              SELECT name, id, breed, weight
+              INTO p_name, p_id, p_breed, p_weight
+              FROM animals
+              ORDER BY name DESC
+              RETURN p_name, p_id, p_breed, p_weight WITH RESUME;
            END FOREACH;
     
        END FUNCTION;"""
@@ -65,7 +65,7 @@ class IbmDbTestCase(unittest.TestCase):
     
     if conn:
         try:
-            ibm_db.exec_immediate(conn, 'DROP PROCEDURE multiResults()')
+            ibm_db.exec_immediate(conn, 'DROP PROCEDURE multiResults')
         except:
             pass
         ibm_db.exec_immediate(conn, procedure)
@@ -74,9 +74,9 @@ class IbmDbTestCase(unittest.TestCase):
         print "Fetching first result set"
         row = ibm_db.fetch_tuple(stmt)
         while ( row ):
-	       for i in row:
+           for i in row:
                 print str(i).strip()
-	       row = ibm_db.fetch_tuple(stmt)
+           row = ibm_db.fetch_tuple(stmt)
     
         if (server == 'IDS') :
            print "Fetching second result set (should fail -- IDS does not support multiple result sets)"
@@ -87,9 +87,9 @@ class IbmDbTestCase(unittest.TestCase):
         if res:
            row = ibm_db.fetch_tuple(res)
            while ( row ):
-  	          for i in row:
+                for i in row:
                    print str(i).strip()
-  	          row = ibm_db.fetch_tuple(res)
+                row = ibm_db.fetch_tuple(res)
      
         if (server == 'IDS'):
            print "Fetching third result set (should fail -- IDS does not support multiple result sets)"
@@ -163,110 +163,110 @@ class IbmDbTestCase(unittest.TestCase):
 #Sweater
 #__ZOS_EXPECTED__
 #Fetching first result set
-#Bubbles         
+#Bubbles
 #3
-#Gizmo           
+#Gizmo
 #4
-#Peaches         
+#Peaches
 #1
-#Pook            
+#Pook
 #0
-#Rickety Ride    
+#Rickety Ride
 #5
-#Smarty          
+#Smarty
 #2
-#Sweater         
+#Sweater
 #6
 #Fetching second result set
-#Sweater         
+#Sweater
 #6
 #llama
 #150.00
-#Smarty          
+#Smarty
 #2
 #horse
 #350.00
-#Rickety Ride    
+#Rickety Ride
 #5
 #goat
 #9.70
-#Pook            
+#Pook
 #0
 #cat
 #3.20
-#Peaches         
+#Peaches
 #1
 #dog
 #12.30
-#Gizmo           
+#Gizmo
 #4
 #budgerigar
 #0.20
-#Bubbles         
+#Bubbles
 #3
 #gold fish
 #0.10
 #Fetching third result set
-#Bubbles         
-#Gizmo           
-#Peaches         
-#Pook            
-#Rickety Ride    
-#Smarty          
-#Sweater         
+#Bubbles
+#Gizmo
+#Peaches
+#Pook
+#Rickety Ride
+#Smarty
+#Sweater
 #__SYSTEMI_EXPECTED__
 #Fetching first result set
-#Bubbles         
+#Bubbles
 #3
-#Gizmo           
+#Gizmo
 #4
-#Peaches         
+#Peaches
 #1
-#Pook            
+#Pook
 #0
-#Rickety Ride    
+#Rickety Ride
 #5
-#Smarty          
+#Smarty
 #2
-#Sweater         
+#Sweater
 #6
 #Fetching second result set
-#Sweater         
+#Sweater
 #6
 #llama
 #150.00
-#Smarty          
+#Smarty
 #2
 #horse
 #350.00
-#Rickety Ride    
+#Rickety Ride
 #5
 #goat
 #9.70
-#Pook            
+#Pook
 #0
 #cat
 #3.20
-#Peaches         
+#Peaches
 #1
 #dog
 #12.30
-#Gizmo           
+#Gizmo
 #4
 #budgerigar
 #0.20
-#Bubbles         
+#Bubbles
 #3
 #gold fish
 #0.10
 #Fetching third result set
-#Bubbles         
-#Gizmo           
-#Peaches         
-#Pook            
-#Rickety Ride    
-#Smarty          
-#Sweater         
+#Bubbles
+#Gizmo
+#Peaches
+#Pook
+#Rickety Ride
+#Smarty
+#Sweater
 #__IDS_EXPECTED__
 #Fetching first result set
 #Sweater

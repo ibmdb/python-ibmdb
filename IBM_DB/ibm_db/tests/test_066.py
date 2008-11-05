@@ -144,17 +144,17 @@ class IbmDbTestCase(unittest.TestCase):
 #Schema:  %s
 #Name:    ANIMALS
 #Type:    TABLE
-#Remarks: None
+#Remarks: 
 #
 #Schema:  %s
 #Name:    ANIMAL_PICS
 #Type:    TABLE
-#Remarks: None
+#Remarks: 
 #
 #Schema:  %s
 #Name:    ANIME_CAT
 #Type:    VIEW
-#Remarks: None
+#Remarks: 
 #__SYSTEMI_EXPECTED__
 #Schema:  %s
 #Name:    ANIMALS

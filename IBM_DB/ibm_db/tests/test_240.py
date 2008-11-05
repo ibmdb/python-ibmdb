@@ -82,7 +82,7 @@ class IbmDbTestCase(unittest.TestCase):
 #-----
 #0:6,6
 #1:10,10
-#2:102400,204800
+#2:1048576,2097152
 #
 #-----
 #region:False
@@ -105,7 +105,7 @@ class IbmDbTestCase(unittest.TestCase):
 #-----
 #0:6,6
 #1:10,10
-#2:102400,204800
+#2:1048576,2097152
 #
 #-----
 #region:False

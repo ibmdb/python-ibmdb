@@ -102,12 +102,12 @@ class IbmDbTestCase(unittest.TestCase):
 #INDEX_TEST
 #0
 #INDEX1
-#None
+#ID
 #Test second index table:
 #INDEX_TEST2
 #1
 #INDEX2
-#None
+#DATA
 #Test non-existent table:
 #Empty
 #__IDS_EXPECTED__

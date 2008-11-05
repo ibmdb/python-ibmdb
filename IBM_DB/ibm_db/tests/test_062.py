@@ -87,7 +87,7 @@ class IbmDbTestCase(unittest.TestCase):
 #T/T2/TABLE
 #T/T3/TABLE
 #T/T4/TABLE
-#done! 
+#done!
 #__IDS_EXPECTED__
 #T%s/t1/TABLE%s
 #T%s/t2/TABLE%s

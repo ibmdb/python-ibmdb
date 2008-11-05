@@ -56,7 +56,7 @@ class IbmDbTestCase(unittest.TestCase):
 #  42 Great Lakes     100 Midwest   Chicago       
 #  51 Plains          140 Midwest   Dallas        
 #  66 Pacific         270 Western   San Francisco 
-#  84 Mountain        290 Western   Denver
+#  84 Mountain        290 Western   Denver        
 #__SYSTEMI_EXPECTED__
 #
 #  10 Head Office     160 Corporate New York      

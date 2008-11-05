@@ -20,7 +20,7 @@
 +--------------------------------------------------------------------------+
 */
 
-#define MODULE_RELEASE "0.4.0"
+#define MODULE_RELEASE "0.4.1"
 
 #include <Python.h>
 #include "ibm_db.h"

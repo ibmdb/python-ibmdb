@@ -37,7 +37,7 @@ class IbmDbTestCase(unittest.TestCase):
       if (row['YEARS'] == None):
         row['YEARS'] = 0
       if (row['COMM'] == None):
-	row['COMM'] = ''
+        row['COMM'] = ''
       print "%5d  %-10s %5d %-7s %5s %15s %10s " % (row['ID'], row['NAME'], row['DEPT'], row['JOB'], row['YEARS'], row['SALARY'], row['COMM'])
       row = ibm_db.fetch_assoc(result)
 
@@ -113,7 +113,7 @@ class IbmDbTestCase(unittest.TestCase):
 #  320  Gonzales      66 Sales       4        16858.20     844.00 
 #  330  Burke         66 Clerk       1        10988.00      55.50 
 #  340  Edwards       84 Sales       7        17844.00    1285.00 
-#  350  Gafney        84 Clerk       5        13030.50     188.00
+#  350  Gafney        84 Clerk       5        13030.50     188.00 
 #__SYSTEMI_EXPECTED__
 #   10  Sanders       20 Mgr         7        18357.50            
 #   20  Pernal        20 Sales       8        18171.25     612.45 

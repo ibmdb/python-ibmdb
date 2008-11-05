@@ -22,19 +22,19 @@ class IbmDbTestCase(unittest.TestCase):
     if (server == 'IDS'):
        procedure = """
         CREATE FUNCTION multiResults()
-	     RETURNING CHAR(16), INT;
-	            
-	     DEFINE p_name CHAR(16);
-	     DEFINE p_id INT;
-	           
-	     FOREACH c1 FOR
-	     	SELECT name, id
-	      	INTO p_name, p_id
-	       	FROM animals
-	       	ORDER BY name
-	      	RETURN p_name, p_id WITH RESUME;
-	     END FOREACH;
-	            
+         RETURNING CHAR(16), INT;
+                
+         DEFINE p_name CHAR(16);
+         DEFINE p_id INT;
+               
+         FOREACH c1 FOR
+             SELECT name, id
+              INTO p_name, p_id
+               FROM animals
+               ORDER BY name
+              RETURN p_name, p_id WITH RESUME;
+         END FOREACH;
+                
        END FUNCTION;
        """
     else:
@@ -68,7 +68,7 @@ class IbmDbTestCase(unittest.TestCase):
     
     if conn:
      try:
-       ibm_db.exec_immediate(conn, 'DROP PROCEDURE multiResults()')
+       ibm_db.exec_immediate(conn, 'DROP PROCEDURE multiResults')
      except:
        pass
      ibm_db.exec_immediate(conn, procedure)
@@ -78,7 +78,7 @@ class IbmDbTestCase(unittest.TestCase):
      row = ibm_db.fetch_tuple(stmt)
      while ( row ):
        for i in row:
-	 print i
+         print i
        row = ibm_db.fetch_tuple(stmt)
     
      if (server == 'IDS'):
@@ -89,9 +89,9 @@ class IbmDbTestCase(unittest.TestCase):
      if res:
        row = ibm_db.fetch_tuple(res)
        while ( row ):
-	 for i in row:
+         for i in row:
            print i
-	 row = ibm_db.fetch_tuple(res)
+         row = ibm_db.fetch_tuple(res)
     
      if (server == 'IDS'):
        print "Fetching third result set (should fail -- IDS does not support multiple result sets)"
@@ -101,18 +101,18 @@ class IbmDbTestCase(unittest.TestCase):
      if res2:
        row = ibm_db.fetch_tuple(res2)
        while ( row ):
-	 for i in row:
+         for i in row:
            print i
-	 row = ibm_db.fetch_tuple(res2)
+         row = ibm_db.fetch_tuple(res2)
     
      print "Fetching fourth result set (should fail)"
      res3 = ibm_db.next_result(stmt)
      if res3:
        row = ibm_db.fetch_tuple(res3)
        while ( row ):
-	 for i in row:
+         for i in row:
            print i
-	 row = ibm_db.fetch_tuple(res3)
+         row = ibm_db.fetch_tuple(res3)
      
      ibm_db.close(conn)
     else:

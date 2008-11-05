@@ -69,7 +69,7 @@ class IbmDbTestCase(unittest.TestCase):
 #%s
 #ANIMALS
 #BREED
-#nil
+#None
 #%s
 #%s
 #YES

@@ -27,7 +27,7 @@ class IbmDbTestCase(unittest.TestCase):
 #__LUW_EXPECTED__
 #[IBM][CLI Driver] SQL30082N  Security processing failed with reason "24" ("USERNAME AND/OR PASSWORD INVALID").  SQLSTATE=08001 SQLCODE=-30082
 #__ZOS_EXPECTED__
-#[IBM][CLI Driver] SQL30082N  Security processing failed with reason "24" ("USERNAME AND/OR PASSWORD INVALID").  SQLSTATE=08001 SQLCODE=-30082
+#[IBM][CLI Driver] SQL30082N  Security processing failed with reason "15" ("PROCESSING FAILURE").  SQLSTATE=08001 SQLCODE=-30082
 #__SYSTEMI_EXPECTED__
 #[IBM][CLI Driver] SQL30082N  Security processing failed with reason "24" ("USERNAME AND/OR PASSWORD INVALID").  SQLSTATE=08001 SQLCODE=-30082
 #__IDS_EXPECTED__

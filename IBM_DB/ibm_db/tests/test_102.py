@@ -17,20 +17,20 @@ class IbmDbTestCase(unittest.TestCase):
 
   def run_test_102(self):
     conn = ibm_db.connect(config.database, config.user, config.password)
-    server = ibm_db.server_info(conn)
-
-    if (server.DBMS_NAME[0:3] != 'IDS'):
-      if (not conn):
-        print ibm_db.conn_errormsg()
-      
+    
+    if (not conn):
+      print ibm_db.conn_errormsg()
+    
+    server = ibm_db.server_info( conn )
+    if ((server.DBMS_NAME[0:2] != "AS") and (server.DBMS_NAME != "DB2")):
       result = ibm_db.exec_immediate(conn, "VALUES(1)")
       #throw :unsupported unless result
       if (not result):
         raise Exception('Unsupported')
       print ibm_db.num_fields(result)
-      ibm_db.close(conn)
     else:
       print '1'
+    ibm_db.close(conn)
 
 #__END__
 #__LUW_EXPECTED__

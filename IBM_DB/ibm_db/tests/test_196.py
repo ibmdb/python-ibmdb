@@ -20,7 +20,7 @@ class IbmDbTestCase(unittest.TestCase):
     conn = ibm_db.connect(config.database, config.user, config.password)
     server = ibm_db.server_info( conn )
 
-    if (server.DBMS_NAME[0:3] != 'IDS'):
+    if ((server.DBMS_NAME[0:3] != 'IDS') and (server.DBMS_NAME[0:2] != "AS")):
       try:
           rc = ibm_db.exec_immediate(conn, "DROP TABLE xml_test")
       except:
@@ -54,7 +54,7 @@ class IbmDbTestCase(unittest.TestCase):
         print "Result from only XMLQuery:", result[0]
         result = ibm_db.fetch_both(stmt)
     else:
-      print 'Native XML datatype is not supported by IDS'
+      print 'Native XML datatype is not supported.'
 
 #__END__
 #__LUW_EXPECTED__
@@ -70,6 +70,6 @@ class IbmDbTestCase(unittest.TestCase):
 #Result from XMLSerialize and XMLQuery: <zip>66061</zip>
 #Result from only XMLQuery:%s<zip>66061</zip>
 #__SYSTEMI_EXPECTED__
-#N/A
+#Native XML datatype is not supported.
 #__IDS_EXPECTED__
-#Native XML datatype is not supported by IDS
+#Native XML datatype is not supported.

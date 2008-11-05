@@ -37,3 +37,5 @@ only optimize for N rows issue #2 (defect #154260)
  - fixed ibm_db_dbi.Connection.tables() returning empty list issue #16 (defect #167059)
  - adjusted error message if IBM DS environment variables not set.
 
+2008/11/05 (setup.py 0.4.1, ibm_db-0.4.1, ibm_db_dbi-0.4.1):
+ - Added zOS and iSeries(System i) support.
