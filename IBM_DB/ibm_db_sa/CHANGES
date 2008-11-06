@@ -12,3 +12,8 @@ Change Log
  - fixed autocommit default issue #6 (defect #156919)
  - fixed _get_exception() tuple issue #8 (defect #156925)
  - fixed create_engine DSN support issue (defect #156930)
+ 
+ 2008/11/06 (IBM_DB_SA adapter 0.1.6):
+ - fixed Metadata not loading any table info (defect #158705)
+ - fixed problems while using different schema names (defect #163785)
+ - fixed keyerror in length in visit_function (defect #166292) 

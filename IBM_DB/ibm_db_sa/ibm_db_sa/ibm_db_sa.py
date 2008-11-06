@@ -13,8 +13,8 @@
 # | KIND, either express or implied. See the License for the specific        |
 # | language governing permissions and limitations under the License.        |
 # +--------------------------------------------------------------------------+
-# | Authors: Alex Pitigoi                                                    |
-# | Version: 0.1.5                                                           |
+# | Authors: Alex Pitigoi, Abhigyan Agrawal                                                    |
+# | Version: 0.1.6                                                           |
 # +--------------------------------------------------------------------------+
 
 """
@@ -472,9 +472,12 @@ class IBM_DBDialect(default.DefaultDialect):
     dialect.logger.debug("\n  ***  IBM_DBDialect::reflecttable( "+str(table)+', '+str(include_columns)+' )')
     ibm_dbi_conn = connection.connection.connection
     schema_name = self.get_default_schema_name(connection)
+    if table.schema is not None:
+        ibm_dbi_conn.set_current_schema(table.schema)
+        schema_name = table.schema
 
     # Append columns to table
-    columns = ibm_dbi_conn.columns( schema_name, str(table), include_columns)
+    columns = ibm_dbi_conn.columns( schema_name, table.name, include_columns)
     if not columns:
       raise exceptions.NoSuchTableError(table.name)
 
@@ -500,7 +503,7 @@ class IBM_DBDialect(default.DefaultDialect):
       table.append_column(column)
 
     # Define table's primary keys
-    pkeys = ibm_dbi_conn.primary_keys( True, schema_name, str(table))
+    pkeys = ibm_dbi_conn.primary_keys( True, schema_name, table.name)
     for pkey in pkeys:
       (pk_schema, pk_table, pk_column, pk_name, key_seq) = (
         pkey['TABLE_SCHEM'].lower(),
@@ -512,7 +515,7 @@ class IBM_DBDialect(default.DefaultDialect):
       table.primary_key.add(table.c[pk_column])
 
     # Define table's other indexes
-    indexes = ibm_dbi_conn.indexes( True, schema_name, str(table))
+    indexes = ibm_dbi_conn.indexes( True, schema_name, table.name)
     for idx in indexes:
       (idx_schema, idx_table, idx_col, idx_name, idx_id, idx_type, is_unique, ascendent) = (
         idx['TABLE_SCHEM'].lower(),
@@ -527,7 +530,7 @@ class IBM_DBDialect(default.DefaultDialect):
       dialect.logger.debug("\n  ***  IBM_DBDialect::reflecttable: indexes: " + str(idx))
 
     # Define table's foreign keys
-    fkeys = ibm_dbi_conn.foreign_keys( True, schema_name, str(table))
+    fkeys = ibm_dbi_conn.foreign_keys( True, schema_name, table.name)
     for fkey in fkeys:
       ( pk_schema, pk_table, pk_column, pk_name, key_seq, 
         fk_schema, fk_table, fk_column, fk_name) = (
@@ -641,7 +644,7 @@ class IBM_DBCompiler(compiler.DefaultCompiler):
   def visit_function( self , func ):
     dialect.logger.debug('\n  ***  IBM_DBCompiler::visit_function( '+repr(func.name)+' )')
     if func.name.upper() == "LENGTH":
-      return "LENGTH('%s')" % func.compile().params[func.name]
+      return "LENGTH('%s')" % func.compile().params[func.name + '_1']
     else:
       return compiler.DefaultCompiler.visit_function( self, func )
 

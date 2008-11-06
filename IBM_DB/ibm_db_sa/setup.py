@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 from distutils.core import setup
 
 PACKAGE = 'ibm_db_sa'
-VERSION = '0.1.5'
+VERSION = '0.1.6'
 LICENSE = 'Apache License 2.0'
 
 setup( name    = PACKAGE, 
@@ -16,16 +16,16 @@ setup( name    = PACKAGE,
        url          = 'http://pypi.python.org/pypi/ibm_db/',
        download_url = 'http://code.google.com/p/ibm-db/downloads/list',
        keywords     = 'sqlalchemy database interface IBM Data Servers DB2 Informix IDS',
-       classifiers  = ['Development Status :: 3 - Alpha',
+       classifiers  = ['Development Status :: 4 - Beta',
                       'Intended Audience :: Developers',
                       'License :: OSI Approved :: Apache License 2.0',
-                      'Operating Systtem :: OS Independent',
+                      'Operating System :: OS Independent',
                       'Topic :: Databases :: Front-end, middle-tier'],
        long_description = '''
                       IBM_DB_SA implementats the SQLAlchemy version 0.4.0 specification
                       in support of IBM Data Servers: DB2 8 and 9, Informix IDS 11''',
        platforms        = 'All',
-       install_requires = [ 'ibm_db>=0.2.5',
+       install_requires = [ 'ibm_db>=0.4.0',
                             'sqlalchemy>=0.4' ],
        dependency_links = [ 'http://pypi.python.org/pypi/ibm_db/',
                             'http://pypi.python.org/pypi/SQLAlchemy/'],
