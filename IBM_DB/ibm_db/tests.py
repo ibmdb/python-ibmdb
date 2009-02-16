@@ -32,8 +32,7 @@ class IbmDbTest(unittest.TestCase):
       
     for i in range(0, len(filelist)):
       filelist[i] = filelist[i].replace('.py', '')
-      if (sys.platform[0:3] == 'win'):
-        filelist[i] = filelist[i].replace(config.test_dir + self.slash, '')
+      filelist[i] = filelist[i].replace(config.test_dir + self.slash, '')
     filelist.sort()
     return filelist
 
@@ -42,13 +41,12 @@ class IbmDbTest(unittest.TestCase):
     filelist = self.getFileList();
     suite = unittest.TestSuite()
     
-    if (sys.platform[0:3] == 'win'):
-      sys.path = [os.path.dirname(os.path.abspath(__file__)) + self.slash + config.test_dir] + sys.path[0:]
+    sys.path = [os.path.dirname(os.path.abspath(__file__)) + self.slash + config.test_dir] + sys.path[0:]
     
     for i in range(0, len(filelist)):
-      extension = __import__(filelist[i])
+      exec("import %s" % filelist[i])
       testFuncName = filelist[i].replace(config.test_dir + self.slash, '')
-      suite.addTest(extension.IbmDbTestCase(testFuncName))
+      exec("suite.addTest(%s.IbmDbTestCase(testFuncName))" % filelist[i])
       
     unittest.TextTestRunner(verbosity=2).run(suite) 
 

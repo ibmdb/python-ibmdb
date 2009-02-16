@@ -79,20 +79,21 @@ List of Operating Systems tested
 SuSE Linux Server 9 32 bit
 Ubuntu Linux 7.04 32 bit
 Windows 32 bit
+Mac OS 32 bit
 
 
 Supported Databases
 -------------------
 IBM DB2 Database on Linux, Unix and Windows 8.2 and onwards
 Informix(IDS) Cheetah version 11.10 onwards
-
+Remote connections to i5/OS (iSeries)
+Remote connections to z/OS (DB2 UDB for zOS)
+DB2 on Mac
 
 Future Supported Databases
 --------------------------
 IBM Cloudscape
 Apache Derby
-Remote connections to i5/OS (iSeries)
-Remote connections to z/OS (DB2 UDB for zOS)
 Native DB2 for i5/OS (iSeries)
 Native DB2 UDB for zOS
 

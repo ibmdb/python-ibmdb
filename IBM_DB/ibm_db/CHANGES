@@ -32,10 +32,20 @@ only optimize for N rows issue #2 (defect #154260)
  - Added trusted context support in driver.
  
 2008/10/08 (setup.py 0.4.0, ibm_db-0.4.0, ibm_db_dbi-0.4.0):
- - fixed memory leak in fetch_assoc issue #13 (defect idsdb00165205)
+ - fixed memory leak in fetch_assoc issue #13 (defect #165205)
  - fixed reference counting errors in _python_ibm_db_bind_fetch_helper issue #14 (defect #167122)
  - fixed ibm_db_dbi.Connection.tables() returning empty list issue #16 (defect #167059)
  - adjusted error message if IBM DS environment variables not set.
 
 2008/11/05 (setup.py 0.4.1, ibm_db-0.4.1, ibm_db_dbi-0.4.1):
  - Added zOS and iSeries(System i) support.
+ 
+2009/02/16 (setup.py 0.6.0, ibm_db-0.6.0, ibm_db_dbi-0.6.0):
+ - New feature - Unicode support for driver and wrapper (defect #166036)
+ - New Feature - DB2 on MacOS support (both Client and Server)
+ - fixed Metadata not loading table info (defect #158705)
+ - fixed problem of real datatype (defect #168619)
+ - Python 2.6 support on driver and wrapper (defect #169629)
+ - decfloat support (defect #95795)
+ - Code clean up and formatting.
+ - Test cases renamed to reflect their functions.

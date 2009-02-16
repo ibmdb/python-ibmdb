@@ -1,7 +1,7 @@
 # +--------------------------------------------------------------------------+
 # |  Licensed Materials - Property of IBM                                    |
 # |                                                                          |
-# | (C) Copyright IBM Corporation 2007, 2008                                 |
+# | (C) Copyright IBM Corporation 2007-2009                                  |
 # +--------------------------------------------------------------------------+
 # | This module complies with SQLAlchemy 0.4 and is                          |
 # | Licensed under the Apache License, Version 2.0 (the "License");          |
@@ -207,7 +207,7 @@ class DBAPITypeObject(ImmutableSet):
         """Constructor for DBAPITypeObject.  It takes a tuple of 
         database column type as an argument.
         """
-        super(DBAPITypeObject, self).__init__([])
+        super(DBAPITypeObject, self).__init__(col_types)
         self.col_types = col_types
 
     def __cmp__(self, cmp):
@@ -227,14 +227,23 @@ class DBAPITypeObject(ImmutableSet):
 # with in order to determine the python type to provide in the 
 # parameter sequence argument of the execute method.
 STRING = DBAPITypeObject(("CHARACTER", "CHAR", "VARCHAR", 
-                               "CHARACTER VARYING", "CLOB", "XML", "STRING"))
+                          "CHARACTER VARYING", "CHAR VARYING", "STRING",))
 
-BINARY = DBAPITypeObject(("BLOB", "BINARY LARGE OBJECT"))
+TEXT = DBAPITypeObject(("CLOB", "CHARACTER LARGE OBJECT", "CHAR LARGE OBJECT",  "XML",))
 
-NUMBER = DBAPITypeObject(("SMALLINT", "INTEGER", "INT", "BIGINT", "FLOAT",
-                       "REAL", "DOUBLE", "DECIMAL", "DEC", "NUMERIC", "NUM"))
+BINARY = DBAPITypeObject(("BLOB", "BINARY LARGE OBJECT",))
 
-DATETIME = DBAPITypeObject(("DATE", "TIME", "TIMESTAMP"))
+NUMBER = DBAPITypeObject(("INTEGER", "INT", "SMALLINT", "BIGINT",))
+
+FLOAT = DBAPITypeObject(("FLOAT", "REAL", "DOUBLE", "DECFLOAT"))
+
+DECIMAL = DBAPITypeObject(("DECIMAL", "DEC", "NUMERIC", "NUM",))
+
+DATE = DBAPITypeObject(("DATE",))
+
+TIME = DBAPITypeObject(("TIME",))
+
+DATETIME = DBAPITypeObject(("TIMESTAMP",))
 
 ROWID = DBAPITypeObject(())
 
@@ -372,17 +381,23 @@ def connect(dsn,user='',password='',host='',database='',conn_options=None):
     """This method creates a connection to the database. It returns
         a ibm_db_dbi.Connection object.
     """
-    logger.debug('connect: '+ str(dsn))
-
+    logger.debug('connect: '+ repr(dsn))
+    
     if dsn is None:
         raise InterfaceError("connect expects a not None dsn value") 
-    if (not isinstance(dsn, types.StringType)) | \
-       (not isinstance(user, types.StringType)) | \
-       (not isinstance(password, types.StringType)) | \
-       (not isinstance(host, types.StringType)) | \
-       (not isinstance(database, types.StringType)):
+    
+    if ((not isinstance(dsn, types.StringType)) and \
+       (not isinstance(dsn, types.UnicodeType))) | \
+       ((not isinstance(user, types.StringType)) and \
+       (not isinstance(user, types.UnicodeType))) | \
+       ((not isinstance(password, types.StringType)) and \
+       (not isinstance(password, types.UnicodeType))) | \
+       ((not isinstance(host, types.StringType)) and \
+       (not isinstance(host, types.UnicodeType))) | \
+       ((not isinstance(database, types.StringType)) and \
+       (not isinstance(database, types.UnicodeType))):
         raise InterfaceError("connect expects the first five arguments to"
-                                                      " be of type string")
+                                                      " be of type string or unicode")
     if conn_options is not None:
         if not isinstance(conn_options, dict):
             raise InterfaceError("connect expects the sixth argument"
@@ -390,7 +405,7 @@ def connect(dsn,user='',password='',host='',database='',conn_options=None):
         if not SQL_ATTR_AUTOCOMMIT in conn_options:
             conn_options[SQL_ATTR_AUTOCOMMIT] = SQL_AUTOCOMMIT_OFF
     else:
-        conn_options = {SQL_ATTR_AUTOCOMMIT : SQL_AUTOCOMMIT_OFF}
+        conn_options = {SQL_ATTR_AUTOCOMMIT : SQL_AUTOCOMMIT_ON}
 
     # If the dsn does not contain port and protocal adding database
     # and hostname is no good.  Add these when required, that is,
@@ -410,7 +425,6 @@ def connect(dsn,user='',password='',host='',database='',conn_options=None):
         dsn = dsn + "UID=" + user + ";"
     if password != '' and dsn.find('PWD=') == -1:
         dsn = dsn + "PWD=" + password + ";"
-
     try:    
         conn = ibm_db.connect(dsn, '', '', conn_options) 
         ibm_db.set_option(conn, {SQL_ATTR_CURRENT_SCHEMA : user}, 1)
@@ -418,7 +432,6 @@ def connect(dsn,user='',password='',host='',database='',conn_options=None):
         raise _get_exception(inst)
 
     return Connection(conn)
-
 
 class Connection(object):
     """This class object represents a connection between the database 
@@ -487,7 +500,7 @@ class Connection(object):
         if self.conn_handler is None:
             raise ProgrammingError("Cursor cannot be returned; "
                                "connection is no longer active.")
-        cursor = Cursor(self.conn_handler)
+        cursor = Cursor(self.conn_handler, self)
         self._cursor_list.append(cursor)
         return cursor
 
@@ -564,12 +577,13 @@ class Connection(object):
         """Input: connection - ibm_db.IBM_DBConnection object
            Return: sequence of table metadata dicts for the specified schema
         """
-        logger.debug('tables( '+str(schema_name)+', '+str(table_name)+' )')
+        logger.debug('tables( ' + repr(schema_name) + ', ' + repr(table_name) + ' )')
+            
         result = []
         if schema_name is not None:
-            schema_name = str(self.set_case("DB2_LUW", schema_name))
+            schema_name = self.set_case("DB2_LUW", schema_name)
         if table_name is not None:
-            table_name = str(self.set_case("DB2_LUW", table_name))
+            table_name = self.set_case("DB2_LUW", table_name)
 
         try:      
           stmt = ibm_db.tables(self.conn_handler, None, schema_name, table_name)
@@ -583,7 +597,7 @@ class Connection(object):
         except Exception, inst:
           raise _get_exception(inst)
 
-        logger.debug('tables: '+str(result))
+        logger.debug('tables: '+repr(result))
         return result
 
     # Retrieves metadata pertaining to index for specified schema (and/or table name)
@@ -603,7 +617,7 @@ class Connection(object):
            'ASC_OR_DESC':       'A'
            }
         """
-        logger.debug('indexes( '+str(unique)+', '+str(schema_name)+', '+str(table_name)+' )')
+        logger.debug('indexes( '+str(unique)+', '+repr(schema_name)+', '+repr(table_name)+' )')
         result = []
         if schema_name is not None:
             schema_name = self.set_case("DB2_LUW", schema_name)
@@ -611,7 +625,7 @@ class Connection(object):
             table_name = self.set_case("DB2_LUW", table_name)
 
         try:
-          stmt = ibm_db.statistics(self.conn_handler, None, str(schema_name), str(table_name), unique)
+          stmt = ibm_db.statistics(self.conn_handler, None, schema_name, table_name, unique)
           row = ibm_db.fetch_assoc(stmt)
           i = 0
           while (row):
@@ -640,7 +654,7 @@ class Connection(object):
            'KEY_SEQ':       1
            }
         """
-        logger.debug('primary_keys( '+str(unique)+', '+str(schema_name)+', '+str(table_name)+' )')
+        logger.debug('primary_keys( '+str(unique)+', '+ repr(schema_name) +', '+repr(table_name)+' )')
         result = []
         if schema_name is not None:
             schema_name = self.set_case("DB2_LUW", schema_name)
@@ -648,7 +662,7 @@ class Connection(object):
             table_name = self.set_case("DB2_LUW", table_name)
 
         try:
-          stmt = ibm_db.primary_keys(self.conn_handler, None, str(schema_name), str(table_name))
+          stmt = ibm_db.primary_keys(self.conn_handler, None, schema_name, table_name)
           row = ibm_db.fetch_assoc(stmt)
           i = 0
           while (row):
@@ -659,7 +673,7 @@ class Connection(object):
         except Exception, inst:
           raise _get_exception(inst)
 
-        logger.debug('primary_keys: '+str(result))
+        logger.debug('primary_keys: '+repr(result))
         return result        
 
     # Retrieves metadata pertaining to foreign keys for specified schema (and/or table name)
@@ -680,7 +694,7 @@ class Connection(object):
            'FKTABLE_SCHEM': 'PYTHONIC' 
            }
         """
-        logger.debug('foreign_keys( '+str(unique)+', '+str(schema_name)+', '+str(table_name)+' )')
+        logger.debug('foreign_keys( '+str(unique)+', '+repr(schema_name)+', '+repr(table_name)+' )')
         result = []
         if schema_name is not None:
             schema_name = self.set_case("DB2_LUW", schema_name)
@@ -688,7 +702,7 @@ class Connection(object):
             table_name = self.set_case("DB2_LUW", table_name)
 
         try:
-          stmt = ibm_db.foreign_keys(self.conn_handler, None, None, None, None, str(schema_name), str(table_name))
+          stmt = ibm_db.foreign_keys(self.conn_handler, None, None, None, None, schema_name, table_name)
           row = ibm_db.fetch_assoc(stmt)
           i = 0
           while (row):
@@ -699,7 +713,7 @@ class Connection(object):
         except Exception, inst:
           raise _get_exception(inst)
 
-        logger.debug('foreign_keys: '+str(result))
+        logger.debug('foreign_keys: '+repr(result))
         return result        
     
     # Retrieves the columns for a specified schema (and/or table name and column name)
@@ -721,7 +735,7 @@ class Connection(object):
            'DECIMAL_DIGITS':     None
            }
         """
-        logger.debug('columns( '+str(schema_name)+', '+str(table_name)+', '+str(column_names)+' )')
+        logger.debug('columns( '+repr(schema_name)+', '+repr(table_name)+', '+repr(column_names)+' )')
         result = []
         if schema_name is not None:
           schema_name = self.set_case("DB2_LUW", schema_name)
@@ -729,7 +743,7 @@ class Connection(object):
           table_name = self.set_case("DB2_LUW", table_name)
 
         try:
-          stmt = ibm_db.columns(self.conn_handler, None, str(schema_name), str(table_name))
+          stmt = ibm_db.columns(self.conn_handler, None, schema_name, table_name)
           row = ibm_db.fetch_assoc(stmt)
           i = 0
           while (row):
@@ -752,16 +766,16 @@ class Connection(object):
         except Exception, inst:
           raise _get_exception(inst)
 
-        logger.debug('columns( '+str(column_names)+': '+str(result)+' )')
+        logger.debug('columns( '+repr(column_names)+': '+repr(result)+' )')
         return result
 
 
 # Defines a cursor for the driver connection
 class Cursor(object):
     """This class represents a cursor of the connection.  It can be
-    used to process an SQL statement. 
-
+    used to process an SQL statement.
     """
+    
     # This method is used to get the description attribute.
     def __get_description(self):
         """ If this method has already been called, after executing a select statement,
@@ -787,18 +801,31 @@ class Cursor(object):
                 type = type.upper()
                 if STRING.__cmp__(type) == 0:
                     column_desc.append(STRING)
+                if TEXT.__cmp__(type) == 0:
+                    column_desc.append(TEXT)
                 if BINARY.__cmp__(type) == 0:
                     column_desc.append(BINARY)
                 if NUMBER.__cmp__(type) == 0:
-                    column_desc.append(NUMBER)
+                    column_desc.append(NUMBER) 
+                if FLOAT.__cmp__(type) == 0:
+                    column_desc.append(FLOAT)                
+                if DECIMAL.__cmp__(type) == 0:
+                    column_desc.append(DECIMAL)
+                if DATE.__cmp__(type) == 0:
+                    column_desc.append(DATE)
+                if TIME.__cmp__(type) == 0:
+                    column_desc.append(TIME)
                 if DATETIME.__cmp__(type) == 0:
                     column_desc.append(DATETIME)
                 if ROWID.__cmp__(type) == 0:
                     column_desc.append(ROWID)
+
                 column_desc.append(ibm_db.field_display_size(
                                              self.stmt_handler, column_index))
 
-                column_desc.append(None)
+                column_desc.append(ibm_db.field_display_size(
+                                             self.stmt_handler, column_index))
+                
                 column_desc.append(ibm_db.field_precision(
                                              self.stmt_handler, column_index))
 
@@ -824,6 +851,14 @@ class Cursor(object):
     # This attribute specifies the number of rows the last executeXXX()
     # produced or affected.  It is a read only attribute. 
     rowcount = property(__get_rowcount, None, None, "")
+    
+    # This method is used to get the Connection object
+    def __get_connection( self ):
+        return self.__connection
+    
+    # This attribute specifies the connection object.
+    # It is a read only attribute. 
+    connection = property(__get_connection, None, None, "")
 
     def __init__(self, conn_handler):
         """Constructor for Cursor object. It takes ibm_db connection 
@@ -839,7 +874,23 @@ class Cursor(object):
         self.conn_handler = conn_handler
         self.stmt_handler = None
         self._is_scrollable_cursor = False
-
+    
+    def __init__(self, conn_handler, conn_object):
+        """Constructor for Cursor object. It takes ibm_db connection
+        handler as an argument.
+        """
+        
+        # This attribute is used to determine the fetch size for fetchmany
+        # operation. It is a read/write attribute
+        self.arraysize = 1
+        self.__rowcount = -1
+        self._result_set_produced = False
+        self.__description = None
+        self.conn_handler = conn_handler
+        self.stmt_handler = None
+        self._is_scrollable_cursor = False
+        self.__connection = conn_object
+    
     # This method closes the statemente associated with the cursor object.
     # It takes no argument.
     def close(self):
@@ -866,9 +917,9 @@ class Cursor(object):
         the stored procedure as arguments. 
 
         """
-        if not isinstance(procname, types.StringType):
+        if not isinstance(procname, types.StringType) and not isinstance(procname, types.UnicodeType):
             raise InterfaceError("callproc expects the first argument to " 
-                                                       "be of type String.")
+                                                       "be of type String or Unicode.")
         if parameters is not None:
             if not isinstance(parameters, (types.ListType, types.TupleType)):
                 raise InterfaceError("callproc expects the second argument"
@@ -918,14 +969,13 @@ class Cursor(object):
                     raise _get_exception(inst)
                 if type == "xml" or type == "clob" or type == "blob":
                     self._is_scrollable_cursor = False
-                    print Warning("rowcount could not be updated because "
-                     "select includes xml, clob and/or blob type column(s)")
+                    #print Warning("rowcount could not be updated because select includes xml, clob and/or blob type column(s)")
                     return True
         return True
 
     # Helper for executing an SQL statement.
     def _execute_helper(self, rows_counter, parameters=None):
-        logger.debug('_execute_helper( '+str(rows_counter)+', '+repr(parameters)+' )')
+        logger.debug('_execute_helper( '+repr(rows_counter)+', '+repr(parameters)+' )')
         if parameters is not None:
             parameters = list(parameters)
             # Convert date/time and binary objects to string for 
@@ -937,7 +987,7 @@ class Cursor(object):
                 if isinstance(parameters[index], buffer):
                     parameters[index] = str(parameters[index])
             parameters = tuple(parameters)
-            try:
+            try:                
                 return_value = ibm_db.execute(self.stmt_handler, parameters)
                 logger.debug('_execute_helper  (1)  return_value: '+str(return_value))
                 if not return_value:
@@ -1013,7 +1063,6 @@ class Cursor(object):
         return identity_val
     last_identity_val = property(_get_last_identity_val, None, None, "")
 
-
     def execute(self, operation, parameters=None):
         """
         This method can be used to prepare and execute an SQL 
@@ -1022,9 +1071,9 @@ class Cursor(object):
         the SQL statement as arguments.
         """
         logger.debug('execute('+repr(operation)+', '+repr(parameters)+' )')
-        if not isinstance(operation, types.StringType):
+        if not (isinstance(operation, types.StringType) or isinstance(operation, types.UnicodeType)):
             raise InterfaceError("execute expects the first argument [%s] "
-                                      "to be of type String." % operation )
+                                      "to be of type String or Unicode." % operation )
         if parameters is not None:
             if not isinstance(parameters, (types.ListType, types.TupleType, types.DictType)): 
                 raise InterfaceError("execute parameters argument should be sequence.")
@@ -1035,7 +1084,6 @@ class Cursor(object):
         self._execute_helper(None, parameters)
         return self._set_rowcount()
 
-
     def executemany(self, operation, seq_parameters):
         """
         This method can be used to prepare, and then execute an SQL 
@@ -1044,9 +1092,9 @@ class Cursor(object):
         parameter markers in the SQL statement as its argument.
         """
         logger.debug('executemany('+repr(operation)+', '+repr(seq_parameters)+' )')
-        if not isinstance(operation, types.StringType):
+        if not (isinstance(operation, types.StringType) or isinstance(operation, types.UnicodeType)):
             raise InterfaceError("executemany expects the first argument "
-                                                    "to be of type String.")
+                                                    "to be of type String or Unicode.")
         if seq_parameters is None:
             raise InterfaceError("executemany expects a not None "
                                   "seq_parameters value")
@@ -1090,15 +1138,14 @@ class Cursor(object):
                 row = ibm_db.fetch_tuple(self.stmt_handler)
                 logger.debug('_fetch_helper('+ repr(row) +')')
             except Exception, inst:
-                raise _get_exception(inst)
+                return row_list
+            
             if row != False:
                 row_list.append(self._fix_return_data_type(row))
             else:
                 return row_list
             rows_fetched = rows_fetched + 1
-
         return row_list
-
 
     def fetchone(self):
         """This method fetches one row from the database, after 
@@ -1203,4 +1250,4 @@ class Cursor(object):
 
                 except Exception, inst:
                     raise DataError("Data type format error: "+ str(inst))
-        return row
+        return tuple(row)
