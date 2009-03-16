@@ -49,3 +49,9 @@ only optimize for N rows issue #2 (defect #154260)
  - decfloat support (defect #95795)
  - Code clean up and formatting.
  - Test cases renamed to reflect their functions.
+ 
+2009/03/16 (setup.py 0.7.0, ibm_db-0.7.0, ibm_db_dbi-0.7.0):
+ - Fixed Graphic column returning nil problem (defect #172150)
+ - Removed warnings while building driver (defect #163787)
+ - Fixed ibm_db.set_option() failing if unicode is passed to dictionary. (defect #172432)
+ - Code clean up and formatting. 

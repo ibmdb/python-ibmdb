@@ -36,6 +36,8 @@
 #define PYTHON_NIL 6
 #define PYTHON_UNICODE 7
 
+#define ENABLE_NUMERIC_LITERALS 1 /* Enable CLI numeric literals */
+
 #ifndef SQL_XML
 #define SQL_XML -370
 #endif
@@ -138,7 +140,7 @@ struct _ibm_db_globals {
 
 typedef struct {
 	PyObject_HEAD
-		PyObject *DRIVER_NAME;
+	PyObject *DRIVER_NAME;
 	PyObject *DRIVER_VER;
 	PyObject *DATA_SOURCE_NAME;
 	PyObject *DRIVER_ODBC_VER;
@@ -161,7 +163,7 @@ static PyMemberDef le_client_info_members[] = {
 };
 
 static PyTypeObject client_infoType = {
-	PyObject_HEAD_INIT(NULL)
+		PyObject_HEAD_INIT(NULL)
 		0,                                     /*ob_size*/
 		"ibm_db.IBM_DBClientInfo", /*tp_name*/
 		sizeof(le_client_info), /*tp_basicsize*/
@@ -203,7 +205,7 @@ static PyTypeObject client_infoType = {
 
 typedef struct {
 	PyObject_HEAD
-		PyObject *DBMS_NAME;
+	PyObject *DBMS_NAME;
 	PyObject *DBMS_VER;
 	PyObject *DB_CODEPAGE;
 	PyObject *DB_NAME;
@@ -255,7 +257,7 @@ static PyMemberDef le_server_info_members[] = {
 };
 
 static PyTypeObject server_infoType = {
-	PyObject_HEAD_INIT(NULL)
+		PyObject_HEAD_INIT(NULL)
 		0,                                     /*ob_size*/
 		"ibm_db.IBM_DBServerInfo", /*tp_name*/
 		sizeof(le_server_info), /*tp_basicsize*/
@@ -305,4 +307,10 @@ static PyTypeObject server_infoType = {
 static void _python_ibm_db_clear_stmt_err_cache(void);
 static void _python_ibm_db_clear_conn_err_cache(void);
 static int _python_get_variable_type(PyObject *variable_value);
+
+#ifdef CLI_DBC_SERVER_TYPE_DB2LUW
+#ifdef SQL_ATTR_DECFLOAT_ROUNDING_MODE
+/* Declare _python_ibm_db_set_decfloat_rounding_mode_client() */
 static int _python_ibm_db_set_decfloat_rounding_mode_client(SQLHANDLE hdbc);
+#endif
+#endif

@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 from distutils.core import setup, Extension
 
 PACKAGE = 'ibm_db'
-VERSION = '0.6.0'
+VERSION = '0.7.0'
 LICENSE = 'Apache License 2.0'
 
 try:
@@ -41,10 +41,10 @@ setup( name    = PACKAGE,
        url              = 'http://pypi.python.org/pypi/ibm_db/',
        download_url     = 'http://code.google.com/p/ibm-db/downloads/list',
        keywords         = 'database DB-API interface IBM Data Servers DB2 Informix IDS',
-       classifiers  = ['Development Status :: 4 - Beta',
+       classifiers  = ['Development Status :: 5 - Production/Stable',
                       'Intended Audience :: Developers',
                       'License :: OSI Approved :: Apache Software License',
-                      'Operating System :: Microsoft :: Windows :: Windows NT/2000',
+                      'Operating System :: Microsoft :: Windows :: Windows NT/2000/XP',
                       'Operating System :: Unix',
                       'Topic :: Database :: Front-Ends'],
 

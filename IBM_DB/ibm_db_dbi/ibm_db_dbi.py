@@ -14,7 +14,7 @@
 # | language governing permissions and limitations under the License.        |
 # +--------------------------------------------------------------------------+
 # | Authors: Swetha Patel, Abhigyan Agrawal                                  |
-# | Version: 0.4.1                                                           |
+# | Version: 0.7.0                                                          |
 # +--------------------------------------------------------------------------+
 
 """
