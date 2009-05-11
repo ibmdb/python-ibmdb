@@ -14,7 +14,7 @@
 # | language governing permissions and limitations under the License.        |
 # +--------------------------------------------------------------------------+
 # | Authors: Swetha Patel, Abhigyan Agrawal                                  |
-# | Version: 0.7.0                                                          |
+# | Version: 0.7.2                                                          |
 # +--------------------------------------------------------------------------+
 
 """
@@ -44,6 +44,8 @@ SQL_TRUE = ibm_db.SQL_TRUE
 SQL_TABLE_STAT = ibm_db.SQL_TABLE_STAT
 SQL_INDEX_CLUSTERED = ibm_db.SQL_INDEX_CLUSTERED
 SQL_INDEX_OTHER = ibm_db.SQL_INDEX_OTHER
+SQL_DBMS_VER = ibm_db.SQL_DBMS_VER
+SQL_DBMS_NAME = ibm_db.SQL_DBMS_NAME
 
 # Module globals
 apilevel = '2.0'
@@ -448,6 +450,24 @@ class Connection(object):
         # Used to identify close cursors for generating exceptions 
         # after the connection is closed.
         self._cursor_list = []
+        self.__dbms_name = ibm_db.get_db_info(conn_handler, SQL_DBMS_NAME)
+        self.__dbms_ver = ibm_db.get_db_info(conn_handler, SQL_DBMS_VER)
+
+    # This method is used to get the DBMS_NAME 
+    def __get_dbms_name( self ):
+        return self.__dbms_name
+
+    # This attribute specifies the DBMS_NAME
+    # It is a read only attribute. 
+    dbms_name = property(__get_dbms_name, None, None, "")
+
+    # This method is used to get the DBMS_ver 
+    def __get_dbms_ver( self ):
+        return self.__dbms_ver
+
+    # This attribute specifies the DBMS_ver
+    # It is a read only attribute. 
+    dbms_ver = property(__get_dbms_ver, None, None, "")
 
     def close(self):
         """This method closes the Database connection associated with
@@ -561,10 +581,9 @@ class Connection(object):
         """Return: tuple (DBMS_NAME, DBMS_VER)
         """
         try:
-          info = ibm_db.server_info(self.conn_handler)
           server_info = []
-          server_info.append(info.DBMS_NAME)
-          server_info.append(info.DBMS_VER)
+          server_info.append(self.dbms_name)
+          server_info.append(self.dbms_ver)
         except Exception, inst:
           raise _get_exception(inst)
         return tuple(server_info)
@@ -941,6 +960,11 @@ class Cursor(object):
     # Helper for preparing an SQL statement. 
     def _prepare_helper(self, operation, parameters=None):
         try:
+            ibm_db.free_stmt(self.stmt_handler)
+        except:
+            pass
+
+        try:
             self.stmt_handler = ibm_db.prepare(self.conn_handler, operation)
         except Exception, inst:
             raise _get_exception(inst)
@@ -951,6 +975,8 @@ class Cursor(object):
         try:
             ibm_db.set_option(self.stmt_handler, 
                  {ibm_db.SQL_ATTR_CURSOR_TYPE: ibm_db.SQL_CURSOR_STATIC}, 0)
+            ibm_db.set_option(self.stmt_handler, 
+                 {ibm_db.SQL_ATTR_ROWCOUNT_PREFETCH: ibm_db.SQL_ROWCOUNT_PREFETCH_ON}, 0)
         except Exception, inst:
             raise _get_exception(inst)
         try:
@@ -961,7 +987,7 @@ class Cursor(object):
             return True 
         self._is_scrollable_cursor = True
         self._result_set_produced = True
-        if ibm_db.server_info(self.conn_handler).DBMS_NAME[0:3] != 'IDS':
+        if self.connection.dbms_name[0:3] != 'IDS':
             for column_index in range(num_columns):
                 try:
                     type = ibm_db.field_type(self.stmt_handler, column_index)
