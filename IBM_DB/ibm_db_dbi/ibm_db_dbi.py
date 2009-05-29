@@ -14,7 +14,7 @@
 # | language governing permissions and limitations under the License.        |
 # +--------------------------------------------------------------------------+
 # | Authors: Swetha Patel, Abhigyan Agrawal                                  |
-# | Version: 0.7.2                                                          |
+# | Version: 0.7.2.1                                                          |
 # +--------------------------------------------------------------------------+
 
 """
@@ -51,6 +51,7 @@ SQL_DBMS_NAME = ibm_db.SQL_DBMS_NAME
 apilevel = '2.0'
 threadsafety = 0
 paramstyle = 'qmark'
+rowcount_prefetch = False
 
 
 class Error(exceptions.StandardError):
@@ -429,6 +430,7 @@ def connect(dsn,user='',password='',host='',database='',conn_options=None):
         dsn = dsn + "PWD=" + password + ";"
     try:    
         conn = ibm_db.connect(dsn, '', '', conn_options) 
+        rowcount_prefetch = ibm_db.check_function_support(conn,ibm_db.SQL_API_SQLROWCOUNT)
         ibm_db.set_option(conn, {SQL_ATTR_CURRENT_SCHEMA : user}, 1)
     except Exception, inst:
         raise _get_exception(inst)
@@ -975,8 +977,9 @@ class Cursor(object):
         try:
             ibm_db.set_option(self.stmt_handler, 
                  {ibm_db.SQL_ATTR_CURSOR_TYPE: ibm_db.SQL_CURSOR_STATIC}, 0)
-            ibm_db.set_option(self.stmt_handler, 
-                 {ibm_db.SQL_ATTR_ROWCOUNT_PREFETCH: ibm_db.SQL_ROWCOUNT_PREFETCH_ON}, 0)
+            if rowcount_prefetch:
+                ibm_db.set_option(self.stmt_handler, 
+                    {ibm_db.SQL_ATTR_ROWCOUNT_PREFETCH: ibm_db.SQL_ROWCOUNT_PREFETCH_ON}, 0)
         except Exception, inst:
             raise _get_exception(inst)
         try:

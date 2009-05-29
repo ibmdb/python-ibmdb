@@ -60,3 +60,6 @@ only optimize for N rows issue #2 (defect #154260)
  - Memory cleanup - Fixed a lot of issues leading to memory leaks.
  - New Feature - Added support for SQLRowCount to return correct results on select queries.
    DB2 supports this from DB2 V95FP3 onwards. See test cases 17,18,19 for samples. (defect #173237)
+ 
+2009/05/27 (setup.py 0.7.2.1, ibm_db-0.7.2.1, ibm_db_dbi-0.7.2.1):
+ - Fixed Backward Compatibility issue with SQLROWCOUNT (defect #185120)

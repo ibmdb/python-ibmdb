@@ -20,7 +20,7 @@
 +--------------------------------------------------------------------------+
 */
 
-#define MODULE_RELEASE "0.7.2"
+#define MODULE_RELEASE "0.7.2.1"
 
 #include <Python.h>
 #include "ibm_db.h"
@@ -7697,6 +7697,50 @@ static PyObject *ibm_db_get_option(PyObject *self, PyObject *args)
 }
 
 /*
+ * ibm_db.check_function_support-- can be used to query whether a  DB2 CLI or ODBC function is supported
+ * ===Description
+ * int ibm_db.check_function_support(ConnectionHandle,FunctionId)
+ * Returns Py_True if a DB2 CLI or ODBC function is supported
+ * return Py_False if a DB2 CLI or ODBC function is not supported
+ */
+static PyObject* ibm_db_check_function_support(PyObject *self, PyObject *args)
+{
+	PyObject *py_conn_res = NULL;
+	int funtion_id = 0;
+	conn_handle *conn_res = NULL;
+	int supported = 0;
+	int rc = 0;
+
+	if (!PyArg_ParseTuple(args, "Oi", &py_conn_res, &funtion_id)) {
+		return NULL;
+	}
+
+	if (!NIL_P(py_conn_res)) {
+		conn_res = (conn_handle *) py_conn_res;
+		/* Check to ensure the connection resource given is active */
+		if (!conn_res->handle_active) {
+			PyErr_SetString(PyExc_Exception, "Connection is not active");				
+			return NULL;
+		 }
+		rc = SQLGetFunctions(conn_res, (SQLUSMALLINT) funtion_id, (SQLUSMALLINT*) &supported);
+		if (rc == SQL_ERROR) {
+			Py_INCREF(Py_False);
+			return Py_False;
+		}
+		else {
+			if(supported == SQL_TRUE) {
+				Py_RETURN_TRUE;
+			}
+			else {
+				Py_RETURN_FALSE;
+			}
+		}
+	
+	}
+	return NULL;
+}
+
+/*
  * ibm_db.get_last_serial_value --	Gets the last inserted serial value from IDS
  *
  * ===Description
@@ -7828,6 +7872,7 @@ static PyMethodDef ibm_db_Methods[] = {
 	{"stmt_errormsg", (PyCFunction)ibm_db_stmt_errormsg , METH_VARARGS, "Returns a string containing the last SQL statement error message"},
 	{"table_privileges", (PyCFunction)ibm_db_table_privileges , METH_VARARGS, "Returns a result set listing the tables and associated privileges in a database"},
 	{"tables", (PyCFunction)ibm_db_tables , METH_VARARGS, "Returns a result set listing the tables and associated metadata in a database"},
+	{"check_function_support",(PyCFunction)ibm_db_check_function_support, METH_VARARGS,"return true if fuction is supported otherwise return false"},
 	/* An end-of-listing sentinel: */ 
 	{NULL, NULL, 0, NULL}
 };
@@ -7938,7 +7983,7 @@ initibm_db(void) {
 	PyModule_AddIntConstant(m, "SQL_ATTR_ROWCOUNT_PREFETCH", SQL_ATTR_ROWCOUNT_PREFETCH);
 	PyModule_AddIntConstant(m, "SQL_ROWCOUNT_PREFETCH_ON", SQL_ROWCOUNT_PREFETCH_ON);
 	PyModule_AddIntConstant(m, "SQL_ROWCOUNT_PREFETCH_OFF", SQL_ROWCOUNT_PREFETCH_OFF);
-
+	PyModule_AddIntConstant(m, "SQL_API_SQLROWCOUNT", SQL_API_SQLROWCOUNT);
 
 	Py_INCREF(&stmt_handleType);
 	PyModule_AddObject(m, "IBM_DBStatement", (PyObject *)&stmt_handleType);
