@@ -1,17 +1,16 @@
-Backend support for IBM Dataservers in Django Framework.
+IBM Dataservers backend support in Django application Framework.
 --------------------------------------------------------
-ibm_db_django will enable the access to IBM Dataservers through 
-Django Framework:
+ibm_db_django enables access to IBM databases from Django applications
   http://www.djangoproject.com/
 
-The adapter have been developed and will be supported by IBM. 
+The adapter has been developed and is supported by IBM. 
 
 Prerequisites
 --------------
-1. Python 2.5 or higher with ucs2 build.
-2. Django Framework 1.0.x.
-3. IBM_DB driver and IBM_DB_DBI wrapper 0.7.0 or higher (ibm_db-0.7.0 is recommended).
-4. You need to apply one patch in django in-order to remove Non-standard SQL generation issue. 
+1. UCS2 build of Python 2.5.
+2. Django Framework 1.0.2.
+3. IBM_DB driver and IBM_DB_DBI wrapper 0.7.2.1 or higher (ibm_db-0.7.2.1 is a minimum)
+4. You need to apply a patch in django in-order to remove Non-standard SQL generation issue. 
    The patch is located at http://code.djangoproject.com/ticket/9862.
    You can extract creation.py file from http://code.djangoproject.com/changeset/9703?format=zip&new=9703 
    and paste it to /django/db/backends/
@@ -19,38 +18,41 @@ Prerequisites
 DB2 Django adapter (ibm_db_django) Build and Installation
 ----------------------------------------------------------
 
-1. Linux
-  $ tar -zxvf ibm_db_django-x.x.x.tar.gz
-  $ cd ibm_db_django-x.x.x
-  $ python setup.py install
+Install Django as per instructions from the Django website (http://docs.djangoproject.com/en/dev/topics/install/#installing-an-official-release)
+
+1. Linux/MAC
+  untar the ibm_db_django gz file
+    $ tar -zxvf ibm_db_django-x.x.x.tar.gz
+
+  Change to the untar'd folder
+    $ cd ibm_db_django
+
+  Install the ibm_db_django adapter
+    $ python setup.py install
 
 2. Windows
-  Uncompress the compressed file ibm_db_django-x.x.x.tar.gz
+  Uncompress the gz file ibm_db_django-x.x.x.tar.gz
   C:\>cd ibm_db_django
   C:\ibm_db_django>python setup.py install
 
-Please note that the above steps assume that Django is installed as per instructions from Django website (http://docs.djangoproject.com/en/dev/topics/install/#installing-an-official-release)
-Install might not work if Django is installed some other way and/or is installed incorrectly. 
-  
+
 List of Operating Systems tested
 --------------------------------
 Ubuntu Linux 7.04 32 bit
 Windows XP 32 bit
+Mac OS X Leopard
 
 Supported Databases
 -------------------
-IBM DB2 Database on Linux, Unix and Windows 8.2 and onwards
+IBM DB2 Database for Linux, Unix, Windows and MAC OS X, version 8.2 or higher (9.5 FP2 or higher for MAC OS X).
 
 Future Supported Databases
 --------------------------
 IBM Cloudscape
 Apache Derby
-Native DB2 for i5/OS (iSeries)
-Native DB2 UDB for zOS
 Informix(IDS) Cheetah version 11.10 onwards
 Remote connections to i5/OS (iSeries)
 Remote connections to z/OS (DB2 UDB for zOS)
-DB2 on Mac
 
 Testing
 -------
@@ -82,14 +84,16 @@ Known Limitations in DB2 adapter
 --------------------------------
 1. User needs to create test database. It can not be created by this adapter.
 
-2. Test cases related to NULLs in UNIQUE columns will fail. (Not supported by DB2.)
+2. Test cases related to NULLs in UNIQUE columns will fail. (Not supported by DB2)
 
 3. Support for REGEX lookup is not present yet.
 
 4. Non-standard SQL queries are not supported. e.g. "SELECT ? FROM TAB1"
 
-5. EXACT lookup in case of LOB fields will not work.
+5. EXACT lookup for LOB fields do not work. (Not supported by DB2)
 
-6. CASE in-sensitive search in case of NUMBER datatypes (INT, FLOAT, DECIMAL, etc.) will not work.
+6. CASE in-sensitive search in case of NUMBER datatypes (INT, FLOAT, DECIMAL, etc.) do not work (Not supported by DB2)
 
 7. If values are inserted/updated manually in AutoField, then the adapter will fail if auto increment is done again on this AutoField.
+
+8. dbshell will not work if server is remote and client is DB2 thin client.
