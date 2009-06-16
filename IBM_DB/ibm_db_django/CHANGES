@@ -1,0 +1,18 @@
+Change Log
+=============
+
+2009/04/01 (setup.py 0.1.0):
+ - Added support for IBM Dataserver in Django Framework.
+ - New files added
+   - ibm_db_django/django/db/backends/db2/__init__.py
+   - ibm_db_django/django/db/backends/db2/base.py
+   - ibm_db_django/django/db/backends/db2/client.py
+   - ibm_db_django/django/db/backends/db2/creation.py
+   - ibm_db_django/django/db/backends/db2/introinspection.py
+   - ibm_db_django/django/db/backends/db2/operations.py
+   - ibm_db_django/django/db/backends/db2/query.py
+   - ibm_db_django/setup.py
+   - ibm_db_django/CHANGES
+   - ibm_db_django/LICENSE
+   - ibm_db_django/README
+ $ python setup.py install
