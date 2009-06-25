@@ -83,7 +83,7 @@ class IbmDbTestCase(unittest.TestCase):
       print "Number of affected rows: %d" % ibm_db.get_num_result(stmt)
       row = ibm_db.fetch_tuple(stmt)
       while ( row ):
-        print row
+        print "%s, %s, %s, %s\n" %(row[0], row[1], row[2], row[3])
         row = ibm_db.fetch_tuple(stmt)
 
       sql = 'select id, name from test where id = ?'
@@ -94,7 +94,7 @@ class IbmDbTestCase(unittest.TestCase):
       print "Number of affected rows: %d" % ibm_db.get_num_result(stmt)
       row = ibm_db.fetch_tuple(stmt)
       while ( row ):
-        print row
+        print "%s, %s\n" %(row[0], row[1])
         row = ibm_db.fetch_tuple(stmt)
 
       if (server.DBMS_NAME[0:3] == 'IDS'):
@@ -109,7 +109,7 @@ class IbmDbTestCase(unittest.TestCase):
       print "Number of affected rows: %d" % ibm_db.get_num_result(stmt)
       row = ibm_db.fetch_tuple(stmt)
       while ( row ):
-        print row
+        print "%s, %s, %s, %s\n" %(row[0], row[1], row[2], row[3])
         row = ibm_db.fetch_tuple(stmt)
 
       ibm_db.close(conn)
@@ -123,16 +123,16 @@ class IbmDbTestCase(unittest.TestCase):
 #Number of affected rows: -1
 #Number of affected rows: -1
 #Number of affected rows: -1
-#(1L, 'some', 'here is a clob value', '<?xml version="1.0" encoding="UTF-8" ?><test attribute="value"/>')
-#(2L, 'value', 'clob data', None)
-#(2L, 'in varchar', 'data2', None)
+#1, some, here is a clob value, <?xml version="1.0" encoding="UTF-8" ?><test attribute="value"/>
+#2, value, clob data, None
+#2, in varchar, data2, None
 #Number of affected rows: 2
-#(2L, 'value')
-#(2L, 'in varchar')
+#2, value
+#2, in varchar
 #Number of affected rows: -1
-#(1L, 'some', 'here is a clob value', '<?xml version="1.0" encoding="UTF-8" ?><test attribute="value"/>')
-#(2L, 'value', 'clob data', None)
-#(2L, 'in varchar', 'data2', None)
+#1, some, here is a clob value, <?xml version="1.0" encoding="UTF-8" ?><test attribute="value"/>
+#2, value, clob data, None
+#2, in varchar, data2, None
 #__ZOS_EXPECTED__
 #Number of affected rows: -2
 #Number of affected rows: -2
@@ -141,16 +141,16 @@ class IbmDbTestCase(unittest.TestCase):
 #Number of affected rows: -1
 #Number of affected rows: -2
 #Number of affected rows: 0
-#(1L, 'some', 'here is a clob value', '<?xml version="1.0" encoding="UTF-8" ?><test attribute="value"/>')
-#(2L, 'value', 'clob data', None)
-#(2L, 'in varchar', 'data2', None)
+#1, some, here is a clob value, <?xml version="1.0" encoding="UTF-8" ?><test attribute="value"/>
+#2, value, clob data, None
+#2, in varchar, data2, None
 #Number of affected rows: 2
-#(2L, 'value')
-#(2L, 'in varchar')
+#2, value
+#2, in varchar
 #Number of affected rows: 0
-#(1L, 'some', 'here is a clob value', '<?xml version="1.0" encoding="UTF-8" ?><test attribute="value"/>')
-#(2L, 'value', 'clob data', None)
-#(2L, 'in varchar', 'data2', None)
+#1, some, here is a clob value, <?xml version="1.0" encoding="UTF-8" ?><test attribute="value"/>
+#2, value, clob data, None
+#2, in varchar, data2, None
 #__SYSTEMI_EXPECTED__
 #Number of affected rows: -2
 #Number of affected rows: -2
@@ -159,16 +159,16 @@ class IbmDbTestCase(unittest.TestCase):
 #Number of affected rows: -1
 #Number of affected rows: -2
 #Number of affected rows: 0
-#(1L, 'some', 'here is a clob value', '<?xml version="1.0" encoding="UTF-8" ?><test attribute="value"/>')
-#(2L, 'value', 'clob data', None)
-#(2L, 'in varchar', 'data2', None)
+#1, some, here is a clob value, <?xml version="1.0" encoding="UTF-8" ?><test attribute="value"/>
+#2, value, clob data, None
+#2, in varchar, data2, None
 #Number of affected rows: 2
-#(2L, 'value')
-#(2L, 'in varchar')
+#2, value
+#2, in varchar
 #Number of affected rows: 0
-#(1L, 'some', 'here is a clob value', '<?xml version="1.0" encoding="UTF-8" ?><test attribute="value"/>')
-#(2L, 'value', 'clob data', None)
-#(2L, 'in varchar', 'data2', None)
+#1, some, here is a clob value, <?xml version="1.0" encoding="UTF-8" ?><test attribute="value"/>
+#2, value, clob data, None
+#2, in varchar, data2, None
 #__IDS_EXPECTED__
 #Number of affected rows: -1
 #Number of affected rows: -1
@@ -177,13 +177,13 @@ class IbmDbTestCase(unittest.TestCase):
 #Number of affected rows: -1
 #Number of affected rows: -1
 #Number of affected rows: 3
-#(1L, 'some', 'here is a clob value', '<?xml version="1.0" encoding="UTF-8" ?><test attribute="value"/>')
-#(2L, 'value', 'clob data', None)
-#(2L, 'in varchar', 'data2', None)
+#1, some, here is a clob value, <?xml version="1.0" encoding="UTF-8" ?><test attribute="value"/>
+#2, value, clob data, None
+#2, in varchar, data2, None
 #Number of affected rows: 2
-#(2L, 'value')
-#(2L, 'in varchar')
+#2, value
+#2, in varchar
 #Number of affected rows: 3
-#(1L, 'some', 'here is a clob value', '<?xml version="1.0" encoding="UTF-8" ?><test attribute="value"/>')
-#(2L, 'value', 'clob data', None)
-#(2L, 'in varchar', 'data2', None)
+#1, some, here is a clob value, <?xml version="1.0" encoding="UTF-8" ?><test attribute="value"/>
+#2, value, clob data, None
+#2, in varchar, data2, None)

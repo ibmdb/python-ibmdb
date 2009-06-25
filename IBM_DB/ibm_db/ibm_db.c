@@ -1,26 +1,27 @@
 /*
 +--------------------------------------------------------------------------+
-| Licensed Materials - Property of IBM									   |
-|																		   |
-| (C) Copyright IBM Corporation 2006-2009								   |
+| Licensed Materials - Property of IBM						|
+|										|
+| (C) Copyright IBM Corporation 2006-2009					|
++--------------------------------------------------------------------------+    | 
+| This module complies with SQLAlchemy 0.4 and is				|
+| Licensed under the Apache License, Version 2.0 (the "License");		|
+| you may not use this file except in compliance with the License.		|
+| You may obtain a copy of the License at					|
+| http://www.apache.org/licenses/LICENSE-2.0 Unless required by applicable      |
+| law or agreed to in writing, software distributed under the License is        |
+| distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY      |
+| KIND, either express or implied. See the License for the specific		|
+| language governing permissions and limitations under the License.		|
 +--------------------------------------------------------------------------+
-| This module complies with SQLAlchemy 0.4 and is						   |
-| Licensed under the Apache License, Version 2.0 (the "License");		   |
-| you may not use this file except in compliance with the License.		   |
-| You may obtain a copy of the License at								   |
-| http://www.apache.org/licenses/LICENSE-2.0 Unless required by applicable |
-| law or agreed to in writing, software distributed under the License is   |
-| distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY |
-| KIND, either express or implied. See the License for the specific		   |
-| language governing permissions and limitations under the License.		   |
-+--------------------------------------------------------------------------+
-| Authors: Manas Dadarkar, Salvador Ledezma, Sushant Koduru,			   |
-|		  Lynh Nguyen, Kanchana Padmanabhan, Dan Scott, Helmut Tessarek,   |
-|		  Sam Ruby, Kellen Bombardier, Tony Cairns, Abhigyan Agrawal	   |
+| Authors: Manas Dadarkar, Salvador Ledezma, Sushant Koduru,			|
+|	Lynh Nguyen, Kanchana Padmanabhan, Dan Scott, Helmut Tessarek,          |
+|	Sam Ruby, Kellen Bombardier, Tony Cairns, Abhigyan Agrawal,             |
+|       Tarun Pasrija	   							|
 +--------------------------------------------------------------------------+
 */
 
-#define MODULE_RELEASE "0.7.2.1"
+#define MODULE_RELEASE "0.7.2.5"
 
 #include <Python.h>
 #include "ibm_db.h"
@@ -705,14 +706,6 @@ static int _python_ibm_db_bind_column_helper(stmt_handle *stmt_res)
 			case SQL_VARGRAPHIC:
 			case SQL_LONGVARGRAPHIC:
 				in_length = stmt_res->column_info[i].size+1;
-				//tmp_length = stmt_res->column_info[column_number].size;
-				//Initialize wout_ptr?
-
-				/*row_data->str_val = (SQLCHAR *) ALLOC_N(char, in_length);
-				if ( row_data->str_val == NULL ) {
-				PyErr_SetString(PyExc_Exception, "Failed to Allocate Memory");
-				return -1;
-				}*/
 				row_data->w_val = (SQLWCHAR *) ALLOC_N(SQLWCHAR, in_length);
 				rc = SQLBindCol((SQLHSTMT)stmt_res->hstmt, (SQLUSMALLINT)(i+1),
 					SQL_C_WCHAR, row_data->w_val, in_length * sizeof(SQLWCHAR),
@@ -3532,7 +3525,6 @@ static PyObject *ibm_db_tables(PyObject *self, PyObject *args)
 		if (PyString_Check(py_qualifier) || PyUnicode_Check(py_qualifier)){
 			py_qualifier = PyUnicode_FromObject(py_qualifier);
 			qualifier = PyUnicode_AS_UNICODE(py_qualifier);
-			//qualifier = PyString_AsString(py_qualifier);
 		}
 		else {
 			PyErr_SetString(PyExc_Exception, "qualifier must be a string or unicode");
@@ -3986,7 +3978,6 @@ static PyObject *ibm_db_free_result(PyObject *self, PyObject *args)
  */					 
 static PyObject *ibm_db_prepare(PyObject *self, PyObject *args)			
 {
-	//SQLCHAR *stmt_string = NULL;
 	PyObject *options = NULL;
 	conn_handle *conn_res;
 	stmt_handle *stmt_res;
@@ -4114,15 +4105,36 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
 	
 	switch(TYPE(bind_data)) {
 		case PYTHON_FIXNUM:
-			curr->ivalue = PyLong_AsLong(bind_data);
-			rc = SQLBindParameter(stmt_res->hstmt, curr->param_num,
-						curr->param_type, SQL_C_LONG, curr->data_type,
-						curr->param_size, curr->scale, &curr->ivalue, 0, NULL);
-			if ( rc == SQL_ERROR ) {
-				_python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, 
+			if(curr->data_type == SQL_BIGINT  ){
+				PyObject *tempobj=NULL;
+				tempobj=PyObject_Str(bind_data);
+				curr->svalue=PyString_AsString(tempobj);
+				curr->ivalue=strlen(curr->svalue);
+				curr->svalue = memcpy(PyMem_Malloc((sizeof(char))*(curr->ivalue+1)), curr->svalue, curr->ivalue);
+				curr->svalue[curr->ivalue] = '\0'; 
+				curr->bind_indicator = curr->ivalue;
+				rc = SQLBindParameter(stmt_res->hstmt, curr->param_num,
+					curr->param_type, SQL_C_CHAR, curr->data_type,
+					curr->param_size, curr->scale,curr->svalue,0, NULL);
+					
+				if ( rc == SQL_ERROR ){
+					_python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, 
 												rc, 1, NULL, -1, 1);
+				}
+				curr->data_type = SQL_C_SBIGINT;
+				Py_XDECREF(tempobj);
 			}
-			curr->data_type = SQL_C_LONG;
+			else{
+				curr->ivalue = PyLong_AsLong(bind_data);
+				rc = SQLBindParameter(stmt_res->hstmt, curr->param_num,
+							curr->param_type, SQL_C_LONG, curr->data_type,
+							curr->param_size, curr->scale, &curr->ivalue, 0, NULL);
+				if ( rc == SQL_ERROR ) {
+					_python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, 
+												rc, 1, NULL, -1, 1);
+				}
+				curr->data_type = SQL_C_LONG;
+			}
 			break;
 
 		/* Convert BOOLEAN types to LONG for DB2 / Cloudscape */
@@ -4421,9 +4433,6 @@ static PyObject *ibm_db_execute(PyObject *self, PyObject *args)
 	char error[DB2_MAX_ERR_MSG_LEN];
 	SQLSMALLINT num;
 	SQLPOINTER valuePtr;
-	// for reflecting inout and out vars
-	//PyObject *m;
-	//PyObject *v;
 
 	/* This is used to loop over the param cache */
 	param_node *prev_ptr, *curr_ptr, *tmp_curr;
@@ -4612,25 +4621,15 @@ static PyObject *ibm_db_execute(PyObject *self, PyObject *args)
 								case SQL_SMALLINT:
 								case SQL_INTEGER:
 								case SQL_BIGINT:
-									
-									//var_assign(tmp_curr->varname, INT2NUM(tmp_curr->ivalue));
-									//tmp_curr->var_pyvalue = tmp_curr->ivalue;
 									break;
 								case SQL_REAL:
 								case SQL_FLOAT:
 								case SQL_DOUBLE:
 								case SQL_DECIMAL:
 								case SQL_NUMERIC:
-									//var_assign(tmp_curr->varname, rb_float_new(tmp_curr->fvalue));
-									//tmp_curr->var_pyvalue = tmp_curr->fvalue;
 									break;
 								default:
 									tmp_curr->var_pyvalue = PyString_FromString(tmp_curr->svalue);
-									//m = PyImport_AddModule("__main__");
-									//v = PyObject_SetAttrString(m, "second_name", tmp_curr->var_pyvalue);
-									//var_assign(tmp_curr->varname, rb_str_new2(tmp_curr->svalue));
-								
-									//var_assign(tmp_curr->var_pyvalue, PyString_FromString(tmp_curr->svalue));
 									break;
 							}
 						}
@@ -6214,7 +6213,6 @@ static PyObject *_python_ibm_db_bind_fetch_helper(PyObject *args, int op)
 					rc = _python_ibm_db_get_data(stmt_res, column_number + 1, SQL_C_WCHAR, wout_ptr,
 						tmp_length + 1, &out_length);
 					if ( rc == SQL_ERROR ) {
-						//free(out_ptr);
 						return NULL;
 					}
 					if (out_length == SQL_NULL_DATA) {

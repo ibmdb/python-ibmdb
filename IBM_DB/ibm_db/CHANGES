@@ -63,3 +63,6 @@ only optimize for N rows issue #2 (defect #154260)
  
 2009/05/27 (setup.py 0.7.2.1, ibm_db-0.7.2.1, ibm_db_dbi-0.7.2.1):
  - Fixed Backward Compatibility issue with SQLROWCOUNT (defect #185120)
+
+2009/06/25 (setup.py 0.7.2.5, ibm_db-0.7.2.5, ibm_db_dbi-0.7.2.5):
+ - Support for inserting BigInt numbers in bigInt type column with prepare statement (defect #184705)
