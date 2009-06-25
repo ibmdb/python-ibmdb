@@ -13,8 +13,8 @@
 # | KIND, either express or implied. See the License for the specific        |
 # | language governing permissions and limitations under the License.        |
 # +--------------------------------------------------------------------------+
-# | Authors: Swetha Patel, Abhigyan Agrawal                                  |
-# | Version: 0.7.2.1                                                          |
+# | Authors: Swetha Patel, Abhigyan Agrawal, Tarun Pasrija                   |
+# | Version: 0.7.2.5                                                         |
 # +--------------------------------------------------------------------------+
 
 """
