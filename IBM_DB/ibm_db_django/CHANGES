@@ -1,5 +1,26 @@
 Change Log
 =============
+2009/08/06 (setup.py 0.1.2)
+ - Adaptor name changed - Value of DATABASE_ENGINE needs to be "ibm_db_django" because of namespace changes in ibm_db_django-0.1.2 
+ - Backward compatibility - Same codebase works with both Django 1.0.x and 1.1
+ - Added support for Multi-DB functionality in base.py, client.py
+ - Added support for settings.DATABASE_SUPPORTS_TRANSACTIONS included in revision 10026
+ - Added functionality to get the server version. 
+   >>> from django.db import connection
+   >>> connection.get_server_version()
+ - Added functionality for filter on DAYOFWEEK.
+ - Changed the packaging and putting ibm_db_django in separate Namespace as follows
+	- ibm_db_django/ibm_db_django/__init__.py
+	- ibm_db_django/ibm_db_django/base.py
+	- ibm_db_django/ibm_db_django/client.py
+	- ibm_db_django/ibm_db_django/creation.py
+	- ibm_db_django/ibm_db_django/introspection.py
+	- ibm_db_django/ibm_db_django/operations.py
+	- ibm_db_django/ibm_db_django/query.py
+	- ibm_db_django/setup.py
+	- ibm_db_django/CHANGES
+	- ibm_db_django/LICENSE
+	- ibm_db_django/README
 
 2009/06/17 (setup.py 0.1.0):
  - Adding IBM Dataservers backend support in Django application Framework.

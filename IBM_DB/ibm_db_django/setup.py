@@ -13,51 +13,52 @@
 # | KIND, either express or implied. See the License for the specific        |
 # | language governing permissions and limitations under the License.        |
 # +--------------------------------------------------------------------------+
-# | Authors: Ambrish Bhargava                                                |
-# | Version: 0.1.0                                                           |
+# | Authors: Ambrish Bhargava, Tarun Pasrija                                 |
+# | Version: 0.1.2                                                           |
 # +--------------------------------------------------------------------------+
 
 import sys
 
-from distutils.core import setup
+from setuptools import setup, find_packages
+from distutils.core import setup, Extension
 
-try:
-    import ibm_db
-    import ibm_db_dbi
-except ImportError:
-    print '''ibm_db/ibm_db_dbi module is not installed.
-Install ibm_db (v0.7.0 or higher) from any one of the following: 
-1. http://code.google.com/p/ibm-db.
-2. http://pypi.python.org/pypi/ibm_db'''
-    sys.exit()
-
-PACKAGE = 'django.db.backends.db2'
-VERSION = '0.1.0'
+PACKAGE = 'ibm_db_django'
+VERSION = '0.1.2'
 LICENSE = 'Apache License 2.0'
 
 setup (
     name              = PACKAGE,
     version           = VERSION,
     license           = LICENSE,
-    requires          = ['ibm_db     ( >= 0.7.0 )', 
-                         'ibm_db_dbi ( >= 0.7.0 )', 
-                         'django     ( >= 1.0 )'],
+    platforms         = 'All',
+    install_requires  = [ 'ibm_db>=0.7.2.5',
+                          'django>=1.0.3'],
+    dependency_links  = [ 'http://pypi.python.org/pypi/ibm_db/',
+                          'http://pypi.python.org/pypi/Django/'],
     description       = 'DB2 support for Django framework.',
     long_description  = 'DB2 support for Django framework.',
-    download_url      = 'http://code.google.com/p/ibm-db',      
-    author            = 'Ambrish Bhargava',
-    author_email      = 'abhargav@in.ibm.com',
-    maintainer        = 'Ambrish Bhargava',
-    maintainer_email  = 'abhargav@in.ibm.com',
-    url               = 'http://code.google.com/p/ibm-db',
-    keywords          = 'django db2 backends adapter IBM Data Servers database',
-    packages          = ['django.db.backends.db2', 'django.db.backends.db2'],
-    platforms         = 'LinuxIA32, Win32',
+    download_url      = 'http://code.google.com/p/ibm-db/downloads/list',
+    author            = 'Ambrish Bhargava, Tarun Pasrija',
+    author_email      = 'abhargav@in.ibm.com, tarun.pasrija@in.ibm.com',
+    maintainer        = 'Ambrish Bhargava, Tarun Pasrija',
+    maintainer_email  = 'abhargav@in.ibm.com, tarun.pasrija@in.ibm.com',
+    url               = 'http://pypi.python.org/pypi/ibm_db_django/',
+    keywords          = 'django ibm_db_django backends adapter IBM Data Servers database db2',
+    packages          = ['ibm_db_django'],
     classifiers       = ['Development Status :: 4 - Beta',
                          'Intended Audience :: Developers',
                          'License :: OSI Approved :: Apache Software License',
                          'Operating System :: Microsoft :: Windows :: Windows NT/2000',
                          'Operating System :: Unix',
-                         'Operating System :: Linux',
+			 'Operating System :: POSIX :: Linux',
+			 'Operating System :: MacOS',
                          'Topic :: Database :: Front-Ends'],
+    data_files        = [ ('', ['./README']),
+                          ('', ['./CHANGES']),
+                          ('', ['./LICENSE']) ],
+    zip_safe          = False,
+    include_package_data = True,
+    entry_points = {
+		'django.db.backends': ['ibm_db_django = ibm_db_django']
+    },
 )

@@ -7,13 +7,23 @@ The adapter has been developed and is supported by IBM.
 
 Prerequisites
 --------------
-1. UCS2 build of Python 2.5.
-2. Django Framework 1.0.2.
-3. IBM_DB driver and IBM_DB_DBI wrapper 0.7.2.1 or higher (ibm_db-0.7.2.1 is a minimum)
-4. You need to apply a patch in django in-order to remove Non-standard SQL generation issue. 
+1. Python 2.5.
+2. Django Framework 1.0.x or above.
+3. IBM_DB driver and IBM_DB_DBI wrapper 0.7.2.5 or higher (ibm_db-0.7.2.5 is a minimum)
+4. For 1.0.2, you need to apply a patch in django in-order to remove Non-standard SQL generation issue. 
    The patch is located at http://code.djangoproject.com/ticket/9862.
    You can extract creation.py file from http://code.djangoproject.com/changeset/9703?format=zip&new=9703 
    and paste it to /django/db/backends/
+5. For versions greater than 1.0.2 no patch is required.
+
+Updation from from ibm_db_django-0.1.0 to ibm_db_django-0.1.2
+-------------------------------------------------------------
+The name of the adaptor (in Django terminology, the DATABASE_ENGINE) has been changed to 'ibm_db_django' from this version onwards (in earlier versions it was 'db2'). For your existing apps please remember to change this once you upgrade to ibm_db_django-0.1.2 
+
+The 'DATABASE_ENGINE' field in settings.py should as below when using ibm_db_django-0.1.2
+   DATABASE_ENGINE    = 'ibm_db_django' 
+
+(In version 0.1.0, it is "DATABASE_ENGINE    = 'db2' " )
 
 DB2 Django adapter (ibm_db_django) Build and Installation
 ----------------------------------------------------------
@@ -21,24 +31,15 @@ DB2 Django adapter (ibm_db_django) Build and Installation
 Install Django as per instructions from the Django website (http://docs.djangoproject.com/en/dev/topics/install/#installing-an-official-release)
 
 1. Linux/MAC
-  untar the ibm_db_django gz file
-    $ tar -zxvf ibm_db_django-x.x.x.tar.gz
-
-  Change to the untar'd folder
-    $ cd ibm_db_django
-
-  Install the ibm_db_django adapter
-    $ python setup.py install
+    $ easy_install ibm_db_django-0.1.2.egg
 
 2. Windows
-  Uncompress the gz file ibm_db_django-x.x.x.tar.gz
-  C:\>cd ibm_db_django
-  C:\ibm_db_django>python setup.py install
+    c:\> easy_install ibm_db_django-0.1.2.egg
 
 
 List of Operating Systems tested
 --------------------------------
-Ubuntu Linux 7.04 32 bit
+Ubuntu Linux 7.04 32/64 bit
 Windows XP 32 bit
 Mac OS X Leopard
 
@@ -65,14 +66,21 @@ In case of *nix the steps will be like:
  $ vi settings.py
 
 The settings.py will be like (after adding DB2 properties):
-   DATABASE_ENGINE    = 'db2'
+   DATABASE_ENGINE    = 'ibm_db_django'
    DATABASE_NAME      = 'mydb'
    DATABASE_USER      = 'db2inst1'
    DATABASE_PASSWORD  = 'ibmdb2'
    DATABASE_HOST      = 'localhost'
    DATABASE_PORT      = '50000'
    
-To enable DB2 support you need to set value of DATABASE_ENGINE to 'db2' in settings.py.
+To enable DB2 support you need to set value of DATABASE_ENGINE to 'ibm_db_django' in settings.py.
+
+In the tuple INSTALLED_APPS in settings.py add the following lines:
+'django.contrib.flatpages',
+'django.contrib.redirects',
+'django.contrib.comments',
+'django.contrib.admin',
+
 
 Next step is to run a simple test suite. To do this just execute following command in the 
 project we created earlier:
@@ -80,8 +88,9 @@ project we created earlier:
  
 For Windows, steps are same as above. In case of editing settings.py file, use notepad (or any other) editor.
  
-Known Limitations in DB2 adapter
---------------------------------
+Known Limitations in ibm_db_django adapter for DB2 databases
+-------------------------------------------------------------
+
 1. User needs to create test database. It can not be created by this adapter.
 
 2. Test cases related to NULLs in UNIQUE columns will fail. (Not supported by DB2)
@@ -97,3 +106,20 @@ Known Limitations in DB2 adapter
 7. If values are inserted/updated manually in AutoField, then the adapter will fail if auto increment is done again on this AutoField.
 
 8. dbshell will not work if server is remote and client is DB2 thin client.
+
+9. For updations involving primary/foreign key references, the entries should be made in correct order. Integrity check is always on and thus the primary keys referenced by the foreign keys in the referencing tables should always exist in the parent table.
+
+10. Decimal datatype is not yet supported by driver, thus the following sample or likewise would fail with Binding Error
+Foo.objects.create(id=1, name='abc', dval = Decimal("12.34"))
+
+11. DB2 Timestamps do not support timezone aware information. Thus a Datetime field including tzinfo(timezone aware info) would fail.
+
+Support for IBM_DB_DJANGO Adaptor
+---------------------------------
+
+Your feedback is very much appreciated and expected through project ibm-db:
+
+ibm-db_django wiki: http://code.google.com/p/ibm-db/wiki/ibm_db_django_README
+ibm-db issues reports: http://code.google.com/p/ibm-db/issues/list
+ibm-db developers: opendev@us.ibm.com
+
