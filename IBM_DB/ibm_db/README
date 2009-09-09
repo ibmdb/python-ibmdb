@@ -149,13 +149,6 @@ Known Limitations for the Python driver
    test_133.py:
      Fails due to the None object not being returned by the
      ibm_db.execute() statement on line 48.
-   test_146.py:
-     Fails due to issues with procedures being called with
-     parameters that have a parameter-type of SQL_PARAM_OUTPUT.
-   test_148.py:
-     Same issue as test_146.py.
-   tests_53494.py:
-     Same issue as test_52949.py.
      
    In addition to these, if trusted context is not set up,
    there will be additional two failures related to trusted context.

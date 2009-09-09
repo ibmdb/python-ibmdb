@@ -20,22 +20,16 @@ class IbmDbTestCase(unittest.TestCase):
     server = ibm_db.server_info( conn )
     
     if conn:
-      sql = 'CALL match_animal(?, ?, ?)'
-      stmt = ibm_db.prepare(conn, sql)
-    
       name = "Peaches"
       second_name = "Rickety Ride"
       weight = 0
-      
-      ibm_db.bind_param(stmt, 1, name, ibm_db.SQL_PARAM_INPUT)
-      ibm_db.bind_param(stmt, 2, second_name, ibm_db.SQL_PARAM_INPUT_OUTPUT)
-      ibm_db.bind_param(stmt, 3, weight, ibm_db.SQL_PARAM_OUTPUT)
-      
     
       print "Values of bound parameters _before_ CALL:"
       print "  1: %s 2: %s 3: %d\n" % (name, second_name, weight)
       
-      if ibm_db.execute(stmt):
+      stmt, name, second_name, weight = ibm_db.callproc(conn, 'match_animal', (name, second_name, weight))
+    
+      if stmt is not None:
         print "Values of bound parameters _after_ CALL:"
         print "  1: %s 2: %s 3: %d\n" % (name, second_name, weight)
 

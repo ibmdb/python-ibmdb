@@ -46,7 +46,7 @@ class IbmDbTestCase(unittest.TestCase):
          print data[2]
          data = ibm_db.fetch_both(stmt)
 
-       sql = "UPDATE tab_num_literals SET col1 = 77 WHERE col2 = '33.44'"
+       sql = "UPDATE tab_num_literals SET col1 = 77 WHERE col2 = 33.44"
        res = ibm_db.exec_immediate(conn, sql)
        print "Number of updated rows:", ibm_db.num_rows(res)
 

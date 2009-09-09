@@ -15,6 +15,7 @@
 # +--------------------------------------------------------------------------+
 # | Authors: Swetha Patel, Abhigyan Agrawal, Tarun Pasrija                   |
 # | Version: 0.7.2.5                                                         |
+# | Version: 0.8.0                                                          |
 # +--------------------------------------------------------------------------+
 
 """
@@ -946,18 +947,21 @@ class Cursor(object):
                 raise InterfaceError("callproc expects the second argument"
                                        " to be of type list or tuple.")
 
-        sql_operation = "CALL " + procname + "("
-        if parameters is not None:
-            prefix_comma = False
-            for index in parameters:
-                if prefix_comma == False:
-                    sql_operation = sql_operation + "?"
-                    prefix_comma = True
-                else:
-                    sql_operation = sql_operation + ", ?"
-        sql_operation = sql_operation + ")"
+        if parameters is None:
+            result = ibm_db.callproc(self.conn_handler,procname)
+        else:
+            result = ibm_db.callproc(self.conn_handler,procname,parameters)
+            
+        return_value = None
+        self.__description = None
+        self._all_stmt_handlers = []
+        if isinstance(result, types.TupleType):
+            self.stmt_handler = result[0]
+            return_value = result[1:]
+        else:
+            self.stmt_handler = result
         self._result_set_produced = True
-        return self.execute(sql_operation, parameters)
+        return return_value
 
     # Helper for preparing an SQL statement. 
     def _prepare_helper(self, operation, parameters=None):

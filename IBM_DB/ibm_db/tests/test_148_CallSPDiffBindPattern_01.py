@@ -55,7 +55,6 @@ class IbmDbTestCase(unittest.TestCase):
       #############################
 
       ##### Run the test #####
-      stmt = ibm_db.prepare( conn , "CALL sp(?, ?, ?, ?, ?)" )
 
       out1 = 0
       out2 = 0.00
@@ -63,13 +62,7 @@ class IbmDbTestCase(unittest.TestCase):
       out4 = 0
       out5 = ""
 
-      ibm_db.bind_param( stmt , 1 , out1 , ibm_db.SQL_PARAM_OUTPUT )
-      ibm_db.bind_param( stmt , 2 , out2 , ibm_db.SQL_PARAM_OUTPUT )
-      ibm_db.bind_param( stmt , 3 , out3 , ibm_db.SQL_PARAM_OUTPUT )
-      ibm_db.bind_param( stmt , 4 , out4 , ibm_db.SQL_PARAM_OUTPUT )
-      ibm_db.bind_param( stmt , 5 , out5 , ibm_db.SQL_PARAM_OUTPUT )
-
-      result = ibm_db.execute( stmt )
+      stmt, out1, out2, out3, out4, out5 = ibm_db.callproc(conn, 'sp', (out1, out2, out3, out4, out5))
 
       print "out 1:"
       print out1

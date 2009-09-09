@@ -16,28 +16,42 @@ class IbmDbTestCase(unittest.TestCase):
     obj.assert_expect(self.run_test_52949)
 
   def test_int(self, conn):
-    sql = "CALL PROCESSINT(?)"
-    stmt = ibm_db.prepare(conn, sql)
     return_value = 0
-    ibm_db.bind_param(stmt, 1, return_value, ibm_db.SQL_PARAM_OUTPUT)
-    ibm_db.execute(stmt)
+    stmt, return_value = ibm_db.callproc(conn, 'PROCESSINT', (return_value,))
     print "ProcessINT:", return_value
 
   def test_varchar(self, conn):
-    sql = "CALL PROCESSVAR(?)"
-    stmt = ibm_db.prepare(conn, sql)
     return_value = ""
-    ibm_db.bind_param(stmt, 1, return_value, ibm_db.SQL_PARAM_OUTPUT, ibm_db.SQL_CHAR, None, None, 4)
-    ibm_db.execute(stmt)
+    stmt, return_value = ibm_db.callproc(conn, 'PROCESSVAR', (return_value,))
     print "ProcessVAR:", return_value
 
   def test_xml(self, conn):
-    sql = "CALL PROCESSXML(?)"
-    stmt = ibm_db.prepare(conn, sql)
-    return_value = ""
-    ibm_db.bind_param(stmt, 1, return_value, ibm_db.SQL_PARAM_OUTPUT, ibm_db.SQL_CHAR, None, None, 100)
-    ibm_db.execute(stmt)
-    print "ProcessXML:", return_value
+    return_value = "This is just a test for XML Column. The data gets truncated since we do not "
+    stmt, return_value = ibm_db.callproc(conn, 'PROCESSXML', (return_value,))
+    print "ProcessXML:", return_value.__str__()
+    
+  def drop_tables(self, conn):
+    if conn:
+     dr = "DROP PROCEDURE processxml"
+     try:
+       ibm_db.exec_immediate(conn, dr)
+     except:
+       pass
+     try:
+       dr = "DROP PROCEDURE processint"
+       ibm_db.exec_immediate(conn, dr)
+     except:
+       pass
+     try:
+       dr = "DROP PROCEDURE processvar"
+       ibm_db.exec_immediate(conn, dr)
+     except:
+       pass
+     try:
+       dr = "DROP TABLE test_stored"
+       ibm_db.exec_immediate(conn, dr)
+     except:
+       pass
 
   def run_test_52949(self):
    conn = ibm_db.connect(config.database, config.user, config.password)
@@ -45,18 +59,8 @@ class IbmDbTestCase(unittest.TestCase):
    if conn:
      serverinfo = ibm_db.server_info(conn )
      server = serverinfo.DBMS_NAME[0:3]
-     dr = "DROP PROCEDURE processxml"
      result = ''
-     try:
-       result = ibm_db.exec_immediate(conn, dr)
-       dr = "DROP PROCEDURE processint"
-       result = ibm_db.exec_immediate(conn, dr)
-       dr = "DROP PROCEDURE processvar"
-       result = ibm_db.exec_immediate(conn, dr)
-       dr = "DROP TABLE test_stored"
-       result = ibm_db.exec_immediate(conn, dr)
-     except:
-       pass
+     self.drop_tables(conn)
 
      try:
        cr1 = "CREATE TABLE test_stored (id INT, name VARCHAR(50), age int, cv XML)"
@@ -66,12 +70,18 @@ class IbmDbTestCase(unittest.TestCase):
        st1 = "CREATE PROCEDURE processxml(OUT risorsa xml) LANGUAGE SQL BEGIN SELECT cv INTO risorsa FROM test_stored WHERE ID = 1; END"
        result = ibm_db.exec_immediate(conn, st1)
 
-       test_xml(conn)
+       #self.test_xml(conn)
      except:
+       pass
+   
+     try:
+       self.drop_tables(conn)
        cr1 = "CREATE TABLE test_stored (id INT, name VARCHAR(50), age int, cv VARCHAR(200))"
        result = ibm_db.exec_immediate(conn, cr1)
        in1 = "INSERT INTO test_stored values (1, 'Kellen', 24, '<example>This is an example</example>')"
        result = ibm_db.exec_immediate(conn, in1)
+     except:
+       pass
 
      if (server == 'IDS'):
         st2 = "CREATE PROCEDURE processint(OUT risorsa int); SELECT age INTO risorsa FROM test_stored WHERE ID = 1; END PROCEDURE;"
@@ -85,8 +95,8 @@ class IbmDbTestCase(unittest.TestCase):
         st3 = "CREATE PROCEDURE processvar(OUT risorsa varchar(50)) LANGUAGE SQL BEGIN SELECT name INTO risorsa FROM test_stored WHERE ID = 1; END"
      result = ibm_db.exec_immediate(conn, st3)
 
-     test_int(conn)
-     test_varchar(conn)
+     self.test_int(conn)
+     self.test_varchar(conn)
 
      ibm_db.close(conn)
    else:
@@ -94,16 +104,14 @@ class IbmDbTestCase(unittest.TestCase):
 
 #__END__
 #__LUW_EXPECTED__
-#ProcessXML:%s<example>This is an example</example>
 #ProcessINT: 24
-#ProcessVAR: Kel
+#ProcessVAR: Kellen
 #__ZOS_EXPECTED__
-#ProcessXML:%s<example>This is an example</example>
 #ProcessINT: 24
-#ProcessVAR: Kel
+#ProcessVAR: Kellen
 #__SYSTEMI_EXPECTED__
 #ProcessINT: 24
-#ProcessVAR: Kel
+#ProcessVAR: Kellen
 #__IDS_EXPECTED__
 #ProcessINT: 24
-#ProcessVAR: Kel
+#ProcessVAR: Kellen

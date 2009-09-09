@@ -66,3 +66,9 @@ only optimize for N rows issue #2 (defect #154260)
 
 2009/06/25 (setup.py 0.7.2.5, ibm_db-0.7.2.5, ibm_db_dbi-0.7.2.5):
  - Support for inserting BigInt numbers in bigInt type column with prepare statement (defect #184705)
+ 
+2009/09/03 (setup.py 0.8.0, ibm_db-0.8.0, ibm_db_dbi-0.8.0):
+ - Added new API "callproc" to support stored procedure (defect#183022)-  Refer test cases for samples and "http://code.google.com/p/ibm-db/wiki/APIs" for API Usage
+ - support OUT variable in stored procedure
+ - Changes in Test cases (test_146_CallSPINAndOUTParams.py, test_148_CallSPDiffBindPattern_01.py, test_52949_TestSPIntVarcharXml.py) for calling strored procedure through new API "callproc"
+ - Removed warnings while building driver
