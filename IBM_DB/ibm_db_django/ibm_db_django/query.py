@@ -14,7 +14,7 @@
 # | language governing permissions and limitations under the License.        |
 # +--------------------------------------------------------------------------+
 # | Authors: Ambrish Bhargava, Tarun Pasrija                                 |
-# | Version: 0.1.2                                                           |
+# | Version: 0.1.4                                                           |
 # +--------------------------------------------------------------------------+
 
 """
@@ -25,7 +25,7 @@ Derives from: django.db.models.sql.query.Query
 def query_class(QueryClass):
     
     class DB2QueryClass(QueryClass):
-        __rownum = '__ROWNUM'
+        __rownum = 'Z.__ROWNUM'
         
         # To get ride of LIMIT/OFFSET problem in DB2, this method has been implemented.
         def as_sql(self, with_limits=True, with_col_aliases=False):
@@ -77,7 +77,7 @@ def query_class(QueryClass):
                 else:
                     sql_sec = " FROM %s " % (sql_split[1])
                 
-                dummyVal = "__db2_"
+                dummyVal = "Z.__db2_"
                 sql_sel = ""
                 
                 sql = "SELECT"
@@ -113,7 +113,7 @@ def query_class(QueryClass):
                 sql_sel = "%s, (%s) AS \"%s\"" % (sql_sel[1:len(sql_sel) - 1], order_sql, self.__rownum)
                 sql_sel = "%s%s" % (sql_sel, sql_sec)
                     
-                sql = "%s FROM (%s) WHERE" % (sql[:len(sql) - 1], sql_sel)
+                sql = "%s FROM (%s) Z WHERE" % (sql[:len(sql) - 1], sql_sel)
                 
                 if self.low_mark is not 0:
                     sql = '%s "%s" > %d' % (sql, self.__rownum, self.low_mark)

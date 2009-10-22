@@ -14,7 +14,7 @@
 # | language governing permissions and limitations under the License.        |
 # +--------------------------------------------------------------------------+
 # | Authors: Ambrish Bhargava, Tarun Pasrija                                 |
-# | Version: 0.1.2                                                           |
+# | Version: 0.1.4                                                           |
 # +--------------------------------------------------------------------------+
 
 import sys
@@ -23,7 +23,7 @@ from setuptools import setup, find_packages
 from distutils.core import setup, Extension
 
 PACKAGE = 'ibm_db_django'
-VERSION = '0.1.2'
+VERSION = '0.1.4'
 LICENSE = 'Apache License 2.0'
 
 setup (

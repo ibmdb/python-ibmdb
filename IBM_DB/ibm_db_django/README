@@ -46,6 +46,7 @@ Mac OS X Leopard
 Supported Databases
 -------------------
 IBM DB2 Database for Linux, Unix, Windows and MAC OS X, version 8.2 or higher (9.5 FP2 or higher for MAC OS X).
+Remote connections to ZOS
 
 Future Supported Databases
 --------------------------
@@ -53,7 +54,6 @@ IBM Cloudscape
 Apache Derby
 Informix(IDS) Cheetah version 11.10 onwards
 Remote connections to i5/OS (iSeries)
-Remote connections to z/OS (DB2 UDB for zOS)
 
 Testing
 -------

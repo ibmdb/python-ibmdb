@@ -14,7 +14,7 @@
 # | language governing permissions and limitations under the License.        |
 # +--------------------------------------------------------------------------+
 # | Authors: Ambrish Bhargava, Tarun Pasrija                                 |
-# | Version: 0.1.2                                                           |
+# | Version: 0.1.4                                                           |
 # +--------------------------------------------------------------------------+
 
 from django.db.backends import BaseDatabaseOperations
@@ -147,17 +147,37 @@ class DatabaseOperations (BaseDatabaseOperations):
     # to a large value (10000).
     def sequence_reset_sql( self, style, model_list ):
         from django.db import models
+        from django.db import connection
+        cursor = connection.cursor()
         sqls = []
         for model in model_list:
             table = model._meta.db_table
             for field in model._meta.local_fields:
                 if isinstance(field, models.AutoField):
+                    max_sql = "SELECT MAX(%s) FROM %s" % (self.quote_name(field.column), self.quote_name(table))
+                    cursor.execute(max_sql)
+                    max_id = [row[0] for row in cursor.fetchall()]
                     sqls.append(style.SQL_KEYWORD("ALTER TABLE") + " " + 
                         style.SQL_TABLE("%s" % self.quote_name(table)) +
                         " " + style.SQL_KEYWORD("ALTER COLUMN") + " %s "
                         % self.quote_name(field.column) +
-                        style.SQL_KEYWORD("RESTART WITH 10000"))
-        
+                        style.SQL_KEYWORD("RESTART WITH %s" %(max_id[0] + 1)))
+                    break
+
+            for field in model._meta.many_to_many:
+                m2m_table = field.m2m_db_table()
+                if not field.rel.through:
+                    max_sql = "SELECT MAX(%s) FROM %s" % (self.quote_name('ID'), self.quote_name(table))
+                    cursor.execute(max_sql)
+                    max_id = [row[0] for row in cursor.fetchall()]
+                    sqls.append(style.SQL_KEYWORD("ALTER TABLE") + " " + 
+                        style.SQL_TABLE("%s" % self.quote_name(m2m_table)) +
+                        " " + style.SQL_KEYWORD("ALTER COLUMN") + " %s "
+                        % self.quote_name('ID') +
+                        style.SQL_KEYWORD("RESTART WITH %s" %(max_id[0] + 1)))
+        if cursor:
+            cursor.close()
+            
         return sqls
     
     def year_lookup_bounds_for_date_field(self, value):

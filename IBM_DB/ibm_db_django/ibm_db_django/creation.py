@@ -14,7 +14,7 @@
 # | language governing permissions and limitations under the License.        |
 # +--------------------------------------------------------------------------+
 # | Authors: Ambrish Bhargava, Tarun Pasrija                                 |
-# | Version: 0.1.2                                                           |
+# | Version: 0.1.4                                                           |
 # +--------------------------------------------------------------------------+
 
 from django.db.backends.creation import BaseDatabaseCreation
@@ -96,9 +96,10 @@ class DatabaseCreation (BaseDatabaseCreation):
 
     # Private method to clean up database.
     def __clean_up(self, cursor):
-        tables = cursor.connection.tables(cursor.connection.get_current_schema())
+        from django.db import connection
+        tables = connection.introspection.django_table_names(only_existing=True)
         
         for table in tables:
-            sql = "DROP TABLE %s" % self.connection.ops.quote_name(table['TABLE_NAME'])
+            sql = "DROP TABLE %s" % self.connection.ops.quote_name(table)
             cursor.execute(sql)
         cursor.close()
