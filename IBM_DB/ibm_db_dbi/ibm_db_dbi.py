@@ -13,9 +13,8 @@
 # | KIND, either express or implied. See the License for the specific        |
 # | language governing permissions and limitations under the License.        |
 # +--------------------------------------------------------------------------+
-# | Authors: Swetha Patel, Abhigyan Agrawal, Tarun Pasrija                   |
-# | Version: 0.7.2.5                                                         |
-# | Version: 0.8.0                                                          |
+# | Authors: Swetha Patel, Abhigyan Agrawal, Tarun Pasrija, Rahul Priyadarshi|
+# | Version: 1.0                                                             |
 # +--------------------------------------------------------------------------+
 
 """
@@ -933,6 +932,31 @@ class Cursor(object):
         self._all_stmt_handlers = None
         return return_value
 
+    # helper for calling procedure
+    def _callproc_helper(self, procname, parameters=None):
+        if parameters is not None:
+            buff = []
+            CONVERT_STR = (datetime.datetime, datetime.date, datetime.time, buffer)
+            # Convert date/time and binary objects to string for 
+            # inserting into the database. 
+            for param in parameters:
+                if isinstance(param, CONVERT_STR):
+                    param = str(param)
+                buff.append(param)
+            parameters = tuple(buff)
+            
+            try:
+                result = ibm_db.callproc(self.conn_handler, procname,parameters)
+            except Exception, inst:
+                raise _get_exception(inst)
+        else:
+            try:
+                result = ibm_db.callproc(self.conn_handler, procname)
+            except Exception, inst:
+                raise _get_exception(inst)
+        return result
+       
+
     def callproc(self, procname, parameters=None):
         """This method can be used to execute a stored procedure.  
         It takes the name of the stored procedure and the parameters to
@@ -946,12 +970,7 @@ class Cursor(object):
             if not isinstance(parameters, (types.ListType, types.TupleType)):
                 raise InterfaceError("callproc expects the second argument"
                                        " to be of type list or tuple.")
-
-        if parameters is None:
-            result = ibm_db.callproc(self.conn_handler,procname)
-        else:
-            result = ibm_db.callproc(self.conn_handler,procname,parameters)
-            
+        result = self._callproc_helper(procname, parameters)
         return_value = None
         self.__description = None
         self._all_stmt_handlers = []
@@ -978,6 +997,13 @@ class Cursor(object):
     # Helper for preparing an SQL statement.
     def _set_cursor_helper(self):
         self._result_set_produced = False
+        
+        try:
+            num_columns = ibm_db.num_fields(self.stmt_handler)
+        except Exception, inst:
+            raise _get_exception(inst)
+        if not num_columns:
+            return True 
         try:
             ibm_db.set_option(self.stmt_handler, 
                  {ibm_db.SQL_ATTR_CURSOR_TYPE: ibm_db.SQL_CURSOR_STATIC}, 0)
@@ -986,12 +1012,6 @@ class Cursor(object):
                     {ibm_db.SQL_ATTR_ROWCOUNT_PREFETCH: ibm_db.SQL_ROWCOUNT_PREFETCH_ON}, 0)
         except Exception, inst:
             raise _get_exception(inst)
-        try:
-            num_columns = ibm_db.num_fields(self.stmt_handler)
-        except Exception, inst:
-            raise _get_exception(inst)
-        if not num_columns:
-            return True 
         self._is_scrollable_cursor = True
         self._result_set_produced = True
         if self.connection.dbms_name[0:3] != 'IDS':
@@ -1002,6 +1022,11 @@ class Cursor(object):
                     raise _get_exception(inst)
                 if type == "xml" or type == "clob" or type == "blob":
                     self._is_scrollable_cursor = False
+                    ibm_db.set_option(self.stmt_handler, {ibm_db.SQL_ATTR_CURSOR_TYPE: ibm_db.SQL_CURSOR_FORWARD_ONLY}, 0)
+                    #If the result set contains a LOBs, XML the cursor type will never be SQL_CURSOR_STATIC because DB2 does not allow this. (http://publib.boulder.ibm.com/infocenter/db2luw/v9r7/index.jsp?topic=/com.ibm.db2.luw.messages.sql.doc/doc/msql00270n.html)
+                    if rowcount_prefetch:
+                        ibm_db.set_option(self.stmt_handler, {ibm_db.SQL_ATTR_ROWCOUNT_PREFETCH: ibm_db.SQL_ROWCOUNT_PREFETCH_OFF}, 0)
+                        #SQL_ATTR_ROWCOUNT_PREFETCH is not supported when the cursor contains LOBs or XML (http://publib.boulder.ibm.com/infocenter/db2luw/v9r7/index.jsp?topic=/com.ibm.db2.luw.apdv.cli.doc/doc/r0000644.html)
                     #print Warning("rowcount could not be updated because select includes xml, clob and/or blob type column(s)")
                     return True
         return True
@@ -1010,16 +1035,15 @@ class Cursor(object):
     def _execute_helper(self, rows_counter, parameters=None):
         logger.debug('_execute_helper( '+repr(rows_counter)+', '+repr(parameters)+' )')
         if parameters is not None:
-            parameters = list(parameters)
+            buff = []
+            CONVERT_STR = (datetime.datetime, datetime.date, datetime.time, buffer)
             # Convert date/time and binary objects to string for 
             # inserting into the database. 
-            for index in range(len(parameters)):
-                if isinstance(parameters[index], (datetime.datetime,
-                                     datetime.date, datetime.time)):
-                    parameters[index] = str(parameters[index])
-                if isinstance(parameters[index], buffer):
-                    parameters[index] = str(parameters[index])
-            parameters = tuple(parameters)
+            for param in parameters:
+                if isinstance(param, CONVERT_STR):
+                    param = str(param)
+                buff.append(param)
+            parameters = tuple(buff)
             try:                
                 return_value = ibm_db.execute(self.stmt_handler, parameters)
                 logger.debug('_execute_helper  (1)  return_value: '+str(return_value))
@@ -1279,7 +1303,7 @@ class Cursor(object):
                         row[index] = buffer(row[index])
 
                     if type == 'REAL':
-                        row[index] = decimal.Decimal(str(row[index]))
+                        row[index] = decimal.Decimal(str(row[index]).replace(",","."))    
 
                 except Exception, inst:
                     raise DataError("Data type format error: "+ str(inst))

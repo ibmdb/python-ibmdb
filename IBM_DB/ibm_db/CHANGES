@@ -72,3 +72,9 @@ only optimize for N rows issue #2 (defect #154260)
  - support OUT variable in stored procedure
  - Changes in Test cases (test_146_CallSPINAndOUTParams.py, test_148_CallSPDiffBindPattern_01.py, test_52949_TestSPIntVarcharXml.py) for calling strored procedure through new API "callproc"
  - Removed warnings while building driver
+
+2009/10/14 (setup.py 1.0, ibm_db-1.0, ibm_db_dbi-1.0):
+ - New Feature - added support for UCS-4 build python (defect #174236)
+ - Removed memory leak in callproc API (defect #191526)
+ - Added support for datetime/time,buffer object type in callproc API (defect #191029)
+ - Removed error in executing statement through wrapper when result set contains LOBs/xml data 

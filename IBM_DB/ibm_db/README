@@ -156,9 +156,7 @@ Known Limitations for the Python driver
 
 Known Limitations for the Python wrapper
 ----------------------------------------
-1. An error is thrown when selecting a row which has a BLOB type
-   column with a null value.
-2. The rowcount for complex select statements can not be generated.
+1. The rowcount for complex select statements can not be generated.
    The wrapper might throw errors with complex select statement.
-3. Some warnings from the drivers are not caught by the wrapper.
+2. Some warnings from the drivers are not caught by the wrapper.
    As such these might go unnoticed.
