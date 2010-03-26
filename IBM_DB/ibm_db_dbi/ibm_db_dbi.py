@@ -14,7 +14,7 @@
 # | language governing permissions and limitations under the License.        |
 # +--------------------------------------------------------------------------+
 # | Authors: Swetha Patel, Abhigyan Agrawal, Tarun Pasrija, Rahul Priyadarshi|
-# | Version: 1.0                                                             |
+# | Version: 1.0.1                                                             |
 # +--------------------------------------------------------------------------+
 
 """
@@ -24,11 +24,6 @@ This module implements the Python DB API Specification v2.0 for DB2 database.
 import types, string, time, datetime, decimal, exceptions
 from sets import ImmutableSet
 import ibm_db
-
-import logging
-logging.basicConfig()
-logger = logging.getLogger('  >  ibm_db_dbi  >  ')
-logger.setLevel(logging.INFO)  # use logging.DEBUG in order to enable debug trace
 
 # Constants for specifying database connection options.
 SQL_ATTR_AUTOCOMMIT = ibm_db.SQL_ATTR_AUTOCOMMIT
@@ -232,11 +227,15 @@ class DBAPITypeObject(ImmutableSet):
 STRING = DBAPITypeObject(("CHARACTER", "CHAR", "VARCHAR", 
                           "CHARACTER VARYING", "CHAR VARYING", "STRING",))
 
-TEXT = DBAPITypeObject(("CLOB", "CHARACTER LARGE OBJECT", "CHAR LARGE OBJECT",  "XML",))
+TEXT = DBAPITypeObject(("CLOB", "CHARACTER LARGE OBJECT", "CHAR LARGE OBJECT",))
+
+XML = DBAPITypeObject(("XML",))
 
 BINARY = DBAPITypeObject(("BLOB", "BINARY LARGE OBJECT",))
 
-NUMBER = DBAPITypeObject(("INTEGER", "INT", "SMALLINT", "BIGINT",))
+NUMBER = DBAPITypeObject(("INTEGER", "INT", "SMALLINT",))
+
+BIGINT = DBAPITypeObject(("BIGINT",))
 
 FLOAT = DBAPITypeObject(("FLOAT", "REAL", "DOUBLE", "DECFLOAT"))
 
@@ -257,8 +256,8 @@ def _get_exception(inst):
     # These tuple are used to determine the type of exceptions that are
     # thrown by the database.  They store the SQLSTATE code and the
     # SQLSTATE class code(the 2 digit prefix of the SQLSTATE code)  
-    warning_error_tuple=('01', )
-    data_error_tuple=('02', '22', '10601', '10603', '10605', '10901', '10902', 
+    warning_error_tuple = ('01', )
+    data_error_tuple = ('02', '22', '10601', '10603', '10605', '10901', '10902', 
                                                                '38552', '54')
 
     operational_error_tuple = ( '08', '09', '10502', '10000', '10611', '38501', 
@@ -380,11 +379,10 @@ def _get_exception(inst):
         return NotSupportedError(message)
     return DatabaseError(message)
 
-def connect(dsn,user='',password='',host='',database='',conn_options=None):
-    """This method creates a connection to the database. It returns
+def connect(dsn, user='', password='', host='', database='', conn_options=None):
+    """This method creates a non persistent connection to the database. It returns
         a ibm_db_dbi.Connection object.
     """
-    logger.debug('connect: '+ repr(dsn))
     
     if dsn is None:
         raise InterfaceError("connect expects a not None dsn value") 
@@ -431,6 +429,62 @@ def connect(dsn,user='',password='',host='',database='',conn_options=None):
     try:    
         conn = ibm_db.connect(dsn, '', '', conn_options) 
         rowcount_prefetch = ibm_db.check_function_support(conn,ibm_db.SQL_API_SQLROWCOUNT)
+        ibm_db.set_option(conn, {SQL_ATTR_CURRENT_SCHEMA : user}, 1)
+    except Exception, inst:
+        raise _get_exception(inst)
+
+    return Connection(conn)
+
+def pconnect(dsn, user='', password='', host='', database='', conn_options=None):
+    """This method creates persistent connection to the database. It returns
+        a ibm_db_dbi.Connection object.
+    """
+    
+    if dsn is None:
+        raise InterfaceError("connect expects a not None dsn value") 
+    
+    if ((not isinstance(dsn, types.StringType)) and \
+       (not isinstance(dsn, types.UnicodeType))) | \
+       ((not isinstance(user, types.StringType)) and \
+       (not isinstance(user, types.UnicodeType))) | \
+       ((not isinstance(password, types.StringType)) and \
+       (not isinstance(password, types.UnicodeType))) | \
+       ((not isinstance(host, types.StringType)) and \
+       (not isinstance(host, types.UnicodeType))) | \
+       ((not isinstance(database, types.StringType)) and \
+       (not isinstance(database, types.UnicodeType))):
+        raise InterfaceError("connect expects the first five arguments to"
+                                                      " be of type string or unicode")
+    if conn_options is not None:
+        if not isinstance(conn_options, dict):
+            raise InterfaceError("connect expects the sixth argument"
+                                 " (conn_options) to be of type dict")
+        if not SQL_ATTR_AUTOCOMMIT in conn_options:
+            conn_options[SQL_ATTR_AUTOCOMMIT] = SQL_AUTOCOMMIT_OFF
+    else:
+        conn_options = {SQL_ATTR_AUTOCOMMIT : SQL_AUTOCOMMIT_ON}
+
+    # If the dsn does not contain port and protocal adding database
+    # and hostname is no good.  Add these when required, that is,
+    # if there is a '=' in the dsn.  Else the dsn string is taken to be
+    # a DSN entry.
+    if dsn.find('=') != -1:
+        if dsn[len(dsn) - 1] != ';':
+            dsn = dsn + ";"
+        if database != '' and dsn.find('DATABASE=') == -1:
+            dsn = dsn + "DATABASE=" + database + ";"
+        if host != '' and dsn.find('HOSTNAME=') == -1:
+            dsn = dsn + "HOSTNAME=" + host + ";"
+    else:
+        dsn = "DSN=" + dsn + ";"
+
+    if user != '' and dsn.find('UID=') == -1:
+        dsn = dsn + "UID=" + user + ";"
+    if password != '' and dsn.find('PWD=') == -1:
+        dsn = dsn + "PWD=" + password + ";"
+    try:    
+        conn = ibm_db.pconnect(dsn, '', '', conn_options) 
+        rowcount_prefetch = ibm_db.check_function_support(conn, ibm_db.SQL_API_SQLROWCOUNT)
         ibm_db.set_option(conn, {SQL_ATTR_CURRENT_SCHEMA : user}, 1)
     except Exception, inst:
         raise _get_exception(inst)
@@ -598,7 +652,6 @@ class Connection(object):
         """Input: connection - ibm_db.IBM_DBConnection object
            Return: sequence of table metadata dicts for the specified schema
         """
-        logger.debug('tables( ' + repr(schema_name) + ', ' + repr(table_name) + ' )')
             
         result = []
         if schema_name is not None:
@@ -618,11 +671,10 @@ class Connection(object):
         except Exception, inst:
           raise _get_exception(inst)
 
-        logger.debug('tables: '+repr(result))
         return result
 
     # Retrieves metadata pertaining to index for specified schema (and/or table name)
-    def indexes(self, unique = True, schema_name=None, table_name=None):
+    def indexes(self, unique=True, schema_name=None, table_name=None):
         """Input: connection - ibm_db.IBM_DBConnection object
            Return: sequence of index metadata dicts for the specified table
         Example:
@@ -638,7 +690,6 @@ class Connection(object):
            'ASC_OR_DESC':       'A'
            }
         """
-        logger.debug('indexes( '+str(unique)+', '+repr(schema_name)+', '+repr(table_name)+' )')
         result = []
         if schema_name is not None:
             schema_name = self.set_case("DB2_LUW", schema_name)
@@ -658,11 +709,10 @@ class Connection(object):
         except Exception, inst:
           raise _get_exception(inst)
 
-        logger.debug('indexes: '+str(result))
         return result        
 
     # Retrieves metadata pertaining to primary keys for specified schema (and/or table name)
-    def primary_keys(self, unique = True, schema_name=None, table_name=None):
+    def primary_keys(self, unique=True, schema_name=None, table_name=None):
         """Input: connection - ibm_db.IBM_DBConnection object
            Return: sequence of PK metadata dicts for the specified table
         Example:
@@ -675,7 +725,6 @@ class Connection(object):
            'KEY_SEQ':       1
            }
         """
-        logger.debug('primary_keys( '+str(unique)+', '+ repr(schema_name) +', '+repr(table_name)+' )')
         result = []
         if schema_name is not None:
             schema_name = self.set_case("DB2_LUW", schema_name)
@@ -694,11 +743,10 @@ class Connection(object):
         except Exception, inst:
           raise _get_exception(inst)
 
-        logger.debug('primary_keys: '+repr(result))
         return result        
 
     # Retrieves metadata pertaining to foreign keys for specified schema (and/or table name)
-    def foreign_keys(self, unique = True, schema_name=None, table_name=None):
+    def foreign_keys(self, unique=True, schema_name=None, table_name=None):
         """Input: connection - ibm_db.IBM_DBConnection object
            Return: sequence of FK metadata dicts for the specified table
         Example:
@@ -715,7 +763,6 @@ class Connection(object):
            'FKTABLE_SCHEM': 'PYTHONIC' 
            }
         """
-        logger.debug('foreign_keys( '+str(unique)+', '+repr(schema_name)+', '+repr(table_name)+' )')
         result = []
         if schema_name is not None:
             schema_name = self.set_case("DB2_LUW", schema_name)
@@ -734,7 +781,6 @@ class Connection(object):
         except Exception, inst:
           raise _get_exception(inst)
 
-        logger.debug('foreign_keys: '+repr(result))
         return result        
     
     # Retrieves the columns for a specified schema (and/or table name and column name)
@@ -756,7 +802,6 @@ class Connection(object):
            'DECIMAL_DIGITS':     None
            }
         """
-        logger.debug('columns( '+repr(schema_name)+', '+repr(table_name)+', '+repr(column_names)+' )')
         result = []
         if schema_name is not None:
           schema_name = self.set_case("DB2_LUW", schema_name)
@@ -787,7 +832,6 @@ class Connection(object):
         except Exception, inst:
           raise _get_exception(inst)
 
-        logger.debug('columns( '+repr(column_names)+': '+repr(result)+' )')
         return result
 
 
@@ -822,23 +866,27 @@ class Cursor(object):
                 type = type.upper()
                 if STRING.__cmp__(type) == 0:
                     column_desc.append(STRING)
-                if TEXT.__cmp__(type) == 0:
+                elif TEXT.__cmp__(type) == 0:
                     column_desc.append(TEXT)
-                if BINARY.__cmp__(type) == 0:
+                elif XML.__cmp__(type) == 0:
+                    column_desc.append(XML)
+                elif BINARY.__cmp__(type) == 0:
                     column_desc.append(BINARY)
-                if NUMBER.__cmp__(type) == 0:
-                    column_desc.append(NUMBER) 
-                if FLOAT.__cmp__(type) == 0:
+                elif NUMBER.__cmp__(type) == 0:
+                    column_desc.append(NUMBER)
+                elif BIGINT.__cmp__(type) == 0:
+                    column_desc.append(BIGINT) 
+                elif FLOAT.__cmp__(type) == 0:
                     column_desc.append(FLOAT)                
-                if DECIMAL.__cmp__(type) == 0:
+                elif DECIMAL.__cmp__(type) == 0:
                     column_desc.append(DECIMAL)
-                if DATE.__cmp__(type) == 0:
+                elif DATE.__cmp__(type) == 0:
                     column_desc.append(DATE)
-                if TIME.__cmp__(type) == 0:
+                elif TIME.__cmp__(type) == 0:
                     column_desc.append(TIME)
-                if DATETIME.__cmp__(type) == 0:
+                elif DATETIME.__cmp__(type) == 0:
                     column_desc.append(DATETIME)
-                if ROWID.__cmp__(type) == 0:
+                elif ROWID.__cmp__(type) == 0:
                     column_desc.append(ROWID)
 
                 column_desc.append(ibm_db.field_display_size(
@@ -1033,7 +1081,6 @@ class Cursor(object):
 
     # Helper for executing an SQL statement.
     def _execute_helper(self, rows_counter, parameters=None):
-        logger.debug('_execute_helper( '+repr(rows_counter)+', '+repr(parameters)+' )')
         if parameters is not None:
             buff = []
             CONVERT_STR = (datetime.datetime, datetime.date, datetime.time, buffer)
@@ -1046,7 +1093,6 @@ class Cursor(object):
             parameters = tuple(buff)
             try:                
                 return_value = ibm_db.execute(self.stmt_handler, parameters)
-                logger.debug('_execute_helper  (1)  return_value: '+str(return_value))
                 if not return_value:
                     if ibm_db.conn_errormsg() is not None:
                         raise Error(str(ibm_db.conn_errormsg()))
@@ -1059,7 +1105,6 @@ class Cursor(object):
         else:
             try:
                 return_value = ibm_db.execute(self.stmt_handler)
-                logger.debug('_execute_helper  (2)  return_value: '+str(return_value))
                 if not return_value:
                     if ibm_db.conn_errormsg() is not None:
                         raise Error(str(ibm_db.conn_errormsg()))
@@ -1074,7 +1119,6 @@ class Cursor(object):
     # This method is used to set the rowcount after executing an SQL 
     # statement. 
     def _set_rowcount(self):
-        logger.debug('_set_rowcount()')
         self.__rowcount = 0
         if not self._result_set_produced:
             try:
@@ -1127,7 +1171,6 @@ class Cursor(object):
         sequence of values to substitute for the parameter markers in  
         the SQL statement as arguments.
         """
-        logger.debug('execute('+repr(operation)+', '+repr(parameters)+' )')
         if not (isinstance(operation, types.StringType) or isinstance(operation, types.UnicodeType)):
             raise InterfaceError("execute expects the first argument [%s] "
                                       "to be of type String or Unicode." % operation )
@@ -1148,7 +1191,6 @@ class Cursor(object):
         and sequence of sequence of values to substitute for the 
         parameter markers in the SQL statement as its argument.
         """
-        logger.debug('executemany('+repr(operation)+', '+repr(seq_parameters)+' )')
         if not (isinstance(operation, types.StringType) or isinstance(operation, types.UnicodeType)):
             raise InterfaceError("executemany expects the first argument "
                                                     "to be of type String or Unicode.")
@@ -1180,7 +1222,6 @@ class Cursor(object):
         It takes the number of rows to fetch as an argument.
         If this is not provided it fetches all the remaining rows.
         """
-        logger.debug('_fetch_helper('+repr(fetch_size)+')')
         if self.stmt_handler is None:
             raise ProgrammingError("Please execute an SQL statement in "
                                    "order to get a row from result set.")
@@ -1193,7 +1234,6 @@ class Cursor(object):
               (fetch_size != -1 and rows_fetched < fetch_size):
             try:
                 row = ibm_db.fetch_tuple(self.stmt_handler)
-                logger.debug('_fetch_helper('+ repr(row) +')')
             except Exception, inst:
                 return row_list
             
@@ -1221,7 +1261,6 @@ class Cursor(object):
         It takes the number of rows to fetch as an argument.  If this 
         is not provided it fetches self.arraysize number of rows. 
         """
-        logger.debug('fetchmany( size='+repr(size)+')')
         if not isinstance(size, (int, long)):
             raise InterfaceError( "fetchmany expects argument type int or long.")
         if size == 0:
@@ -1275,7 +1314,6 @@ class Cursor(object):
     # to date/time and binary objects, for returning it to the user.
     def _fix_return_data_type(self, row):
         row = list(row)
-        logger.debug('_fix_return_data_type( '+repr(row)+' )')
         for index in range(len(row)):
             if row[index] is not None:
                 type = ibm_db.field_type(self.stmt_handler, index)
@@ -1293,17 +1331,17 @@ class Cursor(object):
                                                           '%Y-%m-%d %H:%M:%S')
                         row[index] = row[index].replace(
                                                        microsecond = microsec)
-                    if type == 'DATE':
+                    elif type == 'DATE':
                         row[index] = datetime.datetime.strptime(row[index], 
                                                             '%Y-%m-%d').date()
-                    if type == 'TIME':
+                    elif type == 'TIME':
                         row[index] = datetime.datetime.strptime(row[index],
                                                             '%H:%M:%S').time()
-                    if type == 'BLOB':
+                    elif type == 'BLOB':
                         row[index] = buffer(row[index])
 
-                    if type == 'REAL':
-                        row[index] = decimal.Decimal(str(row[index]).replace(",","."))    
+                    elif type == 'DECIMAL':
+                        row[index] = decimal.Decimal(str(row[index]).replace(",", "."))    
 
                 except Exception, inst:
                     raise DataError("Data type format error: "+ str(inst))

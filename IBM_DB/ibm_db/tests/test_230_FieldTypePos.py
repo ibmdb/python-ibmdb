@@ -54,8 +54,8 @@ class IbmDbTestCase(unittest.TestCase):
 #2:int
 #3:string
 #4:int
-#5:real
-#6:real
+#5:decimal
+#6:decimal
 #
 #-----
 #0:string
@@ -64,7 +64,7 @@ class IbmDbTestCase(unittest.TestCase):
 #
 #-----
 #region:False
-#5:real
+#5:decimal
 #__ZOS_EXPECTED__
 #0:date
 #1:string
@@ -78,8 +78,8 @@ class IbmDbTestCase(unittest.TestCase):
 #2:int
 #3:string
 #4:int
-#5:real
-#6:real
+#5:decimal
+#6:decimal
 #
 #-----
 #0:string
@@ -88,7 +88,7 @@ class IbmDbTestCase(unittest.TestCase):
 #
 #-----
 #region:False
-#5:real
+#5:decimal
 #__SYSTEMI_EXPECTED__
 #0:date
 #1:string
@@ -102,8 +102,8 @@ class IbmDbTestCase(unittest.TestCase):
 #2:int
 #3:string
 #4:int
-#5:real
-#6:real
+#5:decimal
+#6:decimal
 #
 #-----
 #0:string
@@ -112,7 +112,7 @@ class IbmDbTestCase(unittest.TestCase):
 #
 #-----
 #region:False
-#5:real
+#5:decimal
 #__IDS_EXPECTED__
 #0:date
 #1:string
@@ -126,8 +126,8 @@ class IbmDbTestCase(unittest.TestCase):
 #2:int
 #3:string
 #4:int
-#5:real
-#6:real
+#5:decimal
+#6:decimal
 #
 #-----
 #0:string
@@ -136,4 +136,4 @@ class IbmDbTestCase(unittest.TestCase):
 #
 #-----
 #region:string
-#5:real
+#5:decimal

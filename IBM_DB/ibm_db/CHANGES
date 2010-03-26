@@ -77,4 +77,12 @@ only optimize for N rows issue #2 (defect #154260)
  - New Feature - added support for UCS-4 build python (defect #174236)
  - Removed memory leak in callproc API (defect #191526)
  - Added support for datetime/time,buffer object type in callproc API (defect #191029)
- - Removed error in executing statement through wrapper when result set contains LOBs/xml data 
+ - Removed error in executing statement through wrapper when result set contains LOBs/xml data
+
+2010/03/25 (setup.py 1.0.1, ibm_db-1.0.1, ibm_db_dbi-1.0.1):
+ - Fixed reading LONGVARCHAR columns (defect #197044)
+ - Fixed reading BINARY Data (defect #204272)
+ - Fixed reading rows in which CLOB column has NULL value (defect #204273)
+ - Fixed connect-segfault(with None value and 4th agrument is not a Dictionary type) (defect #204271)
+ - Fixed distinction between INT and BIGINT in Field Type return(defect #204278)
+ - New Feature - added new method in ibm_db_dbi wrapper "pconnect"  to establish persistance connection (defect #204278)
