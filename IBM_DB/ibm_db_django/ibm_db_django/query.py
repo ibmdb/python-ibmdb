@@ -13,8 +13,7 @@
 # | KIND, either express or implied. See the License for the specific        |
 # | language governing permissions and limitations under the License.        |
 # +--------------------------------------------------------------------------+
-# | Authors: Ambrish Bhargava, Tarun Pasrija                                 |
-# | Version: 0.1.4                                                           |
+# | Authors: Ambrish Bhargava, Tarun Pasrija, Rahul Priyadarshi              |
 # +--------------------------------------------------------------------------+
 
 """
@@ -44,9 +43,9 @@ def query_class(QueryClass):
                         self.extra_order_by[index] = extra_order_list[index]
 
                 from django import VERSION as djangoVersion
-                if(djangoVersion[0] == 1 and djangoVersion[1] == 0):
+                if (djangoVersion[0:2] <= (1, 0)):
                     order = self.get_ordering()
-                elif(djangoVersion[0] == 1 and djangoVersion[1] == 1):
+                else:
                     order, group_by = self.get_ordering()
                                 
                 if order is not None and len(order) is not 0:
@@ -86,7 +85,7 @@ def query_class(QueryClass):
 
                 sql_select_token = sql_split[0].split(",")
                 i = 0
-                while(i < len(sql_select_token)):
+                while (i < len(sql_select_token)):
                     if sql_select_token[i].count("TIMESTAMP(DATE(SUBSTR(CHAR(") == 1:
                         sql = "%s \"%s%d\"," % (sql, dummyVal, i + 1)
                         sql_sel = '%s %s,%s,%s,%s AS "%s%d",' % (

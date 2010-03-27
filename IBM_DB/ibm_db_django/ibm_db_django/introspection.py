@@ -13,8 +13,7 @@
 # | KIND, either express or implied. See the License for the specific        |
 # | language governing permissions and limitations under the License.        |
 # +--------------------------------------------------------------------------+
-# | Authors: Ambrish Bhargava, Tarun Pasrija                                 |
-# | Version: 0.1.4                                                           |
+# | Authors: Ambrish Bhargava, Tarun Pasrija, Rahul Priyadarshi              |
 # +--------------------------------------------------------------------------+
 
 # Import IBM_DB wrapper ibm_db_dbi
@@ -26,24 +25,41 @@ except ImportError, e:
     raise ImportError("ibm_db module not found. Install ibm_db module from http://code.google.com/p/ibm-db/.")
 
 from django.db.backends import BaseDatabaseIntrospection
+from django import VERSION as djangoVersion
 
-class DatabaseIntrospection (BaseDatabaseIntrospection):
+class DatabaseIntrospection(BaseDatabaseIntrospection):
     
     """
     This is the class where database metadata information can be generated.
     """
-
-    data_types_reverse = {
-        Database.STRING :           "CharField",
-        Database.TEXT :             "TextField",
-        Database.NUMBER :           "IntegerField",
-        Database.FLOAT :            "FloatField",
-        Database.DECIMAL :          "DecimalField",
-        Database.DATE :             "DateField",
-        Database.TIME :             "TimeField",
-        Database.DATETIME :         "DateTimeField",
-        Database.BINARY :           "ImageField",
-    }
+    if(djangoVersion[0:2] <= (1, 1)):
+        data_types_reverse = {
+            Database.STRING :           "CharField",
+            Database.TEXT :             "TextField",
+            Database.XML :              "XMLField",
+            Database.NUMBER :           "IntegerField",
+            Database.BIGINT :           "IntegerField",
+            Database.FLOAT :            "FloatField",
+            Database.DECIMAL :          "DecimalField",
+            Database.DATE :             "DateField",
+            Database.TIME :             "TimeField",
+            Database.DATETIME :         "DateTimeField",
+            Database.BINARY :           "ImageField",
+        }
+    else:
+        data_types_reverse = {
+            Database.STRING :           "CharField",
+            Database.TEXT :             "TextField",
+            Database.XML :              "XMLField",
+            Database.NUMBER :           "IntegerField",
+            Database.BIGINT :           "BigIntegerField",
+            Database.FLOAT :            "FloatField",
+            Database.DECIMAL :          "DecimalField",
+            Database.DATE :             "DateField",
+            Database.TIME :             "TimeField",
+            Database.DATETIME :         "DateTimeField",
+            Database.BINARY :           "ImageField",
+        }
     
     # Converting table name to upper case.
     def table_name_converter (self, name):        
@@ -69,7 +85,7 @@ class DatabaseIntrospection (BaseDatabaseIntrospection):
         return relations
     
     # Private method. Getting Index position of column by its name
-    def __get_col_index (self, cursor, schema, table_name, col_name):
+    def __get_col_index(self, cursor, schema, table_name, col_name):
         for col in cursor.connection.columns(schema, table_name, [col_name]):
             return col['ORDINAL_POSITION'] - 1
     

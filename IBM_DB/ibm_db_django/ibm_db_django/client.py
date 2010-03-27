@@ -13,8 +13,7 @@
 # | KIND, either express or implied. See the License for the specific        |
 # | language governing permissions and limitations under the License.        |
 # +--------------------------------------------------------------------------+
-# | Authors: Ambrish Bhargava, Tarun Pasrija                                 |
-# | Version: 0.1.4                                                           |
+# | Authors: Ambrish Bhargava, Tarun Pasrija, Rahul Priyadarshi              |
 # +--------------------------------------------------------------------------+
 
 """
@@ -27,20 +26,25 @@ import types
 
 import os
 
-class DatabaseClient (BaseDatabaseClient):
+class DatabaseClient(BaseDatabaseClient):
     
     #Over-riding base method to provide shell support for DB2 through Django.
     def runshell(self):
-        if(djangoVersion[0] == 1 and djangoVersion[1] == 0):
+        if (djangoVersion[0:2] <= (1, 0)):
             from django.conf import settings
             database_name = settings.DATABASE_NAME
             database_user = settings.DATABASE_USER
             database_password = settings.DATABASE_PASSWORD
-        elif(djangoVersion[0] == 1 and djangoVersion[1] == 1):
+        elif (djangoVersion[0:2] <= (1, 1)):
             settings_dict = self.connection.settings_dict
             database_name = settings_dict['DATABASE_NAME']
             database_user = settings_dict['DATABASE_USER']
             database_password = settings_dict['DATABASE_PASSWORD']
+        else:
+            settings_dict = self.connection.settings_dict
+            database_name = settings_dict['NAME']
+            database_user = settings_dict['USER']
+            database_password = settings_dict['PASSWORD']
             
         cmdArgs = ["db2"]
         
@@ -49,12 +53,12 @@ class DatabaseClient (BaseDatabaseClient):
         else:
             cmdArgs += ["connect to %s" % database_name]
         
-        if((isinstance(database_user, types.StringType) or 
+        if ((isinstance(database_user, types.StringType) or 
             isinstance(database_user, types.UnicodeType)) and 
             (database_user != '')):
             cmdArgs += ["user %s" % database_user]
             
-            if((isinstance(database_password, types.StringType) or 
+            if ((isinstance(database_password, types.StringType) or 
                 isinstance(database_password, types.UnicodeType)) and 
                 (database_password != '')):
                 cmdArgs += ["using %s" % database_password]
@@ -64,4 +68,3 @@ class DatabaseClient (BaseDatabaseClient):
             os.execvp('db2cmd', cmdArgs)
         else:
             os.execvp('db2', cmdArgs)
-                

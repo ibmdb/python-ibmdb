@@ -13,16 +13,18 @@
 # | KIND, either express or implied. See the License for the specific        |
 # | language governing permissions and limitations under the License.        |
 # +--------------------------------------------------------------------------+
-# | Authors: Ambrish Bhargava, Tarun Pasrija                                 |
-# | Version: 0.1.4                                                           |
+# | Authors: Ambrish Bhargava, Tarun Pasrija, Rahul Priyadarshi              |
 # +--------------------------------------------------------------------------+
 
 from django.db.backends import BaseDatabaseOperations
 from ibm_db_django import query
 from string import upper
+from django import VERSION as djangoVersion
 
-class DatabaseOperations (BaseDatabaseOperations):
-    
+class DatabaseOperations(BaseDatabaseOperations):
+    if(djangoVersion[0:2] >= (1, 2)):
+        compiler_module = "ibm_db_django.compiler"
+
     # Function to extract day, month or year from the date.
     # Reference: http://publib.boulder.ibm.com/infocenter/db2luw/v9r5/topic/com.ibm.db2.luw.sql.ref.doc/doc/r0023457.html
     def date_extract_sql(self, lookup_type, field_name):
@@ -44,7 +46,14 @@ class DatabaseOperations (BaseDatabaseOperations):
             sql = sql % (field_name, 4, '-01-01')
 
         return sql
-    
+        
+    #This function casts the field and returns it for use in the where clause
+    def field_cast_sql(self, db_type):
+        if db_type == 'CLOB':
+            return "VARCHAR(%s, 4096)"
+        else:
+            return " %s"
+            
     #As casting is not required, so nothing is required to do in this function.
     def datetime_cast_sql(self):
         return "%s"
@@ -81,7 +90,7 @@ class DatabaseOperations (BaseDatabaseOperations):
     # As DB2 v91 specifications, 
     # Maximum length of a table name and Maximum length of a column name is 128
     # http://publib.boulder.ibm.com/infocenter/db2e/v9r1/index.jsp?topic=/com.ibm.db2e.doc/db2elimits.html
-    def max_name_length (self):
+    def max_name_length(self):
         return 128
     
     def no_limit_value(self):
@@ -179,6 +188,17 @@ class DatabaseOperations (BaseDatabaseOperations):
             cursor.close()
             
         return sqls
+    
+    def tablespace_sql(self, tablespace, inline=False):
+        # inline is used for column indexes defined in-line with column definition, like:
+        #   CREATE TABLE "TABLE1" ("ID_OTHER" VARCHAR(20) NOT NULL UNIQUE) IN "TABLESPACE1";
+        # couldn't find support for this in create table 
+        #   (http://publib.boulder.ibm.com/infocenter/db2luw/v9/topic/com.ibm.db2.udb.admin.doc/doc/r0000927.htm)
+        if inline:
+            sql = ""
+        else:
+            sql = "IN %s" % self.quote_name(tablespace)
+        return sql
     
     def year_lookup_bounds_for_date_field(self, value):
         lower_bound = "%s-01-01"
