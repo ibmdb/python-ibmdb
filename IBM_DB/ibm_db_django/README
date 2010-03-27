@@ -9,18 +9,18 @@ Prerequisites
 --------------
 1. Python 2.5.
 2. Django Framework 1.0.x or above.
-3. IBM_DB driver and IBM_DB_DBI wrapper 0.7.2.5 or higher (ibm_db-0.7.2.5 is a minimum)
+3. IBM_DB driver and IBM_DB_DBI wrapper 1.0.1 or higher (ibm_db-1.0.1 is a minimum)
 4. For 1.0.2, you need to apply a patch in django in-order to remove Non-standard SQL generation issue. 
    The patch is located at http://code.djangoproject.com/ticket/9862.
    You can extract creation.py file from http://code.djangoproject.com/changeset/9703?format=zip&new=9703 
    and paste it to /django/db/backends/
 5. For versions greater than 1.0.2 no patch is required.
 
-Updation from from ibm_db_django-0.1.0 to ibm_db_django-0.1.2
+Updation from from ibm_db_django-0.1.0 to ibm_db_django-0.1.4
 -------------------------------------------------------------
-The name of the adaptor (in Django terminology, the DATABASE_ENGINE) has been changed to 'ibm_db_django' from this version onwards (in earlier versions it was 'db2'). For your existing apps please remember to change this once you upgrade to ibm_db_django-0.1.2 
+The name of the adaptor (in Django terminology, the DATABASE_ENGINE) has been changed to 'ibm_db_django' from this version onwards (in earlier versions it was 'db2'). For your existing apps please remember to change this once you upgrade to ibm_db_django-0.1.4 
 
-The 'DATABASE_ENGINE' field in settings.py should as below when using ibm_db_django-0.1.2
+The 'DATABASE_ENGINE' field in settings.py should as below when using ibm_db_django-0.1.4
    DATABASE_ENGINE    = 'ibm_db_django' 
 
 (In version 0.1.0, it is "DATABASE_ENGINE    = 'db2' " )
@@ -31,10 +31,10 @@ DB2 Django adapter (ibm_db_django) Build and Installation
 Install Django as per instructions from the Django website (http://docs.djangoproject.com/en/dev/topics/install/#installing-an-official-release)
 
 1. Linux/MAC
-    $ easy_install ibm_db_django-0.1.2.egg
+    $ easy_install ibm_db_django-0.1.4.egg
 
 2. Windows
-    c:\> easy_install ibm_db_django-0.1.2.egg
+    c:\> easy_install ibm_db_django-0.1.4.egg
 
 
 List of Operating Systems tested
@@ -42,11 +42,11 @@ List of Operating Systems tested
 Ubuntu Linux 7.04 32/64 bit
 Windows XP 32 bit
 Mac OS X Leopard
+Remote connections to z/OS (DB2 UDB for zOS)
 
 Supported Databases
 -------------------
 IBM DB2 Database for Linux, Unix, Windows and MAC OS X, version 8.2 or higher (9.5 FP2 or higher for MAC OS X).
-Remote connections to ZOS
 
 Future Supported Databases
 --------------------------
@@ -54,6 +54,7 @@ IBM Cloudscape
 Apache Derby
 Informix(IDS) Cheetah version 11.10 onwards
 Remote connections to i5/OS (iSeries)
+
 
 Testing
 -------

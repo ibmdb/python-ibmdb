@@ -1,5 +1,12 @@
 Change Log
 =============
+2010/03/26 (setup.py 0.2.0)
+ - Support for Django-1.2
+ - Backward compatibility - Same codebase works with Django 1.0.x, 1.1.x and 1.2
+ - Exact look-up for LOB fields upto 4k Chars of data 
+ - added tablespace_sql method in operations.DatabaseOperations
+ - added compiler.py
+
 2009/09/20 (setup.py 0.1.4)
  - ZOS support included
  - ibm_db google code issue no - 25 Implementation change for sequence_reset_sql

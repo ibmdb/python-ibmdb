@@ -13,8 +13,8 @@
 # | KIND, either express or implied. See the License for the specific        |
 # | language governing permissions and limitations under the License.        |
 # +--------------------------------------------------------------------------+
-# | Authors: Ambrish Bhargava, Tarun Pasrija                                 |
-# | Version: 0.1.4                                                           |
+# | Authors: Ambrish Bhargava, Tarun Pasrija, Rahul Priyadarshi              |
+# | Version: 0.2.0                                                           |
 # +--------------------------------------------------------------------------+
 
 import sys
@@ -23,7 +23,7 @@ from setuptools import setup, find_packages
 from distutils.core import setup, Extension
 
 PACKAGE = 'ibm_db_django'
-VERSION = '0.1.4'
+VERSION = '0.2.0'
 LICENSE = 'Apache License 2.0'
 
 setup (
@@ -31,7 +31,7 @@ setup (
     version           = VERSION,
     license           = LICENSE,
     platforms         = 'All',
-    install_requires  = [ 'ibm_db>=0.7.2.5',
+    install_requires  = [ 'ibm_db>=1.0.1',
                           'django>=1.0.3'],
     dependency_links  = [ 'http://pypi.python.org/pypi/ibm_db/',
                           'http://pypi.python.org/pypi/Django/'],
