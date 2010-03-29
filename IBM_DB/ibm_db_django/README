@@ -16,37 +16,27 @@ Prerequisites
    and paste it to /django/db/backends/
 5. For versions greater than 1.0.2 no patch is required.
 
-Updation from from ibm_db_django-0.1.0 to ibm_db_django-0.1.4
--------------------------------------------------------------
-The name of the adaptor (in Django terminology, the DATABASE_ENGINE) has been changed to 'ibm_db_django' from this version onwards (in earlier versions it was 'db2'). For your existing apps please remember to change this once you upgrade to ibm_db_django-0.1.4 
-
-The 'DATABASE_ENGINE' field in settings.py should as below when using ibm_db_django-0.1.4
-   DATABASE_ENGINE    = 'ibm_db_django' 
-
-(In version 0.1.0, it is "DATABASE_ENGINE    = 'db2' " )
-
 DB2 Django adapter (ibm_db_django) Build and Installation
 ----------------------------------------------------------
 
 Install Django as per instructions from the Django website (http://docs.djangoproject.com/en/dev/topics/install/#installing-an-official-release)
 
 1. Linux/MAC
-    $ easy_install ibm_db_django-0.1.4.egg
+    $ easy_install ibm_db_django
 
 2. Windows
-    c:\> easy_install ibm_db_django-0.1.4.egg
-
+    c:\> easy_install ibm_db_django
 
 List of Operating Systems tested
 --------------------------------
 Ubuntu Linux 7.04 32/64 bit
 Windows XP 32 bit
 Mac OS X Leopard
-Remote connections to z/OS (DB2 UDB for zOS)
 
 Supported Databases
 -------------------
 IBM DB2 Database for Linux, Unix, Windows and MAC OS X, version 8.2 or higher (9.5 FP2 or higher for MAC OS X).
+Remote connections to z/OS (DB2 UDB for zOS)
 
 Future Supported Databases
 --------------------------
@@ -100,20 +90,15 @@ Known Limitations in ibm_db_django adapter for DB2 databases
 
 4. Non-standard SQL queries are not supported. e.g. "SELECT ? FROM TAB1"
 
-5. EXACT lookup for LOB fields do not work. (Not supported by DB2)
+5. CASE in-sensitive search in case of NUMBER datatypes (INT, FLOAT, DECIMAL, etc.) do not work (Not supported by DB2)
 
-6. CASE in-sensitive search in case of NUMBER datatypes (INT, FLOAT, DECIMAL, etc.) do not work (Not supported by DB2)
+6. If values are inserted/updated manually in AutoField, then the adapter will fail if auto increment is done again on this AutoField.
 
-7. If values are inserted/updated manually in AutoField, then the adapter will fail if auto increment is done again on this AutoField.
+7. dbshell will not work if server is remote and client is DB2 thin client.
 
-8. dbshell will not work if server is remote and client is DB2 thin client.
+8. For updations involving primary/foreign key references, the entries should be made in correct order. Integrity check is always on and thus the primary keys referenced by the foreign keys in the referencing tables should always exist in the parent table.
 
-9. For updations involving primary/foreign key references, the entries should be made in correct order. Integrity check is always on and thus the primary keys referenced by the foreign keys in the referencing tables should always exist in the parent table.
-
-10. Decimal datatype is not yet supported by driver, thus the following sample or likewise would fail with Binding Error
-Foo.objects.create(id=1, name='abc', dval = Decimal("12.34"))
-
-11. DB2 Timestamps do not support timezone aware information. Thus a Datetime field including tzinfo(timezone aware info) would fail.
+9. DB2 Timestamps do not support timezone aware information. Thus a Datetime field including tzinfo(timezone aware info) would fail.
 
 Support for IBM_DB_DJANGO Adaptor
 ---------------------------------
