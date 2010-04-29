@@ -86,3 +86,7 @@ only optimize for N rows issue #2 (defect #154260)
  - Fixed connect-segfault(with None value and 4th agrument is not a Dictionary type) (defect #204271)
  - Fixed distinction between INT and BIGINT in Field Type return(defect #204278)
  - New Feature - added new method in ibm_db_dbi wrapper "pconnect"  to establish persistance connection (defect #204278)
+
+2010/04/28 (setup.py 1.0.2, ibm_db-1.0.2, ibm_db_dbi-1.0.1)
+ - Fixed issues with Integer argument in AIX (defect #197018)
+ - Fixed Performance issues with dbi wrapper (defect #206854) 

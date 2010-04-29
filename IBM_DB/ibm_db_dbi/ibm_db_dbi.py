@@ -14,7 +14,7 @@
 # | language governing permissions and limitations under the License.        |
 # +--------------------------------------------------------------------------+
 # | Authors: Swetha Patel, Abhigyan Agrawal, Tarun Pasrija, Rahul Priyadarshi|
-# | Version: 1.0.1                                                             |
+# | Version: 1.0.2                                                             |
 # +--------------------------------------------------------------------------+
 
 """
@@ -22,7 +22,7 @@ This module implements the Python DB API Specification v2.0 for DB2 database.
 """
 
 import types, string, time, datetime, decimal, exceptions
-from sets import ImmutableSet
+
 import ibm_db
 
 # Constants for specifying database connection options.
@@ -46,7 +46,6 @@ SQL_DBMS_NAME = ibm_db.SQL_DBMS_NAME
 apilevel = '2.0'
 threadsafety = 0
 paramstyle = 'qmark'
-rowcount_prefetch = False
 
 
 class Error(exceptions.StandardError):
@@ -195,17 +194,19 @@ def Binary(string):
     return buffer(string)
 
 
-class DBAPITypeObject(ImmutableSet):
+class DBAPITypeObject(frozenset):
     """Class used for creating objects that can be used to compare
     in order to determine the python type to provide in parameter 
     sequence argument of the execute method.
 
     """
+    def __new__(cls, col_types):
+        return frozenset.__new__(cls, col_types)
+        
     def __init__(self, col_types):
         """Constructor for DBAPITypeObject.  It takes a tuple of 
         database column type as an argument.
         """
-        super(DBAPITypeObject, self).__init__(col_types)
         self.col_types = col_types
 
     def __cmp__(self, cmp):
@@ -387,16 +388,11 @@ def connect(dsn, user='', password='', host='', database='', conn_options=None):
     if dsn is None:
         raise InterfaceError("connect expects a not None dsn value") 
     
-    if ((not isinstance(dsn, types.StringType)) and \
-       (not isinstance(dsn, types.UnicodeType))) | \
-       ((not isinstance(user, types.StringType)) and \
-       (not isinstance(user, types.UnicodeType))) | \
-       ((not isinstance(password, types.StringType)) and \
-       (not isinstance(password, types.UnicodeType))) | \
-       ((not isinstance(host, types.StringType)) and \
-       (not isinstance(host, types.UnicodeType))) | \
-       ((not isinstance(database, types.StringType)) and \
-       (not isinstance(database, types.UnicodeType))):
+    if (not isinstance(dsn, basestring)) | \
+       (not isinstance(user, basestring)) | \
+       (not isinstance(password, basestring)) | \
+       (not isinstance(host, basestring)) | \
+       (not isinstance(database, basestring)):
         raise InterfaceError("connect expects the first five arguments to"
                                                       " be of type string or unicode")
     if conn_options is not None:
@@ -427,8 +423,7 @@ def connect(dsn, user='', password='', host='', database='', conn_options=None):
     if password != '' and dsn.find('PWD=') == -1:
         dsn = dsn + "PWD=" + password + ";"
     try:    
-        conn = ibm_db.connect(dsn, '', '', conn_options) 
-        rowcount_prefetch = ibm_db.check_function_support(conn,ibm_db.SQL_API_SQLROWCOUNT)
+        conn = ibm_db.connect(dsn, '', '', conn_options)
         ibm_db.set_option(conn, {SQL_ATTR_CURRENT_SCHEMA : user}, 1)
     except Exception, inst:
         raise _get_exception(inst)
@@ -443,16 +438,11 @@ def pconnect(dsn, user='', password='', host='', database='', conn_options=None)
     if dsn is None:
         raise InterfaceError("connect expects a not None dsn value") 
     
-    if ((not isinstance(dsn, types.StringType)) and \
-       (not isinstance(dsn, types.UnicodeType))) | \
-       ((not isinstance(user, types.StringType)) and \
-       (not isinstance(user, types.UnicodeType))) | \
-       ((not isinstance(password, types.StringType)) and \
-       (not isinstance(password, types.UnicodeType))) | \
-       ((not isinstance(host, types.StringType)) and \
-       (not isinstance(host, types.UnicodeType))) | \
-       ((not isinstance(database, types.StringType)) and \
-       (not isinstance(database, types.UnicodeType))):
+    if (not isinstance(dsn, basestring)) | \
+       (not isinstance(user, basestring)) | \
+       (not isinstance(password, basestring)) | \
+       (not isinstance(host, basestring)) | \
+       (not isinstance(database, basestring)):
         raise InterfaceError("connect expects the first five arguments to"
                                                       " be of type string or unicode")
     if conn_options is not None:
@@ -483,8 +473,7 @@ def pconnect(dsn, user='', password='', host='', database='', conn_options=None)
     if password != '' and dsn.find('PWD=') == -1:
         dsn = dsn + "PWD=" + password + ";"
     try:    
-        conn = ibm_db.pconnect(dsn, '', '', conn_options) 
-        rowcount_prefetch = ibm_db.check_function_support(conn, ibm_db.SQL_API_SQLROWCOUNT)
+        conn = ibm_db.pconnect(dsn, '', '', conn_options)
         ibm_db.set_option(conn, {SQL_ATTR_CURRENT_SCHEMA : user}, 1)
     except Exception, inst:
         raise _get_exception(inst)
@@ -1011,7 +1000,7 @@ class Cursor(object):
         the stored procedure as arguments. 
 
         """
-        if not isinstance(procname, types.StringType) and not isinstance(procname, types.UnicodeType):
+        if not isinstance(procname, basestring):
             raise InterfaceError("callproc expects the first argument to " 
                                                        "be of type String or Unicode.")
         if parameters is not None:
@@ -1044,39 +1033,19 @@ class Cursor(object):
 
     # Helper for preparing an SQL statement.
     def _set_cursor_helper(self):
+        if (ibm_db.get_option(self.stmt_handler, ibm_db.SQL_ATTR_CURSOR_TYPE, 0) != ibm_db.SQL_CURSOR_FORWARD_ONLY):
+            self._is_scrollable_cursor = True
+        else:
+            self._is_scrollable_cursor = False
         self._result_set_produced = False
-        
         try:
             num_columns = ibm_db.num_fields(self.stmt_handler)
         except Exception, inst:
             raise _get_exception(inst)
         if not num_columns:
-            return True 
-        try:
-            ibm_db.set_option(self.stmt_handler, 
-                 {ibm_db.SQL_ATTR_CURSOR_TYPE: ibm_db.SQL_CURSOR_STATIC}, 0)
-            if rowcount_prefetch:
-                ibm_db.set_option(self.stmt_handler, 
-                    {ibm_db.SQL_ATTR_ROWCOUNT_PREFETCH: ibm_db.SQL_ROWCOUNT_PREFETCH_ON}, 0)
-        except Exception, inst:
-            raise _get_exception(inst)
-        self._is_scrollable_cursor = True
+            return True
         self._result_set_produced = True
-        if self.connection.dbms_name[0:3] != 'IDS':
-            for column_index in range(num_columns):
-                try:
-                    type = ibm_db.field_type(self.stmt_handler, column_index)
-                except Exception, inst:
-                    raise _get_exception(inst)
-                if type == "xml" or type == "clob" or type == "blob":
-                    self._is_scrollable_cursor = False
-                    ibm_db.set_option(self.stmt_handler, {ibm_db.SQL_ATTR_CURSOR_TYPE: ibm_db.SQL_CURSOR_FORWARD_ONLY}, 0)
-                    #If the result set contains a LOBs, XML the cursor type will never be SQL_CURSOR_STATIC because DB2 does not allow this. (http://publib.boulder.ibm.com/infocenter/db2luw/v9r7/index.jsp?topic=/com.ibm.db2.luw.messages.sql.doc/doc/msql00270n.html)
-                    if rowcount_prefetch:
-                        ibm_db.set_option(self.stmt_handler, {ibm_db.SQL_ATTR_ROWCOUNT_PREFETCH: ibm_db.SQL_ROWCOUNT_PREFETCH_OFF}, 0)
-                        #SQL_ATTR_ROWCOUNT_PREFETCH is not supported when the cursor contains LOBs or XML (http://publib.boulder.ibm.com/infocenter/db2luw/v9r7/index.jsp?topic=/com.ibm.db2.luw.apdv.cli.doc/doc/r0000644.html)
-                    #print Warning("rowcount could not be updated because select includes xml, clob and/or blob type column(s)")
-                    return True
+
         return True
 
     # Helper for executing an SQL statement.
@@ -1119,7 +1088,7 @@ class Cursor(object):
     # This method is used to set the rowcount after executing an SQL 
     # statement. 
     def _set_rowcount(self):
-        self.__rowcount = 0
+        self.__rowcount = -1
         if not self._result_set_produced:
             try:
                 counter = ibm_db.num_rows(self.stmt_handler)
@@ -1171,7 +1140,7 @@ class Cursor(object):
         sequence of values to substitute for the parameter markers in  
         the SQL statement as arguments.
         """
-        if not (isinstance(operation, types.StringType) or isinstance(operation, types.UnicodeType)):
+        if not isinstance(operation, basestring):
             raise InterfaceError("execute expects the first argument [%s] "
                                       "to be of type String or Unicode." % operation )
         if parameters is not None:
@@ -1191,7 +1160,7 @@ class Cursor(object):
         and sequence of sequence of values to substitute for the 
         parameter markers in the SQL statement as its argument.
         """
-        if not (isinstance(operation, types.StringType) or isinstance(operation, types.UnicodeType)):
+        if not isinstance(operation, basestring):
             raise InterfaceError("executemany expects the first argument "
                                                     "to be of type String or Unicode.")
         if seq_parameters is None:
@@ -1209,7 +1178,7 @@ class Cursor(object):
         for index in range(len(seq_parameters)):
             self._execute_helper(rows_counter, seq_parameters[index])
 
-        rowno = 0
+        rowno = -1
         for rows in rows_counter:
            rowno += rows
         self.__rowcount = rowno

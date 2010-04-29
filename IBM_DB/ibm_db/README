@@ -156,7 +156,6 @@ Known Limitations for the Python driver
 
 Known Limitations for the Python wrapper
 ----------------------------------------
-1. The rowcount for complex select statements can not be generated.
-   The wrapper might throw errors with complex select statement.
+1. The rowcount for select statements can not be generated.
 2. Some warnings from the drivers are not caught by the wrapper.
    As such these might go unnoticed.
