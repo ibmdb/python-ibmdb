@@ -53,13 +53,11 @@ class DatabaseClient(BaseDatabaseClient):
         else:
             cmdArgs += ["connect to %s" % database_name]
         
-        if ((isinstance(database_user, types.StringType) or 
-            isinstance(database_user, types.UnicodeType)) and 
+        if (isinstance(database_user, basestring) and 
             (database_user != '')):
             cmdArgs += ["user %s" % database_user]
             
-            if ((isinstance(database_password, types.StringType) or 
-                isinstance(database_password, types.UnicodeType)) and 
+            if (isinstance(database_password, basestring) and 
                 (database_password != '')):
                 cmdArgs += ["using %s" % database_password]
                 

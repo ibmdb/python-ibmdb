@@ -163,4 +163,5 @@ class SQLAggregateCompiler(compiler.SQLAggregateCompiler, SQLCompiler):
     pass
 
 class SQLDateCompiler(compiler.SQLDateCompiler, SQLCompiler):
-    pass 
+    pass
+

@@ -14,7 +14,6 @@
 # | language governing permissions and limitations under the License.        |
 # +--------------------------------------------------------------------------+
 # | Authors: Ambrish Bhargava, Tarun Pasrija, Rahul Priyadarshi              |
-# | Version: 0.2.0                                                           |
 # +--------------------------------------------------------------------------+
 
 import sys
@@ -23,7 +22,7 @@ from setuptools import setup, find_packages
 from distutils.core import setup, Extension
 
 PACKAGE = 'ibm_db_django'
-VERSION = '0.2.0'
+VERSION = '0.2.1'
 LICENSE = 'Apache License 2.0'
 
 setup (
@@ -31,17 +30,17 @@ setup (
     version           = VERSION,
     license           = LICENSE,
     platforms         = 'All',
-    install_requires  = [ 'ibm_db>=1.0.1',
+    install_requires  = [ 'ibm_db>=1.0.2',
                           'django>=1.0.3'],
     dependency_links  = [ 'http://pypi.python.org/pypi/ibm_db/',
                           'http://pypi.python.org/pypi/Django/'],
     description       = 'DB2 support for Django framework.',
     long_description  = 'DB2 support for Django framework.',
     download_url      = 'http://code.google.com/p/ibm-db/downloads/list',
-    author            = 'Ambrish Bhargava, Tarun Pasrija',
-    author_email      = 'abhargav@in.ibm.com, tarun.pasrija@in.ibm.com',
-    maintainer        = 'Ambrish Bhargava, Tarun Pasrija',
-    maintainer_email  = 'abhargav@in.ibm.com, tarun.pasrija@in.ibm.com',
+    author            = 'Ambrish Bhargava, Tarun Pasrija, Rahul Priyadarshi',
+    author_email      = 'abhargav@in.ibm.com, tarun.pasrija@in.ibm.com, rahul.priyadarshi@in.ibm.com',
+    maintainer        = 'Ambrish Bhargava, Rahul Priyadarshi ',
+    maintainer_email  = 'abhargav@in.ibm.com, rahul.priyadarshi@in.ibm.com',
     url               = 'http://pypi.python.org/pypi/ibm_db_django/',
     keywords          = 'django ibm_db_django backends adapter IBM Data Servers database db2',
     packages          = ['ibm_db_django'],
@@ -50,8 +49,8 @@ setup (
                          'License :: OSI Approved :: Apache Software License',
                          'Operating System :: Microsoft :: Windows :: Windows NT/2000',
                          'Operating System :: Unix',
-			 'Operating System :: POSIX :: Linux',
-			 'Operating System :: MacOS',
+                         'Operating System :: POSIX :: Linux',
+                         'Operating System :: MacOS',
                          'Topic :: Database :: Front-Ends'],
     data_files        = [ ('', ['./README']),
                           ('', ['./CHANGES']),

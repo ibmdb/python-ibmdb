@@ -74,8 +74,7 @@ class DatabaseCreation(BaseDatabaseCreation):
     def create_test_db(self, verbosity=0, autoclobber=None):
         print "Preparing Database..."
         if(djangoVersion[0:2] <= (1, 1)):
-            if((isinstance(settings.TEST_DATABASE_NAME, types.StringType) or 
-                isinstance(settings.TEST_DATABASE_NAME, types.UnicodeType)) and 
+            if(isinstance(settings.TEST_DATABASE_NAME, basestring) and 
                 (settings.TEST_DATABASE_NAME != '')):
                 database = settings.TEST_DATABASE_NAME
             else:
@@ -83,8 +82,7 @@ class DatabaseCreation(BaseDatabaseCreation):
             
             settings.DATABASE_SUPPORTS_TRANSACTIONS = True
         else:
-            if((isinstance(self.connection.settings_dict["NAME"], types.StringType) or 
-                isinstance(self.connection.settings_dict["NAME"], types.UnicodeType)) and 
+            if(isinstance(self.connection.settings_dict["NAME"], basestring) and 
                 (self.connection.settings_dict["NAME"] != '')):
                 database = self.connection.settings_dict["NAME"]
             else:
@@ -103,15 +101,13 @@ class DatabaseCreation(BaseDatabaseCreation):
     def destroy_test_db(self, test_database_name, verbosity=0):
         print "Destroying Database..."
         if(djangoVersion[0:2] <= (1, 1)):
-            if((isinstance(settings.TEST_DATABASE_NAME, types.StringType) or 
-                isinstance(settings.TEST_DATABASE_NAME, types.UnicodeType)) and 
+            if(isinstance(settings.TEST_DATABASE_NAME, basestring) and 
                 (settings.TEST_DATABASE_NAME != '')):
                 database = settings.TEST_DATABASE_NAME
             else:
                 database = settings.DATABASE_NAME
         else:
-            if((isinstance(self.connection.settings_dict["NAME"], types.StringType) or 
-                isinstance(self.connection.settings_dict["NAME"], types.UnicodeType)) and 
+            if(isinstance(self.connection.settings_dict["NAME"], basestring) and 
                 (self.connection.settings_dict["NAME"] != '')):
                 database = self.connection.settings_dict["NAME"]
             else:

@@ -38,6 +38,7 @@ from ibm_db_django.client import DatabaseClient
 from ibm_db_django.creation import DatabaseCreation
 from ibm_db_django.introspection import DatabaseIntrospection
 from ibm_db_django.operations import DatabaseOperations
+from django.db.backends.signals import connection_created
 
 # For validation, importing types class
 import types
@@ -139,26 +140,20 @@ class DatabaseWrapper(BaseDatabaseWrapper):
                 from django.core.exceptions import ImproperlyConfigured
                 raise ImproperlyConfigured("Please specify the database Name to connect to")
             
-            if (isinstance(database_name, types.StringType) or
-               isinstance(database_name, types.UnicodeType)):
+            if isinstance(database_name, basestring):
                 kwargs['database'] = database_name
                 
-            if (isinstance(database_user, types.StringType) or 
-               isinstance(database_user, types.UnicodeType)):
+            if isinstance(database_user, basestring):
                 kwargs['user'] = database_user
             
-            if (isinstance(database_pass, types.StringType) or
-               isinstance(database_pass, types.UnicodeType)):
+            if isinstance(database_pass, basestring):
                 kwargs['password'] = database_pass
             
-            if (isinstance(database_host, types.StringType) or
-               isinstance(database_host, types.UnicodeType)):
+            if isinstance(database_host, basestring):
                 kwargs['host'] = database_host
                 
-            if ((isinstance(database_port, types.StringType) or
-                isinstance(database_port, types.UnicodeType)) and 
-                (isinstance(database_host, types.StringType) or
-                isinstance(database_host, types.UnicodeType))):
+            if (isinstance(database_port, basestring) and 
+                isinstance(database_host, basestring)):
                 kwargs['dsn'] = "DATABASE=%s;HOSTNAME=%s;PORT=%s;PROTOCOL=TCPIP;" % (
                          database_name,
                          database_host,
@@ -172,6 +167,7 @@ class DatabaseWrapper(BaseDatabaseWrapper):
             kwargs['conn_options'] = conn_options
             kwargs.update(database_options)
             self.connection = Database.pconnect(**kwargs)
+            connection_created.send(sender=self.__class__)
         
         return DB2CursorWrapper(self.connection)
     
