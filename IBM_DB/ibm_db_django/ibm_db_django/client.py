@@ -26,16 +26,16 @@ import types
 
 import os
 
-class DatabaseClient(BaseDatabaseClient):
+class DatabaseClient( BaseDatabaseClient ):
     
     #Over-riding base method to provide shell support for DB2 through Django.
-    def runshell(self):
-        if (djangoVersion[0:2] <= (1, 0)):
+    def runshell( self ):
+        if ( djangoVersion[0:2] <= ( 1, 0 ) ):
             from django.conf import settings
             database_name = settings.DATABASE_NAME
             database_user = settings.DATABASE_USER
             database_password = settings.DATABASE_PASSWORD
-        elif (djangoVersion[0:2] <= (1, 1)):
+        elif ( djangoVersion[0:2] <= ( 1, 1 ) ):
             settings_dict = self.connection.settings_dict
             database_name = settings_dict['DATABASE_NAME']
             database_user = settings_dict['DATABASE_USER']
@@ -48,21 +48,21 @@ class DatabaseClient(BaseDatabaseClient):
             
         cmdArgs = ["db2"]
         
-        if (os.name == 'nt'):
+        if ( os.name == 'nt' ):
             cmdArgs += ["db2 connect to %s" % database_name]
         else:
             cmdArgs += ["connect to %s" % database_name]
         
-        if (isinstance(database_user, basestring) and 
-            (database_user != '')):
+        if ( isinstance( database_user, basestring ) and 
+            ( database_user != '' ) ):
             cmdArgs += ["user %s" % database_user]
             
-            if (isinstance(database_password, basestring) and 
-                (database_password != '')):
+            if ( isinstance( database_password, basestring ) and 
+                ( database_password != '' ) ):
                 cmdArgs += ["using %s" % database_password]
                 
         # db2cmd is the shell which is required to run db2 commands on windows.
-        if (os.name == 'nt'):
-            os.execvp('db2cmd', cmdArgs)
+        if ( os.name == 'nt' ):
+            os.execvp( 'db2cmd', cmdArgs )
         else:
-            os.execvp('db2', cmdArgs)
+            os.execvp( 'db2', cmdArgs )

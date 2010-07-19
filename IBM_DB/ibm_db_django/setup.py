@@ -18,11 +18,12 @@
 
 import sys
 
+_IS_JYTHON = sys.platform.startswith('java')
 from setuptools import setup, find_packages
 from distutils.core import setup, Extension
 
 PACKAGE = 'ibm_db_django'
-VERSION = '0.2.1'
+VERSION = '1.0'
 LICENSE = 'Apache License 2.0'
 
 setup (
@@ -30,21 +31,21 @@ setup (
     version           = VERSION,
     license           = LICENSE,
     platforms         = 'All',
-    install_requires  = [ 'ibm_db>=1.0.2',
+    install_requires  = _IS_JYTHON and ['django>=1.0.3'] or ['ibm_db>=1.0.2',
                           'django>=1.0.3'],
-    dependency_links  = [ 'http://pypi.python.org/pypi/ibm_db/',
+    dependency_links  = _IS_JYTHON and ['http://pypi.python.org/pypi/Django/'] or ['http://pypi.python.org/pypi/ibm_db/',
                           'http://pypi.python.org/pypi/Django/'],
     description       = 'DB2 support for Django framework.',
     long_description  = 'DB2 support for Django framework.',
     download_url      = 'http://code.google.com/p/ibm-db/downloads/list',
     author            = 'Ambrish Bhargava, Tarun Pasrija, Rahul Priyadarshi',
-    author_email      = 'abhargav@in.ibm.com, tarun.pasrija@in.ibm.com, rahul.priyadarshi@in.ibm.com',
-    maintainer        = 'Ambrish Bhargava, Rahul Priyadarshi ',
-    maintainer_email  = 'abhargav@in.ibm.com, rahul.priyadarshi@in.ibm.com',
+    author_email      = 'opendev@us.ibm.com',
+    maintainer        = 'IBM Application Development Team',
+    maintainer_email  = 'opendev@us.ibm.com, ibm_db@googlegroups.com',
     url               = 'http://pypi.python.org/pypi/ibm_db_django/',
     keywords          = 'django ibm_db_django backends adapter IBM Data Servers database db2',
     packages          = ['ibm_db_django'],
-    classifiers       = ['Development Status :: 4 - Beta',
+    classifiers       = [ _IS_JYTHON and 'Development Status :: 4 - Beta' or 'Development Status :: 5 - Production/Stable',
                          'Intended Audience :: Developers',
                          'License :: OSI Approved :: Apache Software License',
                          'Operating System :: Microsoft :: Windows :: Windows NT/2000',

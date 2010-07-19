@@ -7,9 +7,10 @@ The adapter has been developed and is supported by IBM.
 
 Prerequisites
 --------------
-1. Python 2.5.
+1. Python 2.5.x or Jython 2.5.x .
 2. Django Framework 1.0.x or above.
-3. IBM_DB driver and IBM_DB_DBI wrapper 1.0.1 or higher (ibm_db-1.0.1 is a minimum)
+3. IBM_DB driver and IBM_DB_DBI wrapper 1.0.1 or higher (ibm_db-1.0.1 is a minimum) for Python 
+   and db2jcc.jar and db2jcc_license_cu.jar for Jython
 4. For 1.0.2, you need to apply a patch in django in-order to remove Non-standard SQL generation issue. 
    The patch is located at http://code.djangoproject.com/ticket/9862.
    You can extract creation.py file from http://code.djangoproject.com/changeset/9703?format=zip&new=9703 

@@ -1,5 +1,11 @@
 Change Log
 =============
+2010/07/19 (setup.py 1.0)
+ - Added IBM Dataservers backend support for Django 1.0.x and 1.1.x application Framework using Jython language
+ - New files added
+    -ibm_db_django/ibm_db_django/pybase.py
+    -ibm_db_django/ibm_db_django/jybase.py
+    
 2010/04/28 (setup.py 0.2.1)
  - Allow database connection initialization at the begning of every connetion through Django's connection_created signals
 
