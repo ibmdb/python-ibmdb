@@ -21,7 +21,7 @@
 +--------------------------------------------------------------------------+
 */
 
-#define MODULE_RELEASE "1.0.2"
+#define MODULE_RELEASE "1.0.3"
 
 #include <Python.h>
 #include "ibm_db.h"
@@ -405,7 +405,7 @@ static stmt_handle *_ibm_db_new_stmt_struct(conn_handle* conn_res) {
 /*	static _python_ibm_db_free_stmt_struct */
 static void _python_ibm_db_free_stmt_struct(stmt_handle *handle) {
 	int rc;
-
+	
 	rc = SQLFreeHandle( SQL_HANDLE_STMT, handle->hstmt);
 	if ( handle ) {
 		_python_ibm_db_free_result_struct(handle);
@@ -621,7 +621,11 @@ static int _python_ibm_db_get_result_set_info(stmt_handle *stmt_res)
 	int rc = -1, i;
 	SQLSMALLINT nResultCols = 0, name_length;
 	SQLCHAR tmp_name[BUFSIZ];
+
+	Py_BEGIN_ALLOW_THREADS;
 	rc = SQLNumResultCols((SQLHSTMT)stmt_res->hstmt, &nResultCols);
+	Py_END_ALLOW_THREADS;
+
 	if ( rc == SQL_ERROR || nResultCols == 0) {
 	  _python_ibm_db_check_sql_errors((SQLHSTMT)stmt_res->hstmt, 
 									  SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
@@ -639,12 +643,16 @@ static int _python_ibm_db_get_result_set_info(stmt_handle *stmt_res)
 	  stmt_res->column_info[i].lob_loc = 0;
 	  stmt_res->column_info[i].loc_ind = 0;
 	  stmt_res->column_info[i].loc_type = 0;
+
+	  Py_BEGIN_ALLOW_THREADS;
 	  rc = SQLDescribeCol((SQLHSTMT)stmt_res->hstmt, (SQLSMALLINT)(i + 1 ),
 						  (SQLCHAR *)&tmp_name, BUFSIZ, &name_length, 
 						  &stmt_res->column_info[i].type,
 						  &stmt_res->column_info[i].size, 
 						  &stmt_res->column_info[i].scale,
 						  &stmt_res->column_info[i].nullable);
+	  Py_END_ALLOW_THREADS;
+
 	  if ( rc == SQL_ERROR ) {
 		 _python_ibm_db_check_sql_errors((SQLHSTMT)stmt_res->hstmt, 
 										 SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
@@ -664,12 +672,16 @@ static int _python_ibm_db_get_result_set_info(stmt_handle *stmt_res)
 			PyErr_SetString(PyExc_Exception, "Failed to Allocate Memory");
 			 return -1;
 		 }
+
+		 Py_BEGIN_ALLOW_THREADS;
 		 rc = SQLDescribeCol((SQLHSTMT)stmt_res->hstmt, (SQLSMALLINT)(i + 1),
 							 stmt_res->column_info[i].name, name_length, 
 							 &name_length, &stmt_res->column_info[i].type, 
 							 &stmt_res->column_info[i].size, 
 							 &stmt_res->column_info[i].scale, 
 							 &stmt_res->column_info[i].nullable);
+		 Py_END_ALLOW_THREADS;
+
 		 if ( rc == SQL_ERROR ) {
 			_python_ibm_db_check_sql_errors((SQLHSTMT)stmt_res->hstmt, 
 											SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
@@ -737,10 +749,14 @@ static int _python_ibm_db_bind_column_helper(stmt_handle *stmt_res)
 					if ( row_data->str_val == NULL ) {
 						PyErr_SetString(PyExc_Exception, "Failed to Allocate Memory");
 						return -1;
-					}		
+					}
+
+					Py_BEGIN_ALLOW_THREADS;
 					rc = SQLBindCol((SQLHSTMT)stmt_res->hstmt, (SQLUSMALLINT)(i+1),
 						SQL_C_CHAR, row_data->str_val, in_length,
 						(SQLINTEGER *)(&stmt_res->row_data[i].out_length));
+					Py_END_ALLOW_THREADS;
+
 					if ( rc == SQL_ERROR ) {
 						_python_ibm_db_check_sql_errors((SQLHSTMT)stmt_res->hstmt, 
 							SQL_HANDLE_STMT, rc, 1, NULL,
@@ -754,9 +770,12 @@ static int _python_ibm_db_bind_column_helper(stmt_handle *stmt_res)
 						return -1;
 					}
 
+					Py_BEGIN_ALLOW_THREADS;
 					rc = SQLBindCol((SQLHSTMT)stmt_res->hstmt, (SQLUSMALLINT)(i+1),
 						SQL_C_DEFAULT, row_data->str_val, in_length,
 						(SQLINTEGER *)(&stmt_res->row_data[i].out_length));
+					Py_END_ALLOW_THREADS;
+
 					if ( rc == SQL_ERROR ) {
 						_python_ibm_db_check_sql_errors((SQLHSTMT)stmt_res->hstmt, 
 							SQL_HANDLE_STMT, rc, 1, NULL,
@@ -777,9 +796,12 @@ static int _python_ibm_db_bind_column_helper(stmt_handle *stmt_res)
 					return -1;
 				}
 
+				Py_BEGIN_ALLOW_THREADS;
 				rc = SQLBindCol((SQLHSTMT)stmt_res->hstmt, (SQLUSMALLINT)(i+1),
 					SQL_C_CHAR, row_data->str_val, in_length,
 					(SQLINTEGER *)(&stmt_res->row_data[i].out_length));
+				Py_END_ALLOW_THREADS;
+
 				if ( rc == SQL_ERROR ) {
 					_python_ibm_db_check_sql_errors((SQLHSTMT)stmt_res->hstmt, 
 						SQL_HANDLE_STMT, rc, 1, NULL, -1,												1);
@@ -787,10 +809,14 @@ static int _python_ibm_db_bind_column_helper(stmt_handle *stmt_res)
 				break;
 
 			case SQL_SMALLINT:
+
+				Py_BEGIN_ALLOW_THREADS;
 				rc = SQLBindCol((SQLHSTMT)stmt_res->hstmt, (SQLUSMALLINT)(i+1),
 					SQL_C_DEFAULT, &row_data->s_val, 
 					sizeof(row_data->s_val),
 					(SQLINTEGER *)(&stmt_res->row_data[i].out_length));
+				Py_END_ALLOW_THREADS;
+
 				if ( rc == SQL_ERROR ) {
 					_python_ibm_db_check_sql_errors((SQLHSTMT)stmt_res->hstmt, 
 						SQL_HANDLE_STMT, rc, 1, NULL, -1,
@@ -799,10 +825,14 @@ static int _python_ibm_db_bind_column_helper(stmt_handle *stmt_res)
 				break;
 
 			case SQL_INTEGER:
+
+				Py_BEGIN_ALLOW_THREADS;
 				rc = SQLBindCol((SQLHSTMT)stmt_res->hstmt, (SQLUSMALLINT)(i+1),
 					SQL_C_DEFAULT, &row_data->i_val, 
 					sizeof(row_data->i_val),
 					(SQLINTEGER *)(&stmt_res->row_data[i].out_length));
+				Py_END_ALLOW_THREADS;
+
 				if ( rc == SQL_ERROR ) {
 					_python_ibm_db_check_sql_errors((SQLHSTMT)stmt_res->hstmt, 
 						SQL_HANDLE_STMT, rc, 1, NULL, -1,
@@ -811,10 +841,14 @@ static int _python_ibm_db_bind_column_helper(stmt_handle *stmt_res)
 				break;
 
 			case SQL_REAL:
+
+				Py_BEGIN_ALLOW_THREADS;
 				rc = SQLBindCol((SQLHSTMT)stmt_res->hstmt, (SQLUSMALLINT)(i+1),
 					SQL_C_FLOAT, &row_data->r_val, 
 					sizeof(row_data->r_val),
 					(SQLINTEGER *)(&stmt_res->row_data[i].out_length));
+				Py_END_ALLOW_THREADS;
+
 				if ( rc == SQL_ERROR ) {
 					_python_ibm_db_check_sql_errors((SQLHSTMT)stmt_res->hstmt, 
 						SQL_HANDLE_STMT, rc, 1, NULL, -1,
@@ -823,10 +857,14 @@ static int _python_ibm_db_bind_column_helper(stmt_handle *stmt_res)
 				break;
 
 			case SQL_FLOAT:
+
+				Py_BEGIN_ALLOW_THREADS;
 				rc = SQLBindCol((SQLHSTMT)stmt_res->hstmt, (SQLUSMALLINT)(i+1),
 					SQL_C_DEFAULT, &row_data->f_val, 
 					sizeof(row_data->f_val),
 					(SQLINTEGER *)(&stmt_res->row_data[i].out_length));
+				Py_END_ALLOW_THREADS;
+
 				if ( rc == SQL_ERROR ) {
 					_python_ibm_db_check_sql_errors((SQLHSTMT)stmt_res->hstmt, 
 						SQL_HANDLE_STMT, rc, 1, NULL, -1,
@@ -835,10 +873,14 @@ static int _python_ibm_db_bind_column_helper(stmt_handle *stmt_res)
 				break;
 
 			case SQL_DOUBLE:
+
+				Py_BEGIN_ALLOW_THREADS;
 				rc = SQLBindCol((SQLHSTMT)stmt_res->hstmt, (SQLUSMALLINT)(i+1),
 					SQL_C_DEFAULT, &row_data->d_val, 
 					sizeof(row_data->d_val),
 					(SQLINTEGER *)(&stmt_res->row_data[i].out_length));
+				Py_END_ALLOW_THREADS;
+
 				if ( rc == SQL_ERROR ) {
 					_python_ibm_db_check_sql_errors((SQLHSTMT)stmt_res->hstmt, 
 						SQL_HANDLE_STMT, rc, 1, NULL, -1,
@@ -856,9 +898,12 @@ static int _python_ibm_db_bind_column_helper(stmt_handle *stmt_res)
 					return -1;
 				}
 
+				Py_BEGIN_ALLOW_THREADS;
 				rc = SQLBindCol((SQLHSTMT)stmt_res->hstmt, (SQLUSMALLINT)(i+1),
 					SQL_C_CHAR, row_data->str_val, in_length,
 					(SQLINTEGER *)(&stmt_res->row_data[i].out_length));
+				Py_END_ALLOW_THREADS;
+
 				if ( rc == SQL_ERROR ) {
 					_python_ibm_db_check_sql_errors((SQLHSTMT)stmt_res->hstmt, 
 						SQL_HANDLE_STMT, rc, 1, NULL, -1,
@@ -869,10 +914,14 @@ static int _python_ibm_db_bind_column_helper(stmt_handle *stmt_res)
 			case SQL_CLOB:
 				stmt_res->row_data[i].out_length = 0;
 				stmt_res->column_info[i].loc_type = SQL_CLOB_LOCATOR;
+
+				Py_BEGIN_ALLOW_THREADS;
 				rc = SQLBindCol((SQLHSTMT)stmt_res->hstmt, (SQLUSMALLINT)(i+1),
 					stmt_res->column_info[i].loc_type, 
 					&stmt_res->column_info[i].lob_loc, 4,
 					&stmt_res->column_info[i].loc_ind);
+				Py_END_ALLOW_THREADS;
+
 				if ( rc == SQL_ERROR ) {
 					_python_ibm_db_check_sql_errors((SQLHSTMT)stmt_res->hstmt, 
 						SQL_HANDLE_STMT, rc, 1, NULL, -1,
@@ -882,10 +931,14 @@ static int _python_ibm_db_bind_column_helper(stmt_handle *stmt_res)
 			case SQL_BLOB:
 				stmt_res->row_data[i].out_length = 0;
 				stmt_res->column_info[i].loc_type = SQL_BLOB_LOCATOR;
+
+				Py_BEGIN_ALLOW_THREADS;
 				rc = SQLBindCol((SQLHSTMT)stmt_res->hstmt, (SQLUSMALLINT)(i+1),
 					stmt_res->column_info[i].loc_type, 
 					&stmt_res->column_info[i].lob_loc, 4,
 					&stmt_res->column_info[i].loc_ind);
+				Py_END_ALLOW_THREADS;
+
 				if ( rc == SQL_ERROR ) {
 					_python_ibm_db_check_sql_errors((SQLHSTMT)stmt_res->hstmt, 
 						SQL_HANDLE_STMT, rc, 1, NULL, -1,
@@ -1082,8 +1135,12 @@ static PyObject *_python_ibm_db_connect_helper( PyObject *self, PyObject *args, 
 
 			/* Get the server name */
 			memset(server, 0, sizeof(server));
+
+			Py_BEGIN_ALLOW_THREADS;
 			rc = SQLGetInfo(conn_res->hdbc, SQL_DBMS_NAME, (SQLPOINTER)server, 
 				2048, NULL);
+			Py_END_ALLOW_THREADS;
+
 			if (!strcmp(server, "AS")) is_systemi = 1;
 			if (!strncmp(server, "IDS", 3)) is_informix = 1;
 
@@ -1250,7 +1307,11 @@ static int _python_ibm_db_set_decfloat_rounding_mode_client(SQLHANDLE hdbc)
 			NULL, -1, 1);
 		return rc;
 	}
+
+	Py_BEGIN_ALLOW_THREADS;
 	rc = SQLExecDirect((SQLHSTMT)hstmt, stmt, SQL_NTS);
+	Py_END_ALLOW_THREADS;
+
 	if ( rc == SQL_ERROR ) {
 		_python_ibm_db_check_sql_errors((SQLHSTMT)hstmt,
 			SQL_HANDLE_STMT, rc, 1, NULL,
@@ -1258,15 +1319,23 @@ static int _python_ibm_db_set_decfloat_rounding_mode_client(SQLHANDLE hdbc)
 		return rc;
 	}
 
+	Py_BEGIN_ALLOW_THREADS;
 	rc = SQLBindCol((SQLHSTMT)hstmt, 1, SQL_C_DEFAULT, decflt_rounding, 20, NULL);
+	Py_END_ALLOW_THREADS;
+
 	if ( rc == SQL_ERROR ) {
 		_python_ibm_db_check_sql_errors((SQLHSTMT)hstmt,
 			SQL_HANDLE_STMT, rc, 1, NULL,
 			-1, 1);
 		return rc;
 	}
+
+	Py_BEGIN_ALLOW_THREADS;
 	rc = SQLFetch(hstmt);
+	Py_END_ALLOW_THREADS;
+
 	rc = SQLFreeHandle(SQL_HANDLE_STMT, hstmt);
+	
 	/* Now setting up the same rounding mode on the client*/
 	if (strcmp(decflt_rounding, "ROUND_HALF_EVEN") == 0) rounding_mode = ROUND_HALF_EVEN;
 	if (strcmp(decflt_rounding, "ROUND_HALF_UP") == 0) rounding_mode = ROUND_HALF_UP;
@@ -1672,7 +1741,11 @@ static PyObject *_python_ibm_db_bind_param_helper(int argc, stmt_handle *stmt_re
 		/* if argc == 3, then the default value for param_type will be used */
 		case 3:
 			param_type = SQL_PARAM_INPUT;
+
+			Py_BEGIN_ALLOW_THREADS;
 			rc = SQLDescribeParam((SQLHSTMT)stmt_res->hstmt, (SQLUSMALLINT)param_no, &sql_data_type, &sql_precision, &sql_scale, &sql_nullable);
+			Py_END_ALLOW_THREADS;
+
 			if ( rc == SQL_ERROR ) {
 				_python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
 				sprintf(error, "Describe Param Failed: %s", 
@@ -1688,9 +1761,12 @@ static PyObject *_python_ibm_db_bind_param_helper(int argc, stmt_handle *stmt_re
 			break;
 
 		case 4:
+			Py_BEGIN_ALLOW_THREADS;
 			rc = SQLDescribeParam((SQLHSTMT)stmt_res->hstmt, 
 								(SQLUSMALLINT)param_no, &sql_data_type, 
 								&sql_precision, &sql_scale, &sql_nullable);
+			Py_END_ALLOW_THREADS;
+
 			if ( rc == SQL_ERROR ) {
 				_python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT,
 												rc, 1, NULL, -1, 1);
@@ -1707,9 +1783,12 @@ static PyObject *_python_ibm_db_bind_param_helper(int argc, stmt_handle *stmt_re
 			break;
 
 		case 5:
+			Py_BEGIN_ALLOW_THREADS;
 			rc = SQLDescribeParam((SQLHSTMT)stmt_res->hstmt, 
 								(SQLUSMALLINT)param_no, &sql_data_type, 
 								&sql_precision, &sql_scale, &sql_nullable);
+			Py_END_ALLOW_THREADS;
+
 			if ( rc == SQL_ERROR ) {
 				_python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, 
 								rc, 1, NULL, -1, 1);
@@ -1727,9 +1806,12 @@ static PyObject *_python_ibm_db_bind_param_helper(int argc, stmt_handle *stmt_re
 			break;
 
 		case 6:
+			Py_BEGIN_ALLOW_THREADS;
 			rc = SQLDescribeParam((SQLHSTMT)stmt_res->hstmt, 
 								(SQLUSMALLINT)param_no, &sql_data_type, 
 							&sql_precision, &sql_scale, &sql_nullable);
+			Py_END_ALLOW_THREADS;
+
 			if ( rc == SQL_ERROR ) {
 				_python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT,
 												rc, 1, NULL, -1, 1);
@@ -1966,10 +2048,14 @@ static PyObject *ibm_db_close(PyObject *self, PyObject *args)
 				return NULL;
 			}
 
+			Py_BEGIN_ALLOW_THREADS;
 			rc = SQLFreeHandle(SQL_HANDLE_DBC, conn_res->hdbc);
+			Py_END_ALLOW_THREADS;
+
 			if ( rc == SQL_ERROR ) {
 				_python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, rc, 
 												1, NULL, -1, 1);
+
 				rc = SQLFreeHandle(SQL_HANDLE_ENV, conn_res->henv);
 				return NULL;
 			}
@@ -2118,7 +2204,6 @@ static PyObject *ibm_db_column_privileges(PyObject *self, PyObject *args)
 		}
 
 		stmt_res = _ibm_db_new_stmt_struct(conn_res);
-
 		rc = SQLAllocHandle(SQL_HANDLE_STMT, conn_res->hdbc, &(stmt_res->hstmt));
 		if (rc == SQL_ERROR) {
 			_python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, rc, 1, 
@@ -2136,10 +2221,13 @@ static PyObject *ibm_db_column_privileges(PyObject *self, PyObject *args)
 			owner = getUnicodeDataAsSQLWCHAR(py_owner, &isNewBuffer);
 		if (py_table_name && py_table_name != Py_None )
 			table_name = getUnicodeDataAsSQLWCHAR(py_table_name, &isNewBuffer);
-		
+
+		Py_BEGIN_ALLOW_THREADS;
 		rc = SQLColumnPrivilegesW((SQLHSTMT)stmt_res->hstmt, qualifier, SQL_NTS,
 							owner, SQL_NTS, table_name, SQL_NTS, column_name,
 							SQL_NTS);
+		Py_END_ALLOW_THREADS;
+
 		if (isNewBuffer) {
 			if(qualifier) PyMem_Del(qualifier);
 			if(owner) PyMem_Del(owner);
@@ -2329,9 +2417,11 @@ static PyObject *ibm_db_columns(PyObject *self, PyObject *args)
 			table_name = getUnicodeDataAsSQLWCHAR(py_table_name, &isNewBuffer);
 		if (py_column_name && py_column_name != Py_None )
 			column_name = getUnicodeDataAsSQLWCHAR(py_column_name, &isNewBuffer);
-		
+
+		Py_BEGIN_ALLOW_THREADS;
 		rc = SQLColumnsW((SQLHSTMT)stmt_res->hstmt, qualifier, SQL_NTS,
 			owner,SQL_NTS, table_name, SQL_NTS, column_name, SQL_NTS);
+		Py_END_ALLOW_THREADS;
 
 		if (isNewBuffer) {
 		    if(qualifier) PyMem_Del(qualifier);
@@ -2554,7 +2644,10 @@ static PyObject *ibm_db_foreign_keys(PyObject *self, PyObject *args)
 
 		stmt_res = _ibm_db_new_stmt_struct(conn_res);
 
+		Py_BEGIN_ALLOW_THREADS;
 		rc = SQLAllocHandle(SQL_HANDLE_STMT, conn_res->hdbc, &(stmt_res->hstmt));
+		Py_END_ALLOW_THREADS;
+
 		if (rc == SQL_ERROR) {
 			_python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, rc, 1, 
 				NULL, -1, 1);
@@ -2580,10 +2673,13 @@ static PyObject *ibm_db_foreign_keys(PyObject *self, PyObject *args)
 			fk_owner = getUnicodeDataAsSQLWCHAR(py_fk_owner, &isNewBuffer);
 		if(py_fk_table_name && py_fk_table_name != Py_None)
 			fk_table_name = getUnicodeDataAsSQLWCHAR(py_fk_table_name, &isNewBuffer);
-				
+
+		Py_BEGIN_ALLOW_THREADS;
 		rc = SQLForeignKeysW((SQLHSTMT)stmt_res->hstmt, pk_qualifier, SQL_NTS,
 						pk_owner, SQL_NTS, pk_table_name, SQL_NTS, fk_qualifier, SQL_NTS,
 						fk_owner, SQL_NTS, fk_table_name, SQL_NTS);
+		Py_END_ALLOW_THREADS;
+
 		if (isNewBuffer) {
 		    if(pk_qualifier) PyMem_Del(pk_qualifier);
 		    if(pk_owner) PyMem_Del(pk_owner);
@@ -2740,10 +2836,12 @@ static PyObject *ibm_db_primary_keys(PyObject *self, PyObject *args)
 			owner = getUnicodeDataAsSQLWCHAR(py_owner, &isNewBuffer);
 		if (py_table_name && py_table_name != Py_None )
 			table_name = getUnicodeDataAsSQLWCHAR(py_table_name, &isNewBuffer);
-		
-		
+
+		Py_BEGIN_ALLOW_THREADS;	
 		rc = SQLPrimaryKeysW((SQLHSTMT)stmt_res->hstmt, qualifier, SQL_NTS,
 			owner, SQL_NTS, table_name, SQL_NTS);
+		Py_END_ALLOW_THREADS;
+
 		if (isNewBuffer) {
 		    if(qualifier) PyMem_Del(qualifier);
 		    if(owner) PyMem_Del(owner);
@@ -2946,10 +3044,13 @@ static PyObject *ibm_db_procedure_columns(PyObject *self, PyObject *args)
 			proc_name = getUnicodeDataAsSQLWCHAR(py_proc_name, &isNewBuffer);
 		if (py_column_name && py_column_name != Py_None )
 			column_name = getUnicodeDataAsSQLWCHAR(py_column_name, &isNewBuffer);
-		
+
+		Py_BEGIN_ALLOW_THREADS;
 		rc = SQLProcedureColumnsW((SQLHSTMT)stmt_res->hstmt, qualifier, SQL_NTS, 
 			owner, SQL_NTS, proc_name, SQL_NTS, column_name, 
 			SQL_NTS);
+		Py_END_ALLOW_THREADS;
+
 		if (isNewBuffer) {
 		    if(qualifier) PyMem_Del(qualifier);
 		    if(owner) PyMem_Del(owner);
@@ -3105,9 +3206,12 @@ static PyObject *ibm_db_procedures(PyObject *self, PyObject *args)
 			owner = getUnicodeDataAsSQLWCHAR(py_owner, &isNewBuffer);
 		if (py_proc_name && py_proc_name != Py_None )
 			proc_name = getUnicodeDataAsSQLWCHAR(py_proc_name, &isNewBuffer);
-		
+
+		Py_BEGIN_ALLOW_THREADS;
 		rc = SQLProceduresW((SQLHSTMT)stmt_res->hstmt, qualifier, SQL_NTS, owner,
 			SQL_NTS, proc_name, SQL_NTS);
+		Py_END_ALLOW_THREADS;
+
 		if (isNewBuffer) {
 		    if(qualifier) PyMem_Del(qualifier);
 		    if(owner) PyMem_Del(owner);
@@ -3297,10 +3401,13 @@ static PyObject *ibm_db_special_columns(PyObject *self, PyObject *args)
 			owner = getUnicodeDataAsSQLWCHAR(py_owner, &isNewBuffer);
 		if (py_table_name && py_table_name != Py_None )
 			table_name = getUnicodeDataAsSQLWCHAR(py_table_name, &isNewBuffer);
-		
+
+		Py_BEGIN_ALLOW_THREADS;
 		rc = SQLSpecialColumnsW((SQLHSTMT)stmt_res->hstmt, SQL_BEST_ROWID, 
 			qualifier, SQL_NTS, owner, SQL_NTS, table_name,
 			SQL_NTS, scope, SQL_NULLABLE);
+		Py_END_ALLOW_THREADS;
+
 		if (isNewBuffer) {
 		    if(qualifier) PyMem_Del(qualifier);
 		    if(owner) PyMem_Del(owner);
@@ -3509,9 +3616,12 @@ static PyObject *ibm_db_statistics(PyObject *self, PyObject *args)
 			owner = getUnicodeDataAsSQLWCHAR(py_owner, &isNewBuffer);
 		if (py_table_name && py_table_name != Py_None )
 			table_name = getUnicodeDataAsSQLWCHAR(py_table_name, &isNewBuffer);
-		
+
+		Py_BEGIN_ALLOW_THREADS;
 		rc = SQLStatisticsW((SQLHSTMT)stmt_res->hstmt, qualifier, SQL_NTS, owner,
 			SQL_NTS, table_name, SQL_NTS, sql_unique, SQL_QUICK);
+		Py_END_ALLOW_THREADS;
+
 		if (isNewBuffer) {
 		    if(qualifier) PyMem_Del(qualifier);
 		    if(owner) PyMem_Del(owner);
@@ -3667,9 +3777,12 @@ static PyObject *ibm_db_table_privileges(PyObject *self, PyObject *args)
 			owner = getUnicodeDataAsSQLWCHAR(py_owner, &isNewBuffer);
 		if (py_table_name && py_table_name != Py_None )
 			table_name = getUnicodeDataAsSQLWCHAR(py_table_name, &isNewBuffer);
-				
+
+		Py_BEGIN_ALLOW_THREADS;
 		rc = SQLTablePrivilegesW((SQLHSTMT)stmt_res->hstmt, qualifier, SQL_NTS, 
 			owner, SQL_NTS, table_name, SQL_NTS);
+		Py_END_ALLOW_THREADS;
+
 		if (isNewBuffer) {
 		    if(qualifier) PyMem_Del(qualifier);
 		    if(owner) PyMem_Del(owner);
@@ -3841,9 +3954,12 @@ static PyObject *ibm_db_tables(PyObject *self, PyObject *args)
 			table_name = getUnicodeDataAsSQLWCHAR(py_table_name, &isNewBuffer);
 		if(py_table_type && py_table_type != Py_None)
 			table_type = getUnicodeDataAsSQLWCHAR(py_table_type, &isNewBuffer);
-				
+
+		Py_BEGIN_ALLOW_THREADS;
 		rc = SQLTablesW((SQLHSTMT)stmt_res->hstmt, qualifier, SQL_NTS, owner,
 			SQL_NTS, table_name, SQL_NTS, table_type, SQL_NTS);
+		Py_END_ALLOW_THREADS;
+
 		if (isNewBuffer) {
 		    if(qualifier) PyMem_Del(qualifier);
 		    if(owner) PyMem_Del(owner);
@@ -3969,8 +4085,12 @@ static int _python_ibm_db_do_prepare(SQLHANDLE hdbc, SQLWCHAR *stmt, int stmt_si
 	/* Prepare the stmt. The cursor type requested has already been set in 
 	* _python_ibm_db_assign_options 
 	*/
+
+	Py_BEGIN_ALLOW_THREADS;
 	rc = SQLPrepareW((SQLHSTMT)stmt_res->hstmt, stmt, 
 				stmt_size);
+	Py_END_ALLOW_THREADS;
+
 	if ( rc == SQL_ERROR ) {
 		_python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, rc, 
 										1, NULL, -1, 1);
@@ -4101,8 +4221,10 @@ static PyObject *ibm_db_exec(PyObject *self, PyObject *args)
 		if (py_stmt != NULL && py_stmt != Py_None){
 			stmt = getUnicodeDataAsSQLWCHAR(py_stmt, &isNewBuffer);
      		}
-		
+
+		Py_BEGIN_ALLOW_THREADS;
 		rc = SQLExecDirectW((SQLHSTMT)stmt_res->hstmt, stmt, SQL_NTS);
+		Py_END_ALLOW_THREADS;
 
 		if ( rc < SQL_SUCCESS ) {
 			_python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, -1, 
@@ -4161,7 +4283,10 @@ static PyObject *ibm_db_free_result(PyObject *self, PyObject *args)
 			/* Free any cursors that might have been allocated in a previous call 
 			* to SQLExecute 
 			*/
+			Py_BEGIN_ALLOW_THREADS;
 			SQLFreeStmt((SQLHSTMT)stmt_res->hstmt, SQL_CLOSE);
+			Py_END_ALLOW_THREADS;
+
 			if ( rc == SQL_ERROR ) {
 				_python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, 
 												rc, 1, NULL, -1, 1);
@@ -4373,10 +4498,14 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
 		curr->ivalue = strlen(curr->svalue);
 		valueType = (SQLSMALLINT) curr->ivalue;
 		/* Bind file name string */
+
+		Py_BEGIN_ALLOW_THREADS;
 		rc = SQLBindFileToParam((SQLHSTMT)stmt_res->hstmt, curr->param_num,
 					curr->data_type, (SQLCHAR*)curr->svalue,
 					(SQLSMALLINT*)&(curr->ivalue), &(curr->file_options), 
 					(SQLSMALLINT) curr->ivalue, &(curr->bind_indicator));
+		Py_END_ALLOW_THREADS;
+
 		if ( rc == SQL_ERROR ) {
 			_python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, 
 											 rc, 1, NULL, -1, 1);
@@ -4394,10 +4523,13 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
 				curr->svalue = memcpy(PyMem_Malloc((sizeof(char))*(curr->ivalue+1)), curr->svalue, curr->ivalue);
 				curr->svalue[curr->ivalue] = '\0'; 
 				curr->bind_indicator = curr->ivalue;
+
+				Py_BEGIN_ALLOW_THREADS;
 				rc = SQLBindParameter(stmt_res->hstmt, curr->param_num,
 					curr->param_type, SQL_C_CHAR, curr->data_type,
 					curr->param_size, curr->scale, curr->svalue, curr->param_size, NULL);
-					
+				Py_END_ALLOW_THREADS;
+
 				if ( rc == SQL_ERROR ){
 					_python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, 
 												rc, 1, NULL, -1, 1);
@@ -4407,9 +4539,13 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
 			}
 			else{
 				curr->ivalue = (SQLINTEGER) PyLong_AsLong(bind_data);
+
+				Py_BEGIN_ALLOW_THREADS;
 				rc = SQLBindParameter(stmt_res->hstmt, curr->param_num,
 							curr->param_type, SQL_C_LONG, curr->data_type,
 							curr->param_size, curr->scale, &curr->ivalue, 0, NULL);
+				Py_END_ALLOW_THREADS;
+
 				if ( rc == SQL_ERROR ) {
 					_python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, 
 												rc, 1, NULL, -1, 1);
@@ -4421,9 +4557,13 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
 		/* Convert BOOLEAN types to LONG for DB2 / Cloudscape */
 		case PYTHON_FALSE:
 			curr->ivalue = 0;
+
+			Py_BEGIN_ALLOW_THREADS;
 			rc = SQLBindParameter(stmt_res->hstmt, curr->param_num,
 						curr->param_type, SQL_C_LONG, curr->data_type, curr->param_size,
 						curr->scale, &curr->ivalue, 0, NULL);
+			Py_END_ALLOW_THREADS;
+
 			if ( rc == SQL_ERROR ) {
 				_python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, 
 													rc, 1, NULL, -1, 1);
@@ -4433,9 +4573,13 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
 
 		case PYTHON_TRUE:
 			curr->ivalue = 1;
+
+			Py_BEGIN_ALLOW_THREADS;
 			rc = SQLBindParameter(stmt_res->hstmt, curr->param_num,
 			curr->param_type, SQL_C_LONG, curr->data_type, curr->param_size,
 						curr->scale, &curr->ivalue, 0, NULL);
+			Py_END_ALLOW_THREADS;
+
 			if ( rc == SQL_ERROR ) {
 				_python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, 
 												rc, 1, NULL, -1, 1);
@@ -4445,9 +4589,13 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
 
 		case PYTHON_FLOAT:
 			curr->fvalue = PyFloat_AsDouble(bind_data);
+			
+			Py_BEGIN_ALLOW_THREADS;
 			rc = SQLBindParameter(stmt_res->hstmt, curr->param_num,
 					curr->param_type, SQL_C_DOUBLE, curr->data_type, curr->param_size,
 					curr->scale, &curr->fvalue, 0, NULL);
+			Py_END_ALLOW_THREADS;
+
 			if ( rc == SQL_ERROR ) {
 				_python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, 
 												rc, 1, NULL, -1, 1);
@@ -4534,7 +4682,11 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
 						curr->bind_indicator = curr->ivalue;
 						paramValuePtr = (curr->uvalue);
 				}
+
+				Py_BEGIN_ALLOW_THREADS;
 				rc = SQLBindParameter(stmt_res->hstmt, curr->param_num, curr->param_type, valueType, curr->data_type, curr->param_size, curr->scale, paramValuePtr, curr->ivalue, &(curr->bind_indicator));
+				Py_END_ALLOW_THREADS;
+
 				if ( rc == SQL_ERROR ) {
 					_python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
 				}
@@ -4637,9 +4789,13 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
 					}
 					paramValuePtr = (SQLPOINTER)(curr->svalue);
 			}
+
+			Py_BEGIN_ALLOW_THREADS;
 			rc = SQLBindParameter(stmt_res->hstmt, curr->param_num,
 				curr->param_type, valueType, curr->data_type, curr->param_size,
 				curr->scale, paramValuePtr, curr->ivalue, &(curr->bind_indicator));
+			Py_END_ALLOW_THREADS;
+
 			if ( rc == SQL_ERROR ) {
 				_python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, 
 											rc, 1, NULL, -1, 1);
@@ -4647,11 +4803,44 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
 			curr->data_type = valueType;
 			break;
 
+		case PYTHON_DECIMAL:
+			if (curr->data_type == SQL_DECIMAL || curr->data_type == SQL_DECFLOAT) {
+				PyObject *tempobj = NULL;
+				if(curr->svalue != NULL) {
+					PyMem_Del(curr->svalue);
+					curr->svalue = NULL;
+				}
+				tempobj = PyObject_Str(bind_data);
+				curr->svalue = PyString_AsString(tempobj);
+				curr->ivalue = strlen(curr->svalue);
+				curr->svalue = estrdup(curr->svalue);
+				curr->svalue[curr->ivalue] = '\0'; 
+				valueType = SQL_C_CHAR;
+				paramValuePtr = (SQLPOINTER)(curr->svalue);
+				curr->bind_indicator = curr->ivalue;
+
+				Py_BEGIN_ALLOW_THREADS;
+				rc = SQLBindParameter(stmt_res->hstmt, curr->param_num, curr->param_type, valueType, curr->data_type, curr->param_size, curr->scale, paramValuePtr, curr->ivalue, &(curr->bind_indicator));
+				Py_END_ALLOW_THREADS;
+
+				if ( rc == SQL_ERROR ) {
+					_python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT,rc, 1, NULL, -1, 1);
+				}
+				curr->data_type = valueType;
+				Py_XDECREF(tempobj);
+				break;
+			}
+
+
 		case PYTHON_NIL:
 			curr->ivalue = SQL_NULL_DATA;
+
+			Py_BEGIN_ALLOW_THREADS;
 			rc = SQLBindParameter(stmt_res->hstmt, curr->param_num,
 				curr->param_type, SQL_C_DEFAULT, curr->data_type, curr->param_size,
 				curr->scale, &curr->ivalue, 0, (SQLLEN *)&(curr->ivalue));
+			Py_END_ALLOW_THREADS;
+
 			if ( rc == SQL_ERROR ) {
 				_python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, 
 											rc, 1, NULL, -1, 1);
@@ -4717,9 +4906,13 @@ static int _python_ibm_db_execute_helper2(stmt_handle *stmt_res, PyObject *data,
 				* parameter and then bind it.
 				*/
 				param_no = ++stmt_res->num_params;
+
+				Py_BEGIN_ALLOW_THREADS;
 				rc = SQLDescribeParam((SQLHSTMT)stmt_res->hstmt, param_no,
 					(SQLSMALLINT*)&data_type, &precision, (SQLSMALLINT*)&scale,
 					(SQLSMALLINT*)&nullable);
+				Py_END_ALLOW_THREADS;
+
 				if ( rc == SQL_ERROR ) {
 					_python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT,
 												rc, 1, NULL, -1, 1);
@@ -4776,13 +4969,17 @@ static PyObject *_python_ibm_db_execute_helper1(stmt_handle *stmt_res, PyObject 
 	/* Free any cursors that might have been allocated in a previous call to 
 	* SQLExecute 
 	*/
+	Py_BEGIN_ALLOW_THREADS;
 	SQLFreeStmt((SQLHSTMT)stmt_res->hstmt, SQL_CLOSE);
+	Py_END_ALLOW_THREADS;
 
 	/* This ensures that each call to ibm_db.execute start from scratch */
 	stmt_res->current_node = stmt_res->head_cache_list;
-
+	
+	Py_BEGIN_ALLOW_THREADS;
 	rc = SQLNumParams((SQLHSTMT)stmt_res->hstmt, (SQLSMALLINT*)&num);
-
+	Py_END_ALLOW_THREADS;
+	
 	if ( num != 0 ) {
 		/* Parameter Handling */
 		if ( !NIL_P(parameters_tuple) ) {
@@ -4866,7 +5063,10 @@ static PyObject *_python_ibm_db_execute_helper1(stmt_handle *stmt_res, PyObject 
 		/* No Parameters 
 		 * We just execute the statement. No additional work needed. 
 		 */
+		Py_BEGIN_ALLOW_THREADS;
 		rc = SQLExecute((SQLHSTMT)stmt_res->hstmt);
+		Py_END_ALLOW_THREADS;
+		
 		if ( rc == SQL_ERROR ) {
 			_python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
 			sprintf(error, "Statement Execute Failed: %s", IBM_DB_G(__python_stmt_err_msg));
@@ -4878,7 +5078,10 @@ static PyObject *_python_ibm_db_execute_helper1(stmt_handle *stmt_res, PyObject 
 	}
 		
 	/* Execute Stmt -- All parameters bound */
+	Py_BEGIN_ALLOW_THREADS;
 	rc = SQLExecute((SQLHSTMT)stmt_res->hstmt);
+	Py_END_ALLOW_THREADS;
+	
 	if ( rc == SQL_ERROR ) {
 		_python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
 		sprintf(error, "Statement Execute Failed: %s", IBM_DB_G(__python_stmt_err_msg));
@@ -4890,9 +5093,13 @@ static PyObject *_python_ibm_db_execute_helper1(stmt_handle *stmt_res, PyObject 
 		while ( (SQLParamData((SQLHSTMT)stmt_res->hstmt, (SQLPOINTER *)&valuePtr)) == SQL_NEED_DATA ) {
 			/* passing data value for a parameter */
 			if ( !NIL_P(((param_node*)valuePtr)->svalue)) {
+				Py_BEGIN_ALLOW_THREADS;
 				rc = SQLPutData((SQLHSTMT)stmt_res->hstmt, (SQLPOINTER)(((param_node*)valuePtr)->svalue), ((param_node*)valuePtr)->ivalue);
+				Py_END_ALLOW_THREADS;
 			} else {
+				Py_BEGIN_ALLOW_THREADS;
 				rc = SQLPutData((SQLHSTMT)stmt_res->hstmt, (SQLPOINTER)(((param_node*)valuePtr)->uvalue), ((param_node*)valuePtr)->ivalue);
+				Py_END_ALLOW_THREADS;
 			}
 			
 			if ( rc == SQL_ERROR ) {
@@ -5278,7 +5485,11 @@ static PyObject *ibm_db_next_result(PyObject *self, PyObject *args)
 			Py_INCREF(Py_False);
 			return Py_False;
 		}
+
+		Py_BEGIN_ALLOW_THREADS;
 		rc = SQLNextResult((SQLHSTMT)stmt_res->hstmt, (SQLHSTMT)new_hstmt);
+		Py_END_ALLOW_THREADS;
+		
 		if( rc != SQL_SUCCESS ) {
 			if(rc < SQL_SUCCESS) {
 				_python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, 
@@ -5345,7 +5556,10 @@ static PyObject *ibm_db_num_fields(PyObject *self, PyObject *args)
 
 	if (!NIL_P(stmt_res)) {
 
+		Py_BEGIN_ALLOW_THREADS;
 		rc = SQLNumResultCols((SQLHSTMT)stmt_res->hstmt, &indx);
+		Py_END_ALLOW_THREADS;
+		
 		if ( rc == SQL_ERROR ) {
 			_python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, rc, 
 											1, NULL, -1, 1);
@@ -5409,7 +5623,10 @@ static PyObject *ibm_db_num_rows(PyObject *self, PyObject *args)
 		return NULL;
 
 	if (!NIL_P(stmt_res)) {
+		Py_BEGIN_ALLOW_THREADS;
 		rc = SQLRowCount((SQLHSTMT)stmt_res->hstmt, &count);
+		Py_END_ALLOW_THREADS;
+		
 		if ( rc == SQL_ERROR ) {
 			_python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, rc, 
 											1, NULL, -1, 1);
@@ -5456,9 +5673,12 @@ static PyObject *ibm_db_get_num_result(PyObject *self, PyObject *args)
 		return NULL;
 
 	if (!NIL_P(stmt_res)) {
+		Py_BEGIN_ALLOW_THREADS;
 		rc = SQLGetDiagField(SQL_HANDLE_STMT, stmt_res->hstmt, 0,
 								SQL_DIAG_CURSOR_ROW_COUNT, &count, SQL_IS_INTEGER,
 								&strLenPtr);
+		Py_END_ALLOW_THREADS;
+		
 		if ( rc == SQL_ERROR ) {
 			_python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, rc,
 											1, NULL, -1, 1);
@@ -5606,8 +5826,12 @@ static PyObject *ibm_db_field_display_size(PyObject *self, PyObject *args)
 		Py_INCREF(Py_False);
 		return Py_False;
 	}
+
+	Py_BEGIN_ALLOW_THREADS;
 	rc = SQLColAttributes((SQLHSTMT)stmt_res->hstmt, (SQLSMALLINT)col+1,
 		 SQL_DESC_DISPLAY_SIZE, NULL, 0, NULL, &colDataDisplaySize);
+	Py_END_ALLOW_THREADS;
+	
 	if ( rc < SQL_SUCCESS ) {
 		_python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, rc, 1, 
 									  NULL, -1, 1);
@@ -5913,8 +6137,12 @@ static PyObject *ibm_db_field_width(PyObject *self, PyObject *args)
 		Py_INCREF(Py_False);
 		return Py_False;
 	}
+	
+	Py_BEGIN_ALLOW_THREADS;
 	rc = SQLColAttributes((SQLHSTMT)stmt_res->hstmt, (SQLSMALLINT)col + 1,
 		SQL_DESC_LENGTH, NULL, 0, NULL, &colDataSize);
+	Py_END_ALLOW_THREADS;
+	
 	if ( rc != SQL_SUCCESS ) {
 		_python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, rc, 1, 
 			NULL, -1, 1);
@@ -6041,9 +6269,12 @@ static PyObject *ibm_db_free_stmt(PyObject *self, PyObject *args)
 static RETCODE _python_ibm_db_get_data(stmt_handle *stmt_res, int col_num, short ctype, void *buff, int in_length, SQLINTEGER *out_length)
 {
 	RETCODE rc = SQL_SUCCESS;
-
+	
+	Py_BEGIN_ALLOW_THREADS;
 	rc = SQLGetData((SQLHSTMT)stmt_res->hstmt, col_num, ctype, buff, in_length, 
 		out_length);
+	Py_END_ALLOW_THREADS;
+	
 	if ( rc == SQL_ERROR ) {
 		_python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, rc, 1, 
 			NULL, -1, 1);
@@ -6064,10 +6295,13 @@ static RETCODE _python_ibm_db_get_length(stmt_handle* stmt_res, SQLUSMALLINT col
 		return SQL_ERROR;
 	}
 
+	Py_BEGIN_ALLOW_THREADS;
 	rc = SQLGetLength((SQLHSTMT)new_hstmt, 
 		stmt_res->column_info[col_num-1].loc_type,
 		stmt_res->column_info[col_num-1].lob_loc, sLength,
 		&stmt_res->column_info[col_num-1].loc_ind);
+	Py_END_ALLOW_THREADS;
+	
 	if ( rc == SQL_ERROR ) {
 		_python_ibm_db_check_sql_errors((SQLHSTMT)new_hstmt, SQL_HANDLE_STMT, rc,
 			1, NULL, -1, 1);
@@ -6090,18 +6324,19 @@ static RETCODE _python_ibm_db_get_data2(stmt_handle *stmt_res, SQLUSMALLINT col_
 		return SQL_ERROR;
 	}
 
+	Py_BEGIN_ALLOW_THREADS;
 	rc = SQLGetSubString((SQLHSTMT)new_hstmt, 
 						stmt_res->column_info[col_num-1].loc_type,
 						stmt_res->column_info[col_num-1].lob_loc, 1, in_length,
 						targetCType, buff, in_length, out_length, 
 						&stmt_res->column_info[col_num-1].loc_ind);
+	Py_END_ALLOW_THREADS;
+	
 	if ( rc == SQL_ERROR ) {
 		_python_ibm_db_check_sql_errors((SQLHSTMT)new_hstmt, SQL_HANDLE_STMT, rc,
 									  1, NULL, -1, 1);
 	}
-
 	SQLFreeHandle(SQL_HANDLE_STMT, new_hstmt);
-
 	return rc;
 }
 
@@ -6464,21 +6699,36 @@ static PyObject *_python_ibm_db_bind_fetch_helper(PyObject *args, int op)
 	if (PyTuple_Size(args) == 2 && row_number > 0) {
 #ifndef PASE /* i5/OS problem with SQL_FETCH_ABSOLUTE (temporary until fixed) */
 		if (is_systemi) {
+
+			Py_BEGIN_ALLOW_THREADS;
 			rc = SQLFetchScroll((SQLHSTMT)stmt_res->hstmt, SQL_FETCH_FIRST, 
 				row_number);
+			Py_END_ALLOW_THREADS;
+			
 			if (row_number>1 && (rc == SQL_SUCCESS || rc == SQL_SUCCESS_WITH_INFO))
+				Py_BEGIN_ALLOW_THREADS;
 				rc = SQLFetchScroll((SQLHSTMT)stmt_res->hstmt, SQL_FETCH_RELATIVE, 
 				row_number-1);
+				Py_END_ALLOW_THREADS;
 		} else {
+			Py_BEGIN_ALLOW_THREADS;
 			rc = SQLFetchScroll((SQLHSTMT)stmt_res->hstmt, SQL_FETCH_ABSOLUTE, 
 				row_number);
+			Py_END_ALLOW_THREADS;
 		}
 #else /* PASE */
+		Py_BEGIN_ALLOW_THREADS;
 		rc = SQLFetchScroll((SQLHSTMT)stmt_res->hstmt, SQL_FETCH_FIRST, 
 			row_number);
+		Py_END_ALLOW_THREADS;
+
 		if (row_number>1 && (rc == SQL_SUCCESS || rc == SQL_SUCCESS_WITH_INFO))
+			Py_BEGIN_ALLOW_THREADS;
+
 			rc = SQLFetchScroll((SQLHSTMT)stmt_res->hstmt, SQL_FETCH_RELATIVE, 
 			row_number-1);
+
+			Py_END_ALLOW_THREADS;
 #endif /* PASE */
 	} else if (PyTuple_Size(args) == 2 && row_number < 0) {
 		PyErr_SetString(PyExc_Exception, 
@@ -6486,7 +6736,11 @@ static PyObject *_python_ibm_db_bind_fetch_helper(PyObject *args, int op)
 		return NULL;
 	} else {
 		/* row_number is NULL or 0; just fetch next row */
+		Py_BEGIN_ALLOW_THREADS;
+
 		rc = SQLFetch((SQLHSTMT)stmt_res->hstmt);
+
+		Py_END_ALLOW_THREADS;
 	}
 
 	if (rc == SQL_NO_DATA_FOUND) {
@@ -6828,11 +7082,16 @@ static PyObject *ibm_db_fetch_row(PyObject *self, PyObject *args)
 		rc = SQLFetchScroll((SQLHSTMT)stmt_res->hstmt, SQL_FETCH_ABSOLUTE, 
 						  row_number);
 #else /* PASE */
+		Py_BEGIN_ALLOW_THREADS;
 		rc = SQLFetchScroll((SQLHSTMT)stmt_res->hstmt, SQL_FETCH_FIRST, 
 						  row_number);
+		Py_END_ALLOW_THREADS;
+
 		if (row_number>1 && (rc == SQL_SUCCESS || rc == SQL_SUCCESS_WITH_INFO))
+			Py_BEGIN_ALLOW_THREADS;
 			rc = SQLFetchScroll((SQLHSTMT)stmt_res->hstmt, SQL_FETCH_RELATIVE, 
 							 row_number-1);
+			Py_END_ALLOW_THREADS;
 #endif /* PASE */
 	} else if (PyTuple_Size(args) == 2 && row_number < 0) {
 		PyErr_SetString(PyExc_Exception, 
@@ -6840,7 +7099,9 @@ static PyObject *ibm_db_fetch_row(PyObject *self, PyObject *args)
 		return NULL;
 	} else {
 		/* row_number is NULL or 0; just fetch next row */
+		Py_BEGIN_ALLOW_THREADS;
 		rc = SQLFetch((SQLHSTMT)stmt_res->hstmt);
+		Py_END_ALLOW_THREADS;
 	}
 
 	if (rc == SQL_SUCCESS || rc == SQL_SUCCESS_WITH_INFO) {
@@ -7105,9 +7366,12 @@ static PyObject *ibm_db_get_db_info(PyObject *self, PyObject *args)
 		}
 
 		value = (SQLCHAR*)ALLOC_N(char, ACCTSTR_LEN + 1);
+
+		Py_BEGIN_ALLOW_THREADS;
 		rc = SQLGetInfo(conn_res->hdbc, (SQLSMALLINT)option, (SQLPOINTER)value, 
 						ACCTSTR_LEN, NULL);
-
+		Py_END_ALLOW_THREADS;
+		
 		if ( rc == SQL_ERROR ) {
 			_python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, rc, 1, 
 											NULL, -1, 1);
@@ -7269,8 +7533,11 @@ static PyObject *ibm_db_server_info(PyObject *self, PyObject *args)
 
 		/* DBMS_NAME */
 		memset(buffer255, 0, sizeof(buffer255));
+
+		Py_BEGIN_ALLOW_THREADS;
 		rc = SQLGetInfo(conn_res->hdbc, SQL_DBMS_NAME, (SQLPOINTER)buffer255, 
 						sizeof(buffer255), NULL);
+		Py_END_ALLOW_THREADS;
 
 		if ( rc == SQL_ERROR ) {
 			_python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, rc, 1, 
@@ -7283,8 +7550,11 @@ static PyObject *ibm_db_server_info(PyObject *self, PyObject *args)
 
 		/* DBMS_VER */
 		memset(buffer11, 0, sizeof(buffer11));
+
+		Py_BEGIN_ALLOW_THREADS;
 		rc = SQLGetInfo(conn_res->hdbc, SQL_DBMS_VER, (SQLPOINTER)buffer11, 
 					sizeof(buffer11), NULL);
+		Py_END_ALLOW_THREADS;
 
 		if ( rc == SQL_ERROR ) {
 			_python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, rc, 1, 
@@ -7298,8 +7568,11 @@ static PyObject *ibm_db_server_info(PyObject *self, PyObject *args)
 #ifndef PASE	  /* i5/OS DB_CODEPAGE handled natively */
 		/* DB_CODEPAGE */
 		bufferint32 = 0;
+
+		Py_BEGIN_ALLOW_THREADS;
 		rc = SQLGetInfo(conn_res->hdbc, SQL_DATABASE_CODEPAGE, &bufferint32, 
 						sizeof(bufferint32), NULL);
+		Py_END_ALLOW_THREADS;
 
 		if ( rc == SQL_ERROR ) {
 			_python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, rc, 1, 
@@ -7313,8 +7586,11 @@ static PyObject *ibm_db_server_info(PyObject *self, PyObject *args)
 
 		/* DB_NAME */
 		memset(buffer255, 0, sizeof(buffer255));
+
+		Py_BEGIN_ALLOW_THREADS;
 		rc = SQLGetInfo(conn_res->hdbc, SQL_DATABASE_NAME, (SQLPOINTER)buffer255, 
 						sizeof(buffer255), NULL);
+		Py_END_ALLOW_THREADS;
 
 		if ( rc == SQL_ERROR ) {
 			_python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, rc, 1, 
@@ -7328,8 +7604,11 @@ static PyObject *ibm_db_server_info(PyObject *self, PyObject *args)
 #ifndef PASE	  /* i5/OS INST_NAME handled natively */
 		/* INST_NAME */
 		memset(buffer255, 0, sizeof(buffer255));
+
+		Py_BEGIN_ALLOW_THREADS;
 		rc = SQLGetInfo(conn_res->hdbc, SQL_SERVER_NAME, (SQLPOINTER)buffer255, 
 					sizeof(buffer255), NULL);
+		Py_END_ALLOW_THREADS;
 
 		if ( rc == SQL_ERROR ) {
 			_python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, rc, 1, 
@@ -7342,8 +7621,11 @@ static PyObject *ibm_db_server_info(PyObject *self, PyObject *args)
 
 		/* SPECIAL_CHARS */
 		memset(buffer255, 0, sizeof(buffer255));
+
+		Py_BEGIN_ALLOW_THREADS;
 		rc = SQLGetInfo(conn_res->hdbc, SQL_SPECIAL_CHARACTERS, 
 					(SQLPOINTER)buffer255, sizeof(buffer255), NULL);
+		Py_END_ALLOW_THREADS;
 
 		if ( rc == SQL_ERROR ) {
 			_python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, rc, 1, 
@@ -7357,8 +7639,11 @@ static PyObject *ibm_db_server_info(PyObject *self, PyObject *args)
 
 		/* KEYWORDS */
 		memset(buffer2k, 0, sizeof(buffer2k));
+
+		Py_BEGIN_ALLOW_THREADS;
 		rc = SQLGetInfo(conn_res->hdbc, SQL_KEYWORDS, (SQLPOINTER)buffer2k, 
 						sizeof(buffer2k), NULL);
+		Py_END_ALLOW_THREADS;
 
 		if ( rc == SQL_ERROR ) {
 			_python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, rc, 1, 
@@ -7394,8 +7679,11 @@ static PyObject *ibm_db_server_info(PyObject *self, PyObject *args)
 		/* DFT_ISOLATION */
 		bitmask = 0;
 		memset(buffer11, 0, sizeof(buffer11));
+
+		Py_BEGIN_ALLOW_THREADS;
 		rc = SQLGetInfo(conn_res->hdbc, SQL_DEFAULT_TXN_ISOLATION, &bitmask, 
 					sizeof(bitmask), NULL);
+		Py_END_ALLOW_THREADS;
 
 		if ( rc == SQL_ERROR ) {
 			_python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, rc, 1, 
@@ -7425,8 +7713,11 @@ static PyObject *ibm_db_server_info(PyObject *self, PyObject *args)
 		/* ISOLATION_OPTION */
 		bitmask = 0;
 		memset(buffer11, 0, sizeof(buffer11));
+
+		Py_BEGIN_ALLOW_THREADS;
 		rc = SQLGetInfo(conn_res->hdbc, SQL_TXN_ISOLATION_OPTION, &bitmask, 
 						sizeof(bitmask), NULL);
+		Py_END_ALLOW_THREADS;
 
 		if ( rc == SQL_ERROR ) {
 			_python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, rc, 1, 
@@ -7468,8 +7759,11 @@ static PyObject *ibm_db_server_info(PyObject *self, PyObject *args)
 		/* SQL_CONFORMANCE */
 		bufferint32 = 0;
 		memset(buffer255, 0, sizeof(buffer255));
+
+		Py_BEGIN_ALLOW_THREADS;
 		rc = SQLGetInfo(conn_res->hdbc, SQL_ODBC_SQL_CONFORMANCE, &bufferint32, 
 					sizeof(bufferint32), NULL);
+		Py_END_ALLOW_THREADS;
 
 		if ( rc == SQL_ERROR ) {
 			_python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, rc, 1, 
@@ -7498,8 +7792,11 @@ static PyObject *ibm_db_server_info(PyObject *self, PyObject *args)
 
 		/* PROCEDURES */
 		memset(buffer11, 0, sizeof(buffer11));
+
+		Py_BEGIN_ALLOW_THREADS;
 		rc = SQLGetInfo(conn_res->hdbc, SQL_PROCEDURES, (SQLPOINTER)buffer11, 
 						sizeof(buffer11), NULL);
+		Py_END_ALLOW_THREADS;
 
 		if ( rc == SQL_ERROR ) {
 			_python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, rc, 1, 
@@ -7518,8 +7815,11 @@ static PyObject *ibm_db_server_info(PyObject *self, PyObject *args)
 
 		/* IDENTIFIER_QUOTE_CHAR */
 		memset(buffer11, 0, sizeof(buffer11));
+
+		Py_BEGIN_ALLOW_THREADS;
 		rc = SQLGetInfo(conn_res->hdbc, SQL_IDENTIFIER_QUOTE_CHAR, 
 				(SQLPOINTER)buffer11, sizeof(buffer11), NULL);
+		Py_END_ALLOW_THREADS;
 
 		if ( rc == SQL_ERROR ) {
 			_python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, rc, 1, 
@@ -7532,8 +7832,11 @@ static PyObject *ibm_db_server_info(PyObject *self, PyObject *args)
 
 		/* LIKE_ESCAPE_CLAUSE */
 		memset(buffer11, 0, sizeof(buffer11));
+
+		Py_BEGIN_ALLOW_THREADS;
 		rc = SQLGetInfo(conn_res->hdbc, SQL_LIKE_ESCAPE_CLAUSE, 
 						(SQLPOINTER)buffer11, sizeof(buffer11), NULL);
+		Py_END_ALLOW_THREADS;
 
 		if ( rc == SQL_ERROR ) {
 			_python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, rc, 1, 
@@ -7552,8 +7855,11 @@ static PyObject *ibm_db_server_info(PyObject *self, PyObject *args)
 
 		/* MAX_COL_NAME_LEN */
 		bufferint16 = 0;
+
+		Py_BEGIN_ALLOW_THREADS;
 		rc = SQLGetInfo(conn_res->hdbc, SQL_MAX_COLUMN_NAME_LEN, &bufferint16, 
 					sizeof(bufferint16), NULL);
+		Py_END_ALLOW_THREADS;
 
 		if ( rc == SQL_ERROR ) {
 			_python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, rc, 1, 
@@ -7566,8 +7872,11 @@ static PyObject *ibm_db_server_info(PyObject *self, PyObject *args)
 
 		/* MAX_ROW_SIZE */
 		bufferint32 = 0;
+		
+		Py_BEGIN_ALLOW_THREADS;
 		rc = SQLGetInfo(conn_res->hdbc, SQL_MAX_ROW_SIZE, &bufferint32, 
 						sizeof(bufferint32), NULL);
+		Py_END_ALLOW_THREADS;
 
 		if ( rc == SQL_ERROR ) {
 			_python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, rc, 1, 
@@ -7581,8 +7890,11 @@ static PyObject *ibm_db_server_info(PyObject *self, PyObject *args)
 #ifndef PASE	  /* i5/OS MAX_IDENTIFIER_LEN handled natively */
 		/* MAX_IDENTIFIER_LEN */
 		bufferint16 = 0;
+
+		Py_BEGIN_ALLOW_THREADS;
 		rc = SQLGetInfo(conn_res->hdbc, SQL_MAX_IDENTIFIER_LEN, &bufferint16, 
 					sizeof(bufferint16), NULL);
+		Py_END_ALLOW_THREADS;
 
 		if ( rc == SQL_ERROR ) {
 			_python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, rc, 1, 
@@ -7595,8 +7907,11 @@ static PyObject *ibm_db_server_info(PyObject *self, PyObject *args)
 
 		/* MAX_INDEX_SIZE */
 		bufferint32 = 0;
+
+		Py_BEGIN_ALLOW_THREADS;
 		rc = SQLGetInfo(conn_res->hdbc, SQL_MAX_INDEX_SIZE, &bufferint32, 
 					sizeof(bufferint32), NULL);
+		Py_END_ALLOW_THREADS;
 
 		if ( rc == SQL_ERROR ) {
 			_python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, rc, 1, 
@@ -7609,8 +7924,11 @@ static PyObject *ibm_db_server_info(PyObject *self, PyObject *args)
 
 		/* MAX_PROC_NAME_LEN */
 		bufferint16 = 0;
+
+		Py_BEGIN_ALLOW_THREADS;
 		rc = SQLGetInfo(conn_res->hdbc, SQL_MAX_PROCEDURE_NAME_LEN, &bufferint16, 
 						sizeof(bufferint16), NULL);
+		Py_END_ALLOW_THREADS;
 
 		if ( rc == SQL_ERROR ) {
 			_python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, rc, 1, 
@@ -7624,8 +7942,11 @@ static PyObject *ibm_db_server_info(PyObject *self, PyObject *args)
 
 		/* MAX_SCHEMA_NAME_LEN */
 		bufferint16 = 0;
+
+		Py_BEGIN_ALLOW_THREADS;
 		rc = SQLGetInfo(conn_res->hdbc, SQL_MAX_SCHEMA_NAME_LEN, &bufferint16, 
 						sizeof(bufferint16), NULL);
+		Py_END_ALLOW_THREADS;
 
 		if ( rc == SQL_ERROR ) {
 			_python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, rc, 1, 
@@ -7638,8 +7959,11 @@ static PyObject *ibm_db_server_info(PyObject *self, PyObject *args)
 
 		/* MAX_STATEMENT_LEN */
 		bufferint32 = 0;
+
+		Py_BEGIN_ALLOW_THREADS;
 		rc = SQLGetInfo(conn_res->hdbc, SQL_MAX_STATEMENT_LEN, &bufferint32, 
 						sizeof(bufferint32), NULL);
+		Py_END_ALLOW_THREADS;
 
 		if ( rc == SQL_ERROR ) {
 			_python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, rc, 1, 
@@ -7652,8 +7976,11 @@ static PyObject *ibm_db_server_info(PyObject *self, PyObject *args)
 
 		/* MAX_TABLE_NAME_LEN */
 		bufferint16 = 0;
+
+		Py_BEGIN_ALLOW_THREADS;
 		rc = SQLGetInfo(conn_res->hdbc, SQL_MAX_TABLE_NAME_LEN, &bufferint16, 
 						sizeof(bufferint16), NULL);
+		Py_END_ALLOW_THREADS;
 
 		if ( rc == SQL_ERROR ) {
 			_python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, rc, 1, 
@@ -7666,8 +7993,12 @@ static PyObject *ibm_db_server_info(PyObject *self, PyObject *args)
 
 		/* NON_NULLABLE_COLUMNS */
 		bufferint16 = 0;
+
+		Py_BEGIN_ALLOW_THREADS;
+
 		rc = SQLGetInfo(conn_res->hdbc, SQL_NON_NULLABLE_COLUMNS, &bufferint16, 
 					sizeof(bufferint16), NULL);
+		Py_END_ALLOW_THREADS;
 
 		if ( rc == SQL_ERROR ) {
 			_python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, rc, 1, 
@@ -7767,8 +8098,11 @@ static PyObject *ibm_db_client_info(PyObject *self, PyObject *args)
 
 	/* DRIVER_NAME */
 	memset(buffer255, 0, sizeof(buffer255));
+
+	Py_BEGIN_ALLOW_THREADS;
 	rc = SQLGetInfo(conn_res->hdbc, SQL_DRIVER_NAME, (SQLPOINTER)buffer255, 
 				  sizeof(buffer255), NULL);
+	Py_END_ALLOW_THREADS;
 
 	if ( rc == SQL_ERROR ) {
 		_python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, rc, 1, 
@@ -7781,8 +8115,11 @@ static PyObject *ibm_db_client_info(PyObject *self, PyObject *args)
 
 	/* DRIVER_VER */
 	memset(buffer255, 0, sizeof(buffer255));
+
+	Py_BEGIN_ALLOW_THREADS;
 	rc = SQLGetInfo(conn_res->hdbc, SQL_DRIVER_VER, (SQLPOINTER)buffer255, 
 					  sizeof(buffer255), NULL);
+	Py_END_ALLOW_THREADS;
 
 	if ( rc == SQL_ERROR ) {
 		_python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, rc, 1, 
@@ -7795,8 +8132,11 @@ static PyObject *ibm_db_client_info(PyObject *self, PyObject *args)
 
 	/* DATA_SOURCE_NAME */
 	memset(buffer255, 0, sizeof(buffer255));
+
+	Py_BEGIN_ALLOW_THREADS;
 	rc = SQLGetInfo(conn_res->hdbc, SQL_DATA_SOURCE_NAME, 
 				(SQLPOINTER)buffer255, sizeof(buffer255), NULL);
+	Py_END_ALLOW_THREADS;
 
 	if ( rc == SQL_ERROR ) {
 		_python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, rc, 1, 
@@ -7809,8 +8149,11 @@ static PyObject *ibm_db_client_info(PyObject *self, PyObject *args)
 
 	/* DRIVER_ODBC_VER */
 	memset(buffer255, 0, sizeof(buffer255));
+
+	Py_BEGIN_ALLOW_THREADS;
 	rc = SQLGetInfo(conn_res->hdbc, SQL_DRIVER_ODBC_VER, 
 				  (SQLPOINTER)buffer255, sizeof(buffer255), NULL);
+	Py_END_ALLOW_THREADS;
 
 	if ( rc == SQL_ERROR ) {
         _python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, rc, 1, 
@@ -7824,8 +8167,11 @@ static PyObject *ibm_db_client_info(PyObject *self, PyObject *args)
 #ifndef PASE	  /* i5/OS ODBC_VER handled natively */
 	/* ODBC_VER */
 	memset(buffer255, 0, sizeof(buffer255));
+
+	Py_BEGIN_ALLOW_THREADS;
 	rc = SQLGetInfo(conn_res->hdbc, SQL_ODBC_VER, (SQLPOINTER)buffer255, 
 					  sizeof(buffer255), NULL);
+	Py_END_ALLOW_THREADS;
 
 	if ( rc == SQL_ERROR ) {
 		_python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, rc, 1, 
@@ -7840,8 +8186,11 @@ static PyObject *ibm_db_client_info(PyObject *self, PyObject *args)
 	/* ODBC_SQL_CONFORMANCE */
 	bufferint16 = 0;
 	memset(buffer255, 0, sizeof(buffer255));
+
+	Py_BEGIN_ALLOW_THREADS;
 	rc = SQLGetInfo(conn_res->hdbc, SQL_ODBC_SQL_CONFORMANCE, &bufferint16, 
 				  sizeof(bufferint16), NULL);
+	Py_END_ALLOW_THREADS;
 
 	if ( rc == SQL_ERROR ) {
 		_python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, rc, 1, 
@@ -7868,8 +8217,11 @@ static PyObject *ibm_db_client_info(PyObject *self, PyObject *args)
 #ifndef PASE	  /* i5/OS APPL_CODEPAGE handled natively */
 	/* APPL_CODEPAGE */
 	bufferint32 = 0;
+
+	Py_BEGIN_ALLOW_THREADS;
 	rc = SQLGetInfo(conn_res->hdbc, SQL_APPLICATION_CODEPAGE, &bufferint32, 
 				  sizeof(bufferint32), NULL);
+	Py_END_ALLOW_THREADS;
 
 	if ( rc == SQL_ERROR ) {
 		_python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, rc, 1, 
@@ -7882,8 +8234,11 @@ static PyObject *ibm_db_client_info(PyObject *self, PyObject *args)
 
 	/* CONN_CODEPAGE */
 	bufferint32 = 0;
+
+	Py_BEGIN_ALLOW_THREADS;
 	rc = SQLGetInfo(conn_res->hdbc, SQL_CONNECT_CODEPAGE, &bufferint32, 
 					  sizeof(bufferint32), NULL);
+	Py_END_ALLOW_THREADS;
 
 	if ( rc == SQL_ERROR ) {
 		_python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, rc, 1, 
@@ -8288,7 +8643,11 @@ static PyObject* ibm_db_check_function_support(PyObject *self, PyObject *args)
 			PyErr_SetString(PyExc_Exception, "Connection is not active");				
 			return NULL;
 		 }
+
+		Py_BEGIN_ALLOW_THREADS;
 		rc = SQLGetFunctions(conn_res->hdbc, (SQLUSMALLINT) funtion_id, (SQLUSMALLINT*) &supported);
+		Py_END_ALLOW_THREADS;
+
 		if (rc == SQL_ERROR) {
 			Py_INCREF(Py_False);
 			return Py_False;
@@ -8379,6 +8738,12 @@ static int _python_get_variable_type(PyObject *variable_value)
 	}
 	else if (PyUnicode_Check(variable_value)){
 		return PYTHON_UNICODE;
+	}
+	else if (PyComplex_Check(variable_value)){
+		return PYTHON_COMPLEX;
+	}
+	else if (PyNumber_Check(variable_value)){
+		return PYTHON_DECIMAL;
 	}
 	else if (variable_value == Py_None){
 		return PYTHON_NIL;

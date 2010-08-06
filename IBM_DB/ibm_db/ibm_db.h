@@ -4,7 +4,7 @@
 |                                                                      |
 | (C) Copyright IBM Corporation 2006-2009.                             |
 +----------------------------------------------------------------------+
-| Authors: Manas Dadarkar, Abhigyan Agrawal                            |
+| Authors: Manas Dadarkar, Abhigyan Agrawal, Rahul Priyadarshi         |
 |                                                                      | 
 +----------------------------------------------------------------------+
 */
@@ -35,6 +35,8 @@
 #define PYTHON_STRING 5
 #define PYTHON_NIL 6
 #define PYTHON_UNICODE 7
+#define PYTHON_DECIMAL 8
+#define PYTHON_COMPLEX 9
 
 #define ENABLE_NUMERIC_LITERALS 1 /* Enable CLI numeric literals */
 
