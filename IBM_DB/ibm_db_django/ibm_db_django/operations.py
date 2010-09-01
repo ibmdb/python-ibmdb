@@ -27,6 +27,35 @@ class DatabaseOperations ( BaseDatabaseOperations ):
     if( djangoVersion[0:2] >= ( 1, 2 ) ):
         compiler_module = "ibm_db_django.compiler"
             
+    def check_aggregate_support( self, aggregate ):
+        # In DB2 data type of the result is the same as the data type of the argument values for AVG aggregation
+        # But Django aspect in Float regardless of data types of argument value
+        # http://publib.boulder.ibm.com/infocenter/db2luw/v9r7/index.jsp?topic=/com.ibm.db2.luw.apdv.cli.doc/doc/c0007645.html
+        if aggregate.sql_function == 'AVG':
+            aggregate.sql_template = '%(function)s(DOUBLE(%(field)s))'
+        #In DB2 equivalent sql function of STDDEV_POP is STDDEV
+        elif aggregate.sql_function == 'STDDEV_POP':
+            aggregate.sql_function = 'STDDEV'
+        #In DB2 equivalent sql function of VAR_SAMP is VARIENCE
+        elif aggregate.sql_function == 'VAR_POP':
+            aggregate.sql_function = 'VARIANCE'
+        #DB2 doesn't have sample standard deviation function
+        elif aggregate.sql_function == 'STDDEV_SAMP':
+            raise NotImplementedError
+        #DB2 doesn't have sample variance function
+        elif aggregate.sql_function == 'VAR_SAMP':
+            raise NotImplementedError
+    
+    def combine_expression( self, operator, sub_expressions ):
+        if operator == '%%':
+            return 'MOD(%s, %s)' % ( sub_expressions[0], sub_expressions[1] ) 
+        elif operator == '&':
+            return 'BITAND(%s, %s)' % ( sub_expressions[0], sub_expressions[1] )
+        elif operator == '|': 
+            return 'BITOR(%s, %s)' % ( sub_expressions[0], sub_expressions[1] )
+        else:
+            return super( DatabaseOperations, self ).combine_expression( operator, sub_expressions )
+        
     # Function to extract day, month or year from the date.
     # Reference: http://publib.boulder.ibm.com/infocenter/db2luw/v9r5/topic/com.ibm.db2.luw.sql.ref.doc/doc/r0023457.html
     def date_extract_sql( self, lookup_type, field_name ):

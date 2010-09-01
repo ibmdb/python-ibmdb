@@ -55,19 +55,44 @@ class DatabaseCreation ( BaseDatabaseCreation ):
     
     def sql_indexes_for_field( self, model, f, style ):
         """Return the CREATE INDEX SQL statements for a single model field"""
-        if f.db_index and not f.unique:
-            qn = self.connection.ops.quote_name
-            # ignore tablespace information
-            tablespace_sql = ''
-            output = [style.SQL_KEYWORD( 'CREATE INDEX' ) + ' ' + 
-                      style.SQL_TABLE( qn( '%s_%s' % ( model._meta.db_table, f.column ) ) ) + ' ' + 
-                      style.SQL_KEYWORD( 'ON' ) + ' ' + 
-                      style.SQL_TABLE( qn( model._meta.db_table ) ) + ' ' + 
-                      "(%s)" % style.SQL_FIELD( qn( f.column ) ) + 
-                      "%s;" % tablespace_sql]
-        else:
-            output = []
+        output = []
+        qn = self.connection.ops.quote_name
+        # ignore tablespace information
+        tablespace_sql = ''
+        i = 0
+        if len( model._meta.unique_together_index ) != 0:
+            for unique_together_index in model._meta.unique_together_index:
+                i = i + 1
+                column_list = []
+                for column in unique_together_index:
+                    for local_field in model._meta.local_fields:
+                        if column == local_field.name:
+                            column_list.extend( [local_field.column] )
+                            
+                output.extend( [style.SQL_KEYWORD( 'CREATE UNIQUE INDEX' ) + ' ' + \
+                                style.SQL_TABLE( qn( 'db2_%s_%s' % ( model._meta.db_table, i ) ) ) + ' ' + \
+                                style.SQL_KEYWORD( 'ON' ) + ' ' + \
+                                style.SQL_TABLE( qn( model._meta.db_table ) ) + ' ' + \
+                                '( %s )' % ", ".join( column_list ) + ' ' + \
+                                '%s;' % tablespace_sql] )
+            model._meta.unique_together_index = []
             
+        cisql = False
+        if f.unique_index:
+            cisql = 'CREATE UNIQUE INDEX'
+        elif f.db_index and not f.unique:
+            cisql = 'CREATE INDEX'
+        else:
+            return output
+            
+        if cisql: 
+            output.extend( [style.SQL_KEYWORD( cisql ) + ' ' + 
+                        style.SQL_TABLE( qn( '%s_%s' % ( model._meta.db_table, f.column ) ) ) + ' ' + 
+                        style.SQL_KEYWORD( 'ON' ) + ' ' + 
+                        style.SQL_TABLE( qn( model._meta.db_table ) ) + ' ' + 
+                        "(%s)" % style.SQL_FIELD( qn( f.column ) ) + 
+                        "%s;" % tablespace_sql] )
+                        
         return output
     
     # Method to prepare database. First we are deleting tables from the database,
@@ -119,14 +144,29 @@ class DatabaseCreation ( BaseDatabaseCreation ):
     
     # As DB2 does not allow to insert NULL value in UNIQUE col, hence modifing model.
     def sql_create_model( self, model, style, known_models = set() ):
+        model._meta.unique_together_index = []
+        temp_changed_uvalues = []
+        temp_unique_together = model._meta.unique_together
         for i in range( len( model._meta.local_fields ) ):
-            if model._meta.local_fields[i].unique:
-                model._meta.local_fields[i].null = False
-                
+            model._meta.local_fields[i].unique_index = False
+            if model._meta.local_fields[i]._unique and model._meta.local_fields[i].null:
+                model._meta.local_fields[i].unique_index = True
+                model._meta.local_fields[i]._unique = False
+                temp_changed_uvalues.append( i )
+             
             if len( model._meta.unique_together ) != 0:
-                if model._meta.local_fields[i].name in model._meta.unique_together[0]:
-                    model._meta.local_fields[i].null = False      
+                for unique_together in model._meta.unique_together:
+                    if model._meta.local_fields[i].name in unique_together:
+                        if model._meta.local_fields[i].null:
+                            unique_list = list( model._meta.unique_together )
+                            unique_list.remove( unique_together )
+                            model._meta.unique_together = tuple( unique_list )
+                            model._meta.unique_together_index.append( unique_together )                    
         sql, references = super( DatabaseCreation, self ).sql_create_model( model, style, known_models )
+        
+        for i in temp_changed_uvalues:
+            model._meta.local_fields[i]._unique = True
+        model._meta.unique_together = temp_unique_together
         return sql, references
 
     # Private method to clean up database.

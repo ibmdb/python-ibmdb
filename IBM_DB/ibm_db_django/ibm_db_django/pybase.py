@@ -92,14 +92,7 @@ class DB2CursorWrapper( Database.Cursor ):
     # Over-riding this method to modify SQLs which contains format parameter to qmark. 
     def execute( self, operation, parameters = () ):
         try:
-            buff = []
-            #currently ibm_db driver not supports DECIMAL parameters type
-            for param in parameters:
-                if isinstance( param, decimal.Decimal ):
-                    param = str( param )
-                buff.append( param )
-            parameters = tuple( buff )
-            operation = operation % ( tuple( "?" * len( parameters ) ) )
+            operation = operation % ( tuple( "?" * operation.count( "%s" ) ) )
             if ( djangoVersion[0:2] <= ( 1, 1 ) ):
                 return super( DB2CursorWrapper, self ).execute( operation, parameters )
             else:
@@ -115,17 +108,7 @@ class DB2CursorWrapper( Database.Cursor ):
     # Over-riding this method to modify SQLs which contains format parameter to qmark.
     def executemany( self, operation, seq_parameters ):
         try:
-            seq_buff = []
-            #currently ibm_db driver not supports DECIMAL parameters type
-            for parameters in seq_parameters:
-                buff = []
-                for param in parameters:
-                    if isinstance( param, decimal.Decimal ):
-                        param = str( param )
-                    buff.append( param )
-                seq_buff.append( buff )
-            parameters = tuple( seq_buff )
-            operation = operation % ( tuple( "?" * len( seq_parameters[0] ) ) )
+            operation = operation % ( tuple( "?" * operation.count( "%s" ) ) )
             if ( djangoVersion[0:2] <= ( 1, 1 ) ):
                 return super( DB2CursorWrapper, self ).executemany( operation, seq_parameters )
             else:

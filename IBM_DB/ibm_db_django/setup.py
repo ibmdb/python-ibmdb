@@ -23,7 +23,7 @@ from setuptools import setup, find_packages
 from distutils.core import setup, Extension
 
 PACKAGE = 'ibm_db_django'
-VERSION = '1.0'
+VERSION = '1.0.1'
 LICENSE = 'Apache License 2.0'
 
 setup (
@@ -31,7 +31,7 @@ setup (
     version           = VERSION,
     license           = LICENSE,
     platforms         = 'All',
-    install_requires  = _IS_JYTHON and ['django>=1.0.3'] or ['ibm_db>=1.0.2',
+    install_requires  = _IS_JYTHON and ['django>=1.0.3'] or ['ibm_db>=1.0.3',
                           'django>=1.0.3'],
     dependency_links  = _IS_JYTHON and ['http://pypi.python.org/pypi/Django/'] or ['http://pypi.python.org/pypi/ibm_db/',
                           'http://pypi.python.org/pypi/Django/'],

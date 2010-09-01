@@ -38,7 +38,7 @@ class DatabaseWrapper( object ):
                 connection = PyConnection( con )
             else:
                 host = kwargs.get( 'host' ) or 'localhost'
-                port = kwargs.get( 'port' ) and ( ':%s' % database_port ) or ''
+                port = kwargs.get( 'port' ) and ( ':%s' % kwargs.get( 'port' )) or ''
                 if not ( host.lower() == 'localhost' ):
                     conn_string = "jdbc:db2://%s%s/%s" % ( host, port, kwargs.get( 'database' ) )
                 else:
@@ -87,7 +87,7 @@ class DB2CursorWrapper( object ):
     # Over-riding this method to modify SQLs which contains format parameter to qmark. 
     def execute( self, operation, parameters = () ):
         try:
-            operation = operation % ( tuple( "?" * len( parameters ) ) )
+            operation = operation % ( tuple( "?" * operation.count( "%s" ) ) )
             if operation.endswith( ';' ) or operation.endswith( '/' ):
                 operation = operation[:-1]
             returnValue = self.cursor.execute( operation, parameters )
@@ -102,7 +102,7 @@ class DB2CursorWrapper( object ):
     # Over-riding this method to modify SQLs which contains format parameter to qmark.
     def executemany( self, operation, seq_parameters ):
         try:
-            operation = operation % ( tuple( "?" * len( seq_parameters[0] ) ) )
+            operation = operation % ( tuple( "?" * operation.count( "%s" ) ) )
             if operation.endswith( ';' ) or operation.endswith( '/' ):
                 operation = operation[:-1]
             returnValue = self.cursor.executemany( operation, seq_parameters )

@@ -1,5 +1,12 @@
 Change Log
 =============
+2010/09/01 (setup.py 1.0.1)
+ - Fixed LIMIT constraint in select statement with column name alias
+ - Fixed Unique column constraint with one NULL value
+ - Fixed Unique columns together with one null value
+ - Added Standard deviation, Variance function support (for population standard deviation and variance) 
+ - Added MOD, BITAND and BITOR function support
+ 
 2010/07/19 (setup.py 1.0)
  - Added IBM Dataservers backend support for Django 1.0.x and 1.1.x application Framework using Jython language
  - New files added

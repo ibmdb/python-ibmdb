@@ -24,47 +24,11 @@ class SQLCompiler( compiler.SQLCompiler ):
     # To get ride of LIMIT/OFFSET problem in DB2, this method has been implemented.
     def as_sql( self, with_limits = True, with_col_aliases = False ):
         self.__do_filter( self.query.where.children )
-        sql_ori, params = super( SQLCompiler, self ).as_sql( False, with_col_aliases )
-        sql_modified = self.__modifiy_aggregate( sql_ori )
-        
         if not ( with_limits and ( self.query.high_mark is not None or self.query.low_mark ) ):
-            return sql_modified, params
-        else:                
-            self.pre_sql_setup()
-            self.get_columns()
-            extra_order_list = []
-            if self.query.extra_order_by:
-                for extra_order_by in self.query.extra_order_by:
-                    if( extra_order_by in self.query.extra_select ):
-                        extra_order_list.append( self.query.extra_select[extra_order_by][0] )
-                for index in range( len( extra_order_list ) ):
-                    self.query.extra_order_by[index] = extra_order_list[index]
-                    self.query.extra_order_by[index] = extra_order_list[index]
-
-            order, group_by = self.get_ordering()                 
-            if order is not None and len( order ) is not 0:
-                if not order == ['SYSFUN.RAND()']:
-                    order_sql = "ROW_NUMBER() OVER (ORDER BY %s)" % ( self.__order_columns( order ) )
-                else:
-                    order_sql = "ROW_NUMBER() OVER()"
-            else:
-                meta = self.query.model._meta
-                db_table = meta.db_table
-                db_pk_col = ""
-                for field in meta.fields:
-                    if field.primary_key:
-                        if meta.pk.db_column:
-                            db_pk_col = meta.pk.db_column
-                        else:
-                            db_pk_col = meta.pk.column
-                        break
-                order_sql = """
-                                ROW_NUMBER() OVER (ORDER BY %s.%s ASC)
-                            """ % ( self.quote_name_unless_alias( db_table ),
-                                   self.quote_name_unless_alias( db_pk_col ) ) 
-            
-            
-            sql_split = sql_modified.split( " FROM " )
+            return super( SQLCompiler, self ).as_sql( False, with_col_aliases )
+        else:
+            sql_ori, params = super( SQLCompiler, self ).as_sql( False, with_col_aliases )
+            sql_split = sql_ori.split( " FROM " )
             
             sql_sec = ""
             if len( sql_split ) > 2:
@@ -74,19 +38,19 @@ class SQLCompiler( compiler.SQLCompiler ):
                 sql_sec = " FROM %s " % ( sql_split[1] )
             
             dummyVal = "Z.__db2_"
-            sql_sel = ""
+            sql_pri = ""
             
-            sql = "SELECT"
+            sql_sel = "SELECT"
             if self.query.distinct:
-                sql = "SELECT DISTINCT"
+                sql_sel = "SELECT DISTINCT"
 
             sql_select_token = sql_split[0].split( "," )
             i = 0
             while ( i < len( sql_select_token ) ):
                 if sql_select_token[i].count( "TIMESTAMP(DATE(SUBSTR(CHAR(" ) == 1:
-                    sql = "%s \"%s%d\"," % ( sql, dummyVal, i + 1 )
-                    sql_sel = '%s %s,%s,%s,%s AS "%s%d",' % ( 
-                                    sql_sel,
+                    sql_sel = "%s \"%s%d\"," % ( sql_sel, dummyVal, i + 1 )
+                    sql_pri = '%s %s,%s,%s,%s AS "%s%d",' % ( 
+                                    sql_pri,
                                     sql_select_token[i],
                                     sql_select_token[i + 1],
                                     sql_select_token[i + 2],
@@ -96,20 +60,21 @@ class SQLCompiler( compiler.SQLCompiler ):
                     continue
                 
                 if sql_select_token[i].count( " AS " ) == 1:
-                    temp = sql_select_token[i].split( " AS " )
-                    sql_sel = '%s %s,' % ( sql_sel, sql_select_token[i] )
-                    sql = "%s %s," % ( sql, temp[1] )
+                    temp_col_alias = sql_select_token[i].split( " AS " )
+                    sql_pri = '%s %s,' % ( sql_pri, sql_select_token[i] )
+                    sql_sel = "%s %s," % ( sql_sel, temp_col_alias[1] )
                     i = i + 1
                     continue
             
-                sql_sel = '%s %s AS "%s%d",' % ( sql_sel, sql_select_token[i], dummyVal, i + 1 )
-                sql = "%s \"%s%d\"," % ( sql, dummyVal, i + 1 )
+                sql_pri = '%s %s AS "%s%d",' % ( sql_pri, sql_select_token[i], dummyVal, i + 1 )
+                sql_sel = "%s \"%s%d\"," % ( sql_sel, dummyVal, i + 1 )
                 i = i + 1
 
-            sql_sel = "%s, (%s) AS \"%s\"" % ( sql_sel[1:len( sql_sel ) - 1], order_sql, self.__rownum )
-            sql_sel = "%s%s" % ( sql_sel, sql_sec )
-                
-            sql = "%s FROM (%s) Z WHERE" % ( sql[:len( sql ) - 1], sql_sel )
+            sql_pri = sql_pri[:len( sql_pri ) - 1]
+            sql_pri = "%s%s" % ( sql_pri, sql_sec )
+            sql_sel = sql_sel[:len( sql_sel ) - 1]
+            sql = '%s, ( ROW_NUMBER() OVER() ) AS "%s" FROM ( %s ) AS M' % ( sql_sel, self.__rownum, sql_pri )
+            sql = '%s FROM ( %s ) Z WHERE' % ( sql_sel, sql )
             
             if self.query.low_mark is not 0:
                 sql = '%s "%s" > %d' % ( sql, self.__rownum, self.query.low_mark )
@@ -121,19 +86,6 @@ class SQLCompiler( compiler.SQLCompiler ):
                 sql = '%s "%s" <= %d' % ( sql, self.__rownum, self.query.high_mark )
 
         return sql, params
-    
-    # Converting array to String. In this method, orders argument is a list 
-    # provided  by super class. Reading each element and converting them 
-    # into a string, which will finally get appended to SQL.
-    def __order_columns( self, orders ):
-        ret_order_columns = "%s"
-        for i in range( len( orders ) ):
-            if i is 0:
-                ret_order_columns = ret_order_columns % ( orders[i] )
-            else:
-                ret_order_columns = ret_order_columns + ", %s" % ( orders[i] )
-                
-        return ret_order_columns
     
     # For case insensitive search, converting parameter value to upper case.
     # The right hand side will get converted to upper case in the SQL itself.
@@ -151,37 +103,6 @@ class SQLCompiler( compiler.SQLCompiler ):
                     if node[2] == True:
                         node[3] = node[3].upper()
                         children[index] = tuple( node )
-
-    # In DB2 data type of the result is the same as the data type of the argument values for AVG aggregation
-    # But Django aspect in Float regardless of data types of argument value
-    # http://publib.boulder.ibm.com/infocenter/db2luw/v9r7/index.jsp?topic=/com.ibm.db2.luw.apdv.cli.doc/doc/c0007645.html
-    def __modifiy_aggregate( self, sql ):
-        if sql.find( "AVG(" ) != -1:
-            sql_split = sql.split( "AVG(" )
-            sql_sec = ''
-            for i in range( 1, len( sql_split ) ):
-                count = 1
-                for j in range( 0, len( sql_split[i] ) ):
-                    c = ( sql_split[i] )[j]
-                    if c == '(':
-                        count = count + 1
-                    elif c == ')':
-                        count = count - 1
-                    if count == 0:
-                        sql1 = ( sql_split[i] )[0:j]
-                        sql2 = ( sql_split[i] )[j:]
-                        sql_split[i] = "%s)%s" % ( sql1, sql2 ) 
-                        break
-                        
-                if i == 1:
-                    sql_sec = sql_split[0]
-                    
-                sql_sec = "%s AVG(DOUBLE(%s" % ( sql_sec, sql_split[i] )
-            sql = sql_sec
-                
-        return sql
-
-
 
 class SQLInsertCompiler( compiler.SQLInsertCompiler, SQLCompiler ):
     pass
