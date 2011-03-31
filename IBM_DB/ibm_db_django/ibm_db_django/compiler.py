@@ -27,6 +27,9 @@ class SQLCompiler( compiler.SQLCompiler ):
         if not ( with_limits and ( self.query.high_mark is not None or self.query.low_mark ) ):
             return super( SQLCompiler, self ).as_sql( False, with_col_aliases )
         else:
+            if self.query.high_mark == self.query.low_mark:
+                return '', ()
+            
             sql_ori, params = super( SQLCompiler, self ).as_sql( False, with_col_aliases )
             sql_split = sql_ori.split( " FROM " )
             
@@ -86,6 +89,16 @@ class SQLCompiler( compiler.SQLCompiler ):
                 sql = '%s "%s" <= %d' % ( sql, self.__rownum, self.query.high_mark )
 
         return sql, params
+    
+    #This function  convert 0/1 to boolean type for BooleanField/NullBooleanField
+    def resolve_columns( self, row, fields = () ):
+        values = []
+        index_extra_select = len( self.query.extra_select.keys() )
+        for value, field in map( None, row[index_extra_select:], fields ):
+            if ( field and field.get_internal_type() in ( "BooleanField", "NullBooleanField" ) and value in ( 0, 1 ) ):
+                value = bool( value )
+            values.append( value )
+        return row[:index_extra_select] + tuple( values )
     
     # For case insensitive search, converting parameter value to upper case.
     # The right hand side will get converted to upper case in the SQL itself.

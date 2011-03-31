@@ -24,6 +24,10 @@ import sys
 _IS_JYTHON = sys.platform.startswith( 'java' )
 
 class DatabaseOperations ( BaseDatabaseOperations ):
+    def __init__( self, connection ):
+        super( DatabaseOperations, self ).__init__()
+        self.connection = connection
+        
     if( djangoVersion[0:2] >= ( 1, 2 ) ):
         compiler_module = "ibm_db_django.compiler"
             
@@ -55,7 +59,15 @@ class DatabaseOperations ( BaseDatabaseOperations ):
             return 'BITOR(%s, %s)' % ( sub_expressions[0], sub_expressions[1] )
         else:
             return super( DatabaseOperations, self ).combine_expression( operator, sub_expressions )
-        
+    
+    def convert_values( self, value, field ):
+        field_type = field.get_internal_type()
+        if field_type in ( 'BooleanField', 'NullBooleanField' ):
+            if value in ( 0, 1 ):
+                return bool( value )
+        else:
+            return value
+    
     # Function to extract day, month or year from the date.
     # Reference: http://publib.boulder.ibm.com/infocenter/db2luw/v9r5/topic/com.ibm.db2.luw.sql.ref.doc/doc/r0023457.html
     def date_extract_sql( self, lookup_type, field_name ):
@@ -78,15 +90,21 @@ class DatabaseOperations ( BaseDatabaseOperations ):
 
         return sql
     
+    # Function to Implements the date interval functionality for expressions
+    def date_interval_sql( self, sql, connector, timedelta ):
+        date_interval_token = []
+        date_interval_token.append( sql )
+        date_interval_token.append( str( timedelta.days ) + " DAYS" )
+        if timedelta.seconds > 0:
+            date_interval_token.append( str( timedelta.seconds ) + " SECONDS" )
+        if timedelta.microseconds > 0:
+            date_interval_token.append( str( timedelta.microseconds ) + " MICROSECONDS" )
+        sql = "( %s )" % connector.join( date_interval_token )
+        return sql
+    
     #As casting is not required, so nothing is required to do in this function.
     def datetime_cast_sql( self ):
         return "%s"
-    
-    # This function will allow us to call sql_flush function. If following function 
-    # is not implemented then sql_flush will throw an error on foreign key
-    # constraint violation.
-    def deferrable_sql( self ):
-        return " ON DELETE CASCADE"
     
     # Function to return SQL from dropping foreign key.
     def drop_foreignkey_sql( self ):
@@ -95,7 +113,7 @@ class DatabaseOperations ( BaseDatabaseOperations ):
     # Dropping auto generated property of the identity column.
     def drop_sequence_sql( self, table ):
         return "ALTER TABLE %s ALTER COLUMN ID DROP IDENTITY" % ( self.quote_name( table ) )
-            
+    
     #This function casts the field and returns it for use in the where clause
     def field_cast_sql( self, db_type ):
         if db_type == 'CLOB':
@@ -165,7 +183,7 @@ class DatabaseOperations ( BaseDatabaseOperations ):
     
     # Function to commit savepoint.   
     def savepoint_commit_sql( self, sid ):
-        return "COMMIT %s" % sid
+        return "RELEASE TO SAVEPOINT %s" % sid
     
     # Function to rollback savepoint.
     def savepoint_rollback_sql( self, sid ):
@@ -174,13 +192,73 @@ class DatabaseOperations ( BaseDatabaseOperations ):
     # Deleting all the rows from the list of tables provided and resetting all the
     # sequences.
     def sql_flush( self, style, tables, sequences ):
+        curr_schema = self.connection.connection.get_current_schema().upper()
         sqls = []
         if tables:
+            sqls.append( '''CREATE PROCEDURE FKEY_ALT_CONST(django_tabname VARCHAR(128), curr_schema VARCHAR(128))
+                LANGUAGE SQL
+                P1: BEGIN
+                    DECLARE fktable varchar(128);
+                    DECLARE fkconst varchar(128);
+                    DECLARE row_count integer;
+                    DECLARE alter_fkey_sql varchar(350);
+                    DECLARE cur1 CURSOR for SELECT tabname, constname FROM syscat.tabconst WHERE type = 'F' and tabschema = curr_schema and ENFORCED = 'N';
+                    DECLARE cur2 CURSOR for SELECT tabname, constname FROM syscat.tabconst WHERE type = 'F' and tabname = django_tabname and tabschema = curr_schema and ENFORCED = 'Y';
+                    IF ( django_tabname = '' ) THEN
+                        SET row_count = 0;
+                        SELECT count( * ) INTO row_count FROM syscat.tabconst WHERE type = 'F' and tabschema = curr_schema and ENFORCED = 'N';
+                        IF ( row_count > 0 ) THEN
+                            OPEN cur1;
+                            WHILE( row_count > 0 ) DO 
+                                FETCH cur1 INTO fktable, fkconst;
+                                IF ( LOCATE( ' ', fktable ) > 0 ) THEN 
+                                    SET alter_fkey_sql = 'ALTER TABLE ' || '\"' || fktable || '\"' ||' ALTER FOREIGN KEY ';
+                                ELSE
+                                    SET alter_fkey_sql = 'ALTER TABLE ' || fktable || ' ALTER FOREIGN KEY ';
+                                END IF;
+                                IF ( LOCATE( ' ', fkconst ) > 0) THEN
+                                    SET alter_fkey_sql = alter_fkey_sql || '\"' || fkconst || '\"' || ' ENFORCED';
+                                ELSE
+                                    SET alter_fkey_sql = alter_fkey_sql || fkconst || ' ENFORCED';
+                                END IF;
+                                execute immediate alter_fkey_sql;
+                                SET row_count = row_count - 1;
+                            END WHILE;
+                            CLOSE cur1;
+                        END IF;
+                    ELSE
+                        SET row_count = 0;
+                        SELECT count( * ) INTO row_count FROM syscat.tabconst WHERE type = 'F' and tabname = django_tabname and tabschema = curr_schema and ENFORCED = 'Y';
+                        IF ( row_count > 0 ) THEN
+                            OPEN cur2;
+                            WHILE( row_count > 0 ) DO 
+                                FETCH cur2 INTO fktable, fkconst;
+                                IF ( LOCATE( ' ', fktable ) > 0 ) THEN 
+                                    SET alter_fkey_sql = 'ALTER TABLE ' || '\"' || fktable || '\"' ||' ALTER FOREIGN KEY ';
+                                ELSE
+                                    SET alter_fkey_sql = 'ALTER TABLE ' || fktable || ' ALTER FOREIGN KEY ';
+                                END IF;
+                                IF ( LOCATE( ' ', fkconst ) > 0) THEN
+                                    SET alter_fkey_sql = alter_fkey_sql || '\"' || fkconst || '\"' || ' NOT ENFORCED';
+                                ELSE
+                                    SET alter_fkey_sql = alter_fkey_sql || fkconst || ' NOT ENFORCED';
+                                END IF;
+                                execute immediate alter_fkey_sql;
+                                SET row_count = row_count - 1;
+                            END WHILE;
+                            CLOSE cur2;
+                        END IF;
+                    END IF;
+                END P1''' )    
+            for table in tables:
+                sqls.append( "CALL FKEY_ALT_CONST( '%s', '%s' );" % ( table.upper(), curr_schema ) )
             for table in tables:
                 sqls.append( style.SQL_KEYWORD( "DELETE" ) + " " + 
                            style.SQL_KEYWORD( "FROM" ) + " " + 
                            style.SQL_TABLE( "%s" % self.quote_name( table ) ) )
                 
+            sqls.append( "CALL FKEY_ALT_CONST( '' , '%s' );" % ( curr_schema, ) )
+            sqls.append( "DROP PROCEDURE FKEY_ALT_CONST;" )  
             for sequence in sequences:
                 if( sequence['column'] != None ):
                     sqls.append( style.SQL_KEYWORD( "ALTER TABLE" ) + " " + 
@@ -196,8 +274,7 @@ class DatabaseOperations ( BaseDatabaseOperations ):
     # to a large value (10000).
     def sequence_reset_sql( self, style, model_list ):
         from django.db import models
-        from django.db import connection
-        cursor = connection.cursor()
+        cursor = self.connection.cursor()
         sqls = []
         for model in model_list:
             table = model._meta.db_table
@@ -206,6 +283,8 @@ class DatabaseOperations ( BaseDatabaseOperations ):
                     max_sql = "SELECT MAX(%s) FROM %s" % ( self.quote_name( field.column ), self.quote_name( table ) )
                     cursor.execute( max_sql )
                     max_id = [row[0] for row in cursor.fetchall()]
+                    if max_id[0] == None:
+                        max_id[0] = 0
                     sqls.append( style.SQL_KEYWORD( "ALTER TABLE" ) + " " + 
                         style.SQL_TABLE( "%s" % self.quote_name( table ) ) + 
                         " " + style.SQL_KEYWORD( "ALTER COLUMN" ) + " %s "
@@ -219,6 +298,8 @@ class DatabaseOperations ( BaseDatabaseOperations ):
                     max_sql = "SELECT MAX(%s) FROM %s" % ( self.quote_name( 'ID' ), self.quote_name( table ) )
                     cursor.execute( max_sql )
                     max_id = [row[0] for row in cursor.fetchall()]
+                    if max_id[0] == None:
+                        max_id[0] = 0
                     sqls.append( style.SQL_KEYWORD( "ALTER TABLE" ) + " " + 
                         style.SQL_TABLE( "%s" % self.quote_name( m2m_table ) ) + 
                         " " + style.SQL_KEYWORD( "ALTER COLUMN" ) + " %s "
@@ -240,6 +321,20 @@ class DatabaseOperations ( BaseDatabaseOperations ):
             sql = "IN %s" % self.quote_name( tablespace )
         return sql
     
+    def value_to_db_datetime( self, value ):
+        #DB2 doesn't support time zone aware datetime
+        if ( value is not None ) and ( value.tzinfo is not None ):
+            raise ValueError( "DB2 doesn't support timezone aware datetime" )
+        else:
+            return value
+        
+    def value_to_db_time( self, value ):
+        #DB2 doesn't support time zone aware time
+        if ( value is not None ) and ( value.tzinfo is not None ):
+            raise ValueError( "DB2 doesn't support timezone aware time" )
+        else:
+            return value
+                             
     def year_lookup_bounds_for_date_field( self, value ):
         lower_bound = "%s-01-01"
         upper_bound = "%s-12-31"

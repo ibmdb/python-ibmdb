@@ -1,5 +1,13 @@
 Change Log
 =============
+2011/03/30 (setup.py 1.0.2)
+ - Added support for Django-1.3
+ - Backward compatibility - Same codebase works with Django 1.0.x, 1.1.x, 1.2.x and 1.3.x
+ - Fixed Unique column constraint having more than one NULL value
+ - Fixed Unique columns together having more then one NULL value
+ - Added date interval functionality
+ - Fixed Boolean data type return for BooleanField/NullBooleanField
+
 2010/09/01 (setup.py 1.0.1)
  - Fixed LIMIT constraint in select statement with column name alias
  - Fixed Unique column constraint with one NULL value

@@ -31,6 +31,9 @@ def query_class( QueryClass ):
             if not ( with_limits and ( self.high_mark is not None or self.low_mark ) ):
                 return super( DB2QueryClass, self ).as_sql( False, with_col_aliases )
             else:
+                if self.high_mark == self.low_mark:
+                    return '', ()
+                
                 sql_ori, params = super( DB2QueryClass, self ).as_sql( False, with_col_aliases )
                 sql_split = sql_ori.split( " FROM " )
                 

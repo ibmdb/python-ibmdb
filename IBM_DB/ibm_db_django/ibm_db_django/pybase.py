@@ -56,6 +56,7 @@ class DatabaseWrapper( object ):
             del kwargs['port']
             
             connection = Database.pconnect( **kwargs )
+            connection.autocommit = connection.set_autocommit
             return connection, DB2CursorWrapper( connection )
         else:
             return DB2CursorWrapper( connection )
@@ -120,3 +121,4 @@ class DB2CursorWrapper( Database.Cursor ):
                     raise utils.DatabaseError, utils.DatabaseError( *tuple( e ) ), sys.exc_info()[2] 
         except ( IndexError, TypeError ):
             return None
+    

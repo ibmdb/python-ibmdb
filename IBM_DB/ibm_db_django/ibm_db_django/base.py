@@ -56,6 +56,17 @@ class DatabaseFeatures( BaseDatabaseFeatures ):
     #Custom query class has been implemented 
     #django.db.backends.db2.query.query_class.DB2QueryClass
     uses_custom_query_class = True
+    
+    #transaction is supported by DB2
+    supports_transactions = True
+    
+    interprets_empty_strings_as_nulls = False
+    allows_primary_key_0 = True
+    can_defer_constraint_checks = False
+    supports_forward_references = False
+    requires_rollback_on_dirty_transaction = True
+    supports_regex_backreferencing = False
+    supports_timezones = False
 
 class DatabaseValidation( BaseDatabaseValidation ):    
     #Need to do validation for DB2 and ibm_db version
@@ -69,7 +80,7 @@ class DatabaseWrapper( BaseDatabaseWrapper ):
     wrapper is IBM_DB_DBI (latest version can be downloaded from http://code.google.com/p/ibm-db/ or
     http://pypi.python.org/pypi/ibm_db). 
     """
-        
+    vendor = 'DB2'
     operators = {
         "exact":        "= %s",
         "iexact":       "LIKE %s ESCAPE '\\'",
@@ -88,12 +99,15 @@ class DatabaseWrapper( BaseDatabaseWrapper ):
     # Constructor of DB2 backend support. Initializing all other classes.
     def __init__( self, *args ):
         super( DatabaseWrapper, self ).__init__( *args )
-        self.features = DatabaseFeatures()
-        self.ops = DatabaseOperations()
+        self.ops = DatabaseOperations( self )
         if( djangoVersion[0:2] <= ( 1, 0 ) ):
             self.client = DatabaseClient()
         else:
             self.client = DatabaseClient( self )
+        if( djangoVersion[0:2] <= ( 1, 2 ) ):
+            self.features = DatabaseFeatures()
+        else:
+            self.features = DatabaseFeatures( self )
         self.creation = DatabaseCreation( self )
         self.introspection = DatabaseIntrospection( self )
         if( djangoVersion[0:2] <= ( 1, 1 ) ):
@@ -158,7 +172,11 @@ class DatabaseWrapper( BaseDatabaseWrapper ):
                 kwargs['options'] = database_options
                 
             self.connection, cursor = self.databaseWrapper._cursor( None, kwargs )
-            connection_created.send( sender = self.__class__ )
+            
+            if( djangoVersion[0:3] <= ( 1, 2, 2 ) ):
+                connection_created.send( sender = self.__class__ )
+            else:
+                connection_created.send( sender = self.__class__, connection = self )
         else:
             cursor = self.databaseWrapper._cursor( self.connection, None )
         return cursor

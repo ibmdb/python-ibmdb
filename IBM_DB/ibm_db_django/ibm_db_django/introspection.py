@@ -91,16 +91,16 @@ class DatabaseIntrospection( BaseDatabaseIntrospection ):
             zxJDBC.TIME:                "TimeField",
         }
      
-    # Converting table name to upper case.
+    # Converting table name to lower case.
     def table_name_converter ( self, name ):        
-        return upper( name )
+        return name.lower()
     
     # Getting the list of all tables, which are present under current schema.
     def get_table_list ( self, cursor ):
         table_list = []
         if not _IS_JYTHON:
             for table in cursor.connection.tables( cursor.connection.get_current_schema() ):
-                table_list.append( table['TABLE_NAME'] )
+                table_list.append( table['TABLE_NAME'].lower() )
         else:
             cursor.execute( "select current_schema from sysibm.sysdummy1" )
             schema = cursor.fetchone()[0]
@@ -108,7 +108,7 @@ class DatabaseIntrospection( BaseDatabaseIntrospection ):
             cursor.tables( None, schema, None, ( "TABLE", ) )
             for table in cursor.fetchall():
                 # table[2] is table name
-                table_list.append( table[2] )
+                table_list.append( table[2].lower() )
                 
         return table_list
     
@@ -118,7 +118,7 @@ class DatabaseIntrospection( BaseDatabaseIntrospection ):
         if not _IS_JYTHON:
             schema = cursor.connection.get_current_schema()
             for fk in cursor.connection.foreign_keys( True, schema, table_name ):
-                relations[self.__get_col_index( cursor, schema, table_name, fk['FKCOLUMN_NAME'] )] = ( self.__get_col_index( cursor, schema, fk['PKTABLE_NAME'], fk['PKCOLUMN_NAME'] ), fk['PKTABLE_NAME'] )
+                relations[self.__get_col_index( cursor, schema, table_name, fk['FKCOLUMN_NAME'] )] = ( self.__get_col_index( cursor, schema, fk['PKTABLE_NAME'], fk['PKCOLUMN_NAME'] ), fk['PKTABLE_NAME'].lower() )
         else:
             cursor.execute( "select current_schema from sysibm.sysdummy1" )
             schema = cursor.fetchone()[0]
@@ -188,5 +188,9 @@ class DatabaseIntrospection( BaseDatabaseIntrospection ):
     
     # Getting the description of the table.
     def get_table_description( self, cursor, table_name ):
-        cursor.execute( "SELECT * FROM %s FETCH FIRST 1 ROWS ONLY" % table_name )        
-        return cursor.description
+        qn = self.connection.ops.quote_name
+        cursor.execute( "SELECT * FROM %s FETCH FIRST 1 ROWS ONLY" % qn( table_name ) )   
+        description = []
+        for desc in cursor.description:
+            description.append( [ desc[0].lower(), ] + desc[1:] )
+        return description
