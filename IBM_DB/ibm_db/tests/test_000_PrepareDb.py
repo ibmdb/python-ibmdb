@@ -289,11 +289,10 @@ class IbmDbTestCase(unittest.TestCase):
     stmt = ibm_db.prepare(conn, insert)
     if stmt:
       for photo in emp_photo:
-        result = ibm_db.execute(stmt, photo)
         empno = photo[0]
         photo_format = photo[1]
         fileHandler = open(os.path.dirname(os.path.abspath(__file__)) + '/' + photo[2], 'rb')
-	picture = fileHandler.read()
+        picture = fileHandler.read()
         ibm_db.bind_param(stmt, 1, empno, ibm_db.SQL_PARAM_INPUT)
         ibm_db.bind_param(stmt, 2, photo_format, ibm_db.SQL_PARAM_INPUT)
         ibm_db.bind_param(stmt, 3, picture, ibm_db.SQL_PARAM_INPUT)

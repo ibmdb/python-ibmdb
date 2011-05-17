@@ -14,7 +14,7 @@
 # | language governing permissions and limitations under the License.        |
 # +--------------------------------------------------------------------------+
 # | Authors: Swetha Patel, Abhigyan Agrawal, Tarun Pasrija, Rahul Priyadarshi|
-# | Version: 1.0.3                                                             |
+# | Version: 1.0.4                                                           |
 # +--------------------------------------------------------------------------+
 
 """
@@ -1049,7 +1049,7 @@ class Cursor(object):
         return True
 
     # Helper for executing an SQL statement.
-    def _execute_helper(self, rows_counter, parameters=None):
+    def _execute_helper(self, parameters=None):
         if parameters is not None:
             buff = []
             CONVERT_STR = (datetime.datetime, datetime.date, datetime.time, buffer)
@@ -1067,8 +1067,6 @@ class Cursor(object):
                         raise Error(str(ibm_db.conn_errormsg()))
                     if ibm_db.stmt_errormsg() is not None:
                         raise Error(str(ibm_db.stmt_errormsg()))
-                if rows_counter is not None:
-                    rows_counter.append(ibm_db.num_rows(self.stmt_handler))
             except Exception, inst:
                 raise _get_exception(inst)
         else:
@@ -1079,8 +1077,6 @@ class Cursor(object):
                         raise Error(str(ibm_db.conn_errormsg()))
                     if ibm_db.stmt_errormsg() is not None:
                         raise Error(str(ibm_db.stmt_errormsg()))
-                if rows_counter is not None:
-                    rows_counter.append(ibm_db.num_rows(self.stmt_handler))
             except Exception, inst:
                 raise _get_exception(inst)
         return return_value
@@ -1150,7 +1146,7 @@ class Cursor(object):
         self._all_stmt_handlers = []
         self._prepare_helper(operation)
         self._set_cursor_helper()
-        self._execute_helper(None, parameters)
+        self._execute_helper(parameters)
         return self._set_rowcount()
 
     def executemany(self, operation, seq_parameters):
@@ -1170,18 +1166,34 @@ class Cursor(object):
         if not isinstance(seq_parameters, (types.ListType, types.TupleType)):
             raise InterfaceError("executemany expects the second argument "
                                   "to be of type list or tuple of sequence.")
-
+        
+        CONVERT_STR = (datetime.datetime, datetime.date, datetime.time, buffer)
+        # Convert date/time and binary objects to string for
+        # inserting into the database.
+        buff = []
+        seq_buff = []
+        for index in range(len(seq_parameters)):
+            buff = []
+            for param in seq_parameters[index]:
+                if isinstance(param, CONVERT_STR):
+                    param = str(param)
+                buff.append(param)
+            seq_buff.append(tuple(buff))
+        seq_parameters = tuple(seq_buff)
         self.__description = None
         self._all_stmt_handlers = []
+        self.__rowcount = -1
         self._prepare_helper(operation)
-        rows_counter = []
-        for index in range(len(seq_parameters)):
-            self._execute_helper(rows_counter, seq_parameters[index])
-
-        rowno = -1
-        for rows in rows_counter:
-           rowno += rows
-        self.__rowcount = rowno
+        try:
+            self.__rowcount = ibm_db.execute_many(self.stmt_handler, seq_parameters)
+            if self.__rowcount == -1:
+                if ibm_db.conn_errormsg() is not None:
+                    raise Error(str(ibm_db.conn_errormsg()))
+                if ibm_db.stmt_errormsg() is not None:
+                    raise Error(str(ibm_db.stmt_errormsg()))     
+        except Exception, inst:
+            self._set_rowcount()
+            raise Error(inst)
         return True
 
     def _fetch_helper(self, fetch_size=-1):
@@ -1259,6 +1271,7 @@ class Cursor(object):
             # Store all the stmt handler that were created.  The 
             # handler was the one created by the execute method.  It 
             # should be used to get next result set. 
+            self.__description = None
             self._all_stmt_handlers.append(self.stmt_handler)
             self.stmt_handler = ibm_db.next_result(self._all_stmt_handlers[0])
         except Exception, inst:
@@ -1278,6 +1291,10 @@ class Cursor(object):
         """This method currently does nothing."""
         pass
 
+    #To change formate date/time string to date/time object
+    def _str_to_datetime(self, date_string, format):
+        return datetime.datetime(*(time.strptime(date_string, format)[0:6]))
+
     # This method is used to convert a string representing date/time 
     # and binary data in a row tuple fetched from the database 
     # to date/time and binary objects, for returning it to the user.
@@ -1296,15 +1313,15 @@ class Cursor(object):
                         if row[index][20:] != '':
                             microsec = int(row[index][20:])
                             row[index] = row[index][:19]
-                        row[index] = datetime.datetime.strptime(row[index],
+                        row[index] = self._str_to_datetime(row[index],
                                                           '%Y-%m-%d %H:%M:%S')
                         row[index] = row[index].replace(
                                                        microsecond = microsec)
                     elif type == 'DATE':
-                        row[index] = datetime.datetime.strptime(row[index], 
+                        row[index] = self._str_to_datetime(row[index], 
                                                             '%Y-%m-%d').date()
                     elif type == 'TIME':
-                        row[index] = datetime.datetime.strptime(row[index],
+                        row[index] = self._str_to_datetime(row[index],
                                                             '%H:%M:%S').time()
                     elif type == 'BLOB':
                         row[index] = buffer(row[index])

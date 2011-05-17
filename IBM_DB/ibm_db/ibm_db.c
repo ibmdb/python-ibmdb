@@ -21,7 +21,7 @@
 +--------------------------------------------------------------------------+
 */
 
-#define MODULE_RELEASE "1.0.3"
+#define MODULE_RELEASE "1.0.4"
 
 #include <Python.h>
 #include "ibm_db.h"
@@ -38,6 +38,12 @@ static PyObject* getSQLWCharAsPyUnicodeObject(SQLWCHAR* sqlwcharData, int sqlwch
 const int _check_i = 1;
 #define is_bigendian() ( (*(char*)&_check_i) == 0 )
 static int is_systemi, is_informix;	  /* 1 == TRUE; 0 == FALSE; */
+
+/* Defines a linked list structure for error messages */
+typedef struct _error_msg_node {
+	char err_msg[DB2_MAX_ERR_MSG_LEN];
+	struct _error_msg_node *next;
+} error_msg_node;
 
 /* Defines a linked list structure for caching param data */
 typedef struct _param_cache_node {
@@ -4348,7 +4354,7 @@ static PyObject *_python_ibm_db_prepare_helper(conn_handle *conn_res, PyObject *
 	if (isNewBuffer) {
 		if(stmt) PyMem_Del(stmt);
 	}
-		
+	
 	if ( rc < SQL_SUCCESS ) {
 		sprintf(error, "Statement Prepare Failed: %s", IBM_DB_G(__python_stmt_err_msg));
 		Py_XDECREF(py_stmt);
@@ -4482,7 +4488,6 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
 	Py_ssize_t buffer_len = 0;
 	int param_length;
 	
-
 	/* Have to use SQLBindFileToParam if PARAM is type PARAM_FILE */
 	if ( curr->param_type == PARAM_FILE) {
 		/* Only string types can be bound */
@@ -4887,6 +4892,7 @@ static int _python_ibm_db_execute_helper2(stmt_handle *stmt_res, PyObject *data,
 			}
 			if (bind_data == NULL)
 				return -1;
+				
 			rc = _python_ibm_db_bind_data( stmt_res, curr, bind_data);
 			if ( rc == SQL_ERROR ) {
 				sprintf(error, "Binding Error 1: %s", 
@@ -5090,7 +5096,8 @@ static PyObject *_python_ibm_db_execute_helper1(stmt_handle *stmt_res, PyObject 
 	}
 		
 	if ( rc == SQL_NEED_DATA ) {
-		while ( (SQLParamData((SQLHSTMT)stmt_res->hstmt, (SQLPOINTER *)&valuePtr)) == SQL_NEED_DATA ) {
+		rc = SQLParamData((SQLHSTMT)stmt_res->hstmt, (SQLPOINTER *)&valuePtr);
+		while ( rc == SQL_NEED_DATA ) {
 			/* passing data value for a parameter */
 			if ( !NIL_P(((param_node*)valuePtr)->svalue)) {
 				Py_BEGIN_ALLOW_THREADS;
@@ -5110,6 +5117,15 @@ static PyObject *_python_ibm_db_execute_helper1(stmt_handle *stmt_res, PyObject 
 				PyErr_SetString(PyExc_Exception, error);
 				return NULL;
 			}
+
+			rc = SQLParamData((SQLHSTMT)stmt_res->hstmt, (SQLPOINTER *)&valuePtr);
+		}
+
+		if ( rc == SQL_ERROR ) {
+			_python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
+			sprintf(error, "Sending data failed: %s", IBM_DB_G(__python_stmt_err_msg));
+			PyErr_SetString(PyExc_Exception, error);
+			return NULL;
 		}
 	}
 		
@@ -8442,6 +8458,242 @@ static PyObject *ibm_db_get_option(PyObject *self, PyObject *args)
 	return Py_False;
 }
 
+static int _ibm_db_chaining_flag(stmt_handle *stmt_res, SQLINTEGER flag, error_msg_node *error_list, int client_err_cnt) {
+	int rc;
+	Py_BEGIN_ALLOW_THREADS;
+	rc = SQLSetStmtAttrW((SQLHSTMT)stmt_res->hstmt, flag, (SQLPOINTER)SQL_TRUE, SQL_IS_INTEGER);
+	Py_END_ALLOW_THREADS;
+	if ( flag == SQL_ATTR_CHAINING_BEGIN ) {
+		if ( rc == SQL_ERROR ) {
+			_python_ibm_db_check_sql_errors((SQLHSTMT)stmt_res->hstmt, SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
+			PyErr_SetString(PyExc_Exception, IBM_DB_G(__python_stmt_err_msg));
+		}
+	} else {
+		if ( (rc != SQL_SUCCESS) || (client_err_cnt != 0) ) {
+			SQLINTEGER errNo = 0;
+			PyObject *errTuple = NULL;
+			SQLINTEGER err_cnt = 0;
+			PyObject *err_msg = NULL;
+			char *err_fmt = NULL;
+			if ( rc != SQL_SUCCESS ) {
+				SQLGetDiagField(SQL_HANDLE_STMT, (SQLHSTMT)stmt_res->hstmt, 0, SQL_DIAG_NUMBER, (SQLPOINTER) &err_cnt, SQL_IS_POINTER, NULL);
+			}
+			errTuple = PyTuple_New(err_cnt + client_err_cnt);
+			err_fmt = (char *)PyMem_Malloc(strlen("\nError  :%s \n ") * (err_cnt + client_err_cnt));
+			err_fmt[0] = '\0';
+			errNo = 1;
+			while( error_list != NULL ) {
+				sprintf(err_fmt,"%s\nError %d: %s", err_fmt, (int)errNo, "%s \n");
+				PyTuple_SetItem(errTuple, errNo - 1, PyString_FromString(error_list->err_msg));
+				error_list = error_list->next;
+				errNo++;
+			}
+			for ( errNo = client_err_cnt + 1; errNo <= (err_cnt + client_err_cnt); errNo++ ) {
+				sprintf(err_fmt,"%s\nError %d: %s", err_fmt, (int)errNo, "%s \n");
+				_python_ibm_db_check_sql_errors((SQLHSTMT)stmt_res->hstmt, SQL_HANDLE_STMT, SQL_ERROR, 1, NULL, -1, (errNo - client_err_cnt));
+				PyTuple_SetItem(errTuple, errNo - 1, PyString_FromString(IBM_DB_G(__python_stmt_err_msg)));
+			}
+			err_msg = PyString_Format(PyString_FromString(err_fmt), errTuple);
+			PyErr_SetString(PyExc_Exception, PyString_AsString(err_msg));
+		}
+	}
+	return rc;
+}
+
+static void _build_client_err_list(error_msg_node *head_error_list, char *err_msg) {
+	error_msg_node *tmp_err = NULL, *curr_err = head_error_list->next, *prv_err = NULL;
+	tmp_err = ALLOC(error_msg_node);
+	memset(tmp_err, 0, sizeof(error_msg_node));
+	strcpy(tmp_err->err_msg, err_msg);
+	tmp_err->next = NULL;
+	while( curr_err != NULL ) {
+		prv_err = curr_err;
+		curr_err = curr_err->next;
+	}
+
+	if ( head_error_list->next == NULL ) {
+		head_error_list->next = tmp_err;
+	} else {
+		prv_err->next = tmp_err;
+	}	
+} 
+
+/*
+ * ibm_db.execute_many -- can be used to execute an SQL with multiple values of parameter marker.
+ * ===Description
+ * int ibm_db.execute_many(IBM_DBStatement, Parameters[, Options])
+ * Returns number of inserted/updated/deleted rows if batch executed successfully.
+ * return NULL if batch fully or partialy fails  (All the rows executed except for which error occurs).
+ */
+static PyObject* ibm_db_execute_many (PyObject *self, PyObject *args) {
+	PyObject *options = NULL;
+	PyObject *params = NULL;
+	stmt_handle *stmt_res = NULL;
+	char error[DB2_MAX_ERR_MSG_LEN];
+	PyObject *data = NULL;
+	error_msg_node *head_error_list = NULL;
+	int err_count = 0;
+
+	int rc;
+	int i = 0;
+	int numOpts = 0;
+	int numOfRows = 0;
+	int numOfParam = 0;
+	SQLINTEGER row_cnt = 0;
+	int chaining_start = 0;
+
+	SQLSMALLINT *data_type;
+	SQLUINTEGER precision;
+	SQLSMALLINT scale;
+	SQLSMALLINT nullable;
+
+	/* Get the parameters 
+	 *  	1. statement handler Object
+	 *  	2. Parameters
+	 *  	3. Options (optional) */
+	if (!PyArg_ParseTuple(args, "OO|O", &stmt_res, &params, &options))
+		return NULL;
+	
+	if (!NIL_P(stmt_res)) {
+		/* Free any cursors that might have been allocated in a previous call to SQLExecute */
+		Py_BEGIN_ALLOW_THREADS;
+		SQLFreeStmt((SQLHSTMT)stmt_res->hstmt, SQL_CLOSE);
+		Py_END_ALLOW_THREADS;
+		
+		_python_ibm_db_clear_stmt_err_cache();
+		stmt_res->head_cache_list = NULL;
+		stmt_res->current_node = NULL;
+
+		/* Bind parameters */
+		Py_BEGIN_ALLOW_THREADS;
+		rc = SQLNumParams((SQLHSTMT)stmt_res->hstmt, (SQLSMALLINT*)&numOpts);
+		Py_END_ALLOW_THREADS;
+		
+		data_type = (SQLSMALLINT*)ALLOC_N(SQLSMALLINT, numOpts);
+		if ( numOpts != 0 ) {
+			for ( i = 0; i < numOpts; i++) {
+				Py_BEGIN_ALLOW_THREADS;
+				rc = SQLDescribeParam((SQLHSTMT)stmt_res->hstmt, i + 1,
+					(SQLSMALLINT*)(data_type + i), &precision, (SQLSMALLINT*)&scale,
+					(SQLSMALLINT*)&nullable);
+				Py_END_ALLOW_THREADS;
+
+				if ( rc == SQL_ERROR ) {
+					_python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT,
+												rc, 1, NULL, -1, 1);
+					PyErr_SetString(PyExc_Exception, IBM_DB_G(__python_stmt_err_msg));
+					return NULL;
+				}
+
+				build_list(stmt_res, i + 1, data_type[i], precision, 
+							  scale, nullable);
+			}
+		}
+
+		/* Execute SQL for all set of parameters*/
+		numOfRows = PyTuple_Size(params);
+		head_error_list = ALLOC(error_msg_node);
+		memset(head_error_list, 0, sizeof(error_msg_node));
+		head_error_list->next = NULL;
+		if ( numOfRows != 0 ) {
+			for (i = 0; i < numOfRows; i++) {
+				int j = 0;
+				param_node *curr = NULL;
+				PyObject *param = PyTuple_GET_ITEM(params, i);
+				error[0] = '\0';
+				if ( !PyTuple_Check(param) ) {
+					sprintf(error, "Value parameter: %d is not a tuple", i + 1);
+					_build_client_err_list(head_error_list, error);
+					err_count++;
+					continue;
+				}
+				
+				numOfParam = PyTuple_Size(param);
+				if ( numOpts < numOfParam ) {
+					/* More are passed in -- Warning - Use the max number present */
+					sprintf(error, "Value parameter tuple: %d has more no of param", i + 1);
+					_build_client_err_list(head_error_list, error);
+					err_count++;
+					continue;
+				} else if ( numOpts > numOfParam ) {
+					/* If there are less params passed in, than are present 
+					* -- Error 
+					*/
+					sprintf(error, "Value parameter tuple: %d has less no of param", i + 1);
+					_build_client_err_list(head_error_list, error);
+					err_count++;
+					continue;
+				}
+
+				/* Bind values from the parameters_tuple to params */
+				curr = stmt_res->head_cache_list;
+
+				while ( curr != NULL ) {
+					data = PyTuple_GET_ITEM(param, j);
+					if (data == NULL) {
+						sprintf(error, "NULL value passed for value parameter: %d", i + 1);
+						_build_client_err_list(head_error_list, error);
+						err_count++;
+						break; 
+					}
+					curr->data_type = data_type[curr->param_num - 1];
+					rc = _python_ibm_db_bind_data(stmt_res, curr, data);
+					if ( rc != SQL_SUCCESS ) {
+						sprintf(error, "Binding Error 1: %s", 
+								IBM_DB_G(__python_stmt_err_msg));
+						_build_client_err_list(head_error_list, error);
+						err_count++;
+						break;
+					}
+					curr = curr->next;
+					j++;
+				}
+
+				if ( !chaining_start ) {
+					/* Set statement attribute SQL_ATTR_CHAINING_BEGIN */
+					rc = _ibm_db_chaining_flag(stmt_res, SQL_ATTR_CHAINING_BEGIN, NULL, 0);
+					chaining_start = 1;
+					if ( rc != SQL_SUCCESS ) {
+						return NULL;
+					}
+				}
+
+				if ( error[0] == '\0' ) {
+					Py_BEGIN_ALLOW_THREADS;
+					rc = SQLExecute((SQLHSTMT)stmt_res->hstmt);
+					Py_END_ALLOW_THREADS;
+				}
+			}
+		}
+		
+		/* Set statement attribute SQL_ATTR_CHAINING_END */
+		rc = _ibm_db_chaining_flag(stmt_res, SQL_ATTR_CHAINING_END, head_error_list->next, err_count);
+		if ( head_error_list != NULL ) {
+			error_msg_node *tmp_err = NULL;
+			while ( head_error_list != NULL ) {
+				tmp_err = head_error_list;
+				head_error_list = head_error_list->next;
+				PyMem_Del(tmp_err);
+			}
+		}
+		if ( rc != SQL_SUCCESS || err_count != 0 ) {
+			return NULL;
+		}
+	}
+
+	Py_BEGIN_ALLOW_THREADS;
+	rc = SQLRowCount((SQLHSTMT)stmt_res->hstmt, &row_cnt);
+	Py_END_ALLOW_THREADS;
+	
+	if ( (rc == SQL_ERROR) && (stmt_res != NULL) ) {
+		_python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, rc,1, NULL, -1, 1);
+		sprintf(error, "SQLRowCount failed: %s",IBM_DB_G(__python_stmt_err_msg));
+		PyErr_SetString(PyExc_Exception, error);
+		return NULL;
+	}
+	return PyInt_FromLong(row_cnt);
+}
+
 /*
  * ===Description
  *  ibm_db.callproc( conn_handle conn_res, char *procName, (In/INOUT/OUT parameters tuple) )
@@ -8805,6 +9057,7 @@ static PyMethodDef ibm_db_Methods[] = {
 	{"tables", (PyCFunction)ibm_db_tables, METH_VARARGS, "Returns a result set listing the tables and associated metadata in a database"},
 	{"check_function_support", (PyCFunction)ibm_db_check_function_support, METH_VARARGS, "return true if fuction is supported otherwise return false"},
 	{"callproc", (PyCFunction)ibm_db_callproc, METH_VARARGS, "Returns a tuple containing OUT/INOUT variable value"},
+	{"execute_many", (PyCFunction)ibm_db_execute_many, METH_VARARGS, "Execute SQL with multiple rows."},
 	/* An end-of-listing sentinel: */ 
 	{NULL, NULL, 0, NULL}
 };

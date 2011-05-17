@@ -95,3 +95,10 @@ only optimize for N rows issue #2 (defect #154260)
  - Added Decimal object support in ibm_db Driver (defect #212225)
  - Added test case for Decimal object Support
  - Enhanced Performance by Allowing other threads for concurrent operation during time consuming db calls (defect #208042)
+
+2011/05/17 (setup.py 1.0.4, ibm_db-1.0.4, ibm_db_dbi-1.0.4)
+ - Added new API execute_many in ibm_db Driver(defect #225893)
+ - Added new test case for ibm_db's execute_many API
+ - Modified executemany function of ibm_db_dbi adaptor to use ibm_db's execute_many API(defect #225894)
+ - Fixed cursor.description for fetching multiple resultset(defect #225938)
+ - Fixed error handling for insertion of clob data in ibm_db Driver(defect #225892)
