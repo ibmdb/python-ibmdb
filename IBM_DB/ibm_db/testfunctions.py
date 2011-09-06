@@ -64,6 +64,7 @@ class IbmDbTestFunctions(unittest.TestCase):
     try:
       prepconn = ibm_db.connect(config.database, config.user, config.password)
       server = ibm_db.server_info(prepconn)
+      ibm_db.close(prepconn)
       if (server.DBMS_NAME[0:2] == "AS"):
           self.assertEqual(self.capture(testFuncName), self.expected_AS(callstack[1][1]))
       elif (server.DBMS_NAME == "DB2"):
@@ -72,7 +73,7 @@ class IbmDbTestFunctions(unittest.TestCase):
           self.assertEqual(self.capture(testFuncName), self.expected_IDS(callstack[1][1]))
       else:
           self.assertEqual(self.capture(testFuncName), self.expected_LUW(callstack[1][1]))
-      ibm_db.close
+      
     finally:
       del callstack
 
@@ -83,6 +84,7 @@ class IbmDbTestFunctions(unittest.TestCase):
     try:
       prepconn = ibm_db.connect(config.database, config.user, config.password)
       server = ibm_db.server_info(prepconn)
+      ibm_db.close(prepconn)
       if (server.DBMS_NAME[0:2] == "AS"):
           pattern = self.expected_AS(callstack[1][1])
       elif (server.DBMS_NAME == "DB2"):
@@ -101,7 +103,6 @@ class IbmDbTestFunctions(unittest.TestCase):
 
       result = re.match(pattern, self.capture(testFuncName))
       self.assertNotEqual(result, None)
-      ibm_db.close
     finally:
       del callstack
       

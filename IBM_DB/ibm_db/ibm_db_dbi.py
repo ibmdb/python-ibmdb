@@ -14,7 +14,7 @@
 # | language governing permissions and limitations under the License.        |
 # +--------------------------------------------------------------------------+
 # | Authors: Swetha Patel, Abhigyan Agrawal, Tarun Pasrija, Rahul Priyadarshi|
-# | Version: 1.0.4                                                           |
+# | Version: 1.0.5                                                           |
 # +--------------------------------------------------------------------------+
 
 """
@@ -380,6 +380,138 @@ def _get_exception(inst):
         return NotSupportedError(message)
     return DatabaseError(message)
 
+def _server_connect(dsn, user='', password='', host=''):
+    """This method create connection with server
+    """
+    
+    if dsn is None:
+        raise InterfaceError("dsn value should not be None")
+    
+    if (not isinstance(dsn, basestring)) | \
+       (not isinstance(user, basestring)) | \
+       (not isinstance(password, basestring)) | \
+       (not isinstance(host, basestring)):
+        raise InterfaceError("Arguments should be of type string or unicode")
+    
+    # If the dsn does not contain port and protocal adding database
+    # and hostname is no good.  Add these when required, that is,
+    # if there is a '=' in the dsn.  Else the dsn string is taken to be
+    # a DSN entry.
+    if dsn.find('=') != -1:
+        if dsn[len(dsn) - 1] != ';':
+            dsn = dsn + ";"
+        if host != '' and dsn.find('HOSTNAME=') == -1:
+            dsn = dsn + "HOSTNAME=" + host + ";"
+    else:
+        dsn = "DSN=" + dsn + ";"
+
+    if dsn.find('attach=') == -1:
+        dsn = dsn + "attach=true;"
+    if user != '' and dsn.find('UID=') == -1:
+        dsn = dsn + "UID=" + user + ";"
+    if password != '' and dsn.find('PWD=') == -1:
+        dsn = dsn + "PWD=" + password + ";"
+    try:    
+        conn = ibm_db.connect(dsn, '', '')
+    except Exception, inst:
+        raise _get_exception(inst)
+    
+    return conn
+    
+def createdb(database, dsn, user='', password='', host='', codeset='', mode=''):
+    """This method creates a database by using the specified database name, code set, and mode
+    """
+    
+    if database is None:
+        raise InterfaceError("createdb expects a not None database name value")
+    if (not isinstance(database, basestring)) | \
+       (not isinstance(codeset, basestring)) | \
+       (not isinstance(mode, basestring)):
+        raise InterfaceError("Arguments sould be string or unicode")
+        
+    conn = _server_connect(dsn, user=user, password=password, host=host)
+    try:
+        return_value = ibm_db.createdb(conn, database, codeset, mode)
+    except Exception, inst:
+        raise _get_exception(inst)
+    finally:
+        try:
+            ibm_db.close(conn)
+        except Exception, inst:
+            raise _get_exception(inst)
+        
+    return return_value
+    
+def dropdb(database, dsn, user='', password='', host=''):
+    """This method drops the specified database
+    """
+    
+    if database is None:
+        raise InterfaceError("dropdb expects a not None database name value")
+    if (not isinstance(database, basestring)):
+        raise InterfaceError("Arguments sould be string or unicode")
+        
+    conn = _server_connect(dsn, user=user, password=password, host=host)
+    try:
+        return_value = ibm_db.dropdb(conn, database)
+    except Exception, inst:
+        raise _get_exception(inst)
+    finally:
+        try:
+            ibm_db.close(conn)
+        except Exception, inst:
+            raise _get_exception(inst)
+        
+    return return_value
+    
+def recreatedb(database, dsn, user='', password='', host='', codeset='', mode=''):
+    """This method drops and then recreate the database by using the specified database name, code set, and mode
+    """
+    
+    if database is None:
+        raise InterfaceError("recreatedb expects a not None database name value")
+    if (not isinstance(database, basestring)) | \
+       (not isinstance(codeset, basestring)) | \
+       (not isinstance(mode, basestring)):
+        raise InterfaceError("Arguments sould be string or unicode")
+        
+    conn = _server_connect(dsn, user=user, password=password, host=host)
+    try:
+        return_value = ibm_db.recreatedb(conn, database, codeset, mode)
+    except Exception, inst:
+        raise _get_exception(inst)
+    finally:
+        try:
+            ibm_db.close(conn)
+        except Exception, inst:
+            raise _get_exception(inst)
+        
+    return return_value
+    
+def createdbNX(database, dsn, user='', password='', host='', codeset='', mode=''):
+    """This method creates a database if it not exist by using the specified database name, code set, and mode
+    """
+    
+    if database is None:
+        raise InterfaceError("createdbNX expects a not None database name value")
+    if (not isinstance(database, basestring)) | \
+       (not isinstance(codeset, basestring)) | \
+       (not isinstance(mode, basestring)):
+        raise InterfaceError("Arguments sould be string or unicode")
+        
+    conn = _server_connect(dsn, user=user, password=password, host=host)
+    try:
+        return_value = ibm_db.createdbNX(conn, database, codeset, mode)
+    except Exception, inst:
+        raise _get_exception(inst)
+    finally:
+        try:
+            ibm_db.close(conn)
+        except Exception, inst:
+            raise _get_exception(inst)
+        
+    return return_value
+    
 def connect(dsn, user='', password='', host='', database='', conn_options=None):
     """This method creates a non persistent connection to the database. It returns
         a ibm_db_dbi.Connection object.

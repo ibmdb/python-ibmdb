@@ -50,9 +50,11 @@ class IbmDbTestCase(unittest.TestCase):
             params = ((50, 'Hanes'), (55, ), (55.5, 'invalid row'), (60, 'Quigley') )
             try:
                 ibm_db.execute_many(stmt_insert, params)
-            except:
-                #check the no. of inserted rows
+            except Exception, inst:
+                #check the no. of rows inserted successfully
                 row_count = ibm_db.num_rows(stmt_insert)
+                #check the exception raised by execute_many API
+                print inst
                 print row_count
             ibm_db.close(conn)
 
@@ -66,6 +68,8 @@ class IbmDbTestCase(unittest.TestCase):
 #20, Pernal
 #30, Marenghi
 #40, OBrien
+#Error 1: Value parameter tuple: 2 has less no of param 
+#Error 2: Value parameters array 3 is not homogeneous with privious parameters array 
 #2
 #__ZOS_EXPECTED__
 #4
@@ -73,4 +77,6 @@ class IbmDbTestCase(unittest.TestCase):
 #20, Pernal
 #30, Marenghi
 #40, OBrien
+#Error 1: Value parameter tuple: 2 has less no of param 
+#Error 2: Value parameters array 3 is not homogeneous with privious parameters array 
 #2

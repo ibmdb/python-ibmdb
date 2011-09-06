@@ -21,11 +21,16 @@
 +--------------------------------------------------------------------------+
 */
 
-#define MODULE_RELEASE "1.0.4"
+#define MODULE_RELEASE "1.0.5"
 
 #include <Python.h>
 #include "ibm_db.h"
 #include <ctype.h>
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <dlfcn.h>
+#endif
 
 /* True global resources - no need for thread safety here */
 static struct _ibm_db_globals *ibm_db_globals;
@@ -38,6 +43,22 @@ static PyObject* getSQLWCharAsPyUnicodeObject(SQLWCHAR* sqlwcharData, int sqlwch
 const int _check_i = 1;
 #define is_bigendian() ( (*(char*)&_check_i) == 0 )
 static int is_systemi, is_informix;	  /* 1 == TRUE; 0 == FALSE; */
+#ifdef _WIN32
+#define DLOPEN LoadLibrary
+#define DLSYM GetProcAddress
+#define DLCLOSE FreeLibrary
+#define LIBDB2 "db2cli.dll"
+#elif _AIX
+#define DLOPEN dlopen
+#define DLSYM dlsym
+#define DLCLOSE dlclose
+#define LIBDB2 "libdb2.a"
+#else
+#define DLOPEN dlopen
+#define DLSYM dlsym
+#define DLCLOSE dlclose
+#define LIBDB2 "libdb2.so.1"
+#endif
 
 /* Defines a linked list structure for error messages */
 typedef struct _error_msg_node {
@@ -1576,6 +1597,430 @@ static PyObject *ibm_db_pconnect(PyObject *self, PyObject *args)
 {
 	_python_ibm_db_clear_conn_err_cache();
 	return _python_ibm_db_connect_helper( self, args, 1);
+}
+
+/*
+ * static void _python_clear_local_var(PyObject *dbNameObj, SQLWCHAR *dbName, PyObject *codesetObj, SQLWCHAR *codesetObj, PyObject *modeObj, SQLWCHAR *mode, int isNewBuffer)
+ */
+static void _python_clear_local_var(PyObject *dbNameObj, SQLWCHAR *dbName, PyObject *codesetObj, SQLWCHAR *codeset, PyObject *modeObj, SQLWCHAR *mode, int isNewBuffer)
+{
+	if ( !NIL_P( dbNameObj ) ) {
+		Py_XDECREF( dbNameObj );
+		if ( isNewBuffer ) {
+			PyMem_Del( dbName );
+		}
+	}
+
+	if ( !NIL_P( codesetObj ) ) {
+		Py_XDECREF( codesetObj );
+		if ( isNewBuffer ) {
+			PyMem_Del( codeset );
+		}
+	}
+
+	if ( !NIL_P( modeObj ) ) {
+		Py_XDECREF( modeObj );
+		if ( isNewBuffer ) {
+			PyMem_Del( mode );
+		}
+	}
+}
+
+/*
+ * static int _python_ibm_db_createdb(conn_handle *conn_res, PyObject *dbNameObj, PyObject *codesetObj, PyObject *modeObj, int createNX)
+ */
+static int _python_ibm_db_createdb(conn_handle *conn_res, PyObject *dbNameObj, PyObject *codesetObj, PyObject *modeObj, int createNX)
+{
+	SQLWCHAR *dbName = NULL;
+	SQLWCHAR *codeset = NULL;
+	SQLWCHAR *mode = NULL;
+	SQLINTEGER sqlcode;
+	SQLSMALLINT length;
+	SQLCHAR msg[SQL_MAX_MESSAGE_LENGTH + 1];
+	SQLCHAR sqlstate[SQL_SQLSTATE_SIZE + 1];
+	int isNewBuffer;
+	int rc = 0;
+#ifdef _WIN32
+	HINSTANCE cliLib = NULL;
+	FARPROC sqlcreatedb;
+#else
+	void *cliLib = NULL;
+	typedef int (*sqlcreatedbType)( SQLHDBC, SQLWCHAR *, SQLINTEGER, SQLWCHAR *, SQLINTEGER, SQLWCHAR *, SQLINTEGER );
+	sqlcreatedbType sqlcreatedb;
+#endif
+
+#if defined __APPLE__ || defined _AIX
+	PyErr_SetString( PyExc_Exception, "Not supported: This function is currently not supported on this platform" );
+	return -1;
+#else
+
+	if ( !NIL_P( conn_res ) ) {
+		if ( NIL_P( dbNameObj ) ) {
+			PyErr_SetString( PyExc_Exception, "Supplied database name Parameter is invalid" );
+			return -1;
+		}
+		/* Check to ensure the connection resource given is active */
+		if ( !conn_res->handle_active ) {
+			PyErr_SetString( PyExc_Exception, "Connection is not active" );
+			return -1;
+		}
+
+		dbNameObj = PyUnicode_FromObject( dbNameObj );
+		if ( dbNameObj != NULL &&  dbNameObj != Py_None ) {
+			dbName = getUnicodeDataAsSQLWCHAR( dbNameObj, &isNewBuffer );
+		} else {
+			return -1;
+		}
+		
+		if ( !NIL_P( codesetObj ) ) {
+			codesetObj = PyUnicode_FromObject( codesetObj );
+			if ( codesetObj != NULL &&  codesetObj != Py_None ) {
+				codeset = getUnicodeDataAsSQLWCHAR( codesetObj, &isNewBuffer );
+			} else {
+				_python_clear_local_var( dbNameObj, dbName, NULL, NULL, NULL, NULL, isNewBuffer );
+				return -1;
+			}
+				
+		}
+		if ( !NIL_P( modeObj ) ) {
+			modeObj = PyUnicode_FromObject( modeObj );
+			if ( codesetObj != NULL &&  codesetObj != Py_None ) {
+				mode = getUnicodeDataAsSQLWCHAR( modeObj, &isNewBuffer );	
+			} else {
+				_python_clear_local_var( dbNameObj, dbName, codesetObj, codeset, NULL, NULL, isNewBuffer );
+				return -1;
+			}
+		}
+
+#ifdef _WIN32
+		cliLib = DLOPEN( LIBDB2 );
+#else
+		cliLib = DLOPEN( LIBDB2, RTLD_LAZY );
+#endif
+		if ( !cliLib ) {
+			sprintf( (char *)msg, "Error in loading %s library file", LIBDB2 );
+			PyErr_SetString( PyExc_Exception,  (char *)msg );
+			_python_clear_local_var( dbNameObj, dbName, codesetObj, codeset, modeObj, mode, isNewBuffer );	
+			return -1;
+		}
+#ifdef _WIN32
+		sqlcreatedb =  DLSYM( cliLib, "SQLCreateDbW" );
+#else
+		sqlcreatedb = (sqlcreatedbType) DLSYM( cliLib, "SQLCreateDbW" );
+#endif
+		if ( sqlcreatedb == NULL )  {
+#ifdef _WIN32
+			sprintf( (char *)msg, "Not supported: This function is only supported from v97fp4 version of cli on window" );
+#else
+			sprintf( (char *)msg, "Not supported: This function is only supported from v97fp3 version of cli" );
+#endif
+			PyErr_SetString( PyExc_Exception, (char *)msg );
+			DLCLOSE( cliLib );
+			_python_clear_local_var( dbNameObj, dbName, codesetObj, codeset, modeObj, mode, isNewBuffer );
+			return -1;
+		}
+
+		Py_BEGIN_ALLOW_THREADS;
+		rc = (*sqlcreatedb)( (SQLHDBC)conn_res->hdbc, dbName, SQL_NTS, codeset, SQL_NTS, mode, SQL_NTS );
+		Py_END_ALLOW_THREADS;
+		
+		DLCLOSE( cliLib );		
+		if ( rc != SQL_SUCCESS ) {
+			if ( createNX == 1 ) {
+				if ( SQLGetDiagRec( SQL_HANDLE_DBC, (SQLHDBC)conn_res->hdbc, 1, sqlstate, &sqlcode, msg, SQL_MAX_MESSAGE_LENGTH + 1, &length ) == SQL_SUCCESS ) {
+					if ( sqlcode == -1005 ) {
+						_python_clear_local_var( dbNameObj, dbName, codesetObj, codeset, modeObj, mode, isNewBuffer );
+						return 0;
+					}
+				}
+			}
+			_python_ibm_db_check_sql_errors( conn_res->hdbc, SQL_HANDLE_DBC, rc, 1, NULL, -1, 1 );
+			_python_clear_local_var( dbNameObj, dbName, codesetObj, codeset, modeObj, mode, isNewBuffer );
+			return -1;
+		}
+		_python_clear_local_var( dbNameObj, dbName, codesetObj, codeset, modeObj, mode, isNewBuffer );
+		return 0;
+	} else {
+		PyErr_SetString( PyExc_Exception, "Supplied connection object Parameter is invalid" );
+		return -1;
+	}
+#endif
+}
+
+/*
+ * static int _python_ibm_db_dropdb(conn_handle *conn_res, PyObject *dbNameObj, int recreate)
+ */
+static int _python_ibm_db_dropdb(conn_handle *conn_res, PyObject *dbNameObj, int recreate)
+{
+	SQLWCHAR *dbName = NULL;
+	SQLINTEGER sqlcode;
+	SQLSMALLINT length;
+	SQLCHAR msg[SQL_MAX_MESSAGE_LENGTH + 1];
+	SQLCHAR sqlstate[SQL_SQLSTATE_SIZE + 1];
+	int isNewBuffer;
+	int rc = 0;
+#ifdef _WIN32
+	FARPROC sqldropdb;
+	HINSTANCE cliLib = NULL;
+#else
+	typedef int (*sqldropdbType)( SQLHDBC, SQLWCHAR *, SQLINTEGER );
+	sqldropdbType sqldropdb;	
+	void *cliLib;
+#endif
+
+#if defined __APPLE__ || defined _AIX
+	PyErr_SetString( PyExc_Exception, "Not supported: This function is currently not supported on this platform" );
+	return -1;
+#else
+
+	if ( !NIL_P( conn_res ) ) {
+		if ( NIL_P( dbNameObj ) ) {
+			PyErr_SetString( PyExc_Exception, "Supplied database name Parameter is invalid" );
+			return -1;
+		}
+		/* Check to ensure the connection resource given is active */
+		if ( !conn_res->handle_active ) {
+			PyErr_SetString( PyExc_Exception, "Connection is not active" );
+			return -1;
+		}
+
+		dbNameObj = PyUnicode_FromObject( dbNameObj );
+		if ( dbNameObj != NULL &&  dbNameObj != Py_None ) {
+			dbName = getUnicodeDataAsSQLWCHAR( dbNameObj, &isNewBuffer );	
+		} else {
+			return -1;
+		}
+
+#ifdef _WIN32
+		cliLib = DLOPEN( LIBDB2 );
+#else
+		cliLib = DLOPEN( LIBDB2, RTLD_LAZY );
+#endif
+		if ( !cliLib ) {
+			sprintf( (char *)msg, "Error in loading %s library file", LIBDB2 );
+			PyErr_SetString( PyExc_Exception, (char *)msg );
+			_python_clear_local_var( dbNameObj, dbName, NULL, NULL, NULL, NULL, isNewBuffer );
+			return -1;
+		}
+#ifdef _WIN32
+		sqldropdb = DLSYM( cliLib, "SQLDropDbW" );
+#else
+		sqldropdb = (sqldropdbType)DLSYM( cliLib, "SQLDropDbW" );
+#endif
+		if ( sqldropdb == NULL)  {
+#ifdef _WIN32
+			sprintf( (char *)msg, "Not supported: This function is only supported from v97fp4 version of cli on window" );
+#else
+			sprintf( (char *)msg, "Not supported: This function is only supported from v97fp3 version of cli" );
+#endif
+			PyErr_SetString( PyExc_Exception, (char *)msg );
+			DLCLOSE( cliLib );
+			_python_clear_local_var( dbNameObj, dbName, NULL, NULL, NULL, NULL, isNewBuffer );
+			return -1;
+		}
+
+		Py_BEGIN_ALLOW_THREADS;
+		rc = sqldropdb( conn_res->hdbc, dbName, SQL_NTS );
+		Py_END_ALLOW_THREADS;
+		
+		DLCLOSE( cliLib );
+		if ( rc != SQL_SUCCESS ) {
+			if ( recreate ) {
+				if ( SQLGetDiagRec( SQL_HANDLE_DBC, (SQLHDBC)conn_res->hdbc, 1, sqlstate, &sqlcode, msg, SQL_MAX_MESSAGE_LENGTH + 1, &length ) == SQL_SUCCESS ) {
+					if ( sqlcode == -1013 ) {
+						_python_clear_local_var( dbNameObj, dbName, NULL, NULL, NULL, NULL, isNewBuffer );
+						return 0;
+					}
+				}
+			}
+			_python_ibm_db_check_sql_errors( conn_res->hdbc, SQL_HANDLE_DBC, rc, 1, NULL, -1, 1 );
+			return -1;
+		}
+		_python_clear_local_var( dbNameObj, dbName, NULL, NULL, NULL, NULL, isNewBuffer );
+		return 0;
+	} else {
+		PyErr_SetString( PyExc_Exception, "Supplied connection object Parameter is invalid" );
+		return -1;
+	}
+#endif
+}
+
+/*!# ibm_db.createdb
+ *
+ * ===Description
+ *  True/None ibm_db.createdb ( IBM_DBConnection connection, string dbName [, codeSet, mode] )
+ *
+ * Creates a database by using the specified database name, code set, and mode
+ *
+ * ===Parameters
+ *
+ * ====connection
+ *      A valid database server instance connection resource variable as returned from ibm_db.connect() by specifying the ATTACH keyword.
+ *
+ * ====dbName
+ *      Name of the database that is to be created.
+ *
+ * ====codeSet
+ *      Database code set information.
+ *      Note: If the value of the codeSet argument not specified, the database is created in the Unicode code page for DB2 data servers and in the UTF-8 code page for IDS data servers.
+ *
+ * ====mode
+ *      Database logging mode.
+ *      Note: This value is applicable only to IDS data servers.
+ *
+ * ===Return Value
+ *  Returns True on successful creation of database else return None
+ */
+PyObject *ibm_db_createdb(PyObject *self, PyObject *args)
+{
+	conn_handle *conn_res = NULL;
+	PyObject *dbNameObj = NULL;
+	PyObject *codesetObj = NULL;
+	PyObject *modeObj = NULL;
+	int rc = -1;
+
+	if ( !PyArg_ParseTuple( args, "OO|OO", &conn_res, &dbNameObj, &codesetObj, &modeObj ) ) {
+		return NULL;
+	}
+	rc = _python_ibm_db_createdb(conn_res, dbNameObj, codesetObj, modeObj, 0);
+	if ( rc == 0 ) {
+		Py_RETURN_TRUE;
+	} else {
+		return NULL;
+	}	
+}
+
+/*!# ibm_db.dropdb
+ *
+ * ===Description
+ *  True/None ibm_db.dropdb ( IBM_DBConnection connection, string dbName )
+ *
+ * Drops the specified database
+ *
+ * ===Parameters
+ *
+ * ====connection
+ *      A valid database server instance connection resource variable as returned from ibm_db.connect() by specifying the ATTACH keyword.
+ *
+ * ====dbName
+ *      Name of the database that is to be dropped.
+ *
+ * ===Return Value
+ *  Returns True if specified database dropped sucessfully else None
+ */
+PyObject *ibm_db_dropdb(PyObject *self, PyObject *args)
+{
+	conn_handle *conn_res = NULL;
+	PyObject *dbNameObj = NULL;
+	int rc = -1;
+
+	if ( !PyArg_ParseTuple( args, "OO", &conn_res, &dbNameObj ) ) {
+		return NULL;
+	}
+	
+	rc = _python_ibm_db_dropdb( conn_res, dbNameObj, 0 );
+	if ( rc == 0 ) {
+		Py_RETURN_TRUE;
+	} else {
+		return NULL;
+	}
+}
+
+/*ibm_db.recreatedb
+ *
+ * ===Description
+ *  True/None ibm_db.recreatedb ( IBM_DBConnection connection, string dbName [, codeSet, mode] )
+ *
+ * Drop and then recreates a database by using the specified database name, code set, and mode
+ *
+ * ===Parameters
+ *
+ * ====connection
+ *      A valid database server instance connection resource variable as returned from ibm_db.connect() by specifying the ATTACH keyword.
+ *
+ * ====dbName
+ *      Name of the database that is to be created.
+ *
+ * ====codeSet
+ *      Database code set information.
+ *      Note: If the value of the codeSet argument not specified, the database is created in the Unicode code page for DB2 data servers and in the UTF-8 code page for IDS data servers.
+ *
+ * ====mode
+ *      Database logging mode.
+ *      Note: This value is applicable only to IDS data servers.
+ *
+ * ===Return Value
+ *  Returns True if specified database created successfully else return None
+ */
+PyObject *ibm_db_recreatedb(PyObject *self, PyObject *args)
+{
+	conn_handle *conn_res = NULL;
+	PyObject *dbNameObj = NULL;
+	PyObject *codesetObj = NULL;
+	PyObject *modeObj = NULL;
+	int rc = -1;
+
+	if ( !PyArg_ParseTuple( args, "OO|OO", &conn_res, &dbNameObj, &codesetObj, &modeObj ) ) {
+		return NULL;
+	}
+
+	rc = _python_ibm_db_dropdb( conn_res, dbNameObj, 1 );
+	if ( rc != 0 ) {
+		return NULL; 
+	} 
+
+	rc = _python_ibm_db_createdb(conn_res, dbNameObj, codesetObj, modeObj, 0);
+	if ( rc == 0 ) {
+		Py_RETURN_TRUE;
+	} else {
+		return NULL;
+	}
+}
+
+/*!# ibm_db.createdbNX 
+ *
+ * ===Description
+ *  True/None ibm_db.createdbNX ( IBM_DBConnection connection, string dbName [, codeSet, mode] )
+ *
+ * Creates the database if not exist by using the specified database name, code set, and mode
+ *
+ * ===Parameters
+ *
+ * ====connection
+ *      A valid database server instance connection resource variable as returned from ibm_db.connect() by specifying the ATTACH keyword.
+ *
+ * ====dbName
+ *      Name of the database that is to be created.
+ *
+ * ====codeSet
+ *      Database code set information.
+ *      Note: If the value of the codeSet argument not specified, the database is created in the Unicode code page for DB2 data servers and in the UTF-8 code page for IDS data servers.
+ *
+ * ====mode
+ *      Database logging mode.
+ *      Note: This value is applicable only to IDS data servers.
+ *
+ * ===Return Value
+ *  Returns True if database already exists or created sucessfully else return None
+ */
+PyObject *ibm_db_createdbNX(PyObject *self, PyObject *args)
+{
+	conn_handle *conn_res = NULL;
+	PyObject *dbNameObj = NULL;
+	PyObject *codesetObj = NULL;
+	PyObject *modeObj = NULL;
+	int rc = -1;
+	
+	if ( !PyArg_ParseTuple( args, "OO|OO", &conn_res, &dbNameObj, &codesetObj, &modeObj ) ) {
+		return NULL;
+	}
+	
+	rc = _python_ibm_db_createdb(conn_res, dbNameObj, codesetObj, modeObj, 1);
+	if ( rc == 0 ) {
+		Py_RETURN_TRUE;
+	} else {
+		return NULL;
+	}
 }
 
 /*!# ibm_db.autocommit
@@ -4327,9 +4772,14 @@ static PyObject *_python_ibm_db_prepare_helper(conn_handle *conn_res, PyObject *
 	}
 
 	if (py_stmt != NULL && py_stmt != Py_None) {
-		if (PyString_Check(py_stmt) || PyUnicode_Check(py_stmt)){
+		if (PyString_Check(py_stmt) || PyUnicode_Check(py_stmt)) {
 			py_stmt = PyUnicode_FromObject(py_stmt);
-			stmt_size = PyUnicode_GetSize(py_stmt);
+			if (py_stmt != NULL &&  py_stmt != Py_None) {
+				stmt_size = PyUnicode_GetSize(py_stmt);
+			} else {
+				PyErr_SetString(PyExc_Exception, "Error occure during processing of statement");
+				return NULL;	
+			}
 		}
 		else {
 			PyErr_SetString(PyExc_Exception, "statement must be a string or unicode");
@@ -8536,7 +8986,7 @@ static PyObject* ibm_db_execute_many (PyObject *self, PyObject *args) {
 
 	int rc;
 	int i = 0;
-	int numOpts = 0;
+	SQLSMALLINT numOpts = 0;
 	int numOfRows = 0;
 	int numOfParam = 0;
 	SQLINTEGER row_cnt = 0;
@@ -8546,6 +8996,7 @@ static PyObject* ibm_db_execute_many (PyObject *self, PyObject *args) {
 	SQLUINTEGER precision;
 	SQLSMALLINT scale;
 	SQLSMALLINT nullable;
+	SQLSMALLINT *ref_data_type;
 
 	/* Get the parameters 
 	 *  	1. statement handler Object
@@ -8570,6 +9021,7 @@ static PyObject* ibm_db_execute_many (PyObject *self, PyObject *args) {
 		Py_END_ALLOW_THREADS;
 		
 		data_type = (SQLSMALLINT*)ALLOC_N(SQLSMALLINT, numOpts);
+		ref_data_type = (SQLSMALLINT*)ALLOC_N(SQLSMALLINT, numOpts);
 		if ( numOpts != 0 ) {
 			for ( i = 0; i < numOpts; i++) {
 				Py_BEGIN_ALLOW_THREADS;
@@ -8636,6 +9088,18 @@ static PyObject* ibm_db_execute_many (PyObject *self, PyObject *args) {
 						err_count++;
 						break; 
 					}
+
+					if ( chaining_start ) {
+						if ( ref_data_type[curr->param_num - 1] != TYPE(data) ) {
+							sprintf(error, "Value parameters array %d is not homogeneous with privious parameters array", i + 1);
+							_build_client_err_list(head_error_list, error);
+							err_count++;
+							break;
+						}
+					} else {
+						ref_data_type[curr->param_num -1] = TYPE(data);
+					}
+
 					curr->data_type = data_type[curr->param_num - 1];
 					rc = _python_ibm_db_bind_data(stmt_res, curr, data);
 					if ( rc != SQL_SUCCESS ) {
@@ -8649,7 +9113,7 @@ static PyObject* ibm_db_execute_many (PyObject *self, PyObject *args) {
 					j++;
 				}
 
-				if ( !chaining_start ) {
+				if ( !chaining_start && (error[0] == '\0' ) ) {
 					/* Set statement attribute SQL_ATTR_CHAINING_BEGIN */
 					rc = _ibm_db_chaining_flag(stmt_res, SQL_ATTR_CHAINING_BEGIN, NULL, 0);
 					chaining_start = 1;
@@ -9019,6 +9483,8 @@ static PyMethodDef ibm_db_Methods[] = {
 	{"result", (PyCFunction)ibm_db_result, METH_VARARGS, "Returns a single column from a row in the result set"},
 	{"active", (PyCFunction)ibm_db_active, METH_VARARGS, "Checks if the specified connection resource is active"},
 	{"autocommit", (PyCFunction)ibm_db_autocommit, METH_VARARGS, "Returns or sets the AUTOCOMMIT state for a database connection"},
+	{"callproc", (PyCFunction)ibm_db_callproc, METH_VARARGS, "Returns a tuple containing OUT/INOUT variable value"},
+	{"check_function_support", (PyCFunction)ibm_db_check_function_support, METH_VARARGS, "return true if fuction is supported otherwise return false"},
 	{"close", (PyCFunction)ibm_db_close, METH_VARARGS, "Close a database connection"},
 	{"conn_error", (PyCFunction)ibm_db_conn_error, METH_VARARGS, "Returns a string containing the SQLSTATE returned by the last connection attempt"},
 	{"conn_errormsg", (PyCFunction)ibm_db_conn_errormsg, METH_VARARGS, "Returns an error message and SQLCODE value representing the reason the last database connection attempt failed"},
@@ -9026,7 +9492,11 @@ static PyMethodDef ibm_db_Methods[] = {
 	{"column_privileges", (PyCFunction)ibm_db_column_privileges, METH_VARARGS, "Returns a result set listing the columns and associated privileges for a table."},
 	{"columns", (PyCFunction)ibm_db_columns, METH_VARARGS, "Returns a result set listing the columns and associated metadata for a table"},
 	{"commit", (PyCFunction)ibm_db_commit, METH_VARARGS, "Commits a transaction"},
+	{"createdb", (PyCFunction)ibm_db_createdb, METH_VARARGS, "Create db"},
+	{"createdbNX", (PyCFunction)ibm_db_createdbNX, METH_VARARGS, "createdbNX" },
 	{"cursor_type", (PyCFunction)ibm_db_cursor_type, METH_VARARGS, "Returns the cursor type used by a statement resource"},
+	{"dropdb", (PyCFunction)ibm_db_dropdb, METH_VARARGS, "Drop db"},
+	{"execute_many", (PyCFunction)ibm_db_execute_many, METH_VARARGS, "Execute SQL with multiple rows."},
 	{"field_display_size", (PyCFunction)ibm_db_field_display_size, METH_VARARGS, "Returns the maximum number of bytes required to display a column"},
 	{"field_name", (PyCFunction)ibm_db_field_name, METH_VARARGS, "Returns the name of the column in the result set"},
 	{"field_num", (PyCFunction)ibm_db_field_num, METH_VARARGS, "Returns the position of the named column in a result set"},
@@ -9045,6 +9515,7 @@ static PyMethodDef ibm_db_Methods[] = {
 	{"primary_keys", (PyCFunction)ibm_db_primary_keys, METH_VARARGS, "Returns a result set listing primary keys for a table"},
 	{"procedure_columns", (PyCFunction)ibm_db_procedure_columns, METH_VARARGS, "Returns a result set listing the parameters for one or more stored procedures."},
 	{"procedures", (PyCFunction)ibm_db_procedures, METH_VARARGS, "Returns a result set listing the stored procedures registered in a database"},
+	{"recreatedb", (PyCFunction)ibm_db_recreatedb, METH_VARARGS, "recreate db"},
 	{"rollback", (PyCFunction)ibm_db_rollback, METH_VARARGS, "Rolls back a transaction"},
 	{"server_info", (PyCFunction)ibm_db_server_info, METH_VARARGS, "Returns an object with properties that describe the DB2 database server"},
 	{"get_db_info", (PyCFunction)ibm_db_get_db_info, METH_VARARGS, "Returns an object with properties that describe the DB2 database server according to the option passed"},
@@ -9054,10 +9525,7 @@ static PyMethodDef ibm_db_Methods[] = {
 	{"stmt_error", (PyCFunction)ibm_db_stmt_error, METH_VARARGS, "Returns a string containing the SQLSTATE returned by an SQL statement"},
 	{"stmt_errormsg", (PyCFunction)ibm_db_stmt_errormsg, METH_VARARGS, "Returns a string containing the last SQL statement error message"},
 	{"table_privileges", (PyCFunction)ibm_db_table_privileges, METH_VARARGS, "Returns a result set listing the tables and associated privileges in a database"},
-	{"tables", (PyCFunction)ibm_db_tables, METH_VARARGS, "Returns a result set listing the tables and associated metadata in a database"},
-	{"check_function_support", (PyCFunction)ibm_db_check_function_support, METH_VARARGS, "return true if fuction is supported otherwise return false"},
-	{"callproc", (PyCFunction)ibm_db_callproc, METH_VARARGS, "Returns a tuple containing OUT/INOUT variable value"},
-	{"execute_many", (PyCFunction)ibm_db_execute_many, METH_VARARGS, "Execute SQL with multiple rows."},
+	{"tables", (PyCFunction)ibm_db_tables, METH_VARARGS, "Returns a result set listing the tables and associated metadata in a database"},	
 	/* An end-of-listing sentinel: */ 
 	{NULL, NULL, 0, NULL}
 };

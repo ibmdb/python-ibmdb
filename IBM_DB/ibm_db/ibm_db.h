@@ -323,3 +323,11 @@ static int _python_get_variable_type(PyObject *variable_value);
 static int _python_ibm_db_set_decfloat_rounding_mode_client(SQLHANDLE hdbc);
 #endif
 #endif
+
+/* For compatibility with python < 2.5 */
+#if PY_VERSION_HEX < 0x02050000 && !defined(PY_SSIZE_T_MIN)
+typedef int Py_ssize_t;
+#define PY_SSIZE_T_MAX INT_MAX
+#define PY_SSIZE_T_MIN INT_MIN
+#endif
+
