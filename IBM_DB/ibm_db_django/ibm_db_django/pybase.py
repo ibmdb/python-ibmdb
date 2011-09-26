@@ -51,11 +51,21 @@ class DatabaseWrapper( object ):
             # Setting AUTO COMMIT off on connection.
             conn_options = {Database.SQL_ATTR_AUTOCOMMIT : Database.SQL_AUTOCOMMIT_OFF}
             kwargs['conn_options'] = conn_options
-            kwargs.update( kwargs.get( 'options' ) )
-            del kwargs['options']
-            del kwargs['port']
+            if kwargsKeys.__contains__( 'options' ):
+                kwargs.update( kwargs.get( 'options' ) )
+                del kwargs['options']
+            if kwargsKeys.__contains__( 'port' ):
+                del kwargs['port']
             
-            connection = Database.pconnect( **kwargs )
+            pconnect_flag = True
+            if kwargsKeys.__contains__( 'PCONNECT' ):
+                pconnect_flag = kwargs['PCONNECT']
+                del kwargs['PCONNECT']
+                
+            if pconnect_flag:
+                connection = Database.pconnect( **kwargs )
+            else:
+                connection = Database.connect( **kwargs )
             connection.autocommit = connection.set_autocommit
             return connection, DB2CursorWrapper( connection )
         else:

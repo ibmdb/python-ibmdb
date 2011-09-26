@@ -151,6 +151,12 @@ class DatabaseOperations ( BaseDatabaseOperations ):
     def max_name_length( self ):
         return 128
     
+    # As DB2 v97 specifications,
+    # Maximum length of a database name is 8
+    #http://publib.boulder.ibm.com/infocenter/db2luw/v9r7/topic/com.ibm.db2.luw.sql.ref.doc/doc/r0001029.html
+    def max_db_name_length( self ):
+        return 8
+    
     def no_limit_value( self ):
         return None
     

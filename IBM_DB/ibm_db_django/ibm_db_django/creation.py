@@ -16,11 +16,23 @@
 # | Authors: Ambrish Bhargava, Tarun Pasrija, Rahul Priyadarshi              |
 # +--------------------------------------------------------------------------+
 
+import sys
+_IS_JYTHON = sys.platform.startswith( 'java' )
+
+# Importing IBM_DB wrapper ibm_db_dbi, if not running on jython
+if not _IS_JYTHON:
+    try:
+        import ibm_db_dbi as Database
+    except ImportError, e:
+        raise ImportError( "ibm_db module not found. Install ibm_db module from http://code.google.com/p/ibm-db/." )
+
 from django.db.backends.creation import BaseDatabaseCreation
 from django.conf import settings
 from django.core.management import call_command
 from django import VERSION as djangoVersion
 from django.db.backends.util import truncate_name
+
+TEST_DBNAME_PREFIX = 'test_'
 
 class DatabaseCreation ( BaseDatabaseCreation ):
     psudo_column_prefix = 'psudo_'
@@ -91,7 +103,7 @@ class DatabaseCreation ( BaseDatabaseCreation ):
                         style.SQL_TABLE( qn( '%s_%s' % ( model._meta.db_table, f.column ) ) ) + ' ' + 
                         style.SQL_KEYWORD( 'ON' ) + ' ' + 
                         style.SQL_TABLE( qn( model._meta.db_table ) ) + ' ' + 
-                        "(%s, %s )" % ( style.SQL_FIELD( qn( f.column ) ), style.SQL_FIELD( qn( truncate_name( ( self.psudo_column_prefix + f.column ), max_name_length ) ) ) ) +  
+                        "(%s, %s )" % ( style.SQL_FIELD( qn( f.column ) ), style.SQL_FIELD( qn( truncate_name( ( self.psudo_column_prefix + f.column ), max_name_length ) ) ) ) + 
                         "%s;" % tablespace_sql] )
             
         elif f.db_index and not f.unique:
@@ -105,58 +117,123 @@ class DatabaseCreation ( BaseDatabaseCreation ):
                         
         return output
     
-    # Method to prepare database. First we are deleting tables from the database,
-    # then creating tables on the basis of installed models.
-    def create_test_db( self, verbosity = 0, autoclobber = None ):
-        print "Preparing Database..."
-        if( djangoVersion[0:2] <= ( 1, 1 ) ):
-            if( isinstance( settings.TEST_DATABASE_NAME, basestring ) and 
-                ( settings.TEST_DATABASE_NAME != '' ) ):
-                database = settings.TEST_DATABASE_NAME
+    # Method to create and return test database, before creating test database it takes confirmation from user. 
+    # If test database already exists then it takes confirmation from user to recreate that database .
+    # If create test database not supported in current scenario then it takes confirmation from user to use settings file's database name as test database
+    # For Jython this method prepare the settings file's database. First it drops the tables from the database,then create tables on the basis of installed models.
+    def create_test_db( self, verbosity = 0, autoclobber = False ):
+        kwargs = self.__create_test_kwargs()
+        if not _IS_JYTHON:
+            old_database = kwargs['database']
+            max_db_name_length = self.connection.ops.max_db_name_length()
+            kwargs['database'] = truncate_name( "%s%s" % ( TEST_DBNAME_PREFIX, old_database ), max_db_name_length )
+            kwargsKeys = kwargs.keys()
+            if ( kwargsKeys.__contains__( 'port' ) and 
+                    kwargsKeys.__contains__( 'host' ) ):
+                    kwargs['dsn'] = "DATABASE=%s;HOSTNAME=%s;PORT=%s;PROTOCOL=TCPIP;" % ( 
+                             kwargs.get( 'dbname' ),
+                             kwargs.get( 'host' ),
+                             kwargs.get( 'port' )
+                    )
             else:
-                database = settings.DATABASE_NAME
+                kwargs['dsn'] = ''
+            if kwargsKeys.__contains__( 'port' ):
+                del kwargs['port']
             
-            settings.DATABASE_SUPPORTS_TRANSACTIONS = True
-        else:
-            if( isinstance( self.connection.settings_dict["NAME"], basestring ) and 
-                ( self.connection.settings_dict["NAME"] != '' ) ):
-                database = self.connection.settings_dict["NAME"]
+            if not autoclobber:
+                confirm = raw_input( "Wants to create %s as test database. Type yes to create it, or no to exit" % ( kwargs.get( 'database' ) ) )
+            if autoclobber or confirm == 'yes':
+                try:
+                    if verbosity > 1:
+                        print "Creating Test Database %s" % ( kwargs.get( 'database' ) )
+                    Database.createdb( **kwargs )
+                except Exception, inst:
+                    message = repr( inst )
+                    if ( message.find( 'Not supported:' ) != -1 ):
+                        if not autoclobber:
+                            confirm = raw_input( "Not able to create test database, %s. Type yes to use %s as test database, or no to exit" % ( message.split( ":" )[1], old_database ) )
+                        if autoclobber or confirm == 'yes':
+                            kwargs['database'] = old_database   
+                            self.__clean_up( self.connection.cursor() )
+                            self.connection._commit()
+                            self.connection.close()                
+                        else:
+                            print "Tests cancelled"
+                            sys.exit( 1 )
+                    else:
+                        sys.stderr.write( "Error occurred during creation of test database: %s" % ( message ) )
+                        index = message.find( 'SQLCODE' )
+                        
+                        if( message != '' ) & ( index != -1 ):
+                            error_code = message[( index + 8 ): ( index + 13 )]
+                            if( error_code != '-1005' ):
+                                print "Tests cancelled"
+                                sys.exit( 1 )
+                            else:
+                                if not autoclobber:
+                                    confirm = raw_input( "\nTest database: %s already exist. Type yes to recreate it, or no to exit" % ( kwargs.get( 'database' ) ) )
+                                if autoclobber or confirm == 'yes':
+                                    if verbosity > 1:
+                                        print "Recreating Test Database %s" % ( kwargs.get( 'database' ) )
+                                    Database.recreatedb( **kwargs )
+                                else:
+                                    print "Tests cancelled."
+                                    sys.exit( 1 )
             else:
-                from django.core.exceptions import ImproperlyConfigured
-                raise ImproperlyConfigured( "the database Name doesn't exist" )
-            self.connection.settings_dict["SUPPORTS_TRANSACTIONS"] = True
-                
-        self.__clean_up( self.connection.cursor() )
-        self.connection._commit()
-        self.connection.close()
-        # Confirm the feature set of the test database
-        if( djangoVersion[0:2] > ( 1, 2 ) ):
-            self.connection.features.confirm()
-        
+                print "Tests cancelled."
+                sys.exit( 1 )
+        else:
+            self.__clean_up( self.connection.cursor() )
+            self.connection._commit()
+            self.connection.close()
+            
+        test_database = kwargs.get( 'database' )
+        if verbosity > 1:
+            print "Preparing Database..." 
+            
         if( djangoVersion[0:2] <= ( 1, 1 ) ):
+            settings.DATABASE_NAME = test_database
+            settings.__setattr__( 'PCONNECT', False )
             call_command( 'syncdb', verbosity = verbosity, interactive = False )
         else:
+            self.connection.settings_dict['NAME'] = test_database
+            self.connection.settings_dict['PCONNECT'] = False     
+            # Confirm the feature set of the test database
+            if( djangoVersion[0:2] > ( 1, 2 ) ):
+                self.connection.features.confirm()
+            
             call_command( 'syncdb', database = self.connection.alias, verbosity = verbosity, interactive = False )
-        return database
+        return test_database
     
-    # Method to destroy database. Nothing is getting done over here.
-    def destroy_test_db( self, test_database_name, verbosity = 0 ):
+    # Method to destroy database. For Jython nothing is getting done over here.
+    def destroy_test_db( self, old_database_name, verbosity = 0 ):
         print "Destroying Database..."
-        if( djangoVersion[0:2] <= ( 1, 1 ) ):
-            if( isinstance( settings.TEST_DATABASE_NAME, basestring ) and 
-                ( settings.TEST_DATABASE_NAME != '' ) ):
-                database = settings.TEST_DATABASE_NAME
+        if not _IS_JYTHON:
+            kwargs = self.__create_test_kwargs()
+            if( old_database_name != kwargs.get( 'database' ) ):
+                kwargsKeys = kwargs.keys()
+                if ( kwargsKeys.__contains__( 'port' ) and 
+                    kwargsKeys.__contains__( 'host' ) ):
+                    kwargs['dsn'] = "DATABASE=%s;HOSTNAME=%s;PORT=%s;PROTOCOL=TCPIP;" % ( 
+                             kwargs.get( 'database' ),
+                             kwargs.get( 'host' ),
+                             kwargs.get( 'port' )
+                    )
+                else:
+                    kwargs['dsn'] = ''
+                if kwargsKeys.__contains__( 'port' ):
+                    del kwargs['port']
+                if verbosity > 1:
+                    print "Droping Test Database %s" % ( kwargs.get( 'database' ) )
+                Database.dropdb( **kwargs )
+                
+            if( djangoVersion[0:2] <= ( 1, 1 ) ):
+                settings.DATABASE_NAME = old_database_name
+                settings.PCONNECT = True
             else:
-                database = settings.DATABASE_NAME
-        else:
-            if( isinstance( self.connection.settings_dict["NAME"], basestring ) and 
-                ( self.connection.settings_dict["NAME"] != '' ) ):
-                database = self.connection.settings_dict["NAME"]
-            else:
-                from django.core.exceptions import ImproperlyConfigured
-                raise ImproperlyConfigured( "database Name doesn't exist" )
-        
-        return database
+                self.connection.settings_dict['NAME'] = old_database_name
+                self.connection.settings_dict['PCONNECT'] = True
+        return old_database_name
     
     # As DB2 does not allow to insert NULL value in UNIQUE col, hence modifing model.
     def sql_create_model( self, model, style, known_models = set() ):
@@ -197,7 +274,7 @@ class DatabaseCreation ( BaseDatabaseCreation ):
     # Private method to alter a table with adding psudokey column
     def __add_psudokey_column( self, style, cursor, table_name, pk_name, column_list ):
         qn = self.connection.ops.quote_name
-        max_name_length = self.connection.ops.max_name_length
+        max_name_length = self.connection.ops.max_name_length()
         
         sql = style.SQL_KEYWORD( 'ALTER TABLE ' ) + \
             style.SQL_TABLE( qn( table_name ) ) + \
@@ -211,3 +288,48 @@ class DatabaseCreation ( BaseDatabaseCreation ):
         cursor.execute( sql )
         cursor.execute( 'SET INTEGRITY FOR ' + style.SQL_TABLE( table_name ) + ' IMMEDIATE CHECKED;' )
         cursor.close()
+        
+    #private method to create dictionary of login credentials for test database
+    def __create_test_kwargs( self ):
+        if( djangoVersion[0:2] <= ( 1, 1 ) ):
+            if( isinstance( settings.TEST_DATABASE_NAME, basestring ) and 
+                ( settings.TEST_DATABASE_NAME != '' ) ):
+                database = settings.TEST_DATABASE_NAME
+            else:
+                database = settings.DATABASE_NAME
+            database_user = settings.DATABASE_USER
+            database_pass = settings.DATABASE_PASSWORD
+            database_host = settings.DATABASE_HOST
+            database_port = settings.DATABASE_PORT
+            settings.DATABASE_SUPPORTS_TRANSACTIONS = True
+        else:
+            if( isinstance( self.connection.settings_dict['NAME'], basestring ) and 
+                ( self.connection.settings_dict['NAME'] != '' ) ):
+                database = self.connection.settings_dict['NAME']
+            else:
+                from django.core.exceptions import ImproperlyConfigured
+                raise ImproperlyConfigured( "the database Name doesn't exist" )
+            database_user = self.connection.settings_dict['USER']
+            database_pass = self.connection.settings_dict['PASSWORD']
+            database_host = self.connection.settings_dict['HOST']
+            database_port = self.connection.settings_dict['PORT']
+            self.connection.settings_dict['SUPPORTS_TRANSACTIONS'] = True
+        
+        kwargs = { }   
+        kwargs['database'] = database
+        if isinstance( database_user, basestring ):
+            kwargs['user'] = database_user
+        
+        if isinstance( database_pass, basestring ):
+            kwargs['password'] = database_pass
+        
+        if isinstance( database_host, basestring ):
+            kwargs['host'] = database_host
+        
+        if isinstance( database_port, basestring ):
+            kwargs['port'] = database_port
+            
+        if isinstance( database_host, basestring ):
+            kwargs['host'] = database_host
+            
+        return kwargs

@@ -23,7 +23,7 @@ from setuptools import setup, find_packages
 from distutils.core import setup, Extension
 
 PACKAGE = 'ibm_db_django'
-VERSION = '1.0.2'
+VERSION = '1.0.3'
 LICENSE = 'Apache License 2.0'
 
 setup (

@@ -170,7 +170,13 @@ class DatabaseWrapper( BaseDatabaseWrapper ):
             
             if isinstance( database_options, dict ):
                 kwargs['options'] = database_options
-                
+            
+            if ( djangoVersion[0:2] <= ( 1, 0 ) ):
+               if( hasattr( settings, 'PCONNECT' ) ):
+                   kwargs['PCONNECT'] = settings.PCONNECT
+            else:
+                if ( settings_dict.keys() ).__contains__( 'PCONNECT' ):
+                    kwargs['PCONNECT'] = settings_dict['PCONNECT']
             self.connection, cursor = self.databaseWrapper._cursor( None, kwargs )
             
             if( djangoVersion[0:3] <= ( 1, 2, 2 ) ):

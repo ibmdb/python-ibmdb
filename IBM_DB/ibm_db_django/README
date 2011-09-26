@@ -22,7 +22,7 @@ DB2 Django adapter (ibm_db_django) Build and Installation
 
 Install Django as per instructions from the Django website (http://docs.djangoproject.com/en/dev/topics/install/#installing-an-official-release)
 
-1. Linux/MAC
+1. Linux
     $ easy_install ibm_db_django
 
 2. Windows
@@ -32,7 +32,6 @@ List of Operating Systems tested
 --------------------------------
 Ubuntu Linux 7.04 32/64 bit
 Windows XP 32 bit
-Mac OS X Leopard
 
 Supported Databases
 -------------------
@@ -58,12 +57,12 @@ In case of *nix the steps will be like:
  $ vi settings.py
 
 The settings.py will be like (after adding DB2 properties):
-   DATABASE_ENGINE    = 'ibm_db_django'
-   DATABASE_NAME      = 'mydb'
-   DATABASE_USER      = 'db2inst1'
-   DATABASE_PASSWORD  = 'ibmdb2'
-   DATABASE_HOST      = 'localhost'
-   DATABASE_PORT      = '50000'
+   ENGINE    = 'ibm_db_django'
+   NAME      = 'mydb'
+   USER      = 'db2inst1'
+   PASSWORD  = 'ibmdb2'
+   HOST      = 'localhost'
+   PORT      = '50000'
    
 To enable DB2 support you need to set value of DATABASE_ENGINE to 'ibm_db_django' in settings.py.
 
@@ -83,17 +82,15 @@ For Windows, steps are same as above. In case of editing settings.py file, use n
 Known Limitations in ibm_db_django adapter for DB2 databases
 -------------------------------------------------------------
 
-1. User needs to create test database. It can not be created by this adapter.
+1. Support for REGEX lookup is not present yet.
 
-2. Support for REGEX lookup is not present yet.
+2. Non-standard SQL queries are not supported. e.g. "SELECT ? FROM TAB1"
 
-3. Non-standard SQL queries are not supported. e.g. "SELECT ? FROM TAB1"
+3. dbshell will not work if server is remote and client is DB2 thin client.
 
-4. dbshell will not work if server is remote and client is DB2 thin client.
+4. For updations involving primary/foreign key references, the entries should be made in correct order. Integrity check is always on and thus the primary keys referenced by the foreign keys in the referencing tables should always exist in the parent table.
 
-5. For updations involving primary/foreign key references, the entries should be made in correct order. Integrity check is always on and thus the primary keys referenced by the foreign keys in the referencing tables should always exist in the parent table.
-
-6. DB2 Timestamps do not support timezone aware information. Thus a Datetime field including tzinfo(timezone aware info) would fail.
+5. DB2 Timestamps do not support timezone aware information. Thus a Datetime field including tzinfo(timezone aware info) would fail.
 
 Support for IBM_DB_DJANGO Adaptor
 ---------------------------------
