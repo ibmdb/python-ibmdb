@@ -60,6 +60,8 @@ class DatabaseFeatures( BaseDatabaseFeatures ):
     #transaction is supported by DB2
     supports_transactions = True
     
+    supports_tablespaces = True
+    
     interprets_empty_strings_as_nulls = False
     allows_primary_key_0 = True
     can_defer_constraint_checks = False
@@ -67,7 +69,11 @@ class DatabaseFeatures( BaseDatabaseFeatures ):
     requires_rollback_on_dirty_transaction = True
     supports_regex_backreferencing = False
     supports_timezones = False
-
+    has_bulk_insert = True
+    has_select_for_update = True
+    supports_long_model_names = False
+    can_distinct_on_fields = False
+    
 class DatabaseValidation( BaseDatabaseValidation ):    
     #Need to do validation for DB2 and ibm_db version
     def validate_field( self, errors, opts, f ):

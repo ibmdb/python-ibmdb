@@ -57,12 +57,16 @@ In case of *nix the steps will be like:
  $ vi settings.py
 
 The settings.py will be like (after adding DB2 properties):
-   ENGINE    = 'ibm_db_django'
-   NAME      = 'mydb'
-   USER      = 'db2inst1'
-   PASSWORD  = 'ibmdb2'
-   HOST      = 'localhost'
-   PORT      = '50000'
+   DATABASES = {
+      'default': {
+         'ENGINE'     : 'ibm_db_django'
+         'NAME'       : 'mydb'
+         'USER'       : 'db2inst1'
+         'PASSWORD'   : 'ibmdb2'
+         'HOST'       : 'localhost'
+         'PORT'       : '50000'
+      }
+   }
    
 To enable DB2 support you need to set value of DATABASE_ENGINE to 'ibm_db_django' in settings.py.
 

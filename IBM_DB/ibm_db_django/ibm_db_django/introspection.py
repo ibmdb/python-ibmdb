@@ -26,7 +26,7 @@ if not _IS_JYTHON:
         import ibm_db_dbi as Database
         #from Database import DatabaseError
     except ImportError, e:
-        raise ImportError( "ibm_db module not found. Install ibm_db module from http://code.google.com/p/ibm-db/." )
+        raise ImportError( "ibm_db module not found. Install ibm_db module from http://code.google.com/p/ibm-db/. Error: %s" % e )
 else:
     from com.ziclix.python.sql import zxJDBC
 

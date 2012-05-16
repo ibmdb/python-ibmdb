@@ -1,5 +1,13 @@
 Change Log
 =============
+2012/05/15 (setup.py 1.0.4)
+ - Added support for Django-1.4
+ - Backward compatibilty - Same codebase works with older supported version of Django 
+ - Added support to enable Django's USE_TZ feature
+ - Added support for Django's bulk_create
+ - Added support for 'SELECT FOR UPDATE'
+ - Added module version string __version__
+ 
 2011/09/26 (setup.py 1.0.3)
  - Added support to create test database
 

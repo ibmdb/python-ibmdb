@@ -21,11 +21,18 @@ from ibm_db_django import query
 from string import upper
 from django import VERSION as djangoVersion
 import sys
-_IS_JYTHON = sys.platform.startswith( 'java' )
 
+_IS_JYTHON = sys.platform.startswith( 'java' )
+if( djangoVersion[0:2] >= ( 1, 4 ) ):
+    from django.utils.timezone import is_aware, is_naive, utc 
+    from django.conf import settings
+    
 class DatabaseOperations ( BaseDatabaseOperations ):
     def __init__( self, connection ):
-        super( DatabaseOperations, self ).__init__()
+        if( djangoVersion[0:2] >= ( 1, 4 ) ):
+            super( DatabaseOperations, self ).__init__(self)
+        else:
+            super( DatabaseOperations, self ).__init__()
         self.connection = connection
         
     if( djangoVersion[0:2] >= ( 1, 2 ) ):
@@ -328,20 +335,58 @@ class DatabaseOperations ( BaseDatabaseOperations ):
         return sql
     
     def value_to_db_datetime( self, value ):
-        #DB2 doesn't support time zone aware datetime
-        if ( value is not None ) and ( value.tzinfo is not None ):
-            raise ValueError( "DB2 doesn't support timezone aware datetime" )
+        if value is None:
+            return None
+        
+        if( djangoVersion[0:2] <= ( 1, 3 ) ):
+            #DB2 doesn't support time zone aware datetime
+            if ( value.tzinfo is not None ):
+                raise ValueError( "Timezone aware datetime not supported" )
+            else:
+                return value
         else:
-            return value
+            if is_aware(value):
+                if settings.USE_TZ:
+                    value = value.astimezone( utc ).replace( tzinfo=None )
+                else:
+                    raise ValueError( "Timezone aware datetime not supported" )
+            return unicode( value )
         
     def value_to_db_time( self, value ):
-        #DB2 doesn't support time zone aware time
-        if ( value is not None ) and ( value.tzinfo is not None ):
-            raise ValueError( "DB2 doesn't support timezone aware time" )
+        if value is None:
+            return None
+        
+        if( djangoVersion[0:2] <= ( 1, 3 ) ):
+            #DB2 doesn't support time zone aware time
+            if ( value.tzinfo is not None ):
+                raise ValueError( "Timezone aware time not supported" )
+            else:
+                return value
         else:
-            return value
-                             
+            if is_aware(value):
+                raise ValueError( "Timezone aware time not supported" )
+            else:
+                return value
+                    
     def year_lookup_bounds_for_date_field( self, value ):
         lower_bound = "%s-01-01"
         upper_bound = "%s-12-31"
         return [lower_bound % value, upper_bound % value]
+    
+    def bulk_insert_sql(self, fields, num_values):
+        values_sql = "( %s )" %(", ".join( ["%s"] * len(fields)))
+        bulk_values_sql = "VALUES " + ", ".join([values_sql] * num_values )
+        return bulk_values_sql
+    
+    def for_update_sql(self, nowait=False):
+        #DB2 doesn't support nowait select for update
+        if nowait:
+            return ValueError( "Nowait Select for update not supported " )
+        else:
+            return 'WITH RS USE AND KEEP UPDATE LOCKS'
+
+    def distinct_sql(self, fields):
+        if fields:
+            return ValueError( "distinct_on_fields not supported" )
+        else:
+            return 'DISTINCT'

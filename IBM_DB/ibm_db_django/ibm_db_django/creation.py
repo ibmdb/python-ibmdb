@@ -24,7 +24,7 @@ if not _IS_JYTHON:
     try:
         import ibm_db_dbi as Database
     except ImportError, e:
-        raise ImportError( "ibm_db module not found. Install ibm_db module from http://code.google.com/p/ibm-db/." )
+        raise ImportError( "ibm_db module not found. Install ibm_db module from http://code.google.com/p/ibm-db/. Error: %s" % e )
 
 from django.db.backends.creation import BaseDatabaseCreation
 from django.conf import settings
@@ -52,6 +52,7 @@ class DatabaseCreation ( BaseDatabaseCreation ):
         'IntegerField':                 'INTEGER',
         'BigIntegerField':              'BIGINT',
         'IPAddressField':               'VARCHAR(15)',
+        'GenericIPAddressField':        'VARCHAR(39)',
         'ManyToManyField':              'VARCHAR(%(max_length)s)',
         'NullBooleanField':             'SMALLINT CHECK (%(attname)s IN (0,1) OR (%(attname)s IS NULL))',
         'OneToOneField':                'VARCHAR(%(max_length)s)',
@@ -141,7 +142,7 @@ class DatabaseCreation ( BaseDatabaseCreation ):
                 del kwargs['port']
             
             if not autoclobber:
-                confirm = raw_input( "Wants to create %s as test database. Type yes to create it, or no to exit" % ( kwargs.get( 'database' ) ) )
+                confirm = raw_input( "Wants to create %s as test database. Type yes to create it else type no" % ( kwargs.get( 'database' ) ) )
             if autoclobber or confirm == 'yes':
                 try:
                     if verbosity > 1:
@@ -180,8 +181,14 @@ class DatabaseCreation ( BaseDatabaseCreation ):
                                     print "Tests cancelled."
                                     sys.exit( 1 )
             else:
-                print "Tests cancelled."
-                sys.exit( 1 )
+                confirm = raw_input( "Wants to use %s as test database, Type yes to use it as test database or no to exit" % ( old_database ) )
+                if confirm == 'yes':
+                    kwargs['database'] = old_database
+                    self.__clean_up( self.connection.cursor() )
+                    self.connection._commit()
+                    self.connection.close()
+                else:
+                    sys.exit( 1 )
         else:
             self.__clean_up( self.connection.cursor() )
             self.connection._commit()
@@ -202,7 +209,9 @@ class DatabaseCreation ( BaseDatabaseCreation ):
             if( djangoVersion[0:2] > ( 1, 2 ) ):
                 self.connection.features.confirm()
             
-            call_command( 'syncdb', database = self.connection.alias, verbosity = verbosity, interactive = False )
+            call_command( 'syncdb', database = self.connection.alias, verbosity = verbosity, interactive = False, load_initial_data = False )
+            # We need to then do a flush to ensure that any data installed by custom SQL has been removed.
+            call_command('flush', database=self.connection.alias, verbosity = verbosity, interactive=False)
         return test_database
     
     # Method to destroy database. For Jython nothing is getting done over here.
@@ -265,7 +274,6 @@ class DatabaseCreation ( BaseDatabaseCreation ):
     # Private method to clean up database.
     def __clean_up( self, cursor ):
         tables = self.connection.introspection.django_table_names( only_existing = True )
-        
         for table in tables:
             sql = "DROP TABLE %s" % self.connection.ops.quote_name( table )
             cursor.execute( sql )
