@@ -87,6 +87,10 @@
 #define DB2_ERRMSG 1
 #define DB2_ERR 2
 
+/*Used to decide if LITERAL REPLACEMENT should be turned on or not*/
+#define SET_QUOTED_LITERAL_REPLACEMENT_ON  1
+#define SET_QUOTED_LITERAL_REPLACEMENT_OFF 0
+
 /* DB2 instance environment variable */
 #define DB2_VAR_INSTANCE "DB2INSTANCE="
 

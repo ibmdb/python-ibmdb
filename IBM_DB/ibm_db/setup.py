@@ -1,25 +1,58 @@
 import os
 import sys
-
+import struct
+import warnings
 from setuptools import setup, find_packages
 from distutils.core import setup, Extension
 
 PACKAGE = 'ibm_db'
-VERSION = '1.0.5'
+VERSION = '1.0.6'
 LICENSE = 'Apache License 2.0'
 
-try:
-	ibm_db_dir = os.environ['IBM_DB_DIR']
-	ibm_db_lib = os.environ['IBM_DB_LIB']
-except (KeyError):
-	print '''IBM DataServer environment not set. 
-Please set IBM_DB_DIR to path to sqllib,
-and set IBM_DB_LIB to lib directory under sqllib
-e.g. export IBM_DB_DIR=/home/db2inst1/sqllib
-     export IBM_DB_LIB=/home/db2inst1/sqllib/lib
-'''
-	sys.exit()
+machine_bits =  8 * struct.calcsize("P")
+is64Bit = True
+libDir = ''
+ibm_db_home = ''
+ibm_db_dir = ''
+ibm_db_lib = ''
 
+if machine_bits == 64:
+    is64Bit = True
+    libDir = 'lib64'
+    print "Detected 64-bit Python\n"
+else:
+    is64Bit = False
+    libDir = 'lib32'
+    print "Detected 32-bit Python\m"
+    
+try:
+    ibm_db_home = os.environ['IBM_DB_HOME']
+    ibm_db_dir = ibm_db_home
+    ibm_db_lib = ibm_db_dir + '/' + libDir
+except (KeyError):   
+    try:
+        ibm_db_dir = os.environ['IBM_DB_DIR']
+        ibm_db_lib = ibm_db_dir + '/' + libDir
+    except (KeyError):
+        print "Environment variable IBM_DB_HOME is not set. Set it to your DB2/IBM_Data_Server_Driver installation directory and retry ibm_db module install.\n"
+        sys.exit()
+
+if not os.path.isdir(ibm_db_lib):
+    ibm_db_lib = ibm_db_dir + '/lib'
+    if not os.path.isdir(ibm_db_lib):
+        print "Cannot find %s directory. Check if you have set the IBM_DB_HOME environment variable's value correctly\n " %(ibm_db_lib)
+        sys.exit()
+    notifyString  = "Detected usage of IBM Data Server Driver package. Ensure you have downloaded "
+    if is64Bit:
+        notifyString = notifyString + "64-bit package "
+    else:
+        notifyString = notifyString + "32-bit package "
+    notifyString = notifyString + "of IBM_Data_Server_Driver and retry the ibm_db module install\n "
+    warnings.warn(notifyString)
+if not os.path.isdir(ibm_db_dir + '/include'):
+    print " %s/include folder not found. Check if you have set the IBM_DB_HOME environment variable's value correctly\n " %(ibm_db_dir)
+    sys.exit()
+    
 library = ['db2']
 if (sys.platform[0:3] == 'win'):
   library = ['db2cli']

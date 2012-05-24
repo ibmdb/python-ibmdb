@@ -21,7 +21,7 @@
 +--------------------------------------------------------------------------+
 */
 
-#define MODULE_RELEASE "1.0.5"
+#define MODULE_RELEASE "1.0.6"
 
 #include <Python.h>
 #include "ibm_db.h"
@@ -955,6 +955,26 @@ static int _python_ibm_db_bind_column_helper(stmt_handle *stmt_res)
 						1);
 				}
 				break;
+
+			case SQL_DBCLOB:
+				stmt_res->row_data[i].out_length = 0;
+				stmt_res->column_info[i].loc_type = SQL_DBCLOB_LOCATOR;
+				stmt_res->column_info[i].loc_ind = 0;
+
+				Py_BEGIN_ALLOW_THREADS;
+				rc = SQLBindCol((SQLHSTMT)stmt_res->hstmt, (SQLUSMALLINT)(i+1),
+						stmt_res->column_info[i].loc_type,
+						&stmt_res->column_info[i].lob_loc, 4,
+						&stmt_res->column_info[i].loc_ind);
+				Py_END_ALLOW_THREADS;
+
+				if ( rc == SQL_ERROR ) {
+					_python_ibm_db_check_sql_errors((SQLHSTMT)stmt_res->hstmt,
+							SQL_HANDLE_STMT, rc, 1, NULL, -1,
+							1);
+				}
+				break;
+
 			case SQL_BLOB:
 				stmt_res->row_data[i].out_length = 0;
 				stmt_res->column_info[i].loc_type = SQL_BLOB_LOCATOR;
@@ -1000,6 +1020,8 @@ static PyObject *_python_ibm_db_connect_helper( PyObject *self, PyObject *args, 
 	SQLWCHAR *uid = NULL;
 	SQLWCHAR *password = NULL;
 	PyObject *options = NULL;
+	PyObject *literal_replacementObj = NULL;
+	SQLINTEGER literal_replacement;
 	PyObject *equal = PyString_FromString("=");
 	int rc = 0;
 	SQLINTEGER conn_alive;
@@ -1012,7 +1034,7 @@ static PyObject *_python_ibm_db_connect_helper( PyObject *self, PyObject *args, 
 	
 	conn_alive = 1;	
 
-	if (!PyArg_ParseTuple(args, "OOO|O", &databaseObj, &uidObj, &passwordObj, &options)){
+	if (!PyArg_ParseTuple(args, "OOO|OO", &databaseObj, &uidObj, &passwordObj, &options, &literal_replacementObj)){
 		return NULL;
 	}
 	do {
@@ -1049,6 +1071,11 @@ static PyObject *_python_ibm_db_connect_helper( PyObject *self, PyObject *args, 
 			/* Need to check for max pconnections? */
 		}
 
+		if ( !NIL_P(literal_replacementObj) ) {
+			literal_replacement = (SQLINTEGER) PyInt_AsLong(literal_replacementObj);
+		} else {
+			literal_replacement = SET_QUOTED_LITERAL_REPLACEMENT_ON; /*QUOTED LITERAL replacemnt is ON by default*/
+		}
 		if (conn_res == NULL) {
 			conn_res = PyObject_NEW(conn_handle, &conn_handleType);
 			conn_res->henv = 0;
@@ -1181,7 +1208,7 @@ static PyObject *_python_ibm_db_connect_helper( PyObject *self, PyObject *args, 
 			/* Only enable this feature if we are not connected to an Informix data 
 			* server 
 			*/
-			if (!is_informix) {
+			if (!is_informix && (literal_replacement == SET_QUOTED_LITERAL_REPLACEMENT_ON)) {
 				rc = SQLSetConnectAttr((SQLHDBC)conn_res->hdbc, 
 					SQL_ATTR_REPLACE_QUOTED_LITERALS, 
 					(SQLPOINTER) (ENABLE_NUMERIC_LITERALS), 
@@ -1519,6 +1546,12 @@ static void _python_ibm_db_clear_conn_err_cache(void)
  *			cursor for a statement resource.
  *			This mode enables random access to rows in a result set, but
  *			currently is supported only by IBM DB2 Universal Database.
+ * ====set_replace_quoted_literal
+ *	  This variable indicates if the CLI Connection attribute SQL_ATTR_REPLACE_QUOTED_LITERAL is to be set or not
+ *	  To turn it ON pass  IBM_DB::SET_QUOTED_LITERAL_REPLACEMENT_ON
+ *	  To turn it OFF pass IBM_DB::SET_QUOTED_LITERAL_REPLACEMENT_OFF
+ *
+ *	  Default Setting: - IBM_DB::SET_QUOTED_LITERAL_REPLACEMENT_ON
  *
  * ===Return Values
  *
@@ -1585,6 +1618,13 @@ static PyObject *ibm_db_connect(PyObject *self, PyObject *args)
  *			 Passing the SQL_CURSOR_KEYSET_DRIVEN value specifies a scrollable
  * cursor for a statement resource. This mode enables random access to rows in a
  * result set, but currently is supported only by IBM DB2 Universal Database.
+ *
+ * ====set_replace_quoted_literal
+ *	  This variable indicates if the CLI Connection attribute SQL_ATTR_REPLACE_QUOTED_LITERAL is to be set or not
+ *	  To turn it ON pass  IBM_DB::SET_QUOTED_LITERAL_REPLACEMENT_ON
+ *	  To turn it OFF pass IBM_DB::SET_QUOTED_LITERAL_REPLACEMENT_OFF
+ *
+ *	  Default Setting: - IBM_DB::SET_QUOTED_LITERAL_REPLACEMENT_ON
  *
  * ===Return Values
  *
@@ -4970,7 +5010,7 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
 	
 	switch(TYPE(bind_data)) {
 		case PYTHON_FIXNUM:
-			if(curr->data_type == SQL_BIGINT  ){
+			if(curr->data_type == SQL_BIGINT || curr->data_type == SQL_DECIMAL ){
 				PyObject *tempobj = NULL;
 				tempobj = PyObject_Str(bind_data);
 				curr->svalue = PyString_AsString(tempobj);
@@ -4989,12 +5029,10 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
 					_python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, 
 												rc, 1, NULL, -1, 1);
 				}
-				curr->data_type = SQL_C_SBIGINT;
 				Py_XDECREF(tempobj);
 			}
 			else{
 				curr->ivalue = (SQLINTEGER) PyLong_AsLong(bind_data);
-
 				Py_BEGIN_ALLOW_THREADS;
 				rc = SQLBindParameter(stmt_res->hstmt, curr->param_num,
 							curr->param_type, SQL_C_LONG, curr->data_type,
@@ -5073,35 +5111,52 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
 					curr->ivalue = PyUnicode_GetSize(bind_data);
 					curr->ivalue = curr->ivalue * sizeof(SQLWCHAR);
 				}
+				param_length = curr->ivalue;
 				if (curr->size != 0) {
-					curr->ivalue = curr->size * sizeof(SQLWCHAR);
+					curr->ivalue = (curr->size + 1) * sizeof(SQLWCHAR);
 				}
+
+				if (curr->param_type == SQL_PARAM_OUTPUT || curr->param_type == SQL_PARAM_INPUT_OUTPUT) {
+					if (curr->size == 0) {
+						if (curr->data_type == SQL_DBCLOB) {
+							if (curr->ivalue <= (curr->param_size * sizeof(SQLWCHAR))) {
+								curr->ivalue = (curr->param_size + 1) * sizeof(SQLWCHAR);
+							}
+						} else {
+							if (curr->ivalue <= curr->param_size) {
+								curr->ivalue = curr->param_size + sizeof(SQLWCHAR);
+							}
+						}
+					}
+				}
+
 				if (isNewBuffer == 0 ){
 					/* actually make a copy, since this will uvalue will be freed explicitly */
 					SQLWCHAR* tmp = (SQLWCHAR*)ALLOC_N(SQLWCHAR, curr->ivalue + 1);
-					memcpy(tmp, curr->uvalue, (curr->ivalue + sizeof(SQLWCHAR)));
+					memcpy(tmp, curr->uvalue, (param_length + sizeof(SQLWCHAR)));
 					curr->uvalue = tmp;
 				}
 				
-				switch( curr->data_type){
+				switch( curr->data_type ){
 					case SQL_CLOB:
+                    case SQL_DBCLOB:
 						if(curr->param_type == SQL_PARAM_OUTPUT || curr->param_type == SQL_PARAM_INPUT_OUTPUT){
-							curr->bind_indicator = curr->ivalue;
+							curr->bind_indicator = param_length;
 							paramValuePtr = (SQLPOINTER)curr->uvalue;
 						} else {
 							curr->bind_indicator = SQL_DATA_AT_EXEC;
-							valueType = SQL_C_WCHAR;
 #ifndef PASE
 							paramValuePtr = (SQLPOINTER)(curr);
 #else
 							paramValuePtr = (SQLPOINTER)&(curr);
 #endif
 						}
+						valueType = SQL_C_WCHAR;
 						break;
 					
 					case SQL_BLOB:
 						if (curr->param_type == SQL_PARAM_OUTPUT ||curr->param_type == SQL_PARAM_INPUT_OUTPUT) {
-							curr->bind_indicator = curr->ivalue ;
+							curr->bind_indicator =  param_length;
 							valueType = SQL_C_BINARY;
 							paramValuePtr = (SQLPOINTER)curr;
 						} else {
@@ -5121,21 +5176,21 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
 #endif /* PASE */
 					case SQL_VARBINARY:
 						/* account for bin_mode settings as well */
-						curr->bind_indicator = curr->ivalue;
+						curr->bind_indicator = param_length;
 						valueType = SQL_C_BINARY;
 						paramValuePtr = (SQLPOINTER)curr->uvalue;
 						break;
 
 					case SQL_XML:
-						curr->bind_indicator = curr->ivalue;
+						curr->bind_indicator = param_length;
 						paramValuePtr = (SQLPOINTER)curr->uvalue;
 						valueType = SQL_C_WCHAR;
 						break;
 					
 					default:
 						valueType = SQL_C_WCHAR;
-						curr->bind_indicator = curr->ivalue;
-						paramValuePtr = (curr->uvalue);
+						curr->bind_indicator = param_length;
+						paramValuePtr = (SQLPOINTER)(curr->uvalue);
 				}
 
 				Py_BEGIN_ALLOW_THREADS;
@@ -5150,113 +5205,123 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
 			break;
 		
 		case PYTHON_STRING:
-			if (curr->data_type == SQL_BLOB || curr->data_type == SQL_BINARY
-										 || curr->data_type == SQL_VARBINARY ) {
-				PyObject_AsReadBuffer(bind_data, (const void **) &(curr->svalue), &buffer_len);
-				curr->ivalue = buffer_len;
-			} else {
-				if(curr->svalue != NULL) {
-					PyMem_Del(curr->svalue);
-					curr->svalue = NULL;
+			{
+				char* tmp;
+				if (curr->data_type == SQL_BLOB || curr->data_type == SQL_BINARY
+											 || curr->data_type == SQL_VARBINARY ) {
+					PyObject_AsReadBuffer(bind_data, (const void **) &(curr->svalue), &buffer_len);
+					curr->ivalue = buffer_len;
+				} else {
+					if(curr->svalue != NULL) {
+						PyMem_Del(curr->svalue);
+						curr->svalue = NULL;
+					}
+					curr->svalue = PyString_AsString(bind_data);
+					curr->ivalue = strlen(curr->svalue);
 				}
-				curr->svalue = PyString_AsString(bind_data);
-				curr->ivalue = strlen(curr->svalue);
-			}
-			param_length = curr->ivalue;
-			/*
-			* An extra parameter is given by the client to pick the size of the 
-			* string returned. The string is then truncate past that size.	
-			* If no size is given then use BUFSIZ to return the string.
-			*/
-			if (curr->size != 0) {
-				curr->ivalue = curr->size;
-			}
-            
-			if (curr->param_type == SQL_PARAM_OUTPUT || curr->param_type == SQL_PARAM_INPUT_OUTPUT) {
-				if (curr->size == 0) {
-					if (curr->ivalue < curr->param_size) {
-						curr->ivalue = curr->param_size;
+				param_length = curr->ivalue;
+				/*
+				* An extra parameter is given by the client to pick the size of the 
+				* string returned. The string is then truncate past that size.	
+				* If no size is given then use BUFSIZ to return the string.
+				*/
+				if (curr->size != 0) {
+					curr->ivalue = curr->size;
+				}
+	            
+				if (curr->param_type == SQL_PARAM_OUTPUT || curr->param_type == SQL_PARAM_INPUT_OUTPUT) {
+					if (curr->size == 0) {
+						if (curr->ivalue <= curr->param_size) {
+							curr->ivalue = curr->param_size + 1;
+						}
 					}
 				}
-			}
 			
-			curr->svalue = memcpy(ALLOC_N(char, curr->ivalue+1), curr->svalue, param_length);
-			curr->svalue[param_length] = '\0';
+				tmp = ALLOC_N(char, curr->ivalue+1);
+				curr->svalue = memcpy(tmp, curr->svalue, param_length);
+				curr->svalue[param_length] = '\0';
 
-			switch ( curr->data_type ) {
-				case SQL_CLOB:
-					if (curr->param_type == SQL_PARAM_OUTPUT || 
-						curr->param_type == SQL_PARAM_INPUT_OUTPUT) {
-						curr->bind_indicator = curr->ivalue;
-						valueType = SQL_C_CHAR;
-						paramValuePtr = (SQLPOINTER)curr->svalue;
-					} else {
-						curr->bind_indicator = SQL_DATA_AT_EXEC;
-						valueType = SQL_C_CHAR;
-						/* The correct dataPtr will be set during SQLPutData with 
-						* the len from this struct 
-						*/
+				switch ( curr->data_type ) {
+					case SQL_CLOB:
+					case SQL_DBCLOB:
+						if (curr->param_type == SQL_PARAM_OUTPUT || 
+							curr->param_type == SQL_PARAM_INPUT_OUTPUT) {
+							curr->bind_indicator = param_length;
+							valueType = SQL_C_CHAR;
+							paramValuePtr = (SQLPOINTER)curr->svalue;
+						} else {
+							curr->bind_indicator = SQL_DATA_AT_EXEC;
+							valueType = SQL_C_CHAR;
+							/* The correct dataPtr will be set during SQLPutData with 
+							* the len from this struct 
+							*/
 #ifndef PASE
-						paramValuePtr = (SQLPOINTER)(curr);
+							paramValuePtr = (SQLPOINTER)(curr);
 #else
-						paramValuePtr = (SQLPOINTER)&(curr);
+							paramValuePtr = (SQLPOINTER)&(curr);
 #endif
-					}
-					break;
+						}
+						break;
 
-				case SQL_BLOB:
-					if (curr->param_type == SQL_PARAM_OUTPUT || 
-						curr->param_type == SQL_PARAM_INPUT_OUTPUT) {
-						curr->bind_indicator = curr->ivalue;
-						valueType = SQL_C_BINARY;
-						paramValuePtr = (SQLPOINTER)curr;
-					} else {
-						curr->bind_indicator = SQL_DATA_AT_EXEC;
-						valueType = SQL_C_BINARY;
+					case SQL_BLOB:
+						if (curr->param_type == SQL_PARAM_OUTPUT || 
+							curr->param_type == SQL_PARAM_INPUT_OUTPUT) {
+							curr->ivalue = curr->ivalue -1;
+							curr->bind_indicator = param_length;
+							valueType = SQL_C_BINARY;
+							paramValuePtr = (SQLPOINTER)curr;
+						} else {
+							curr->bind_indicator = SQL_DATA_AT_EXEC;
+							valueType = SQL_C_BINARY;
 #ifndef PASE
-						paramValuePtr = (SQLPOINTER)(curr);
+							paramValuePtr = (SQLPOINTER)(curr);
 #else
-						paramValuePtr = (SQLPOINTER)&(curr);
+							paramValuePtr = (SQLPOINTER)&(curr);
 #endif
-					}
-					break;
+						}
+						break;
 
-				case SQL_BINARY:
+					case SQL_BINARY:
 #ifndef PASE /* i5/OS SQL_LONGVARBINARY is SQL_VARBINARY */
-				case SQL_LONGVARBINARY:
+					case SQL_LONGVARBINARY:
 #endif /* PASE */
-				case SQL_VARBINARY:
-				case SQL_XML:
-					/* account for bin_mode settings as well */
-					curr->bind_indicator = curr->ivalue;
-					valueType = SQL_C_BINARY;
-					paramValuePtr = (SQLPOINTER)curr->svalue;
-					break;
+					case SQL_VARBINARY:
+					case SQL_XML:
+						/* account for bin_mode settings as well */
+						curr->bind_indicator = curr->ivalue;
+						if (curr->param_type == SQL_PARAM_OUTPUT || curr->param_type == SQL_PARAM_INPUT_OUTPUT) {
+							curr->ivalue = curr->ivalue - 1;
+							curr->bind_indicator = param_length;
+						}
+						valueType = SQL_C_BINARY;
+						paramValuePtr = (SQLPOINTER)curr->svalue;
+						break;
 
-					/* This option should handle most other types such as DATE, 
-					* VARCHAR etc 
-					*/
-				default:
-					valueType = SQL_C_CHAR;
-					curr->bind_indicator = curr->ivalue;
-					if (curr->param_type == SQL_PARAM_OUTPUT || curr->param_type == SQL_PARAM_INPUT_OUTPUT) {
-						curr->bind_indicator = SQL_NTS;
+						/* This option should handle most other types such as DATE, 
+						* VARCHAR etc 
+						*/
+					default:
+						valueType = SQL_C_CHAR;
+						curr->bind_indicator = curr->ivalue;
+						if (curr->param_type == SQL_PARAM_OUTPUT || curr->param_type == SQL_PARAM_INPUT_OUTPUT) {
+							curr->bind_indicator = SQL_NTS;
+						}	
+						paramValuePtr = (SQLPOINTER)(curr->svalue);
 					}
-					paramValuePtr = (SQLPOINTER)(curr->svalue);
-			}
+		
+				Py_BEGIN_ALLOW_THREADS;
+				rc = SQLBindParameter(stmt_res->hstmt, curr->param_num,
+					curr->param_type, valueType, curr->data_type, curr->param_size,
+					curr->scale, paramValuePtr, curr->ivalue, &(curr->bind_indicator));
+				Py_END_ALLOW_THREADS;
 
-			Py_BEGIN_ALLOW_THREADS;
-			rc = SQLBindParameter(stmt_res->hstmt, curr->param_num,
-				curr->param_type, valueType, curr->data_type, curr->param_size,
-				curr->scale, paramValuePtr, curr->ivalue, &(curr->bind_indicator));
-			Py_END_ALLOW_THREADS;
-
-			if ( rc == SQL_ERROR ) {
-				_python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, 
+				if ( rc == SQL_ERROR ) {
+					_python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, 
 											rc, 1, NULL, -1, 1);
+				}
+				curr->data_type = valueType;
 			}
-			curr->data_type = valueType;
-			break;
+				break;
 
 		case PYTHON_DECIMAL:
 			if (curr->data_type == SQL_DECIMAL || curr->data_type == SQL_DECFLOAT) {
@@ -6530,7 +6595,9 @@ static PyObject *ibm_db_field_type(PyObject *self, PyObject *args)
 		case SQL_CLOB:
 			str_val = "clob";
 			break;
-		
+		case SQL_DBCLOB:
+			str_val = "dbclob";
+			break;	
 		case SQL_BLOB:
 			str_val = "blob";
 			break;
@@ -6964,6 +7031,7 @@ static PyObject *ibm_db_result(PyObject *self, PyObject *args)
 			break;
 
 		case SQL_CLOB:
+		case SQL_DBCLOB:
 			out_wchar_ptr = NULL;
 			rc = _python_ibm_db_get_length(stmt_res, (SQLUSMALLINT) col_num+1, &in_length);
 			if ( rc == SQL_ERROR ) {
@@ -7264,7 +7332,7 @@ static PyObject *_python_ibm_db_bind_fetch_helper(PyObject *args, int op)
 
 #ifndef PASE /* i5/OS SQL_LONGVARCHAR is SQL_VARCHAR */
 				case SQL_LONGVARCHAR:
-
+				case SQL_WLONGVARCHAR:
 #endif /* PASE */
 					/* i5/OS will xlate from EBCIDIC to ASCII (via SQLGetData) */
 					tmp_length = stmt_res->column_info[column_number].size;
@@ -7423,6 +7491,7 @@ static PyObject *_python_ibm_db_bind_fetch_helper(PyObject *args, int op)
 				break;
 
 			case SQL_CLOB:
+			case SQL_DBCLOB:
 				wout_ptr = NULL;
 				rc = _python_ibm_db_get_length(stmt_res, column_number + 1, &tmp_length);
 				if (tmp_length == SQL_NULL_DATA) {
@@ -7453,8 +7522,9 @@ static PyObject *_python_ibm_db_bind_fetch_helper(PyObject *args, int op)
 					}					
 				}
 				break;
-
 			default:
+				Py_INCREF(Py_None);
+				value = Py_None;
 				break;
 			}
 		}
@@ -9002,10 +9072,10 @@ static PyObject* ibm_db_execute_many (PyObject *self, PyObject *args) {
 	 *  	1. statement handler Object
 	 *  	2. Parameters
 	 *  	3. Options (optional) */
-	if (!PyArg_ParseTuple(args, "OO|O", &stmt_res, &params, &options))
+	if ( !PyArg_ParseTuple(args, "OO|O", &stmt_res, &params, &options) )
 		return NULL;
 	
-	if (!NIL_P(stmt_res)) {
+	if ( !NIL_P(stmt_res) ) {
 		/* Free any cursors that might have been allocated in a previous call to SQLExecute */
 		Py_BEGIN_ALLOW_THREADS;
 		SQLFreeStmt((SQLHSTMT)stmt_res->hstmt, SQL_CLOSE);
@@ -9022,8 +9092,11 @@ static PyObject* ibm_db_execute_many (PyObject *self, PyObject *args) {
 		
 		data_type = (SQLSMALLINT*)ALLOC_N(SQLSMALLINT, numOpts);
 		ref_data_type = (SQLSMALLINT*)ALLOC_N(SQLSMALLINT, numOpts);
+		for ( i = 0; i < numOpts; i++) {
+			ref_data_type[i] = -1;
+		}
 		if ( numOpts != 0 ) {
-			for ( i = 0; i < numOpts; i++) {
+			for ( i = 0; i < numOpts; i++ ) {
 				Py_BEGIN_ALLOW_THREADS;
 				rc = SQLDescribeParam((SQLHSTMT)stmt_res->hstmt, i + 1,
 					(SQLSMALLINT*)(data_type + i), &precision, (SQLSMALLINT*)&scale,
@@ -9042,13 +9115,13 @@ static PyObject* ibm_db_execute_many (PyObject *self, PyObject *args) {
 			}
 		}
 
-		/* Execute SQL for all set of parameters*/
+		/* Execute SQL for all set of parameters */
 		numOfRows = PyTuple_Size(params);
 		head_error_list = ALLOC(error_msg_node);
 		memset(head_error_list, 0, sizeof(error_msg_node));
 		head_error_list->next = NULL;
-		if ( numOfRows != 0 ) {
-			for (i = 0; i < numOfRows; i++) {
+		if ( numOfRows > 0 ) {
+			for ( i = 0; i < numOfRows; i++ ) {
 				int j = 0;
 				param_node *curr = NULL;
 				PyObject *param = PyTuple_GET_ITEM(params, i);
@@ -9082,26 +9155,108 @@ static PyObject* ibm_db_execute_many (PyObject *self, PyObject *args) {
 
 				while ( curr != NULL ) {
 					data = PyTuple_GET_ITEM(param, j);
-					if (data == NULL) {
+					if ( data == NULL ) {
 						sprintf(error, "NULL value passed for value parameter: %d", i + 1);
 						_build_client_err_list(head_error_list, error);
 						err_count++;
-						break; 
+						break;
 					}
 
 					if ( chaining_start ) {
-						if ( ref_data_type[curr->param_num - 1] != TYPE(data) ) {
+						if ( ( TYPE(data) != PYTHON_NIL ) && ( ref_data_type[curr->param_num - 1] != TYPE(data) ) ) {
 							sprintf(error, "Value parameters array %d is not homogeneous with privious parameters array", i + 1);
 							_build_client_err_list(head_error_list, error);
 							err_count++;
 							break;
 						}
 					} else {
-						ref_data_type[curr->param_num -1] = TYPE(data);
+						if ( TYPE(data) != PYTHON_NIL ) {
+							ref_data_type[curr->param_num -1] = TYPE(data);
+						} else {
+							int i_tmp;
+							PyObject *param_tmp = NULL;
+							PyObject *data_tmp = NULL;
+							i_tmp = i + 1;
+							for ( i_tmp = i + 1; i_tmp < numOfRows; i_tmp++ ) {
+								param_tmp = PyTuple_GET_ITEM(params, i_tmp);
+								if ( !PyTuple_Check(param_tmp) ) {
+									continue;
+								}
+								data_tmp = PyTuple_GET_ITEM(param_tmp, j);
+								if ( TYPE(data_tmp) != PYTHON_NIL ) {
+									ref_data_type[curr->param_num -1] = TYPE(data_tmp);
+									break;
+								} else {
+									continue;
+								}	
+							}
+							if ( ref_data_type[curr->param_num -1] == -1 ) {
+								ref_data_type[curr->param_num -1] = PYTHON_NIL;
+							}
+						}
 					}
 
 					curr->data_type = data_type[curr->param_num - 1];
-					rc = _python_ibm_db_bind_data(stmt_res, curr, data);
+					if ( TYPE(data) != PYTHON_NIL ) {
+						rc = _python_ibm_db_bind_data(stmt_res, curr, data);
+					} else {
+						SQLSMALLINT valueType = 0;
+						switch( ref_data_type[curr->param_num -1] ) {
+							case PYTHON_FIXNUM:
+								if(curr->data_type == SQL_BIGINT || curr->data_type == SQL_DECIMAL ) {
+									valueType = SQL_C_CHAR;
+								} else {
+									valueType = SQL_C_LONG;
+								}
+								break;
+							case PYTHON_FALSE:
+							case PYTHON_TRUE:
+								valueType = SQL_C_LONG;
+								break;
+							case PYTHON_FLOAT:
+								valueType = SQL_C_DOUBLE;
+								break;
+							case PYTHON_UNICODE:
+								switch( curr->data_type ) {
+									case SQL_BLOB:
+									case SQL_BINARY:
+#ifndef PASE /* i5/OS SQL_LONGVARBINARY is SQL_VARBINARY */
+									case SQL_LONGVARBINARY:
+#endif /* PASE */
+									case SQL_VARBINARY:
+										valueType = SQL_C_BINARY;
+										break;
+									default:
+										valueType = SQL_C_WCHAR;
+								}
+								break;
+							case PYTHON_STRING:
+								switch( curr->data_type ) {
+									case SQL_BLOB:
+									case SQL_BINARY:
+#ifndef PASE /* i5/OS SQL_LONGVARBINARY is SQL_VARBINARY */
+									case SQL_LONGVARBINARY:
+#endif /* PASE */
+									case SQL_VARBINARY:
+										valueType = SQL_C_BINARY;
+										break;
+									default:
+										valueType = SQL_C_CHAR;
+								}
+								break;
+							case PYTHON_DECIMAL:
+								valueType = SQL_C_CHAR;
+								break;
+							case PYTHON_NIL:
+								valueType = SQL_C_DEFAULT;
+								break;
+						}
+						curr->ivalue = SQL_NULL_DATA;
+
+						Py_BEGIN_ALLOW_THREADS;
+						rc = SQLBindParameter(stmt_res->hstmt, curr->param_num, curr->param_type, valueType, curr->data_type, curr->param_size, curr->scale, &curr->ivalue, 0, (SQLLEN *)&(curr->ivalue));
+						Py_END_ALLOW_THREADS;
+					}
 					if ( rc != SQL_SUCCESS ) {
 						sprintf(error, "Binding Error 1: %s", 
 								IBM_DB_G(__python_stmt_err_msg));
@@ -9113,7 +9268,7 @@ static PyObject* ibm_db_execute_many (PyObject *self, PyObject *args) {
 					j++;
 				}
 
-				if ( !chaining_start && (error[0] == '\0' ) ) {
+				if ( !chaining_start && ( error[0] == '\0' ) ) {
 					/* Set statement attribute SQL_ATTR_CHAINING_BEGIN */
 					rc = _ibm_db_chaining_flag(stmt_res, SQL_ATTR_CHAINING_BEGIN, NULL, 0);
 					chaining_start = 1;
@@ -9128,6 +9283,8 @@ static PyObject* ibm_db_execute_many (PyObject *self, PyObject *args) {
 					Py_END_ALLOW_THREADS;
 				}
 			}
+		} else {
+			return PyInt_FromLong(0);			
 		}
 		
 		/* Set statement attribute SQL_ATTR_CHAINING_END */
@@ -9143,6 +9300,9 @@ static PyObject* ibm_db_execute_many (PyObject *self, PyObject *args) {
 		if ( rc != SQL_SUCCESS || err_count != 0 ) {
 			return NULL;
 		}
+	} else {
+		PyErr_SetString(PyExc_Exception, "Supplied parameter is invalid");
+		return NULL;
 	}
 
 	Py_BEGIN_ALLOW_THREADS;
@@ -9637,6 +9797,9 @@ initibm_db(void) {
 	PyModule_AddIntConstant(m, "SQL_ROWCOUNT_PREFETCH_ON", SQL_ROWCOUNT_PREFETCH_ON);
 	PyModule_AddIntConstant(m, "SQL_ROWCOUNT_PREFETCH_OFF", SQL_ROWCOUNT_PREFETCH_OFF);
 	PyModule_AddIntConstant(m, "SQL_API_SQLROWCOUNT", SQL_API_SQLROWCOUNT);
+	PyModule_AddIntConstant(m, "QUOTED_LITERAL_REPLACEMENT_ON", SET_QUOTED_LITERAL_REPLACEMENT_ON);
+	PyModule_AddIntConstant(m, "QUOTED_LITERAL_REPLACEMENT_OFF", SET_QUOTED_LITERAL_REPLACEMENT_OFF);
+	PyModule_AddStringConstant(m, "__version__", MODULE_RELEASE);
 
 	Py_INCREF(&stmt_handleType);
 	PyModule_AddObject(m, "IBM_DBStatement", (PyObject *)&stmt_handleType);

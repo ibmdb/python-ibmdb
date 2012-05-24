@@ -14,7 +14,6 @@
 # | language governing permissions and limitations under the License.        |
 # +--------------------------------------------------------------------------+
 # | Authors: Swetha Patel, Abhigyan Agrawal, Tarun Pasrija, Rahul Priyadarshi|
-# | Version: 1.0.5                                                           |
 # +--------------------------------------------------------------------------+
 
 """
@@ -24,6 +23,7 @@ This module implements the Python DB API Specification v2.0 for DB2 database.
 import types, string, time, datetime, decimal, exceptions
 
 import ibm_db
+__version__ = ibm_db.__version__
 
 # Constants for specifying database connection options.
 SQL_ATTR_AUTOCOMMIT = ibm_db.SQL_ATTR_AUTOCOMMIT
@@ -48,7 +48,7 @@ threadsafety = 0
 paramstyle = 'qmark'
 
 
-class Error(exceptions.StandardError):
+class Error(Exception):
     """This is the base class of all other exception thrown by this
     module.  It can be use to catch all exceptions with a single except
     statement.
@@ -56,25 +56,23 @@ class Error(exceptions.StandardError):
     """
     def __init__(self, message):
         """This is the constructor which take one string argument."""
-        super(Error, self).__init__(message)
-        self.message = message
+        self._message = message
     def __str__(self):
         """Converts the message to a string."""
-        return 'ibm_db_dbi::'+str(self.__class__.__name__)+': '+str(self.message)
+        return 'ibm_db_dbi::'+str(self.__class__.__name__)+': '+str(self._message)
 
 
-class Warning(exceptions.StandardError):
+class Warning(Exception):
     """This exception is used to inform the user about important 
     warnings such as data truncations.
 
     """
     def __init__(self, message):
         """This is the constructor which take one string argument."""
-        super(Warning, self).__init__(message)
-        self.message = message
+        self._message = message
     def __str__(self):
         """Converts the message to a string."""
-        return 'ibm_db_dbi::'+str(self.__class__.__name__)+': '+str(self.message)
+        return 'ibm_db_dbi::'+str(self.__class__.__name__)+': '+str(self._message)
 
 
 class InterfaceError(Error):
@@ -534,7 +532,7 @@ def connect(dsn, user='', password='', host='', database='', conn_options=None):
         if not SQL_ATTR_AUTOCOMMIT in conn_options:
             conn_options[SQL_ATTR_AUTOCOMMIT] = SQL_AUTOCOMMIT_OFF
     else:
-        conn_options = {SQL_ATTR_AUTOCOMMIT : SQL_AUTOCOMMIT_ON}
+        conn_options = {SQL_ATTR_AUTOCOMMIT : SQL_AUTOCOMMIT_OFF}
 
     # If the dsn does not contain port and protocal adding database
     # and hostname is no good.  Add these when required, that is,
@@ -584,7 +582,7 @@ def pconnect(dsn, user='', password='', host='', database='', conn_options=None)
         if not SQL_ATTR_AUTOCOMMIT in conn_options:
             conn_options[SQL_ATTR_AUTOCOMMIT] = SQL_AUTOCOMMIT_OFF
     else:
-        conn_options = {SQL_ATTR_AUTOCOMMIT : SQL_AUTOCOMMIT_ON}
+        conn_options = {SQL_ATTR_AUTOCOMMIT : SQL_AUTOCOMMIT_OFF}
 
     # If the dsn does not contain port and protocal adding database
     # and hostname is no good.  Add these when required, that is,
@@ -970,14 +968,16 @@ class Cursor(object):
         if self.__description is not None:
             return self.__description 
 
-        self.__description = []
         if self.stmt_handler is None:
             return None
+        self.__description = []
+        
         try:
             num_columns = ibm_db.num_fields(self.stmt_handler)
             """ If the execute statement did not produce a result set return None.
             """
             if num_columns == False:
+                self.__description = None
                 return None
             for column_index in range(num_columns):
                 column_desc = []
@@ -1025,7 +1025,8 @@ class Cursor(object):
                 column_desc.append(None)
                 self.__description.append(column_desc)
         except Exception, inst:
-            raise _get_exception(inst)
+            self.messages.append(_get_exception(inst))
+            raise self.messages[len(self.messages) - 1]
 
         return self.__description
 
@@ -1050,22 +1051,7 @@ class Cursor(object):
     # It is a read only attribute. 
     connection = property(__get_connection, None, None, "")
 
-    def __init__(self, conn_handler):
-        """Constructor for Cursor object. It takes ibm_db connection 
-        handler as an argument.
-
-        """
-        # This attribute is used to determine the fetch size for fetchmany
-        # operation. It is a read/write attribute
-        self.arraysize = 1
-        self.__rowcount = -1
-        self._result_set_produced = False
-        self.__description = None
-        self.conn_handler = conn_handler
-        self.stmt_handler = None
-        self._is_scrollable_cursor = False
-    
-    def __init__(self, conn_handler, conn_object):
+    def __init__(self, conn_handler, conn_object=None):
         """Constructor for Cursor object. It takes ibm_db connection
         handler as an argument.
         """
@@ -1080,6 +1066,7 @@ class Cursor(object):
         self.stmt_handler = None
         self._is_scrollable_cursor = False
         self.__connection = conn_object
+        self.messages = []
     
     # This method closes the statemente associated with the cursor object.
     # It takes no argument.
@@ -1089,13 +1076,15 @@ class Cursor(object):
         arguments.
 
         """
+        messages = []
         if self.conn_handler is None:
-            raise ProgrammingError("Cursor cannot be closed; "
-                             "connection is no longer active.")
+            self.messages.append(ProgrammingError("Cursor cannot be closed; connection is no longer active."))
+            raise self.messages[len(self.messages) - 1]
         try:
             return_value = ibm_db.free_stmt(self.stmt_handler)
         except Exception, inst:
-            raise _get_exception(inst)
+            self.messages.append(_get_exception(inst))
+            raise self.messages[len(self.messages) - 1]
         self.stmt_handler = None
         self.conn_handler = None
         self._all_stmt_handlers = None
@@ -1117,12 +1106,14 @@ class Cursor(object):
             try:
                 result = ibm_db.callproc(self.conn_handler, procname,parameters)
             except Exception, inst:
-                raise _get_exception(inst)
+                self.messages.append(_get_exception(inst))
+                raise self.messages[len(self.messages) - 1]
         else:
             try:
                 result = ibm_db.callproc(self.conn_handler, procname)
             except Exception, inst:
-                raise _get_exception(inst)
+                self.messages.append(_get_exception(inst))
+                raise self.messages[len(self.messages) - 1]
         return result
        
 
@@ -1132,13 +1123,14 @@ class Cursor(object):
         the stored procedure as arguments. 
 
         """
+        self.messages = []
         if not isinstance(procname, basestring):
-            raise InterfaceError("callproc expects the first argument to " 
-                                                       "be of type String or Unicode.")
+            self.messages.append(InterfaceError("callproc expects the first argument to be of type String or Unicode."))
+            raise self.messages[len(self.messages) - 1]
         if parameters is not None:
             if not isinstance(parameters, (types.ListType, types.TupleType)):
-                raise InterfaceError("callproc expects the second argument"
-                                       " to be of type list or tuple.")
+                self.messages.append(InterfaceError("callproc expects the second argument to be of type list or tuple."))
+                raise self.messages[len(self.messages) - 1]
         result = self._callproc_helper(procname, parameters)
         return_value = None
         self.__description = None
@@ -1161,7 +1153,8 @@ class Cursor(object):
         try:
             self.stmt_handler = ibm_db.prepare(self.conn_handler, operation)
         except Exception, inst:
-            raise _get_exception(inst)
+            self.messages.append(_get_exception(inst))
+            raise self.messages[len(self.messages) - 1]
 
     # Helper for preparing an SQL statement.
     def _set_cursor_helper(self):
@@ -1173,7 +1166,8 @@ class Cursor(object):
         try:
             num_columns = ibm_db.num_fields(self.stmt_handler)
         except Exception, inst:
-            raise _get_exception(inst)
+            self.messages.append(_get_exception(inst))
+            raise self.messages[len(self.messages) - 1]
         if not num_columns:
             return True
         self._result_set_produced = True
@@ -1196,21 +1190,27 @@ class Cursor(object):
                 return_value = ibm_db.execute(self.stmt_handler, parameters)
                 if not return_value:
                     if ibm_db.conn_errormsg() is not None:
-                        raise Error(str(ibm_db.conn_errormsg()))
+                        self.messages.append(Error(str(ibm_db.conn_errormsg())))
+                        raise self.messages[len(self.messages) - 1]
                     if ibm_db.stmt_errormsg() is not None:
-                        raise Error(str(ibm_db.stmt_errormsg()))
+                        self.messages.append(Error(str(ibm_db.stmt_errormsg())))
+                        raise self.messages[len(self.messages) - 1]
             except Exception, inst:
-                raise _get_exception(inst)
+                self.messages.append(_get_exception(inst))
+                raise self.messages[len(self.messages) - 1]
         else:
             try:
                 return_value = ibm_db.execute(self.stmt_handler)
                 if not return_value:
                     if ibm_db.conn_errormsg() is not None:
-                        raise Error(str(ibm_db.conn_errormsg()))
+                        self.messages.append(Error(str(ibm_db.conn_errormsg())))
+                        raise self.messages[len(self.messages) - 1]
                     if ibm_db.stmt_errormsg() is not None:
-                        raise Error(str(ibm_db.stmt_errormsg()))
+                        self.messages.append(Error(str(ibm_db.stmt_errormsg())))
+                        raise self.messages[len(self.messages) - 1]
             except Exception, inst:
-                raise _get_exception(inst)
+                self.messages.append(_get_exception(inst))
+                raise self.messages[len(self.messages) - 1]
         return return_value
 
     # This method is used to set the rowcount after executing an SQL 
@@ -1221,13 +1221,15 @@ class Cursor(object):
             try:
                 counter = ibm_db.num_rows(self.stmt_handler)
             except Exception, inst:
-                raise _get_exception(inst)
+                self.messages.append(_get_exception(inst))
+                raise self.messages[len(self.messages) - 1]
             self.__rowcount = counter
         elif self._is_scrollable_cursor:
             try:
                 counter = ibm_db.get_num_result(self.stmt_handler)
             except Exception, inst:
-                raise _get_exception(inst)
+                self.messages.append(_get_exception(inst))
+                raise self.messages[len(self.messages) - 1]
             if counter >= 0:
                 self.__rowcount = counter
         return True
@@ -1253,11 +1255,14 @@ class Cursor(object):
                   identity_val = None
             else:
                 if ibm_db.conn_errormsg() is not None:
-                    raise Error(str(ibm_db.conn_errormsg()))
+                    self.messages.append(Error(str(ibm_db.conn_errormsg())))
+                    raise self.messages[len(self.messages) - 1]
                 if ibm_db.stmt_errormsg() is not None:
-                    raise Error(str(ibm_db.stmt_errormsg()))
+                    self.messages.append(Error(str(ibm_db.stmt_errormsg())))
+                    raise self.messages[len(self.messages) - 1]
         except Exception, inst:
-            raise _get_exception(inst)
+            self.messages.append(_get_exception(inst))
+            raise self.messages[len(self.messages) - 1]
         return identity_val
     last_identity_val = property(_get_last_identity_val, None, None, "")
 
@@ -1268,12 +1273,14 @@ class Cursor(object):
         sequence of values to substitute for the parameter markers in  
         the SQL statement as arguments.
         """
+        self.messages = []
         if not isinstance(operation, basestring):
-            raise InterfaceError("execute expects the first argument [%s] "
-                                      "to be of type String or Unicode." % operation )
+            self.messages.append(InterfaceError("execute expects the first argument [%s] to be of type String or Unicode." % operation ))
+            raise self.messages[len(self.messages) - 1]
         if parameters is not None:
-            if not isinstance(parameters, (types.ListType, types.TupleType, types.DictType)): 
-                raise InterfaceError("execute parameters argument should be sequence.")
+            if not isinstance(parameters, (types.ListType, types.TupleType, types.DictType)):
+                self.messages.append(InterfaceError("execute parameters argument should be sequence."))
+                raise self.messages[len(self.messages) - 1]
         self.__description = None
         self._all_stmt_handlers = []
         self._prepare_helper(operation)
@@ -1288,16 +1295,17 @@ class Cursor(object):
         and sequence of sequence of values to substitute for the 
         parameter markers in the SQL statement as its argument.
         """
+        self.messages = []
         if not isinstance(operation, basestring):
-            raise InterfaceError("executemany expects the first argument "
-                                                    "to be of type String or Unicode.")
+            self.messages.append(InterfaceError("executemany expects the first argument to be of type String or Unicode."))
+            raise self.messages[len(self.messages) - 1]
         if seq_parameters is None:
-            raise InterfaceError("executemany expects a not None "
-                                  "seq_parameters value")
+            self.messages.append(InterfaceError("executemany expects a not None seq_parameters value"))
+            raise self.messages[len(self.messages) - 1]
 
         if not isinstance(seq_parameters, (types.ListType, types.TupleType)):
-            raise InterfaceError("executemany expects the second argument "
-                                  "to be of type list or tuple of sequence.")
+            self.messages.append(InterfaceError("executemany expects the second argument to be of type list or tuple of sequence."))
+            raise self.messages[len(self.messages) - 1]
         
         CONVERT_STR = (datetime.datetime, datetime.date, datetime.time, buffer)
         # Convert date/time and binary objects to string for
@@ -1317,15 +1325,24 @@ class Cursor(object):
         self.__rowcount = -1
         self._prepare_helper(operation)
         try:
+            autocommit = ibm_db.autocommit(self.conn_handler)
+            if autocommit !=  0:
+                ibm_db.autocommit(self.conn_handler, 0)
             self.__rowcount = ibm_db.execute_many(self.stmt_handler, seq_parameters)
+            if autocommit != 0:
+                ibm_db.commit(self.conn_handler)
+                ibm_db.autocommit(self.conn_handler, autocommit)
             if self.__rowcount == -1:
                 if ibm_db.conn_errormsg() is not None:
-                    raise Error(str(ibm_db.conn_errormsg()))
+                    self.messages.append(Error(str(ibm_db.conn_errormsg())))
+                    raise self.messages[len(self.messages) - 1]
                 if ibm_db.stmt_errormsg() is not None:
-                    raise Error(str(ibm_db.stmt_errormsg()))     
+                    self.messages.append(Error(str(ibm_db.stmt_errormsg())))
+                    raise self.messages[len(self.messages) - 1]   
         except Exception, inst:
             self._set_rowcount()
-            raise Error(inst)
+            self.messages.append(Error(inst))
+            raise self.messages[len(self.messages) - 1]
         return True
 
     def _fetch_helper(self, fetch_size=-1):
@@ -1336,11 +1353,11 @@ class Cursor(object):
         If this is not provided it fetches all the remaining rows.
         """
         if self.stmt_handler is None:
-            raise ProgrammingError("Please execute an SQL statement in "
-                                   "order to get a row from result set.")
+            self.messages.append(ProgrammingError("Please execute an SQL statement in order to get a row from result set."))
+            raise self.messages[len(self.messages) - 1]
         if self._result_set_produced == False:
-            raise  ProgrammingError("The last call to execute did not "
-                                              "produce any result set.")
+            self.messages.append(ProgrammingError("The last call to execute did not produce any result set."))
+            raise  self.messages[len(self.messages) - 1]
         row_list = []
         rows_fetched = 0
         while (fetch_size == -1) or \
@@ -1348,7 +1365,11 @@ class Cursor(object):
             try:
                 row = ibm_db.fetch_tuple(self.stmt_handler)
             except Exception, inst:
-                return row_list
+                self.messages.append(_get_exception(inst))
+                if len(row_list) == 0:
+                    raise self.messages[len(self.messages) - 1]
+                else:
+                    return row_list
             
             if row != False:
                 row_list.append(self._fix_return_data_type(row))
@@ -1375,11 +1396,13 @@ class Cursor(object):
         is not provided it fetches self.arraysize number of rows. 
         """
         if not isinstance(size, (int, long)):
-            raise InterfaceError( "fetchmany expects argument type int or long.")
+            self.messages.append(InterfaceError( "fetchmany expects argument type int or long."))
+            raise self.messages[len(self.messages) - 1]
         if size == 0:
             size = self.arraysize
         if size < -1:
-            raise ProgrammingError("fetchmany argument size expected to be positive.")
+            self.messages.append(ProgrammingError("fetchmany argument size expected to be positive."))
+            raise self.messages[len(self.messages) - 1]
 
         return self._fetch_helper(size)
 
@@ -1393,12 +1416,13 @@ class Cursor(object):
         """This method can be used to get the next result set after 
         executing a stored procedure, which produces multiple result sets.
         """
+        self.messages = []
         if self.stmt_handler is None:
-            raise ProgrammingError("Please execute an SQL statement in "
-                                             "order to get result sets.")
+            self.messages.append(ProgrammingError("Please execute an SQL statement in order to get result sets."))
+            raise self.messages[len(self.messages) - 1]
         if self._result_set_produced == False:
-            raise ProgrammingError("The last call to execute did not "
-                                             "produce any result set.")
+            self.messages.append(ProgrammingError("The last call to execute did not produce any result set."))
+            raise self.messages[len(self.messages) - 1]
         try:
             # Store all the stmt handler that were created.  The 
             # handler was the one created by the execute method.  It 
@@ -1407,7 +1431,8 @@ class Cursor(object):
             self._all_stmt_handlers.append(self.stmt_handler)
             self.stmt_handler = ibm_db.next_result(self._all_stmt_handlers[0])
         except Exception, inst:
-            raise _get_exception(inst)
+            self.messages.append(_get_exception(inst))
+            raise self.messages[len(self.messages) - 1]
 
         if self.stmt_handler == False:
             self.stmt_handler = None
@@ -1462,5 +1487,6 @@ class Cursor(object):
                         row[index] = decimal.Decimal(str(row[index]).replace(",", "."))    
 
                 except Exception, inst:
-                    raise DataError("Data type format error: "+ str(inst))
+                    self.messages.append(DataError("Data type format error: "+ str(inst)))
+                    raise self.messages[len(self.messages) - 1]
         return tuple(row)

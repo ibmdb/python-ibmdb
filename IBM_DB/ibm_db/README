@@ -15,8 +15,7 @@ Python ibm_db Driver Build and Installation
     If you are compiling against a DB2 instance, do the following
     (paths depend on system):
       . <path_to_sqllib>/db2profile
-      export IBM_DB_DIR=<path_to_sqllib>
-      export IBM_DB_LIB=<path_to_sqllib>/lib
+      export IBM_DB_HOME=<path_to_sqllib>
   
   Installation Commands for Linux:
     python setup.py build
@@ -38,8 +37,7 @@ Python ibm_db Driver Build and Installation
       SET LIB=%LIB%;C:\Program Files\Microsoft Visual Studio .NET
         2003\Vc7\lib 
       (Use notepad to edit config.py to your DB2 settings)
-      set IBM_DB_DIR=<path_to_sqllib>
-      set IBM_DB_LIB=<path_to_sqllib>\lib
+      set IBM_DB_HOME=<path_to_sqllib>
 
   Installation Commands for Windows:
     setup.py build
@@ -146,9 +144,6 @@ Known Limitations for the Python driver
    test_03a.py: 
      Fails due to an exception being thrown by the driver and not
      being caught by the test.
-   test_133.py:
-     Fails due to the None object not being returned by the
-     ibm_db.execute() statement on line 48.
      
    In addition to these, if trusted context is not set up,
    there will be additional two failures related to trusted context.

@@ -13,7 +13,7 @@ class IbmDbTestCase(unittest.TestCase):
 
   def test_133_ExecuteLongInputParams(self):
     obj = IbmDbTestFunctions()
-    obj.assert_expect(self.run_test_133)
+    obj.assert_expectf(self.run_test_133)
 
   def run_test_133(self):
     conn = ibm_db.connect(config.database, config.user, config.password)
@@ -65,12 +65,12 @@ class IbmDbTestCase(unittest.TestCase):
 #__END__
 #__LUW_EXPECTED__
 #Starting test ...
-#None
+#
 #SQLSTATE: 22001
 #Message: [IBM][CLI Driver] CLI0109E  String data right truncation. SQLSTATE=22001 SQLCODE=-99999
 #True
 #SQLSTATE: 02000
-#Message: [IBM][CLI Driver][DB2%s] SQL0100W  No row was found for FETCH, UPDATE or DELETE; or the result of a query is an empty table.  SQLSTATE=02000
+#Message: [IBM][CLI Driver][DB2/%s] SQL0100W  No row was found for FETCH, UPDATE or DELETE; or the result of a query is an empty table.  SQLSTATE=02000 SQLCODE=100
 #Done
 #__ZOS_EXPECTED__
 #Starting test ...
