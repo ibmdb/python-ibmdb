@@ -31,10 +31,10 @@ class IbmDbTestCase(unittest.TestCase):
     
       if ibm_db.execute(stmt):
         stmt = ibm_db.exec_immediate(conn, select)
-	row = ibm_db.fetch_tuple(stmt)
+        row = ibm_db.fetch_tuple(stmt)
         while ( row ):
           #row.each { |child| print child }
-	  for i in row:
+          for i in row:
             print i
           row = ibm_db.fetch_tuple(stmt)
 

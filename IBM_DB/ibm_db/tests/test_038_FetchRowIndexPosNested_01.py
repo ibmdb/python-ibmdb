@@ -38,7 +38,7 @@ class IbmDbTestCase(unittest.TestCase):
                                             ibm_db.result(result2, 2), \
                                             ibm_db.result(result2, 3), \
                                             ibm_db.result(result2, 5))
-	row2 = ibm_db.fetch_row(result2)
+        row2 = ibm_db.fetch_row(result2)
       row = ibm_db.fetch_row(result)
 
 #__END__

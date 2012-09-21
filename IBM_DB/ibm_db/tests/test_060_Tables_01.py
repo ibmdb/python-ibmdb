@@ -56,7 +56,7 @@ class IbmDbTestCase(unittest.TestCase):
         if (i < 4):
           print "/%s/%s" % (row[1], row[2])
         i = i + 1
-	row = ibm_db.fetch_both(result)
+        row = ibm_db.fetch_both(result)
 
       ibm_db.exec_immediate(conn, 'DROP TABLE t.t1')
       ibm_db.exec_immediate(conn, 'DROP TABLE t.t2')

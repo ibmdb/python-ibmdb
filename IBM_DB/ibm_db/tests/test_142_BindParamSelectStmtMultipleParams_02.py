@@ -36,7 +36,7 @@ class IbmDbTestCase(unittest.TestCase):
           #row.each { |child| print child }
           for i in row:
             print i
-	  row = ibm_db.fetch_tuple(stmt)
+          row = ibm_db.fetch_tuple(stmt)
       ibm_db.close(conn)
     else:
       print "Connection failed."

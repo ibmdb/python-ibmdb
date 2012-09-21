@@ -27,7 +27,7 @@ class IbmDbTestCase(unittest.TestCase):
       while( cols ):
         print "%s %s %s %s " % (cols[0], cols[1], cols[2], cols[3])
         i+=1
-	cols = ibm_db.fetch_tuple( stmt )
+        cols = ibm_db.fetch_tuple( stmt )
       
       print "\nNumber of rows: %d" % i
     else:

@@ -2,11 +2,12 @@ import os
 import sys
 import struct
 import warnings
+
 from setuptools import setup, find_packages
 from distutils.core import setup, Extension
 
 PACKAGE = 'ibm_db'
-VERSION = '1.0.6'
+VERSION = '2.0.0'
 LICENSE = 'Apache License 2.0'
 
 machine_bits =  8 * struct.calcsize("P")
@@ -19,11 +20,11 @@ ibm_db_lib = ''
 if machine_bits == 64:
     is64Bit = True
     libDir = 'lib64'
-    print "Detected 64-bit Python\n"
+    sys.stdout.write("Detected 64-bit Python\n")
 else:
     is64Bit = False
     libDir = 'lib32'
-    print "Detected 32-bit Python\m"
+    sys.stdout.write("Detected 32-bit Python\m")
     
 try:
     ibm_db_home = os.environ['IBM_DB_HOME']
@@ -34,13 +35,13 @@ except (KeyError):
         ibm_db_dir = os.environ['IBM_DB_DIR']
         ibm_db_lib = ibm_db_dir + '/' + libDir
     except (KeyError):
-        print "Environment variable IBM_DB_HOME is not set. Set it to your DB2/IBM_Data_Server_Driver installation directory and retry ibm_db module install.\n"
+        sys.stdout.write("Environment variable IBM_DB_HOME is not set. Set it to your DB2/IBM_Data_Server_Driver installation directory and retry ibm_db module install.\n")
         sys.exit()
 
 if not os.path.isdir(ibm_db_lib):
     ibm_db_lib = ibm_db_dir + '/lib'
     if not os.path.isdir(ibm_db_lib):
-        print "Cannot find %s directory. Check if you have set the IBM_DB_HOME environment variable's value correctly\n " %(ibm_db_lib)
+        sys.stdout.write("Cannot find %s directory. Check if you have set the IBM_DB_HOME environment variable's value correctly\n " %(ibm_db_lib))
         sys.exit()
     notifyString  = "Detected usage of IBM Data Server Driver package. Ensure you have downloaded "
     if is64Bit:
@@ -50,7 +51,7 @@ if not os.path.isdir(ibm_db_lib):
     notifyString = notifyString + "of IBM_Data_Server_Driver and retry the ibm_db module install\n "
     warnings.warn(notifyString)
 if not os.path.isdir(ibm_db_dir + '/include'):
-    print " %s/include folder not found. Check if you have set the IBM_DB_HOME environment variable's value correctly\n " %(ibm_db_dir)
+    sys.stdout.write(" %s/include folder not found. Check if you have set the IBM_DB_HOME environment variable's value correctly\n " %(ibm_db_dir))
     sys.exit()
     
 library = ['db2']
@@ -64,6 +65,9 @@ ibm_db = Extension('ibm_db',
                     sources = ['ibm_db.c'])
 
 modules = ['config', 'ibm_db_dbi', 'testfunctions', 'tests']
+extra = {}
+if sys.version_info >= (3, ):
+    extra['use_2to3'] = True
 
 setup( name    = PACKAGE, 
        version = VERSION,
@@ -74,7 +78,7 @@ setup( name    = PACKAGE,
        url              = 'http://pypi.python.org/pypi/ibm_db/',
        download_url     = 'http://code.google.com/p/ibm-db/downloads/list',
        keywords         = 'database DB-API interface IBM Data Servers DB2 Informix IDS',
-       classifiers  = ['Development Status :: 5 - Production/Stable',
+       classifiers  = [(sys.version_info >= (3, )) and 'Development Status :: 4 - Beta' or 'Development Status :: 5 - Production/Stable',
                       'Intended Audience :: Developers',
                       'License :: OSI Approved :: Apache Software License',
                       'Operating System :: Microsoft :: Windows :: Windows NT/2000/XP',
@@ -92,5 +96,6 @@ setup( name    = PACKAGE,
        data_files=[ ('', ['./README']),
                     ('', ['./CHANGES']),
                     ('', ['./LICENSE']) ],
-       include_package_data = True
+       include_package_data = True,
+       **extra
      )

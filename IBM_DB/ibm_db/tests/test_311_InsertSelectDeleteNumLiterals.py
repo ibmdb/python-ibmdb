@@ -70,7 +70,7 @@ class IbmDbTestCase(unittest.TestCase):
          print data[0]
          print data[1]
          print data[2]
-	 data = ibm_db.fetch_both(stmt)
+         data = ibm_db.fetch_both(stmt)
 
        ibm_db.rollback(conn)
        ibm_db.close(conn)

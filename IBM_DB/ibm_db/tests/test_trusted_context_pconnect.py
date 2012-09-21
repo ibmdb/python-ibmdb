@@ -147,7 +147,7 @@ class IbmDbTestCase(unittest.TestCase):
 #__LUW_EXPECTED__
 #Trusted connection succeeded.
 #User has been switched.
-#[%s][%s][%s] SQL0551N  "%s" does not have the privilege to perform operation "UPDATE" on object "%s.TRUSTED_TABLE".  SQLSTATE=42501 SQLCODE=-551
+#[%s][%s][%s] SQL0551N  "%s" does not have the %s privilege to perform operation "UPDATE" on object "%s.TRUSTED_TABLE".  SQLSTATE=42501 SQLCODE=-551
 #Explicit Trusted Connection succeeded.
 #Explicit Trusted Connection succeeded.
 #Explicit Trusted Connection succeeded.
@@ -162,7 +162,7 @@ class IbmDbTestCase(unittest.TestCase):
 #__ZOS_EXPECTED__
 #Trusted connection succeeded.
 #User has been switched.
-#[%s][%s][%s] SQL0551N  "%s" does not have the privilege to perform operation "UPDATE" on object "%s.TRUSTED_TABLE".  SQLSTATE=42501 SQLCODE=-551
+#[%s][%s][%s] SQL0551N  "%s" does not have the %s privilege to perform operation "UPDATE" on object "%s.TRUSTED_TABLE".  SQLSTATE=42501 SQLCODE=-551
 #Explicit Trusted Connection succeeded.
 #Explicit Trusted Connection succeeded.
 #Explicit Trusted Connection succeeded.
@@ -192,7 +192,7 @@ class IbmDbTestCase(unittest.TestCase):
 #__IDS_EXPECTED__
 #Trusted connection succeeded.
 #User has been switched.
-#[%s][%s][%s] SQL0551N  "%s" does not have the privilege to perform operation "UPDATE" on object "%s.TRUSTED_TABLE".  SQLSTATE=42501 SQLCODE=-551
+#[%s][%s][%s] SQL0551N  "%s" does not have the %s privilege to perform operation "UPDATE" on object "%s.TRUSTED_TABLE".  SQLSTATE=42501 SQLCODE=-551
 #Explicit Trusted Connection succeeded.
 #Explicit Trusted Connection succeeded.
 #Explicit Trusted Connection succeeded.

@@ -55,7 +55,7 @@ class IbmDbTestCase(unittest.TestCase):
         print row0
         print row1
         print row2
-	result = ibm_db.fetch_row(stmt)
+        result = ibm_db.fetch_row(stmt)
       
       ibm_db.close(conn)
     else:

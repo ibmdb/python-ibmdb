@@ -42,7 +42,7 @@ class IbmDbTestCase(unittest.TestCase):
     print value4
 
     op = {ibm_db.ATTR_CASE: ibm_db.CASE_UPPER}
-    ibm_db.set_option(conn, op, 0)
+    ibm_db.set_option(conn, op, 1)
     if (server.DBMS_NAME[0:3] == 'IDS'):
       result = ibm_db.columns(conn,None,None,"employee")
     else:
@@ -66,7 +66,7 @@ class IbmDbTestCase(unittest.TestCase):
     print value4
     
     op = {ibm_db.ATTR_CASE: ibm_db.CASE_LOWER}
-    ibm_db.set_option(conn, op, 0)
+    ibm_db.set_option(conn, op, 1)
     if (server.DBMS_NAME[0:3] == 'IDS'):
       result = ibm_db.columns(conn,None,None,"employee")
     else:

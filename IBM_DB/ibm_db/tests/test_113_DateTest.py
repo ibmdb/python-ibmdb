@@ -49,7 +49,7 @@ class IbmDbTestCase(unittest.TestCase):
         row1 = ibm_db.result(stmt, 1)
         print row0
         print row1
-	result = ibm_db.fetch_row( stmt )
+        result = ibm_db.fetch_row( stmt )
     else:
       print "Connection failed."
 

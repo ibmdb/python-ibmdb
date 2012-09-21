@@ -22,15 +22,15 @@ class IbmDbTestCase(unittest.TestCase):
       ibm_db.autocommit(conn, ibm_db.SQL_AUTOCOMMIT_OFF)
 
       stmt = ibm_db.exec_immediate(conn, "INSERT INTO animals (id, breed, name, weight) VALUES (null, null, null, null)")
-      statement = "SELECT count(id) FROM animals"; 
+      statement = "SELECT count(id) FROM animals"
       result = ibm_db.exec_immediate(conn, statement)
       if ( (not result) and ibm_db.stmt_error() ):
-        print "ERROR: %s" % ibm_db.stmt_errormsg()
+        print "ERROR: %s" % (ibm_db.stmt_errormsg(), )
 
       row = ibm_db.fetch_tuple(result)
       while ( row ):
-	for i in row:
-          print i
+        for i in row:
+            print i
         row = ibm_db.fetch_tuple(result)
     
       ibm_db.rollback(conn)

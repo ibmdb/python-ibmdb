@@ -28,12 +28,12 @@ class IbmDbTestCase(unittest.TestCase):
       
       if ibm_db.execute(stmt, (None, 'ghost', None, None)):
         stmt = ibm_db.exec_immediate(conn, select)
-	row = ibm_db.fetch_tuple(stmt)
+        row = ibm_db.fetch_tuple(stmt)
         while ( row ): 
           #row.each { |child| puts child }
-	  for child in row:
-	    print child
-	  row = ibm_db.fetch_tuple(stmt)
+          for child in row:
+            print child
+          row = ibm_db.fetch_tuple(stmt)
       ibm_db.rollback(conn)
     else:
       print "Connection failed."

@@ -33,7 +33,7 @@ class IbmDbTestCase(unittest.TestCase):
           print "---------"
           j += 1
           if (j == 10):
-	         break
+            break
        
           row = ibm_db.fetch_both(result)
        

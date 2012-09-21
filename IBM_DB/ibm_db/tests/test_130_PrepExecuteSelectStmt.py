@@ -26,7 +26,7 @@ class IbmDbTestCase(unittest.TestCase):
         while ( row ):
           for i in row:
             print i
-	  row = ibm_db.fetch_tuple(stmt)
+            row = ibm_db.fetch_tuple(stmt)
     else:
       print "Connection failed."
 

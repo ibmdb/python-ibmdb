@@ -16,6 +16,44 @@
 #include <Python.h> 
 #include <structmember.h>
 
+/*
+ * Combability changes for Python 3
+ */
+
+/* defining string methods */
+#if  PY_MAJOR_VERSION < 3
+#define PyBytes_Check			PyString_Check
+#define StringOBJ_FromASCII(str)	PyString_FromString(str)
+#define PyBytes_AsString		PyString_AsString
+#define PyBytes_FromStringAndSize	PyString_FromStringAndSize
+#define StringObj_Format		PyString_Format
+#define StringObj_Size			PyString_Size
+#define PyObject_CheckBuffer		PyObject_CheckReadBuffer
+#define PyVarObject_HEAD_INIT(type, size) \
+					PyObject_HEAD_INIT(type) size,
+#define Py_TYPE(ob)			(((PyObject*)(ob))->ob_type)
+#define MOD_RETURN_ERROR		
+#define MOD_RETURN_VAL(mod)			
+#define INIT_ibm_db			initibm_db
+#define MOD_DEF(m, name, methods, doc)	m = Py_InitModule3(name, methods, doc);
+#else
+#define PyInt_Check			PyLong_Check
+#define PyInt_FromLong          	PyLong_FromLong
+#define PyInt_AsLong            	PyLong_AsLong
+#define PyInt_AS_LONG			PyLong_AsLong
+#define StringOBJ_FromASCII(str)	PyUnicode_DecodeASCII(str, strlen(str), NULL)
+#define PyString_Check			PyUnicode_Check
+#define StringObj_Format		PyUnicode_Format
+#define StringObj_Size			PyUnicode_GET_SIZE
+#define MOD_RETURN_ERROR		NULL
+#define MOD_RETURN_VAL(mod)		mod
+#define INIT_ibm_db PyInit_ibm_db
+#define MOD_DEF(m, name, methods, doc) \
+	static struct PyModuleDef moduledef = { \
+		PyModuleDef_HEAD_INIT, name, doc, -1, methods, }; \
+	m = PyModule_Create(&moduledef);
+#endif
+
 #define NUM2LONG(data) PyInt_AsLong(data)
 #define STR2CSTR(data) PyString_AsString(data)
 #define NIL_P(ptr) (ptr == NULL)
@@ -176,8 +214,7 @@ static PyMemberDef le_client_info_members[] = {
 };
 
 static PyTypeObject client_infoType = {
-		PyObject_HEAD_INIT(NULL)
-		0,                                     /*ob_size*/
+		PyVarObject_HEAD_INIT(NULL, 0)
 		"ibm_db.IBM_DBClientInfo", /*tp_name*/
 		sizeof(le_client_info), /*tp_basicsize*/
 		0,                                     /*tp_itemsize*/
@@ -270,8 +307,7 @@ static PyMemberDef le_server_info_members[] = {
 };
 
 static PyTypeObject server_infoType = {
-		PyObject_HEAD_INIT(NULL)
-		0,                                     /*ob_size*/
+		PyVarObject_HEAD_INIT(NULL, 0)
 		"ibm_db.IBM_DBServerInfo", /*tp_name*/
 		sizeof(le_server_info), /*tp_basicsize*/
 		0,                                     /*tp_itemsize*/

@@ -35,10 +35,10 @@ class IbmDbTestCase(unittest.TestCase):
 
         if (server.DBMS_NAME[0:3] != 'IDS'):
           print "Results:"
-	  row = ibm_db.fetch_tuple(stmt)
+          row = ibm_db.fetch_tuple(stmt)
           while ( row ): 
             print "  %s, %s, %s" % (row[0].strip(), row[1].strip(), row[2])
-	    row = ibm_db.fetch_tuple(stmt)
+            row = ibm_db.fetch_tuple(stmt)
 
 #__END__
 #__LUW_EXPECTED__

@@ -20,8 +20,16 @@
 This module implements the Python DB API Specification v2.0 for DB2 database.
 """
 
-import types, string, time, datetime, decimal, exceptions
+import types, string, time, datetime, decimal, sys
 
+if sys.version_info >= (3, ):
+   buffer = memoryview
+if sys.version_info < (3, ):
+   import exceptions
+   exception = exceptions.StandardError
+else:
+   exception = Exception
+   
 import ibm_db
 __version__ = ibm_db.__version__
 
@@ -48,7 +56,7 @@ threadsafety = 0
 paramstyle = 'qmark'
 
 
-class Error(Exception):
+class Error(exception):
     """This is the base class of all other exception thrown by this
     module.  It can be use to catch all exceptions with a single except
     statement.
@@ -62,7 +70,7 @@ class Error(Exception):
         return 'ibm_db_dbi::'+str(self.__class__.__name__)+': '+str(self._message)
 
 
-class Warning(Exception):
+class Warning(exception):
     """This exception is used to inform the user about important 
     warnings such as data truncations.
 
@@ -1088,6 +1096,11 @@ class Cursor(object):
         self.stmt_handler = None
         self.conn_handler = None
         self._all_stmt_handlers = None
+        if self.__connection is not None:
+            try:
+                self.__connection._cursor_list.remove(self)
+            except:
+                pass
         return return_value
 
     # helper for calling procedure

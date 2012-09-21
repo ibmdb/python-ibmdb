@@ -29,7 +29,7 @@ class IbmDbTestCase(unittest.TestCase):
 
       try:
         sql = 'drop table test'
-	
+
         stmt = ibm_db.prepare(conn, sql)
         ibm_db.set_option(stmt, cursor_option, 0)
         ibm_db.execute(stmt)
@@ -83,7 +83,7 @@ class IbmDbTestCase(unittest.TestCase):
       print "Number of affected rows: %d" % ibm_db.get_num_result(stmt)
       row = ibm_db.fetch_tuple(stmt)
       while ( row ):
-        print "%s, %s, %s, %s\n" %(row[0], row[1], row[2], row[3])
+        print "%s, %s, %s, %s\n" %(row[0], row[1], row[2], ((row[3] is not None) and row[3].startswith(u'\ufeff')) and  row[3][1:] or  row[3])
         row = ibm_db.fetch_tuple(stmt)
 
       sql = 'select id, name from test where id = ?'
@@ -109,7 +109,7 @@ class IbmDbTestCase(unittest.TestCase):
       print "Number of affected rows: %d" % ibm_db.get_num_result(stmt)
       row = ibm_db.fetch_tuple(stmt)
       while ( row ):
-        print "%s, %s, %s, %s\n" %(row[0], row[1], row[2], row[3])
+        print "%s, %s, %s, %s\n" %(row[0], row[1], row[2], ((row[3] is not None) and row[3].startswith(u'\ufeff')) and  row[3][1:] or  row[3])
         row = ibm_db.fetch_tuple(stmt)
 
       ibm_db.close(conn)
@@ -123,14 +123,14 @@ class IbmDbTestCase(unittest.TestCase):
 #Number of affected rows: -1
 #Number of affected rows: -1
 #Number of affected rows: -1
-#1, some, here is a clob value, %s<?xml version="1.0" encoding="UTF-16" ?><test attribute="value"/>
+#1, some, here is a clob value, <?xml version="1.0" encoding="UTF-16" ?><test attribute="value"/>
 #2, value, clob data, None
 #2, in varchar, data2, None
 #Number of affected rows: 2
 #2, value
 #2, in varchar
 #Number of affected rows: -1
-#1, some, here is a clob value, %s<?xml version="1.0" encoding="UTF-16" ?><test attribute="value"/>
+#1, some, here is a clob value, <?xml version="1.0" encoding="UTF-16" ?><test attribute="value"/>
 #2, value, clob data, None
 #2, in varchar, data2, None
 #__ZOS_EXPECTED__
@@ -141,14 +141,14 @@ class IbmDbTestCase(unittest.TestCase):
 #Number of affected rows: -1
 #Number of affected rows: -2
 #Number of affected rows: 0
-#1, some, here is a clob value, %s<?xml version="1.0" encoding="UTF-16" ?><test attribute="value"/>
+#1, some, here is a clob value, <?xml version="1.0" encoding="UTF-16" ?><test attribute="value"/>
 #2, value, clob data, None
 #2, in varchar, data2, None
 #Number of affected rows: 2
 #2, value
 #2, in varchar
 #Number of affected rows: 0
-#1, some, here is a clob value, %s<?xml version="1.0" encoding="UTF-16" ?><test attribute="value"/>
+#1, some, here is a clob value, <?xml version="1.0" encoding="UTF-16" ?><test attribute="value"/>
 #2, value, clob data, None
 #2, in varchar, data2, None
 #__SYSTEMI_EXPECTED__
@@ -159,14 +159,14 @@ class IbmDbTestCase(unittest.TestCase):
 #Number of affected rows: -1
 #Number of affected rows: -2
 #Number of affected rows: 0
-#1, some, here is a clob value, %s<?xml version="1.0" encoding="UTF-16" ?><test attribute="value"/>
+#1, some, here is a clob value, <?xml version="1.0" encoding="UTF-16" ?><test attribute="value"/>
 #2, value, clob data, None
 #2, in varchar, data2, None
 #Number of affected rows: 2
 #2, value
 #2, in varchar
 #Number of affected rows: 0
-#1, some, here is a clob value, %s<?xml version="1.0" encoding="UTF-16" ?><test attribute="value"/>
+#1, some, here is a clob value, <?xml version="1.0" encoding="UTF-16" ?><test attribute="value"/>
 #2, value, clob data, None
 #2, in varchar, data2, None
 #__IDS_EXPECTED__
@@ -177,13 +177,13 @@ class IbmDbTestCase(unittest.TestCase):
 #Number of affected rows: -1
 #Number of affected rows: -1
 #Number of affected rows: 3
-#1, some, here is a clob value, %s<?xml version="1.0" encoding="UTF-16" ?><test attribute="value"/>
+#1, some, here is a clob value, <?xml version="1.0" encoding="UTF-16" ?><test attribute="value"/>
 #2, value, clob data, None
 #2, in varchar, data2, None
 #Number of affected rows: 2
 #2, value
 #2, in varchar
 #Number of affected rows: 3
-#1, some, here is a clob value, %s<?xml version="1.0" encoding="UTF-16" ?><test attribute="value"/>
+#1, some, here is a clob value, <?xml version="1.0" encoding="UTF-16" ?><test attribute="value"/>
 #2, value, clob data, None
 #2, in varchar, data2, None)

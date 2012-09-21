@@ -124,3 +124,9 @@ only optimize for N rows issue #2 (defect #154260)
   - Fixed: OverflowError on Long Integer in Decimal-Field (defect #240445)
   - Fixed: Stored procedure truncates string-parameter (defect #240445)
   - Added a environment variable IBM_DB_HOME to make the installation process easy (defect #240445)
+  
+2012/09/21 (setup.py 2.0.0, ibm_db-2.0.0, ibm_db_dbi-2.0.0)
+  - New Feature - Added Python-3.x support for driver and wrapper (defect #243457)
+  - Fixed: Resource leak over the lifetime of connection objects in wrapper (issue #120)
+  - Enhanced: Strict type checking for connection and statement object.
+  - Fixed: Allow trial license to connect ZOS/i5(defect #243556)

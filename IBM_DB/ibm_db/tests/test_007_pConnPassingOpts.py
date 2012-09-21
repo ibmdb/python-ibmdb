@@ -31,7 +31,7 @@ class IbmDbTestCase(unittest.TestCase):
       data = ibm_db.fetch_both(stmt)
       while ( data ):
         print data[0].strip()
-	data = ibm_db.fetch_both(stmt)
+        data = ibm_db.fetch_both(stmt)
 
       print ""
       
@@ -40,7 +40,7 @@ class IbmDbTestCase(unittest.TestCase):
       data = ibm_db.fetch_both(stmt)
       while ( data ):
         print data[0].strip()
-	data = ibm_db.fetch_both(stmt)
+        data = ibm_db.fetch_both(stmt)
     
       ibm_db.close(conn)
     else:

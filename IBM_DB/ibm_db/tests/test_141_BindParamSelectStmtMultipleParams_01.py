@@ -29,12 +29,12 @@ class IbmDbTestCase(unittest.TestCase):
       ibm_db.bind_param(stmt, 2, mass)
     
       if ibm_db.execute(stmt):
-	row = ibm_db.fetch_tuple(stmt)
+        row = ibm_db.fetch_tuple(stmt)
         while ( row ): 
           #row.each { |child| print child }
-	  for i in row:
+          for i in row:
             print i
-	  row = ibm_db.fetch_tuple(stmt)
+          row = ibm_db.fetch_tuple(stmt)
       ibm_db.close(conn)
     else:
       print "Connection failed."

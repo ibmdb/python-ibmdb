@@ -31,7 +31,7 @@ class IbmDbTestCase(unittest.TestCase):
     else:
       print ibm_db.stmt_errormsg()
     fp.close()
-    cmp = (open('tests/spook_out.png').read() == open('tests/spook.png').read())
+    cmp = (open('tests/spook_out.png', "rb").read() == open('tests/spook.png', "rb").read())
     print "Are the files the same:", cmp
 
 #__END__

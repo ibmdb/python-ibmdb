@@ -21,7 +21,7 @@ class IbmDbTestCase(unittest.TestCase):
             # Drop the tabmany table, in case it exists
             drop = "DROP TABLE TABMANY"
             try:
-				result = ibm_db.exec_immediate(conn, drop)
+                result = ibm_db.exec_immediate(conn, drop)
             except:
                 pass
 

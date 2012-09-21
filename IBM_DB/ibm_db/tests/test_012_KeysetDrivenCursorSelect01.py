@@ -25,10 +25,10 @@ class IbmDbTestCase(unittest.TestCase):
         else:
           stmt = ibm_db.prepare(conn, "SELECT name FROM animals WHERE weight < 10.0")
         ibm_db.execute(stmt)
-	data = ibm_db.fetch_both( stmt )
+        data = ibm_db.fetch_both( stmt )
         while (data):
           print data[0]
-	  data = ibm_db.fetch_both( stmt)
+          data = ibm_db.fetch_both( stmt)
         ibm_db.close(conn)
       else:
         print "Connection failed."

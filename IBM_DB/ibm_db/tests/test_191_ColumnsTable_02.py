@@ -38,7 +38,7 @@ class IbmDbTestCase(unittest.TestCase):
             print"%s,%s,%s,%s\n" % (row['TABLE_SCHEM'], 
             row['TABLE_NAME'], row['COLUMN_NAME'], row['IS_NULLABLE'])
         i = i + 1
-	row = ibm_db.fetch_both(result)
+        row = ibm_db.fetch_both(result)
       print "done!"
     else:
       print "no connection: ", ibm_db.conn_errormsg()    

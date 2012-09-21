@@ -24,7 +24,7 @@ class IbmDbTestCase(unittest.TestCase):
       if result:
         rows = ibm_db.num_rows(stmt)
         print "affected row:", rows
-	ibm_db.free_result(stmt)
+        ibm_db.free_result(stmt)
       else:
         print ibm_db.stmt_errormsg()
 

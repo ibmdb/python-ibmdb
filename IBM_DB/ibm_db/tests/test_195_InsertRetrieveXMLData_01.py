@@ -39,7 +39,7 @@ class IbmDbTestCase(unittest.TestCase):
       result = ibm_db.fetch_assoc(stmt)
       while( result ):
         print "Output:", result
-	result = ibm_db.fetch_assoc(stmt)
+        result = ibm_db.fetch_assoc(stmt)
       ibm_db.close(conn)
     else:
       print "Native XML datatype is not supported."
