@@ -130,3 +130,8 @@ only optimize for N rows issue #2 (defect #154260)
   - Fixed: Resource leak over the lifetime of connection objects in wrapper (issue #120)
   - Enhanced: Strict type checking for connection and statement object.
   - Fixed: Allow trial license to connect ZOS/i5(defect #243556)
+  
+2013/02/03 (setup.py 2.0.1, ibm_db-2.0.1, ibm_db_dbi-2.0.1)
+  - Fixed: Retrieving NULL CLOB/XML/BLOB values(issue #121, #125)
+  - Fixed: free_stmt() not able to free stmt resources(issue #124)
+  

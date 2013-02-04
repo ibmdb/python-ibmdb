@@ -21,7 +21,7 @@
 +--------------------------------------------------------------------------+
 */
 
-#define MODULE_RELEASE "2.0.0"
+#define MODULE_RELEASE "2.0.1"
 
 #include <Python.h>
 #include "ibm_db.h"
@@ -430,10 +430,11 @@ static stmt_handle *_ibm_db_new_stmt_struct(conn_handle* conn_res) {
 /*	static _python_ibm_db_free_stmt_struct */
 static void _python_ibm_db_free_stmt_struct(stmt_handle *handle) {
 	int rc;
-	
-	rc = SQLFreeHandle( SQL_HANDLE_STMT, handle->hstmt);
-	if ( handle ) {
-		_python_ibm_db_free_result_struct(handle);
+	if ( handle->hstmt != -1 ) {
+		rc = SQLFreeHandle( SQL_HANDLE_STMT, handle->hstmt);
+		if ( handle ) {
+			_python_ibm_db_free_result_struct(handle);
+		}
 	}
 	Py_TYPE(handle)->tp_free((PyObject*)handle);
 }
@@ -7202,6 +7203,26 @@ static PyObject *ibm_db_rollback(PyObject *self, PyObject *args)
  */
 static PyObject *ibm_db_free_stmt(PyObject *self, PyObject *args)
 {
+	PyObject *py_stmt_res = NULL;
+	stmt_handle *handle;
+	SQLRETURN rc;
+	if (!PyArg_ParseTuple(args, "O", &py_stmt_res))
+		return NULL;
+	if (!NIL_P(py_stmt_res)) {
+		if (PyObject_TypeCheck(py_stmt_res, &stmt_handleType)) {
+			handle = (stmt_handle *)py_stmt_res;
+			if (handle->hstmt != -1) {
+				rc = SQLFreeHandle( SQL_HANDLE_STMT, handle->hstmt);
+				if ( rc == SQL_ERROR ){ 
+					_python_ibm_db_check_sql_errors(handle->hstmt, SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
+					Py_RETURN_FALSE;
+				}
+				 _python_ibm_db_free_result_struct(handle);
+				handle->hstmt = -1;
+				Py_RETURN_TRUE;
+			}
+		}
+	}
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -7601,6 +7622,20 @@ static PyObject *ibm_db_result(PyObject *self, PyObject *args)
 	Py_RETURN_FALSE;
 }
 
+/* Function to check if the value of the LOB in the column is null or not
+*/
+
+int isNullLOB(stmt_handle *stmt_res, int column_number, PyObject **value)
+{
+	if (stmt_res->column_info[column_number].loc_ind == SQL_NULL_DATA) {
+		Py_INCREF(Py_None);
+		*value = Py_None;
+		return 1;
+ 	} else {
+		return 0;
+	}
+}
+
 /* static void _python_ibm_db_bind_fetch_helper(INTERNAL_FUNCTION_PARAMETERS, 
 												int op)
 */
@@ -7838,6 +7873,10 @@ static PyObject *_python_ibm_db_bind_fetch_helper(PyObject *args, int op)
 
 				case SQL_BLOB:
 					out_ptr = NULL;
+					/*Check if the data value in the column is null*/
+					if (isNullLOB(stmt_res, column_number, &value)) {
+						break;
+					}
 					rc = _python_ibm_db_get_length(stmt_res, column_number + 1, &tmp_length);
 
 					if (tmp_length == SQL_NULL_DATA) {
@@ -7884,6 +7923,10 @@ static PyObject *_python_ibm_db_bind_fetch_helper(PyObject *args, int op)
 				
 			case SQL_XML:
 				wout_ptr = NULL;
+				/*Check if the data value in the column is null*/
+				if (isNullLOB(stmt_res, column_number, &value)) {
+					break;
+				}
 				rc = _python_ibm_db_get_data(stmt_res, column_number + 1, SQL_C_WCHAR, NULL, 
 					0, &tmp_length);
 				
@@ -7926,6 +7969,10 @@ static PyObject *_python_ibm_db_bind_fetch_helper(PyObject *args, int op)
 			case SQL_CLOB:
 			case SQL_DBCLOB:
 				wout_ptr = NULL;
+				/*Check if the data value in the column is null*/
+				if (isNullLOB(stmt_res, column_number, &value)) {
+					break;
+				}
 				rc = _python_ibm_db_get_length(stmt_res, column_number + 1, &tmp_length);
 				if (tmp_length == SQL_NULL_DATA) {
 					Py_INCREF(Py_None);
