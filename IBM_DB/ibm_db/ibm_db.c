@@ -347,6 +347,7 @@ static void _python_ibm_db_free_result_struct(stmt_handle* handle) {
 
 			prev_ptr = curr_ptr;
 		}
+		handle->head_cache_list = NULL;
 		/* free row data cache */
 		if (handle->row_data) {
 			for (i = 0; i<handle->num_columns; i++) {
@@ -7805,7 +7806,7 @@ static PyObject *_python_ibm_db_bind_fetch_helper(PyObject *args, int op)
 					/* i5/OS will xlate from EBCIDIC to ASCII (via SQLGetData) */
 					tmp_length = stmt_res->column_info[column_number].size;
 
-					wout_ptr = (SQLPOINTER)malloc(tmp_length * sizeof(SQLWCHAR) + 1);
+					wout_ptr = (SQLWCHAR *)ALLOC_N(SQLWCHAR, tmp_length + 1);
 					if ( wout_ptr == NULL ) {
 						PyErr_SetString(PyExc_Exception, "Failed to Allocate Memory");
 						return NULL;
@@ -7823,7 +7824,10 @@ static PyObject *_python_ibm_db_bind_fetch_helper(PyObject *args, int op)
 					} else {
 						value = getSQLWCharAsPyUnicodeObject(wout_ptr, out_length);
 					}
-					free(out_ptr);
+					if (wout_ptr != NULL) {
+						PyMem_Del(wout_ptr);
+						wout_ptr = NULL;
+					}
 					break;
 				
 				case SQL_TYPE_DATE:
