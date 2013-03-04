@@ -1,27 +1,27 @@
 /*
 +--------------------------------------------------------------------------+
-| Licensed Materials - Property of IBM						|
-|										|
-| (C) Copyright IBM Corporation 2006-2009					|
-+--------------------------------------------------------------------------+    | 
-| This module complies with SQLAlchemy 0.4 and is				|
-| Licensed under the Apache License, Version 2.0 (the "License");		|
-| you may not use this file except in compliance with the License.		|
-| You may obtain a copy of the License at					|
-| http://www.apache.org/licenses/LICENSE-2.0 Unless required by applicable      |
-| law or agreed to in writing, software distributed under the License is        |
-| distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY      |
-| KIND, either express or implied. See the License for the specific		|
-| language governing permissions and limitations under the License.		|
+| Licensed Materials - Property of IBM                                     |
+|                                                                          |
+| (C) Copyright IBM Corporation 2006-2013                                  |
++--------------------------------------------------------------------------+ 
+| This module complies with SQLAlchemy 0.4 and is                          |
+| Licensed under the Apache License, Version 2.0 (the "License");          |
+| you may not use this file except in compliance with the License.         |
+| You may obtain a copy of the License at                                  |
+| http://www.apache.org/licenses/LICENSE-2.0 Unless required by applicable |
+| law or agreed to in writing, software distributed under the License is   |
+| distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY |
+| KIND, either express or implied. See the License for the specific        |
+| language governing permissions and limitations under the License.        |
 +--------------------------------------------------------------------------+
-| Authors: Manas Dadarkar, Salvador Ledezma, Sushant Koduru,			|
-|	Lynh Nguyen, Kanchana Padmanabhan, Dan Scott, Helmut Tessarek,		|
-|	Sam Ruby, Kellen Bombardier, Tony Cairns, Abhigyan Agrawal,             |
-|       Tarun Pasrija, Rahul Priyadarshi	   				|
+| Authors: Manas Dadarkar, Salvador Ledezma, Sushant Koduru,               |
+|   Lynh Nguyen, Kanchana Padmanabhan, Dan Scott, Helmut Tessarek,         |
+|   Sam Ruby, Kellen Bombardier, Tony Cairns, Abhigyan Agrawal,            |
+|   Tarun Pasrija, Rahul Priyadarshi                                       |
 +--------------------------------------------------------------------------+
 */
 
-#define MODULE_RELEASE "2.0.1"
+#define MODULE_RELEASE "2.0.2"
 
 #include <Python.h>
 #include "ibm_db.h"
@@ -9523,7 +9523,7 @@ static int _ibm_db_chaining_flag(stmt_handle *stmt_res, SQLINTEGER flag, error_m
 				SQLGetDiagField(SQL_HANDLE_STMT, (SQLHSTMT)stmt_res->hstmt, 0, SQL_DIAG_NUMBER, (SQLPOINTER) &err_cnt, SQL_IS_POINTER, NULL);
 			}
 			errTuple = PyTuple_New(err_cnt + client_err_cnt);
-			err_fmt = (char *)PyMem_Malloc(strlen("\nError  :%s \n ") * (err_cnt + client_err_cnt));
+			err_fmt = (char *)PyMem_Malloc(strlen("%s\nError %d :%s \n ") * (err_cnt + client_err_cnt));
 			err_fmt[0] = '\0';
 			errNo = 1;
 			while( error_list != NULL ) {
@@ -9791,6 +9791,9 @@ static PyObject* ibm_db_execute_many (PyObject *self, PyObject *args) {
 						Py_BEGIN_ALLOW_THREADS;
 						rc = SQLBindParameter(stmt_res->hstmt, curr->param_num, curr->param_type, valueType, curr->data_type, curr->param_size, curr->scale, &curr->ivalue, 0, (SQLLEN *)&(curr->ivalue));
 						Py_END_ALLOW_THREADS;
+						if ( rc == SQL_ERROR ) {
+							_python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
+						}
 					}	
 					if ( rc != SQL_SUCCESS ) {
 						sprintf(error, "Binding Error 1: %s", 
@@ -9816,6 +9819,31 @@ static PyObject* ibm_db_execute_many (PyObject *self, PyObject *args) {
 					Py_BEGIN_ALLOW_THREADS;
 					rc = SQLExecute((SQLHSTMT)stmt_res->hstmt);
 					Py_END_ALLOW_THREADS;
+
+					if ( rc == SQL_NEED_DATA ) {
+						SQLPOINTER valuePtr;
+						rc = SQLParamData((SQLHSTMT)stmt_res->hstmt, (SQLPOINTER *)&valuePtr);
+						while ( rc == SQL_NEED_DATA ) {
+							/* passing data value for a parameter */
+							if ( !NIL_P(((param_node*)valuePtr)->svalue)) {
+								Py_BEGIN_ALLOW_THREADS;
+								rc = SQLPutData((SQLHSTMT)stmt_res->hstmt, (SQLPOINTER)(((param_node*)valuePtr)->svalue), ((param_node*)valuePtr)->ivalue);
+								Py_END_ALLOW_THREADS;
+							} else {
+								Py_BEGIN_ALLOW_THREADS;
+								rc = SQLPutData((SQLHSTMT)stmt_res->hstmt, (SQLPOINTER)(((param_node*)valuePtr)->uvalue), ((param_node*)valuePtr)->ivalue);
+								Py_END_ALLOW_THREADS;
+							}
+							if ( rc == SQL_ERROR ) {
+								_python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
+								sprintf(error, "Sending data failed: %s", IBM_DB_G(__python_stmt_err_msg));
+								_build_client_err_list(head_error_list, error);
+								err_count++;
+								break;
+							}
+							rc = SQLParamData((SQLHSTMT)stmt_res->hstmt, (SQLPOINTER *)&valuePtr);
+						}
+					}
 				}
 			}
 		} else {

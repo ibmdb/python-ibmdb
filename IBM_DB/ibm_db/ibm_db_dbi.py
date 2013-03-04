@@ -1,9 +1,9 @@
 # +--------------------------------------------------------------------------+
 # |  Licensed Materials - Property of IBM                                    |
 # |                                                                          |
-# | (C) Copyright IBM Corporation 2007-2009                                  |
+# | (C) Copyright IBM Corporation 2007-2013                                  |
 # +--------------------------------------------------------------------------+
-# | This module complies with SQLAlchemy 0.4 and is                          |
+# | This module complies with SQLAlchemy and is                              |
 # | Licensed under the Apache License, Version 2.0 (the "License");          |
 # | you may not use this file except in compliance with the License.         |
 # | You may obtain a copy of the License at                                  |
@@ -21,6 +21,7 @@ This module implements the Python DB API Specification v2.0 for DB2 database.
 """
 
 import types, string, time, datetime, decimal, sys
+import weakref
 
 if sys.version_info >= (3, ):
    buffer = memoryview
@@ -668,9 +669,12 @@ class Connection(object):
             raise _get_exception(inst)
         self.conn_handler = None
         for index in range(len(self._cursor_list)):
-            self._cursor_list[index].conn_handler = None
-            self._cursor_list[index].stmt_handler = None
-            self._cursor_list[index]._all_stmt_handlers = None
+            if (self._cursor_list[index]() != None):
+                tmp_cursor =  self._cursor_list[index]()
+                tmp_cursor.conn_handler = None
+                tmp_cursor.stmt_handler = None
+                tmp_cursor._all_stmt_handlers = None
+        self._cursor_list = []
         return return_value
 
     def commit(self):
@@ -704,7 +708,7 @@ class Connection(object):
             raise ProgrammingError("Cursor cannot be returned; "
                                "connection is no longer active.")
         cursor = Cursor(self.conn_handler, self)
-        self._cursor_list.append(cursor)
+        self._cursor_list.append(weakref.ref(cursor))
         return cursor
 
     # Sets connection attribute values
@@ -1047,6 +1051,15 @@ class Cursor(object):
     def __get_rowcount( self ):
         return self.__rowcount
 
+    def __iter__( self ):
+        return self
+        
+    def next( self ):
+        row = self.fetchone()
+        if row == None:
+            raise StopIteration
+        return row
+        
     # This attribute specifies the number of rows the last executeXXX()
     # produced or affected.  It is a read only attribute. 
     rowcount = property(__get_rowcount, None, None, "")
@@ -1098,7 +1111,7 @@ class Cursor(object):
         self._all_stmt_handlers = None
         if self.__connection is not None:
             try:
-                self.__connection._cursor_list.remove(self)
+                self.__connection._cursor_list.remove(weakref.ref(self))
             except:
                 pass
         return return_value

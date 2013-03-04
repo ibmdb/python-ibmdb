@@ -135,3 +135,8 @@ only optimize for N rows issue #2 (defect #154260)
   - Fixed: Retrieving NULL CLOB/XML/BLOB values(issue #121, #125)
   - Fixed: free_stmt() not able to free stmt resources(issue #124)
   
+2013/03/04 (setup.py 2.0.2, ibm_db-2.0.2, ibm_db_dbi-2.0.2)
+  - Fixed: Memory leak with LONGVARCHAR (defect #248442)
+  - Fixed: Handling of CLOB datatype in execute_many function (defect #248442)
+  - Enhanced: Keeps weakref of open cursor in connection's _cursor_list (defect #248442)
+  - Enhanced: dbi cursor is now compatible to the iteration protocol (defect #248442)
