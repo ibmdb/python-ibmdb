@@ -1,7 +1,7 @@
 # +--------------------------------------------------------------------------+
 # |  Licensed Materials - Property of IBM                                    |
 # |                                                                          |
-# | (C) Copyright IBM Corporation 2009.                                      |
+# | (C) Copyright IBM Corporation 2009-2013.                                      |
 # +--------------------------------------------------------------------------+
 # | This module complies with Django 1.0 and is                              |
 # | Licensed under the Apache License, Version 2.0 (the "License");          |
@@ -17,7 +17,6 @@
 # +--------------------------------------------------------------------------+
 
 import sys
-from string import upper
 _IS_JYTHON = sys.platform.startswith( 'java' )
 
 if not _IS_JYTHON:

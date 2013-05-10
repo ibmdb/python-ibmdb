@@ -25,7 +25,10 @@ from distutils.core import setup, Extension
 PACKAGE = 'ibm_db_django'
 VERSION = __import__('ibm_db_django').__version__
 LICENSE = 'Apache License 2.0'
-
+extra = {}
+if sys.version_info >= (3, ):
+    extra['use_2to3'] = True
+    
 setup (
     name              = PACKAGE,
     version           = VERSION,
@@ -61,4 +64,5 @@ setup (
     entry_points = {
 		'django.db.backends': ['ibm_db_django = ibm_db_django']
     },
+    **extra
 )

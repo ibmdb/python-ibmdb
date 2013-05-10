@@ -1,7 +1,7 @@
 # +--------------------------------------------------------------------------+
 # |  Licensed Materials - Property of IBM                                    |
 # |                                                                          |
-# | (C) Copyright IBM Corporation 2009.                                      |
+# | (C) Copyright IBM Corporation 2009-2013.                                      |
 # +--------------------------------------------------------------------------+
 # | This module complies with Django 1.0 and is                              |
 # | Licensed under the Apache License, Version 2.0 (the "License");          |
@@ -39,10 +39,16 @@ class DatabaseWrapper( object ):
             else:
                 host = kwargs.get( 'host' ) or 'localhost'
                 port = kwargs.get( 'port' ) and ( ':%s' % kwargs.get( 'port' )) or ''
-                if not ( host.lower() == 'localhost' ):
+                DriverType = 4
+                kwargsKeys = kwargs.keys()
+                if kwargsKeys.__contains__( 'DriverType' ):
+                    DriverType = kwargs['DriverType']
+                if DriverType == 4:
                     conn_string = "jdbc:db2://%s%s/%s" % ( host, port, kwargs.get( 'database' ) )
-                else:
+                elif DriverType == 2:
                     conn_string = "jdbc:db2:%s" % ( kwargs.get( 'database' ) )
+                else:
+                    raise ImproperlyConfigured( "Wrong Driver type" )
                 
                 # for Setting default AUTO COMMIT off on connection.
                 autocommit = False

@@ -1,7 +1,7 @@
 # +--------------------------------------------------------------------------+
 # |  Licensed Materials - Property of IBM                                    |
 # |                                                                          |
-# | (C) Copyright IBM Corporation 2009.                                      |
+# | (C) Copyright IBM Corporation 2009-2013.                                      |
 # +--------------------------------------------------------------------------+
 # | This module complies with Django 1.0 and is                              |
 # | Licensed under the Apache License, Version 2.0 (the "License");          |
@@ -18,7 +18,6 @@
 
 from django.db.backends import BaseDatabaseOperations
 from ibm_db_django import query
-from string import upper
 from django import VERSION as djangoVersion
 import sys
 
@@ -26,6 +25,11 @@ _IS_JYTHON = sys.platform.startswith( 'java' )
 if( djangoVersion[0:2] >= ( 1, 4 ) ):
     from django.utils.timezone import is_aware, is_naive, utc 
     from django.conf import settings
+
+if _IS_JYTHON:
+    dbms_name = 'dbname'
+else:
+    dbms_name = 'dbms_name'
     
 class DatabaseOperations ( BaseDatabaseOperations ):
     def __init__( self, connection ):
@@ -52,10 +56,10 @@ class DatabaseOperations ( BaseDatabaseOperations ):
             aggregate.sql_function = 'VARIANCE'
         #DB2 doesn't have sample standard deviation function
         elif aggregate.sql_function == 'STDDEV_SAMP':
-            raise NotImplementedError
+            raise NotImplementedError("sample standard deviation function not supported")
         #DB2 doesn't have sample variance function
         elif aggregate.sql_function == 'VAR_SAMP':
-            raise NotImplementedError
+            raise NotImplementedError("sample variance function not supported")
     
     def combine_expression( self, operator, sub_expressions ):
         if operator == '%%':
@@ -78,21 +82,21 @@ class DatabaseOperations ( BaseDatabaseOperations ):
     # Function to extract day, month or year from the date.
     # Reference: http://publib.boulder.ibm.com/infocenter/db2luw/v9r5/topic/com.ibm.db2.luw.sql.ref.doc/doc/r0023457.html
     def date_extract_sql( self, lookup_type, field_name ):
-        if upper( lookup_type ) == 'WEEK_DAY':
+        if lookup_type.upper() == 'WEEK_DAY':
             return " DAYOFWEEK(%s) " % ( field_name )
         else:
-            return " %s(%s) " % ( upper( lookup_type ), field_name )
+            return " %s(%s) " % ( lookup_type.upper(), field_name )
      
     # Rounding of date on the basic of looktype.
     # e.g If input is 2008-12-04 and month then output will be 2008-12-01 00:00:00
     # Reference: http://www.ibm.com/developerworks/data/library/samples/db2/0205udfs/index.html
     def date_trunc_sql( self, lookup_type, field_name ):
         sql = "TIMESTAMP(DATE(SUBSTR(CHAR(%s), 1, %d) || '%s'), TIME('00:00:00'))"
-        if upper( lookup_type ) == 'DAY':
+        if lookup_type.upper() == 'DAY':
             sql = sql % ( field_name, 10, '' )
-        elif upper( lookup_type ) == 'MONTH':
+        elif lookup_type.upper() == 'MONTH':
             sql = sql % ( field_name, 7, '-01' )
-        elif upper( lookup_type ) == 'YEAR':
+        elif lookup_type.upper() == 'YEAR':
             sql = sql % ( field_name, 4, '-01-01' )
 
         return sql
@@ -112,7 +116,13 @@ class DatabaseOperations ( BaseDatabaseOperations ):
     #As casting is not required, so nothing is required to do in this function.
     def datetime_cast_sql( self ):
         return "%s"
-    
+        
+    def deferrable_sql( self ):
+        if getattr(self.connection.connection, dbms_name) == 'DB2':
+            return "ON DELETE NO ACTION NOT ENFORCED"
+        else:
+            return ""
+        
     # Function to return SQL from dropping foreign key.
     def drop_foreignkey_sql( self ):
         return "DROP FOREIGN KEY"
@@ -173,7 +183,7 @@ class DatabaseOperations ( BaseDatabaseOperations ):
         
     # Function to quote the name of schema, table and column.
     def quote_name( self, name ):
-        name = upper( name )
+        name = name.upper()
         if( name.startswith( "\"" ) & name.endswith( "\"" ) ):
             return name
         
@@ -190,6 +200,13 @@ class DatabaseOperations ( BaseDatabaseOperations ):
     def random_function_sql( self ):
         return "SYSFUN.RAND()"
     
+    
+    def regex_lookup(self, lookup_type):
+        if lookup_type == 'regex':
+            return '''xmlcast( xmlquery('fn:matches($c, "%%s")' passing %s as "c") as varchar(5)) = 'true' db2regexExtraField(%s)'''
+        else:
+            return '''xmlcast( xmlquery('fn:matches($c, "%%s", "i")' passing %s as "c") as varchar(5)) = 'true' db2regexExtraField(%s)'''
+        
     # As save-point is supported by DB2, following function will return SQL to create savepoint.
     def savepoint_create_sql( self, sid ):
         return "SAVEPOINT %s ON ROLLBACK RETAIN CURSORS" % sid
@@ -208,70 +225,84 @@ class DatabaseOperations ( BaseDatabaseOperations ):
         curr_schema = self.connection.connection.get_current_schema().upper()
         sqls = []
         if tables:
-            sqls.append( '''CREATE PROCEDURE FKEY_ALT_CONST(django_tabname VARCHAR(128), curr_schema VARCHAR(128))
-                LANGUAGE SQL
-                P1: BEGIN
-                    DECLARE fktable varchar(128);
-                    DECLARE fkconst varchar(128);
-                    DECLARE row_count integer;
-                    DECLARE alter_fkey_sql varchar(350);
-                    DECLARE cur1 CURSOR for SELECT tabname, constname FROM syscat.tabconst WHERE type = 'F' and tabschema = curr_schema and ENFORCED = 'N';
-                    DECLARE cur2 CURSOR for SELECT tabname, constname FROM syscat.tabconst WHERE type = 'F' and tabname = django_tabname and tabschema = curr_schema and ENFORCED = 'Y';
-                    IF ( django_tabname = '' ) THEN
-                        SET row_count = 0;
-                        SELECT count( * ) INTO row_count FROM syscat.tabconst WHERE type = 'F' and tabschema = curr_schema and ENFORCED = 'N';
-                        IF ( row_count > 0 ) THEN
-                            OPEN cur1;
-                            WHILE( row_count > 0 ) DO 
-                                FETCH cur1 INTO fktable, fkconst;
-                                IF ( LOCATE( ' ', fktable ) > 0 ) THEN 
-                                    SET alter_fkey_sql = 'ALTER TABLE ' || '\"' || fktable || '\"' ||' ALTER FOREIGN KEY ';
-                                ELSE
-                                    SET alter_fkey_sql = 'ALTER TABLE ' || fktable || ' ALTER FOREIGN KEY ';
-                                END IF;
-                                IF ( LOCATE( ' ', fkconst ) > 0) THEN
-                                    SET alter_fkey_sql = alter_fkey_sql || '\"' || fkconst || '\"' || ' ENFORCED';
-                                ELSE
-                                    SET alter_fkey_sql = alter_fkey_sql || fkconst || ' ENFORCED';
-                                END IF;
-                                execute immediate alter_fkey_sql;
-                                SET row_count = row_count - 1;
-                            END WHILE;
-                            CLOSE cur1;
+            #check for zOS DB2 server
+            if getattr(self.connection.connection, dbms_name) != 'DB2':
+                fk_tab = 'TABNAME'
+                fk_tabschema = 'TABSCHEMA'
+                fk_const = 'CONSTNAME'
+                fk_systab = 'SYSCAT.TABCONST'
+                type_check_string = "type = 'F' and"
+                sqls.append( '''CREATE PROCEDURE FKEY_ALT_CONST(django_tabname VARCHAR(128), curr_schema VARCHAR(128))
+                    LANGUAGE SQL
+                    P1: BEGIN
+                        DECLARE fktable varchar(128);
+                        DECLARE fkconst varchar(128);
+                        DECLARE row_count integer;
+                        DECLARE alter_fkey_sql varchar(350);
+                        DECLARE cur1 CURSOR for SELECT %(fk_tab)s, %(fk_const)s FROM %(fk_systab)s WHERE %(type_check_string)s %(fk_tabschema)s = curr_schema and ENFORCED = 'N';
+                        DECLARE cur2 CURSOR for SELECT %(fk_tab)s, %(fk_const)s FROM %(fk_systab)s WHERE %(type_check_string)s %(fk_tab)s = django_tabname and %(fk_tabschema)s = curr_schema and ENFORCED = 'Y';
+                        IF ( django_tabname = '' ) THEN
+                            SET row_count = 0;
+                            SELECT count( * ) INTO row_count FROM %(fk_systab)s WHERE %(type_check_string)s %(fk_tabschema)s = curr_schema and ENFORCED = 'N';
+                            IF ( row_count > 0 ) THEN
+                                OPEN cur1;
+                                WHILE( row_count > 0 ) DO 
+                                    FETCH cur1 INTO fktable, fkconst;
+                                    IF ( LOCATE( ' ', fktable ) > 0 ) THEN 
+                                        SET alter_fkey_sql = 'ALTER TABLE ' || '\"' || fktable || '\"' ||' ALTER FOREIGN KEY ';
+                                    ELSE
+                                        SET alter_fkey_sql = 'ALTER TABLE ' || fktable || ' ALTER FOREIGN KEY ';
+                                    END IF;
+                                    IF ( LOCATE( ' ', fkconst ) > 0) THEN
+                                        SET alter_fkey_sql = alter_fkey_sql || '\"' || fkconst || '\"' || ' ENFORCED';
+                                    ELSE
+                                        SET alter_fkey_sql = alter_fkey_sql || fkconst || ' ENFORCED';
+                                    END IF;
+                                    execute immediate alter_fkey_sql;
+                                    SET row_count = row_count - 1;
+                                END WHILE;
+                                CLOSE cur1;
+                            END IF;
+                        ELSE
+                            SET row_count = 0;
+                            SELECT count( * ) INTO row_count FROM %(fk_systab)s WHERE %(type_check_string)s %(fk_tab)s = django_tabname and %(fk_tabschema)s = curr_schema and ENFORCED = 'Y';
+                            IF ( row_count > 0 ) THEN
+                                OPEN cur2;
+                                WHILE( row_count > 0 ) DO 
+                                    FETCH cur2 INTO fktable, fkconst;
+                                    IF ( LOCATE( ' ', fktable ) > 0 ) THEN 
+                                        SET alter_fkey_sql = 'ALTER TABLE ' || '\"' || fktable || '\"' ||' ALTER FOREIGN KEY ';
+                                    ELSE
+                                        SET alter_fkey_sql = 'ALTER TABLE ' || fktable || ' ALTER FOREIGN KEY ';
+                                    END IF;
+                                    IF ( LOCATE( ' ', fkconst ) > 0) THEN
+                                        SET alter_fkey_sql = alter_fkey_sql || '\"' || fkconst || '\"' || ' NOT ENFORCED';
+                                    ELSE
+                                        SET alter_fkey_sql = alter_fkey_sql || fkconst || ' NOT ENFORCED';
+                                    END IF;
+                                    execute immediate alter_fkey_sql;
+                                    SET row_count = row_count - 1;
+                                END WHILE;
+                                CLOSE cur2;
+                            END IF;
                         END IF;
-                    ELSE
-                        SET row_count = 0;
-                        SELECT count( * ) INTO row_count FROM syscat.tabconst WHERE type = 'F' and tabname = django_tabname and tabschema = curr_schema and ENFORCED = 'Y';
-                        IF ( row_count > 0 ) THEN
-                            OPEN cur2;
-                            WHILE( row_count > 0 ) DO 
-                                FETCH cur2 INTO fktable, fkconst;
-                                IF ( LOCATE( ' ', fktable ) > 0 ) THEN 
-                                    SET alter_fkey_sql = 'ALTER TABLE ' || '\"' || fktable || '\"' ||' ALTER FOREIGN KEY ';
-                                ELSE
-                                    SET alter_fkey_sql = 'ALTER TABLE ' || fktable || ' ALTER FOREIGN KEY ';
-                                END IF;
-                                IF ( LOCATE( ' ', fkconst ) > 0) THEN
-                                    SET alter_fkey_sql = alter_fkey_sql || '\"' || fkconst || '\"' || ' NOT ENFORCED';
-                                ELSE
-                                    SET alter_fkey_sql = alter_fkey_sql || fkconst || ' NOT ENFORCED';
-                                END IF;
-                                execute immediate alter_fkey_sql;
-                                SET row_count = row_count - 1;
-                            END WHILE;
-                            CLOSE cur2;
-                        END IF;
-                    END IF;
-                END P1''' )    
-            for table in tables:
-                sqls.append( "CALL FKEY_ALT_CONST( '%s', '%s' );" % ( table.upper(), curr_schema ) )
+                    END P1''' % {'fk_tab':fk_tab, 'fk_tabschema':fk_tabschema, 'fk_const':fk_const, 'fk_systab':fk_systab, 'type_check_string':type_check_string} )  
+            
+            if getattr(self.connection.connection, dbms_name) != 'DB2':
+                for table in tables:
+                    sqls.append( "CALL FKEY_ALT_CONST( '%s', '%s' );" % ( table.upper(), curr_schema ) )
+            else:
+                sqls = []
+                
             for table in tables:
                 sqls.append( style.SQL_KEYWORD( "DELETE" ) + " " + 
                            style.SQL_KEYWORD( "FROM" ) + " " + 
                            style.SQL_TABLE( "%s" % self.quote_name( table ) ) )
                 
-            sqls.append( "CALL FKEY_ALT_CONST( '' , '%s' );" % ( curr_schema, ) )
-            sqls.append( "DROP PROCEDURE FKEY_ALT_CONST;" )  
+            if getattr(self.connection.connection, dbms_name) != 'DB2':    
+                sqls.append( "CALL FKEY_ALT_CONST( '' , '%s' );" % ( curr_schema, ) )
+                sqls.append( "DROP PROCEDURE FKEY_ALT_CONST;" )  
+                
             for sequence in sequences:
                 if( sequence['column'] != None ):
                     sqls.append( style.SQL_KEYWORD( "ALTER TABLE" ) + " " + 
@@ -381,12 +412,12 @@ class DatabaseOperations ( BaseDatabaseOperations ):
     def for_update_sql(self, nowait=False):
         #DB2 doesn't support nowait select for update
         if nowait:
-            return ValueError( "Nowait Select for update not supported " )
+            raise ValueError( "Nowait Select for update not supported " )
         else:
             return 'WITH RS USE AND KEEP UPDATE LOCKS'
 
     def distinct_sql(self, fields):
         if fields:
-            return ValueError( "distinct_on_fields not supported" )
+            raise ValueError( "distinct_on_fields not supported" )
         else:
             return 'DISTINCT'

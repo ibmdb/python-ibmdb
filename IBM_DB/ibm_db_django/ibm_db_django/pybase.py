@@ -1,7 +1,7 @@
 # +--------------------------------------------------------------------------+
 # |  Licensed Materials - Property of IBM                                    |
 # |                                                                          |
-# | (C) Copyright IBM Corporation 2009.                                      |
+# | (C) Copyright IBM Corporation 2009-2013.                                      |
 # +--------------------------------------------------------------------------+
 # | This module complies with Django 1.0 and is                              |
 # | Licensed under the Apache License, Version 2.0 (the "License");          |
@@ -25,7 +25,7 @@ except ImportError, e:
 import datetime
 # For checking django's version
 from django import VERSION as djangoVersion
-import decimal
+
 if ( djangoVersion[0:2] > ( 1, 1 ) ):
     from django.db import utils
     import sys
@@ -33,7 +33,11 @@ if ( djangoVersion[0:2] >= ( 1, 4) ):
     from django.utils import timezone
     from django.conf import settings
     import warnings
-
+if ( djangoVersion[0:2] >= ( 1, 5 )):
+    from django.utils.encoding import force_bytes, force_text
+    from django.utils import six
+    import re
+    
 DatabaseError = Database.DatabaseError
 IntegrityError = Database.IntegrityError
 
@@ -61,7 +65,7 @@ class DatabaseWrapper( object ):
             if kwargsKeys.__contains__( 'port' ):
                 del kwargs['port']
             
-            pconnect_flag = True
+            pconnect_flag = False
             if kwargsKeys.__contains__( 'PCONNECT' ):
                 pconnect_flag = kwargs['PCONNECT']
                 del kwargs['PCONNECT']
@@ -124,7 +128,12 @@ class DB2CursorWrapper( Database.Cursor ):
     # Over-riding this method to modify SQLs which contains format parameter to qmark. 
     def execute( self, operation, parameters = () ):
         try:
-            operation = operation % ( tuple( "?" * operation.count( "%s" ) ) )
+            if operation.count("db2regexExtraField(%s)") > 0:
+                operation = operation.replace("db2regexExtraField(%s)", "")
+                operation = operation % parameters
+                parameters = ()
+            if operation.count( "%s" ) > 0:
+                operation = operation % ( tuple( "?" * operation.count( "%s" ) ) )
             if ( djangoVersion[0:2] >= ( 1, 4 ) ):
                 parameters = self._format_parameters( parameters )
                 
@@ -134,16 +143,26 @@ class DB2CursorWrapper( Database.Cursor ):
                 try:
                     return super( DB2CursorWrapper, self ).execute( operation, parameters )
                 except IntegrityError, e:
-                    raise utils.IntegrityError, utils.IntegrityError( *tuple( e ) ), sys.exc_info()[2]
+                    if (djangoVersion[0:2] >= (1, 5)):
+                        six.reraise(utils.IntegrityError, utils.IntegrityError( *tuple( e ) ), sys.exc_info()[2])
+                    else:
+                        raise utils.IntegrityError, utils.IntegrityError( *tuple( e ) ), sys.exc_info()[2]
+                    
                 except DatabaseError, e:
-                    raise utils.DatabaseError, utils.DatabaseError( *tuple( e ) ), sys.exc_info()[2]   
+                    if (djangoVersion[0:2] >= (1, 5)):
+                        six.reraise(utils.DatabaseError, utils.DatabaseError( *tuple( e ) ), sys.exc_info()[2])
+                    else:
+                        raise utils.DatabaseError, utils.DatabaseError( *tuple( e ) ), sys.exc_info()[2]  
         except ( TypeError ):
             return None
         
     # Over-riding this method to modify SQLs which contains format parameter to qmark.
     def executemany( self, operation, seq_parameters ):
         try:
-            operation = operation % ( tuple( "?" * operation.count( "%s" ) ) )
+            if operation.count("db2regexExtraField(%s)") > 0:
+                 raise ValueError("Regex not supported in this operation")
+            if operation.count( "%s" ) > 0:
+                operation = operation % ( tuple( "?" * operation.count( "%s" ) ) )
             if ( djangoVersion[0:2] >= ( 1, 4 ) ):
                 seq_parameters = [ self._format_parameters( parameters ) for parameters in seq_parameters ]
                 
@@ -153,9 +172,15 @@ class DB2CursorWrapper( Database.Cursor ):
                 try:
                     return super( DB2CursorWrapper, self ).executemany( operation, seq_parameters )
                 except IntegrityError, e:
-                    raise utils.IntegrityError, utils.IntegrityError( *tuple( e ) ), sys.exc_info()[2]
+                    if (djangoVersion[0:2] >= (1, 5)):
+                        six.reraise(utils.IntegrityError, utils.IntegrityError( *tuple( e ) ), sys.exc_info()[2])
+                    else:
+                        raise utils.IntegrityError, utils.IntegrityError( *tuple( e ) ), sys.exc_info()[2]
                 except DatabaseError, e:
-                    raise utils.DatabaseError, utils.DatabaseError( *tuple( e ) ), sys.exc_info()[2] 
+                    if (djangoVersion[0:2] >= (1, 5)):
+                        six.reraise(utils.DatabaseError, utils.DatabaseError( *tuple( e ) ), sys.exc_info()[2])
+                    else:
+                        raise utils.DatabaseError, utils.DatabaseError( *tuple( e ) ), sys.exc_info()[2] 
         except ( IndexError, TypeError ):
             return None
     
@@ -194,5 +219,7 @@ class DB2CursorWrapper( Database.Cursor ):
                     if settings.USE_TZ and value is not None and timezone.is_naive( value ):
                         value = value.replace( tzinfo=timezone.utc )
                         row[index] = value
-                      
+                elif ( djangoVersion[0:2] >= (1, 5 ) ):
+                    if isinstance(value, six.string_types):
+                        row[index] = re.sub(r'[\x00]', '', value)
         return tuple( row )

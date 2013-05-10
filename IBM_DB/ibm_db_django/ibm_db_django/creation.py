@@ -1,7 +1,7 @@
 # +--------------------------------------------------------------------------+
 # |  Licensed Materials - Property of IBM                                    |
 # |                                                                          |
-# | (C) Copyright IBM Corporation 2009.                                      |
+# | (C) Copyright IBM Corporation 2009-2013.                                      |
 # +--------------------------------------------------------------------------+
 # | This module complies with Django 1.0 and is                              |
 # | Licensed under the Apache License, Version 2.0 (the "License");          |
@@ -32,6 +32,10 @@ from django.core.management import call_command
 from django import VERSION as djangoVersion
 from django.db.backends.util import truncate_name
 
+if _IS_JYTHON:
+    dbms_name = 'dbname'
+else:
+    dbms_name = 'dbms_name'
 TEST_DBNAME_PREFIX = 'test_'
 
 class DatabaseCreation ( BaseDatabaseCreation ):
@@ -72,42 +76,44 @@ class DatabaseCreation ( BaseDatabaseCreation ):
         """Return the CREATE INDEX SQL statements for a single model field"""
         output = []
         qn = self.connection.ops.quote_name
-        max_name_length = self.connection.ops.max_name_length
+        max_name_length = self.connection.ops.max_name_length()
         # ignore tablespace information
         tablespace_sql = ''
         i = 0
-        if len( model._meta.unique_together_index ) != 0:
-            for unique_together_index in model._meta.unique_together_index:
-                i = i + 1
-                column_list = []
-                for column in unique_together_index:
-                    for local_field in model._meta.local_fields:
-                        if column == local_field.name:
-                            column_list.extend( [ local_field.column ] )
+        if getattr(self.connection.connection, dbms_name) != 'DB2':
+            if len( model._meta.unique_together_index ) != 0:
+                for unique_together_index in model._meta.unique_together_index:
+                    i = i + 1
+                    column_list = []
+                    for column in unique_together_index:
+                        for local_field in model._meta.local_fields:
+                            if column == local_field.name:
+                                column_list.extend( [ local_field.column ] )
+                    
+                    self.__add_psudokey_column( style, self.connection.cursor(), model._meta.db_table, model._meta.pk.attname, column_list )
+                    column_list.extend( [ truncate_name( "%s%s" % ( self.psudo_column_prefix, "_".join( column_list ) ), max_name_length ) ] )            
+                    output.extend( [style.SQL_KEYWORD( 'CREATE UNIQUE INDEX' ) + ' ' + \
+                                    style.SQL_TABLE( qn( 'db2_%s_%s' % ( model._meta.db_table, i ) ) ) + ' ' + \
+                                    style.SQL_KEYWORD( 'ON' ) + ' ' + \
+                                    style.SQL_TABLE( qn( model._meta.db_table ) ) + ' ' + \
+                                    '( %s )' % ", ".join( column_list ) + ' ' + \
+                                    '%s;' % tablespace_sql] )
+                model._meta.unique_together_index = []
                 
+            if f.unique_index:
+                column_list = []
+                column_list.extend( [f.column] )
                 self.__add_psudokey_column( style, self.connection.cursor(), model._meta.db_table, model._meta.pk.attname, column_list )
-                column_list.extend( [ truncate_name( "%s%s" % ( self.psudo_column_prefix, "_".join( column_list ) ), max_name_length ) ] )            
-                output.extend( [style.SQL_KEYWORD( 'CREATE UNIQUE INDEX' ) + ' ' + \
-                                style.SQL_TABLE( qn( 'db2_%s_%s' % ( model._meta.db_table, i ) ) ) + ' ' + \
-                                style.SQL_KEYWORD( 'ON' ) + ' ' + \
-                                style.SQL_TABLE( qn( model._meta.db_table ) ) + ' ' + \
-                                '( %s )' % ", ".join( column_list ) + ' ' + \
-                                '%s;' % tablespace_sql] )
-            model._meta.unique_together_index = []
+                cisql = 'CREATE UNIQUE INDEX'
+                output.extend( [style.SQL_KEYWORD( cisql ) + ' ' + 
+                            style.SQL_TABLE( qn( '%s_%s' % ( model._meta.db_table, f.column ) ) ) + ' ' + 
+                            style.SQL_KEYWORD( 'ON' ) + ' ' + 
+                            style.SQL_TABLE( qn( model._meta.db_table ) ) + ' ' + 
+                            "(%s, %s )" % ( style.SQL_FIELD( qn( f.column ) ), style.SQL_FIELD( qn( truncate_name( ( self.psudo_column_prefix + f.column ), max_name_length ) ) ) ) + 
+                            "%s;" % tablespace_sql] )
+                return output
             
-        if f.unique_index:
-            column_list = []
-            column_list.extend( [f.column] )
-            self.__add_psudokey_column( style, self.connection.cursor(), model._meta.db_table, model._meta.pk.attname, column_list )
-            cisql = 'CREATE UNIQUE INDEX'
-            output.extend( [style.SQL_KEYWORD( cisql ) + ' ' + 
-                        style.SQL_TABLE( qn( '%s_%s' % ( model._meta.db_table, f.column ) ) ) + ' ' + 
-                        style.SQL_KEYWORD( 'ON' ) + ' ' + 
-                        style.SQL_TABLE( qn( model._meta.db_table ) ) + ' ' + 
-                        "(%s, %s )" % ( style.SQL_FIELD( qn( f.column ) ), style.SQL_FIELD( qn( truncate_name( ( self.psudo_column_prefix + f.column ), max_name_length ) ) ) ) + 
-                        "%s;" % tablespace_sql] )
-            
-        elif f.db_index and not f.unique:
+        if f.db_index and not f.unique:
             cisql = 'CREATE INDEX'
             output.extend( [style.SQL_KEYWORD( cisql ) + ' ' + 
                         style.SQL_TABLE( qn( '%s_%s' % ( model._meta.db_table, f.column ) ) ) + ' ' + 
@@ -206,7 +212,7 @@ class DatabaseCreation ( BaseDatabaseCreation ):
             self.connection.settings_dict['NAME'] = test_database
             self.connection.settings_dict['PCONNECT'] = False     
             # Confirm the feature set of the test database
-            if( djangoVersion[0:2] > ( 1, 2 ) ):
+            if( ( 1, 2 ) <= djangoVersion[0:2] < (1,5) ):
                 self.connection.features.confirm()
             
             call_command( 'syncdb', database = self.connection.alias, verbosity = verbosity, interactive = False, load_initial_data = False )
@@ -246,30 +252,33 @@ class DatabaseCreation ( BaseDatabaseCreation ):
     
     # As DB2 does not allow to insert NULL value in UNIQUE col, hence modifing model.
     def sql_create_model( self, model, style, known_models = set() ):
-        model._meta.unique_together_index = []
-        temp_changed_uvalues = []
-        temp_unique_together = model._meta.unique_together
-        for i in range( len( model._meta.local_fields ) ):
-            model._meta.local_fields[i].unique_index = False
-            if model._meta.local_fields[i]._unique and model._meta.local_fields[i].null:
-                model._meta.local_fields[i].unique_index = True
-                model._meta.local_fields[i]._unique = False
-                temp_changed_uvalues.append( i )
-             
-            if len( model._meta.unique_together ) != 0:
-                for unique_together in model._meta.unique_together:
-                    if model._meta.local_fields[i].name in unique_together:
-                        if model._meta.local_fields[i].null:
-                            unique_list = list( model._meta.unique_together )
-                            unique_list.remove( unique_together )
-                            model._meta.unique_together = tuple( unique_list )
-                            model._meta.unique_together_index.append( unique_together )                    
-        sql, references = super( DatabaseCreation, self ).sql_create_model( model, style, known_models )
-        
-        for i in temp_changed_uvalues:
-            model._meta.local_fields[i]._unique = True
-        model._meta.unique_together = temp_unique_together
-        return sql, references
+        if getattr(self.connection.connection, dbms_name) != 'DB2':
+            model._meta.unique_together_index = []
+            temp_changed_uvalues = []
+            temp_unique_together = model._meta.unique_together
+            for i in range( len( model._meta.local_fields ) ):
+                model._meta.local_fields[i].unique_index = False
+                if model._meta.local_fields[i]._unique and model._meta.local_fields[i].null:
+                    model._meta.local_fields[i].unique_index = True
+                    model._meta.local_fields[i]._unique = False
+                    temp_changed_uvalues.append( i )
+                 
+                if len( model._meta.unique_together ) != 0:
+                    for unique_together in model._meta.unique_together:
+                        if model._meta.local_fields[i].name in unique_together:
+                            if model._meta.local_fields[i].null:
+                                unique_list = list( model._meta.unique_together )
+                                unique_list.remove( unique_together )
+                                model._meta.unique_together = tuple( unique_list )
+                                model._meta.unique_together_index.append( unique_together )                    
+            sql, references = super( DatabaseCreation, self ).sql_create_model( model, style, known_models )
+            
+            for i in temp_changed_uvalues:
+                model._meta.local_fields[i]._unique = True
+            model._meta.unique_together = temp_unique_together
+            return sql, references
+        else:
+            return super( DatabaseCreation, self ).sql_create_model( model, style, known_models )
 
     # Private method to clean up database.
     def __clean_up( self, cursor ):

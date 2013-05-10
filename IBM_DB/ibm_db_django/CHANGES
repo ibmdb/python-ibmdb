@@ -1,5 +1,9 @@
 Change Log
 =============
+2013/05/10 (setup.py 1.0.5)
+ - Added support for Django-1.5, with backward compatibilty
+ - Added support for regrex lookup
+ 
 2012/05/15 (setup.py 1.0.4)
  - Added support for Django-1.4
  - Backward compatibilty - Same codebase works with older supported version of Django 

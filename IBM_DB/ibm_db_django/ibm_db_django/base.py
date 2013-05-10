@@ -1,7 +1,7 @@
 # +--------------------------------------------------------------------------+
 # |  Licensed Materials - Property of IBM                                    |
 # |                                                                          |
-# | (C) Copyright IBM Corporation 2009.                                      |
+# | (C) Copyright IBM Corporation 2009-2013.                                      |
 # +--------------------------------------------------------------------------+
 # | This module complies with Django 1.0 and is                              |
 # | Licensed under the Apache License, Version 2.0 (the "License");          |
@@ -37,16 +37,21 @@ from ibm_db_django.creation import DatabaseCreation
 from ibm_db_django.introspection import DatabaseIntrospection
 from ibm_db_django.operations import DatabaseOperations
 if not _IS_JYTHON:
-    import ibm_db_django.pybase as baseWrapper
+    import ibm_db_django.pybase as Database
 else:
-    import ibm_db_django.jybase as baseWrapper 
+    import ibm_db_django.jybase as Database
     
 # For checking django's version
 from django import VERSION as djangoVersion
 
-DatabaseError = baseWrapper.DatabaseError
-IntegrityError = baseWrapper.IntegrityError
+DatabaseError = Database.DatabaseError
+IntegrityError = Database.IntegrityError
 
+if _IS_JYTHON:
+    dbms_name = 'dbname'
+else:
+    dbms_name = 'dbms_name'
+    
 class DatabaseFeatures( BaseDatabaseFeatures ):    
     can_use_chunked_reads = False
     
@@ -67,9 +72,9 @@ class DatabaseFeatures( BaseDatabaseFeatures ):
     can_defer_constraint_checks = False
     supports_forward_references = False
     requires_rollback_on_dirty_transaction = True
-    supports_regex_backreferencing = False
+    supports_regex_backreferencing = True
     supports_timezones = False
-    has_bulk_insert = True
+    has_bulk_insert = False
     has_select_for_update = True
     supports_long_model_names = False
     can_distinct_on_fields = False
@@ -120,7 +125,7 @@ class DatabaseWrapper( BaseDatabaseWrapper ):
             self.validation = DatabaseValidation()
         else:
             self.validation = DatabaseValidation( self )
-        self.databaseWrapper = baseWrapper.DatabaseWrapper()
+        self.databaseWrapper = Database.DatabaseWrapper()
     
     # Method to check if connection is live or not.
     def __is_connection( self ):
@@ -191,9 +196,16 @@ class DatabaseWrapper( BaseDatabaseWrapper ):
                 connection_created.send( sender = self.__class__, connection = self )
         else:
             cursor = self.databaseWrapper._cursor( self.connection, None )
+            
+        if getattr(self.connection, dbms_name) == 'DB2':
+            self.features.has_bulk_insert = False
+        else:
+            self.features.has_bulk_insert = True    
         return cursor
     
     def close( self ):
+        if( djangoVersion[0:2] >= ( 1, 5 ) ):
+            self.validate_thread_sharing()
         if self.connection is not None:
             self.databaseWrapper.close( self.connection )
             self.connection = None
