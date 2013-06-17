@@ -220,14 +220,30 @@ class DBAPITypeObject(frozenset):
         """This method checks if the string compared with is in the 
         tuple provided to the constructor of this object.  It takes 
         string as an argument. 
- 
         """
         if cmp in self.col_types:
             return 0
-        if cmp < self.col_types:
-            return 1
+        if sys.version_info < (3, ):
+            if cmp < self.col_types:
+                return 1
+            else:
+                return -1
         else:
-            return -1
+            return 1
+            
+    def __eq__(self, cmp):
+        """This method checks if the string compared with is in the 
+        tuple provided to the constructor of this object.  It takes 
+        string as an argument. 
+        """
+        return cmp in self.col_types
+           
+    def __ne__(self, cmp):
+        """This method checks if the string compared with is not in the 
+        tuple provided to the constructor of this object.  It takes 
+        string as an argument. 
+        """
+        return cmp not in self.col_types
 
 # The user can use these objects to compare the database column types
 # with in order to determine the python type to provide in the 
@@ -997,29 +1013,29 @@ class Cursor(object):
                                                           column_index))
                 type = ibm_db.field_type(self.stmt_handler, column_index)
                 type = type.upper()
-                if STRING.__cmp__(type) == 0:
+                if STRING == type:
                     column_desc.append(STRING)
-                elif TEXT.__cmp__(type) == 0:
+                elif TEXT == type:
                     column_desc.append(TEXT)
-                elif XML.__cmp__(type) == 0:
+                elif XML == type:
                     column_desc.append(XML)
-                elif BINARY.__cmp__(type) == 0:
+                elif BINARY == type:
                     column_desc.append(BINARY)
-                elif NUMBER.__cmp__(type) == 0:
+                elif NUMBER == type:
                     column_desc.append(NUMBER)
-                elif BIGINT.__cmp__(type) == 0:
+                elif BIGINT == type:
                     column_desc.append(BIGINT) 
-                elif FLOAT.__cmp__(type) == 0:
+                elif FLOAT == type:
                     column_desc.append(FLOAT)                
-                elif DECIMAL.__cmp__(type) == 0:
+                elif DECIMAL == type:
                     column_desc.append(DECIMAL)
-                elif DATE.__cmp__(type) == 0:
+                elif DATE == type:
                     column_desc.append(DATE)
-                elif TIME.__cmp__(type) == 0:
+                elif TIME == type:
                     column_desc.append(TIME)
-                elif DATETIME.__cmp__(type) == 0:
+                elif DATETIME == type:
                     column_desc.append(DATETIME)
-                elif ROWID.__cmp__(type) == 0:
+                elif ROWID == type:
                     column_desc.append(ROWID)
 
                 column_desc.append(ibm_db.field_display_size(
@@ -1033,8 +1049,10 @@ class Cursor(object):
 
                 column_desc.append(ibm_db.field_scale(self.stmt_handler,
                                                                 column_index))
-
-                column_desc.append(None)
+                                                                
+                column_desc.append(ibm_db.field_nullable(
+                                             self.stmt_handler, column_index))
+                                             
                 self.__description.append(column_desc)
         except Exception, inst:
             self.messages.append(_get_exception(inst))
@@ -1120,7 +1138,7 @@ class Cursor(object):
     def _callproc_helper(self, procname, parameters=None):
         if parameters is not None:
             buff = []
-            CONVERT_STR = (datetime.datetime, datetime.date, datetime.time, buffer)
+            CONVERT_STR = (buffer)
             # Convert date/time and binary objects to string for 
             # inserting into the database. 
             for param in parameters:
@@ -1204,7 +1222,7 @@ class Cursor(object):
     def _execute_helper(self, parameters=None):
         if parameters is not None:
             buff = []
-            CONVERT_STR = (datetime.datetime, datetime.date, datetime.time, buffer)
+            CONVERT_STR = (buffer)
             # Convert date/time and binary objects to string for 
             # inserting into the database. 
             for param in parameters:
@@ -1333,7 +1351,7 @@ class Cursor(object):
             self.messages.append(InterfaceError("executemany expects the second argument to be of type list or tuple of sequence."))
             raise self.messages[len(self.messages) - 1]
         
-        CONVERT_STR = (datetime.datetime, datetime.date, datetime.time, buffer)
+        CONVERT_STR = (buffer)
         # Convert date/time and binary objects to string for
         # inserting into the database.
         buff = []
@@ -1474,45 +1492,31 @@ class Cursor(object):
         """This method currently does nothing."""
         pass
 
-    #To change formate date/time string to date/time object
-    def _str_to_datetime(self, date_string, format):
-        return datetime.datetime(*(time.strptime(date_string, format)[0:6]))
-
-    # This method is used to convert a string representing date/time 
+    # This method is used to convert a string representing decimal 
     # and binary data in a row tuple fetched from the database 
-    # to date/time and binary objects, for returning it to the user.
+    # to decimal and binary objects, for returning it to the user.
     def _fix_return_data_type(self, row):
-        row = list(row)
+        row_list = None
         for index in range(len(row)):
             if row[index] is not None:
                 type = ibm_db.field_type(self.stmt_handler, index)
                 type = type.upper()
 
                 try:
-                    if type == 'TIMESTAMP':
-                        # strptime() method does not support 
-                        # microsecond format. 
-                        microsec = 0
-                        if row[index][20:] != '':
-                            microsec = int(row[index][20:])
-                            row[index] = row[index][:19]
-                        row[index] = self._str_to_datetime(row[index],
-                                                          '%Y-%m-%d %H:%M:%S')
-                        row[index] = row[index].replace(
-                                                       microsecond = microsec)
-                    elif type == 'DATE':
-                        row[index] = self._str_to_datetime(row[index], 
-                                                            '%Y-%m-%d').date()
-                    elif type == 'TIME':
-                        row[index] = self._str_to_datetime(row[index],
-                                                            '%H:%M:%S').time()
-                    elif type == 'BLOB':
-                        row[index] = buffer(row[index])
+                    if type == 'BLOB':
+                        if row_list is None:
+                            row_list = list(row)
+                        row_list[index] = buffer(row[index])
 
                     elif type == 'DECIMAL':
-                        row[index] = decimal.Decimal(str(row[index]).replace(",", "."))    
+                        if row_list is None:
+                            row_list = list(row)
+                        row_list[index] = decimal.Decimal(str(row[index]).replace(",", "."))    
 
                 except Exception, inst:
                     self.messages.append(DataError("Data type format error: "+ str(inst)))
                     raise self.messages[len(self.messages) - 1]
-        return tuple(row)
+        if row_list is None:
+            return row
+        else:
+            return tuple(row_list)

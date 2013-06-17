@@ -139,13 +139,7 @@ Running the driver testsuite on Windows
 
 Known Limitations for the Python driver
 ---------------------------------------
-1. The following tests are expected to fail:
-   test_03a.py: 
-     Fails due to an exception being thrown by the driver and not
-     being caught by the test.
-     
-   In addition to these, if trusted context is not set up,
-   there will be additional two failures related to trusted context.
+If trusted context is not set up, there will be two failures related to trusted context. When thick client has been used than additioanl three failures related to create, recreate DB.
 
 
 Known Limitations for the Python wrapper

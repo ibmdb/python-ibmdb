@@ -140,3 +140,11 @@ only optimize for N rows issue #2 (defect #154260)
   - Fixed: Handling of CLOB datatype in execute_many function (defect #248442)
   - Enhanced: Keeps weakref of open cursor in connection's _cursor_list (defect #248442)
   - Enhanced: dbi cursor is now compatible to the iteration protocol (defect #248442)
+  
+2013/06/17 (setup.py 2.0.3, ibm_db-2.0.3, ibm_db_dbi-2.0.3)
+  - Fixed: Performance issue due to datetime, date, time conversion inside dbi wrapper. ibm_db driver now returns datetime, date, time object for TIMESTAMP, DATE, TIME field type correspondingly instead of string object
+  - Enhanced: ibm_db driver are now capable to handle datetime, date, time object
+  - Fixed: Now quoted literal replacement off by default
+  - Enhanced: Added a new method in ibm_db to check indicated column in result set is nullable or not, cursor's description of ibm_db_dbi now keep the nullable column info also
+  - Fixed: callproc api now return long type object instead of string for BIGINT field type
+  - Added: New test case test_InsertRetrieveDateTimeTypeColumn.py for handling of datetime object in ibm_db driver

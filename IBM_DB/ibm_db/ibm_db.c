@@ -21,9 +21,10 @@
 +--------------------------------------------------------------------------+
 */
 
-#define MODULE_RELEASE "2.0.2"
+#define MODULE_RELEASE "2.0.3"
 
 #include <Python.h>
+#include <datetime.h>
 #include "ibm_db.h"
 #include <ctype.h>
 #ifdef _WIN32
@@ -68,22 +69,25 @@ typedef struct _error_msg_node {
 
 /* Defines a linked list structure for caching param data */
 typedef struct _param_cache_node {
-	SQLSMALLINT data_type;		/* Datatype */
-	SQLUINTEGER param_size;		/* param size */
-	SQLSMALLINT nullable;		 /* is Nullable */
+	SQLSMALLINT data_type;			/* Datatype */
+	SQLUINTEGER param_size;			/* param size */
+	SQLSMALLINT nullable;			/* is Nullable */
 	SQLSMALLINT scale;			/* Decimal scale */
-	SQLUINTEGER file_options;	 /* File options if PARAM_FILE */
-	SQLINTEGER	bind_indicator;  /* indicator variable for SQLBindParameter */
-	int		param_num;		  /* param number in stmt */
-	int		param_type;		 /* Type of param - INP/OUT/INP-OUT/FILE */
-	int		size;				/* Size of param */
-	char	*varname;			 /* bound variable name */
-	PyObject  *var_pyvalue;		/* bound variable value */
-	SQLINTEGER	  ivalue;			 /* Temp storage value */
-	double	fvalue;			  /* Temp storage value */
+	SQLUINTEGER file_options;		/* File options if PARAM_FILE */
+	SQLINTEGER	bind_indicator;		/* indicator variable for SQLBindParameter */
+	int		param_num;		/* param number in stmt */
+	int		param_type;		/* Type of param - INP/OUT/INP-OUT/FILE */
+	int		size;			/* Size of param */
+	char	*varname;			/* bound variable name */
+	PyObject  *var_pyvalue;			/* bound variable value */
+	SQLINTEGER	  ivalue;		/* Temp storage value */
+	double	fvalue;				/* Temp storage value */
 	char	  *svalue;			/* Temp storage value */
-	SQLWCHAR *uvalue;			 /* Temp storage value */
-	struct _param_cache_node *next; /* Pointer to next node */
+	SQLWCHAR *uvalue;			/* Temp storage value */
+	DATE_STRUCT *date_value;		/* Temp storage value */
+	TIME_STRUCT *time_value;		/* Temp storage value */
+	TIMESTAMP_STRUCT *ts_value;		/* Temp storage value */
+	struct _param_cache_node *next;		/* Pointer to next node */
 } param_node;
 
 typedef struct _conn_handle_struct {
@@ -151,6 +155,9 @@ typedef union {
 	SQLCHAR *str_val;
 	SQLREAL r_val;
 	SQLWCHAR *w_val;
+	TIMESTAMP_STRUCT *ts_val;
+	DATE_STRUCT *date_val;
+	TIME_STRUCT *time_val;
 } ibm_db_row_data_type;
 
 
@@ -298,16 +305,15 @@ char *strtoupper(char *data, int max) {
 
 /*	static void _python_ibm_db_free_conn_struct */
 static void _python_ibm_db_free_conn_struct(conn_handle *handle) {
-	int rc;
 
 	/* Disconnect from DB. If stmt is allocated, it is freed automatically */
 	if ( handle->handle_active && !handle->flag_pconnect) {
 		if(handle->auto_commit == 0){
-			rc = SQLEndTran(SQL_HANDLE_DBC, (SQLHDBC)handle->hdbc, SQL_ROLLBACK);
+			SQLEndTran(SQL_HANDLE_DBC, (SQLHDBC)handle->hdbc, SQL_ROLLBACK);
 		}
-		rc = SQLDisconnect((SQLHDBC)handle->hdbc);
-		rc = SQLFreeHandle(SQL_HANDLE_DBC, handle->hdbc);
-		rc = SQLFreeHandle(SQL_HANDLE_ENV, handle->henv);
+		SQLDisconnect((SQLHDBC)handle->hdbc);
+		SQLFreeHandle(SQL_HANDLE_DBC, handle->hdbc);
+		SQLFreeHandle(SQL_HANDLE_ENV, handle->henv);
 	}
 	Py_TYPE(handle)->tp_free((PyObject*)handle);
 }
@@ -360,9 +366,6 @@ static void _python_ibm_db_free_result_struct(stmt_handle* handle) {
 					case SQL_GRAPHIC:
 					case SQL_VARGRAPHIC:
 					case SQL_LONGVARGRAPHIC:
-					case SQL_TYPE_DATE:
-					case SQL_TYPE_TIME:
-					case SQL_TYPE_TIMESTAMP:
 					case SQL_BIGINT:
 					case SQL_DECIMAL:
 					case SQL_NUMERIC:
@@ -376,6 +379,25 @@ static void _python_ibm_db_free_result_struct(stmt_handle* handle) {
 							PyMem_Del(handle->row_data[i].data.w_val);
 							handle->row_data[i].data.w_val = NULL;
 						}
+						break;
+					case SQL_TYPE_TIMESTAMP:
+						if ( handle->row_data[i].data.ts_val != NULL ) {
+							PyMem_Del(handle->row_data[i].data.ts_val);
+							handle->row_data[i].data.ts_val = NULL;
+						}
+						break;
+					case SQL_TYPE_DATE:
+						if ( handle->row_data[i].data.date_val != NULL ) {
+							PyMem_Del(handle->row_data[i].data.date_val);
+							handle->row_data[i].data.date_val = NULL;
+						}
+						break;
+					case SQL_TYPE_TIME:
+						if ( handle->row_data[i].data.time_val != NULL ) {
+							PyMem_Del(handle->row_data[i].data.time_val);
+							handle->row_data[i].data.time_val = NULL;
+						}
+						break;
 				}
 			}
 			PyMem_Del(handle->row_data);
@@ -430,9 +452,8 @@ static stmt_handle *_ibm_db_new_stmt_struct(conn_handle* conn_res) {
 
 /*	static _python_ibm_db_free_stmt_struct */
 static void _python_ibm_db_free_stmt_struct(stmt_handle *handle) {
-	int rc;
 	if ( handle->hstmt != -1 ) {
-		rc = SQLFreeHandle( SQL_HANDLE_STMT, handle->hstmt);
+		SQLFreeHandle( SQL_HANDLE_STMT, handle->hstmt);
 		if ( handle ) {
 			_python_ibm_db_free_result_struct(handle);
 		}
@@ -811,9 +832,6 @@ static int _python_ibm_db_bind_column_helper(stmt_handle *stmt_res)
 				}
 				break;
 
-			case SQL_TYPE_DATE:
-			case SQL_TYPE_TIME:
-			case SQL_TYPE_TIMESTAMP:
 			case SQL_BIGINT:
 			case SQL_DECFLOAT:
 				in_length = stmt_res->column_info[i].size+2;
@@ -831,7 +849,65 @@ static int _python_ibm_db_bind_column_helper(stmt_handle *stmt_res)
 
 				if ( rc == SQL_ERROR ) {
 					_python_ibm_db_check_sql_errors((SQLHSTMT)stmt_res->hstmt, 
-						SQL_HANDLE_STMT, rc, 1, NULL, -1,												1);
+						SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
+				}
+				break;
+
+			case SQL_TYPE_DATE:
+				row_data->date_val = ALLOC(DATE_STRUCT);
+				if ( row_data->date_val == NULL ) {
+					PyErr_SetString(PyExc_Exception, "Failed to Allocate Memory");
+					return -1;
+				}
+
+				Py_BEGIN_ALLOW_THREADS;
+				rc = SQLBindCol((SQLHSTMT)stmt_res->hstmt, (SQLUSMALLINT)(i+1),
+					SQL_C_TYPE_DATE, row_data->date_val, sizeof(DATE_STRUCT),
+					(SQLINTEGER *)(&stmt_res->row_data[i].out_length));
+				Py_END_ALLOW_THREADS;
+
+				if ( rc == SQL_ERROR ) {
+					_python_ibm_db_check_sql_errors((SQLHSTMT)stmt_res->hstmt,
+						SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
+				}
+				break;
+
+			case SQL_TYPE_TIME:
+				row_data->time_val = ALLOC(TIME_STRUCT);
+				if ( row_data->time_val == NULL ) {
+					PyErr_SetString(PyExc_Exception, "Failed to Allocate Memory");
+					return -1;
+				}
+
+				Py_BEGIN_ALLOW_THREADS;
+				rc = SQLBindCol((SQLHSTMT)stmt_res->hstmt, (SQLUSMALLINT)(i+1),
+					SQL_C_TYPE_TIME, row_data->time_val, sizeof(TIME_STRUCT),
+					(SQLINTEGER *)(&stmt_res->row_data[i].out_length));
+				Py_END_ALLOW_THREADS;
+
+				if ( rc == SQL_ERROR ) {
+					_python_ibm_db_check_sql_errors((SQLHSTMT)stmt_res->hstmt,
+						SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
+				}
+				break;
+
+			case SQL_TYPE_TIMESTAMP:
+				row_data->ts_val = ALLOC(TIMESTAMP_STRUCT);
+				if ( row_data->ts_val == NULL ) {
+					PyErr_SetString(PyExc_Exception, "Failed to Allocate Memory");
+					return -1;
+				}
+
+				Py_BEGIN_ALLOW_THREADS;
+				rc = SQLBindCol((SQLHSTMT)stmt_res->hstmt, (SQLUSMALLINT)(i+1),
+					SQL_C_TYPE_TIMESTAMP, row_data->time_val, sizeof(TIMESTAMP_STRUCT),
+					(SQLINTEGER *)(&stmt_res->row_data[i].out_length));
+				Py_END_ALLOW_THREADS;
+
+				if ( rc == SQL_ERROR ) {
+					_python_ibm_db_check_sql_errors((SQLHSTMT)stmt_res->hstmt,
+						SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
+					return -1;
 				}
 				break;
 
@@ -1073,7 +1149,7 @@ static PyObject *_python_ibm_db_connect_helper( PyObject *self, PyObject *args, 
 		if ( !NIL_P(literal_replacementObj) ) {
 			literal_replacement = (SQLINTEGER) PyInt_AsLong(literal_replacementObj);
 		} else {
-			literal_replacement = SET_QUOTED_LITERAL_REPLACEMENT_ON; /*QUOTED LITERAL replacemnt is ON by default*/
+			literal_replacement = SET_QUOTED_LITERAL_REPLACEMENT_OFF; /*QUOTED LITERAL replacemnt is OFF by default*/
 		}
 				
 		if (conn_res == NULL) {
@@ -5549,6 +5625,49 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
 			}
 
 
+		case PYTHON_DATE:
+			curr->date_value = ALLOC(DATE_STRUCT);
+			curr->date_value->year = PyDateTime_GET_YEAR(bind_data);
+			curr->date_value->month = PyDateTime_GET_MONTH(bind_data);
+			curr->date_value->day = PyDateTime_GET_DAY(bind_data);
+
+			Py_BEGIN_ALLOW_THREADS;
+			rc = SQLBindParameter(stmt_res->hstmt, curr->param_num,
+				curr->param_type, SQL_C_TYPE_DATE, curr->data_type, curr->param_size,
+				curr->scale, curr->date_value, curr->ivalue, &(curr->bind_indicator));
+			Py_END_ALLOW_THREADS;
+			break;
+
+		case PYTHON_TIME:
+			curr->time_value = ALLOC(TIME_STRUCT);
+			curr->time_value->hour = PyDateTime_TIME_GET_HOUR(bind_data);
+			curr->time_value->minute = PyDateTime_TIME_GET_MINUTE(bind_data);
+			curr->time_value->second = PyDateTime_TIME_GET_SECOND(bind_data);
+
+			Py_BEGIN_ALLOW_THREADS;
+			rc = SQLBindParameter(stmt_res->hstmt, curr->param_num,
+				curr->param_type, SQL_C_TYPE_TIME, curr->data_type, curr->param_size,
+				curr->scale, curr->time_value, curr->ivalue, &(curr->bind_indicator));
+			Py_END_ALLOW_THREADS;
+			break;
+
+		case PYTHON_TIMESTAMP:
+			curr->ts_value = ALLOC(TIMESTAMP_STRUCT);
+			curr->ts_value->year = PyDateTime_GET_YEAR(bind_data);
+			curr->ts_value->month = PyDateTime_GET_MONTH(bind_data);
+			curr->ts_value->day = PyDateTime_GET_DAY(bind_data);
+			curr->ts_value->hour = PyDateTime_DATE_GET_HOUR(bind_data);
+			curr->ts_value->minute = PyDateTime_DATE_GET_MINUTE(bind_data);
+			curr->ts_value->second = PyDateTime_DATE_GET_SECOND(bind_data);
+			curr->ts_value->fraction = PyDateTime_DATE_GET_MICROSECOND(bind_data) * 1000;
+
+			Py_BEGIN_ALLOW_THREADS;
+			rc = SQLBindParameter(stmt_res->hstmt, curr->param_num,
+				curr->param_type, SQL_C_TYPE_TIMESTAMP, curr->data_type, curr->param_size,
+				curr->scale, curr->ts_value, curr->ivalue, &(curr->bind_indicator));
+			Py_END_ALLOW_THREADS;
+			break;
+
 		case PYTHON_NIL:
 			curr->ivalue = SQL_NULL_DATA;
 
@@ -5563,7 +5682,7 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
 											rc, 1, NULL, -1, 1);
 			}
 			break;
-
+			
 		default:
 			return SQL_ERROR;
 	}
@@ -6673,7 +6792,91 @@ static PyObject *ibm_db_field_display_size(PyObject *self, PyObject *args)
 	}
 	return PyInt_FromLong(colDataDisplaySize);
 }
+/*!# ibm_db.field_nullable
+ *
+ * ===Description
+ * bool ibm_db.field_nullable ( resource stmt, mixed column )
+ *
+ * Returns True/False based on indicated column in result set is nullable or not.
+ *
+ * ===Parameters
+ *
+ * ====stmt
+ *              Specifies a statement resource containing a result set. 
+ *
+ * ====column
+ *              Specifies the column in the result set. This can either be an integer
+ * representing the 0-indexed position of the column, or a string containing the
+ * name of the column.
+ *
+ * ===Return Values
+ *
+ * Returns TRUE if indicated column is nullable else returns FALSE.
+ * If the specified column does not exist in the result set, ibm_db.field_nullable() returns FALSE
+ */
+static PyObject *ibm_db_field_nullable(PyObject *self, PyObject *args)
+{
+	PyObject *py_stmt_res = NULL;
+	PyObject *column = NULL;
+#if  PY_MAJOR_VERSION >= 3
+	PyObject *col_name_py3_tmp = NULL;
+#endif
+	stmt_handle* stmt_res = NULL;
+	char *col_name = NULL;
+	int col = -1;
+	int rc;
+	SQLINTEGER nullableCol;
 
+	if (!PyArg_ParseTuple(args, "OO", &py_stmt_res, &column))
+		return NULL;
+
+	if (NIL_P(py_stmt_res) || (!PyObject_TypeCheck(py_stmt_res, &stmt_handleType))) {
+		PyErr_SetString( PyExc_Exception, "Supplied statement object parameter is invalid" );
+		return NULL;
+	} else {
+		stmt_res = (stmt_handle *)py_stmt_res;
+	}
+
+	if ( TYPE(column) == PYTHON_FIXNUM ) {
+		col = PyInt_AsLong(column);
+	} else if (PyString_Check(column)) {
+#if  PY_MAJOR_VERSION >= 3
+		col_name_py3_tmp = PyUnicode_AsASCIIString(column);
+		if (col_name_py3_tmp == NULL) {
+			return NULL;
+		}
+		column = col_name_py3_tmp;
+#endif
+		col_name = PyBytes_AsString(column);
+	} else {
+		/* Column argument has to be either an integer or string */
+		Py_RETURN_FALSE;
+	}
+	col = _python_ibm_db_get_column_by_name(stmt_res, col_name, col);
+#if  PY_MAJOR_VERSION >= 3
+	if ( col_name_py3_tmp != NULL ) {
+		Py_XDECREF(col_name_py3_tmp);
+	}
+#endif
+	if ( col < 0 ) {
+		 Py_RETURN_FALSE;
+	}
+
+	Py_BEGIN_ALLOW_THREADS;
+	rc = SQLColAttributes((SQLHSTMT)stmt_res->hstmt, (SQLSMALLINT)col+1,
+		SQL_DESC_NULLABLE, NULL, 0, NULL, &nullableCol);
+	Py_END_ALLOW_THREADS;
+
+	if ( rc < SQL_SUCCESS ) {
+		_python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, rc, 1,
+					NULL, -1, 1);
+		Py_RETURN_FALSE;
+	} else if ( nullableCol == SQL_NULLABLE ) {
+		Py_RETURN_TRUE;
+	} else {
+		Py_RETURN_FALSE;
+	}
+}
 /*!# ibm_db.field_num
  *
  * ===Description
@@ -7224,8 +7427,7 @@ static PyObject *ibm_db_free_stmt(PyObject *self, PyObject *args)
 			}
 		}
 	}
-	Py_INCREF(Py_None);
-	return Py_None;
+	Py_RETURN_NONE;
 }
 
 /*	static RETCODE _python_ibm_db_get_data(stmt_handle *stmt_res, int col_num, short ctype, void *buff, int in_length, SQLINTEGER *out_length) */
@@ -7339,6 +7541,9 @@ static PyObject *ibm_db_result(PyObject *self, PyObject *args)
 	RETCODE rc;
 	void	*out_ptr;
 	SQLWCHAR *out_wchar_ptr;
+	DATE_STRUCT *date_ptr;
+	TIME_STRUCT *time_ptr;
+	TIMESTAMP_STRUCT *ts_ptr;
 	char error[DB2_MAX_ERR_MSG_LEN];
 	SQLINTEGER in_length, out_length = -10; /* Initialize out_length to some
 						* meaningless value
@@ -7411,9 +7616,6 @@ static PyObject *ibm_db_result(PyObject *self, PyObject *args)
 		case SQL_LONGVARCHAR:
 		case SQL_LONGVARGRAPHIC:
 #endif /* PASE */
-		case SQL_TYPE_DATE:
-		case SQL_TYPE_TIME:
-		case SQL_TYPE_TIMESTAMP:
 		case SQL_BIGINT:
 		case SQL_DECIMAL:
 		case SQL_NUMERIC:
@@ -7444,16 +7646,109 @@ static PyObject *ibm_db_result(PyObject *self, PyObject *args)
 				Py_RETURN_FALSE;
 			}
 			if (out_length == SQL_NULL_DATA) {
-				PyMem_Del(out_ptr);
-				out_ptr = NULL;
-				return NULL;
+				Py_INCREF(Py_None);
+				return_value = Py_None;
+			} else if (column_type == SQL_BIGINT){
+				return_value = PyLong_FromString(out_ptr, NULL, 0);
 			} else {
 				return_value = getSQLWCharAsPyUnicodeObject(out_ptr, out_length);
-				PyMem_Del(out_ptr);
-				out_ptr = NULL;
+			}
+			PyMem_Del(out_ptr);
+			out_ptr = NULL;
+			return return_value;
+
+		case SQL_TYPE_DATE:
+			date_ptr = ALLOC(DATE_STRUCT);
+			if (date_ptr == NULL) {
+				PyErr_SetString(PyExc_Exception, "Failed to Allocate Memory");
+				return NULL;
+			}
+
+			rc = _python_ibm_db_get_data(stmt_res, col_num+1, SQL_C_TYPE_DATE,
+						date_ptr, sizeof(DATE_STRUCT), &out_length);
+
+			if ( rc == SQL_ERROR ) {
+				if(date_ptr != NULL) {
+					PyMem_Del(date_ptr);
+					date_ptr = NULL;
+				}
+				PyErr_Clear();
+				Py_RETURN_FALSE;
+			}
+			if (out_length == SQL_NULL_DATA) {
+				PyMem_Del(date_ptr);
+				date_ptr = NULL;
+				Py_RETURN_NONE;
+			} else {
+				return_value = PyDate_FromDate(date_ptr->year, date_ptr->month, date_ptr->day);
+				PyMem_Del(date_ptr);
+				date_ptr = NULL;
 				return return_value;
 			}
-			break; 
+			break;
+
+		case SQL_TYPE_TIME:
+			time_ptr = ALLOC(TIME_STRUCT);
+			if (time_ptr == NULL) {
+				PyErr_SetString(PyExc_Exception, "Failed to Allocate Memory");
+				return NULL;
+			}
+
+			rc = _python_ibm_db_get_data(stmt_res, col_num+1, SQL_C_TYPE_TIME,
+						time_ptr, sizeof(TIME_STRUCT), &out_length);
+
+			if ( rc == SQL_ERROR ) {
+				if(time_ptr != NULL) {
+					PyMem_Del(time_ptr);
+					time_ptr = NULL;
+				}
+				PyErr_Clear();
+				Py_RETURN_FALSE;
+			}
+
+			if (out_length == SQL_NULL_DATA) {
+				PyMem_Del(time_ptr);
+				time_ptr = NULL;
+				Py_RETURN_NONE;
+			} else {
+				return_value = PyTime_FromTime(time_ptr->hour, time_ptr->minute, time_ptr->second, 0);
+				PyMem_Del(time_ptr);
+				time_ptr = NULL;
+				return return_value;
+			}
+			break;
+
+		case SQL_TYPE_TIMESTAMP:
+			ts_ptr = ALLOC(TIMESTAMP_STRUCT);
+			if (ts_ptr == NULL) {
+				PyErr_SetString(PyExc_Exception, "Failed to Allocate Memory");
+				return NULL;
+			}
+
+			rc = _python_ibm_db_get_data(stmt_res, col_num+1, SQL_C_TYPE_TIMESTAMP,
+						ts_ptr, sizeof(TIMESTAMP_STRUCT), &out_length);
+
+			if ( rc == SQL_ERROR ) {
+				if(ts_ptr != NULL) {
+					PyMem_Del(ts_ptr);
+					time_ptr = NULL;
+				}
+				PyErr_Clear();
+				Py_RETURN_FALSE;
+			}
+
+			if (out_length == SQL_NULL_DATA) {
+				PyMem_Del(ts_ptr);
+				ts_ptr = NULL;
+				Py_RETURN_NONE;
+			} else {
+				return_value = PyDateTime_FromDateAndTime(ts_ptr->year, ts_ptr->month, ts_ptr->day, ts_ptr->hour, ts_ptr->minute, ts_ptr->second, ts_ptr->fraction / 1000);
+				PyMem_Del(ts_ptr);
+				ts_ptr = NULL;
+				return return_value;
+			}
+			break;
+
 		case SQL_SMALLINT:
 		case SQL_INTEGER:
 			rc = _python_ibm_db_get_data(stmt_res, col_num+1, SQL_C_LONG, 
@@ -7464,9 +7759,9 @@ static PyObject *ibm_db_result(PyObject *self, PyObject *args)
 				Py_RETURN_FALSE;
 			}
 			if (out_length == SQL_NULL_DATA) {
-				return NULL;
+				Py_RETURN_NONE;
 			} else {
-				return PyLong_FromLong(long_val);
+				return PyInt_FromLong(long_val);
 			}
 			break;
 
@@ -7481,7 +7776,7 @@ static PyObject *ibm_db_result(PyObject *self, PyObject *args)
 				Py_RETURN_FALSE;
 			}
 			if (out_length == SQL_NULL_DATA) {
-				return NULL;
+				Py_RETURN_NONE;
 			} else {
 				return PyFloat_FromDouble(double_val);
 			}
@@ -7495,7 +7790,7 @@ static PyObject *ibm_db_result(PyObject *self, PyObject *args)
 				Py_RETURN_FALSE;
 			}
 			if (in_length == SQL_NULL_DATA) {
-				return NULL;
+				Py_RETURN_NONE;
 			}
 			out_wchar_ptr = (SQLWCHAR*)ALLOC_N(SQLWCHAR, in_length+1);
 			if ( out_wchar_ptr == NULL ) {
@@ -7536,7 +7831,7 @@ static PyObject *ibm_db_result(PyObject *self, PyObject *args)
 				Py_RETURN_FALSE;
 			}
 			if (in_length == SQL_NULL_DATA) {
-				return NULL;
+				Py_RETURN_NONE;
 			}
 
 			switch (stmt_res->s_bin_mode) {
@@ -7587,7 +7882,7 @@ static PyObject *ibm_db_result(PyObject *self, PyObject *args)
 				Py_RETURN_FALSE;
 			}
 			if (in_length == SQL_NULL_DATA) {
-				return NULL;
+				Py_RETURN_NONE;
 			}
 			in_length = in_length + 1;
 			out_ptr = (SQLPOINTER)ALLOC_N(SQLWCHAR, in_length);
@@ -7830,13 +8125,24 @@ static PyObject *_python_ibm_db_bind_fetch_helper(PyObject *args, int op)
 					}
 					break;
 				
-				case SQL_TYPE_DATE:
-				case SQL_TYPE_TIME:
-				case SQL_TYPE_TIMESTAMP:
 				case SQL_DECIMAL:
 				case SQL_NUMERIC:
 				case SQL_DECFLOAT:
 					value = StringOBJ_FromASCII((char *)row_data->str_val);
+					break;
+
+				case SQL_TYPE_DATE:
+					value = PyDate_FromDate(row_data->date_val->year, row_data->date_val->month, row_data->date_val->day);
+					break;
+
+				case SQL_TYPE_TIME:
+					value = PyTime_FromTime(row_data->time_val->hour, row_data->time_val->minute, row_data->time_val->second, 0);
+					break;
+
+				case SQL_TYPE_TIMESTAMP:
+					value = PyDateTime_FromDateAndTime(row_data->ts_val->year, row_data->ts_val->month, row_data->ts_val->day,
+									row_data->ts_val->hour, row_data->ts_val->minute, row_data->ts_val->second,
+									row_data->ts_val->fraction / 1000);
 					break;
 
 				case SQL_BIGINT:
@@ -7848,7 +8154,7 @@ static PyObject *_python_ibm_db_bind_fetch_helper(PyObject *args, int op)
 					break;
 
 				case SQL_INTEGER:
-					value = PyLong_FromLong(row_data->i_val);
+					value = PyInt_FromLong(row_data->i_val);
 					break;
 
 				case SQL_REAL:
@@ -9436,9 +9742,9 @@ static PyObject *ibm_db_get_option(PyObject *self, PyObject *args)
 			if (!conn_res->handle_active) {
 				PyErr_SetString(PyExc_Exception, "Connection is not active");
 				return NULL;
-		 }
+		 	}
 			/* Check that the option given is not null */
-			if (!NIL_P(&op_integer)) {
+			if (!NIL_P(py_op_integer)) {
 				/* ACCTSTR_LEN is the largest possible length of the options to 
 				* retrieve 
 			 */
@@ -9475,7 +9781,7 @@ static PyObject *ibm_db_get_option(PyObject *self, PyObject *args)
 			stmt_res = (stmt_handle *)conn_or_stmt;
 
 			/* Check that the option given is not null */
-			if (!NIL_P(&op_integer)) {
+			if (!NIL_P(py_op_integer)) {
 				/* Checking that the option to get is the cursor type because that 
 				* is what we support here 
 				*/
@@ -9779,6 +10085,15 @@ static PyObject* ibm_db_execute_many (PyObject *self, PyObject *args) {
 										valueType = SQL_C_CHAR;
 								}
 								break;
+							case PYTHON_DATE:
+								valueType = SQL_C_TYPE_DATE;
+								break;
+							case PYTHON_TIME:
+								valueType = SQL_C_TYPE_TIME;
+								break;
+							case PYTHON_TIMESTAMP:
+								valueType = SQL_C_TYPE_TIMESTAMP;
+								break;
 							case PYTHON_DECIMAL:
 								valueType = SQL_C_CHAR;
 								break;
@@ -9892,7 +10207,6 @@ static PyObject* ibm_db_execute_many (PyObject *self, PyObject *args) {
  * ===Parameters
  * =====  conn_handle
  *		a valid connection resource
- *
  * ===== procedure Name
  *		a valide procedure Name
  *
@@ -10010,15 +10324,33 @@ static PyObject* ibm_db_callproc(PyObject *self, PyObject *args){
 						switch (tmp_curr->data_type) {
 							case SQL_SMALLINT:
 							case SQL_INTEGER:
-								PyTuple_SetItem(outTuple, paramCount, PyLong_FromLong(tmp_curr->ivalue));
+								PyTuple_SetItem(outTuple, paramCount, PyInt_FromLong(tmp_curr->ivalue));
 								paramCount++;
 								break;
 							case SQL_REAL:
 							case SQL_FLOAT:
 							case SQL_DOUBLE:
-							case SQL_DECIMAL:
-							case SQL_NUMERIC:
 								PyTuple_SetItem(outTuple, paramCount, PyFloat_FromDouble(tmp_curr->fvalue));
+								paramCount++;
+								break;
+							case SQL_TYPE_DATE:
+								PyTuple_SetItem(outTuple, paramCount, PyDate_FromDate(tmp_curr->date_value->year,
+									tmp_curr->date_value->month, tmp_curr->date_value->day));
+								paramCount++;
+								break;
+							case SQL_TYPE_TIME:
+								PyTuple_SetItem(outTuple, paramCount, PyTime_FromTime(tmp_curr->time_value->hour,
+									tmp_curr->time_value->minute, tmp_curr->time_value->second, 0));
+								paramCount++;
+								break;
+							case SQL_TYPE_TIMESTAMP:
+								PyTuple_SetItem(outTuple, paramCount, PyDateTime_FromDateAndTime(tmp_curr->ts_value->year,
+									tmp_curr->ts_value->month, tmp_curr->ts_value->day, tmp_curr->ts_value->hour,
+									tmp_curr->ts_value->minute, tmp_curr->ts_value->second, tmp_curr->ts_value->fraction / 1000));
+								paramCount++;
+								break;
+							case SQL_BIGINT:
+								PyTuple_SetItem(outTuple, paramCount, PyLong_FromString(tmp_curr->svalue, NULL, 0));
 								paramCount++;
 								break;
 							default:
@@ -10191,6 +10523,15 @@ static int _python_get_variable_type(PyObject *variable_value)
 	else if (PyString_Check(variable_value) || PyBytes_Check(variable_value)){
 		return PYTHON_STRING;
 	}
+	else if (PyDateTime_Check(variable_value)){
+		return PYTHON_TIMESTAMP;
+	}
+	else if (PyTime_Check(variable_value)){
+		return PYTHON_TIME;
+	}
+	else if (PyDate_Check(variable_value)){
+		return PYTHON_DATE;
+	}
 	else if (PyComplex_Check(variable_value)){
 		return PYTHON_COMPLEX;
 	}
@@ -10235,6 +10576,7 @@ static PyMethodDef ibm_db_Methods[] = {
 	{"execute_many", (PyCFunction)ibm_db_execute_many, METH_VARARGS, "Execute SQL with multiple rows."},
 	{"field_display_size", (PyCFunction)ibm_db_field_display_size, METH_VARARGS, "Returns the maximum number of bytes required to display a column"},
 	{"field_name", (PyCFunction)ibm_db_field_name, METH_VARARGS, "Returns the name of the column in the result set"},
+	{"field_nullable", (PyCFunction)ibm_db_field_nullable, METH_VARARGS, "Returns indicated column can contain nulls or not"},
 	{"field_num", (PyCFunction)ibm_db_field_num, METH_VARARGS, "Returns the position of the named column in a result set"},
 	{"field_precision", (PyCFunction)ibm_db_field_precision, METH_VARARGS, "Returns the precision of the indicated column in a result set"},
 	{"field_scale", (PyCFunction)ibm_db_field_scale , METH_VARARGS, "Returns the scale of the indicated column in a result set"},
@@ -10275,6 +10617,7 @@ PyMODINIT_FUNC
 INIT_ibm_db(void) {
 	PyObject* m;
 
+	PyDateTime_IMPORT;
 	ibm_db_globals = ALLOC(struct _ibm_db_globals);
 	memset(ibm_db_globals, 0, sizeof(struct _ibm_db_globals));
 	python_ibm_db_init_globals(ibm_db_globals);

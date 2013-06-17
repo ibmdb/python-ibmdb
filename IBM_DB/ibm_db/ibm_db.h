@@ -75,6 +75,9 @@
 #define PYTHON_UNICODE 7
 #define PYTHON_DECIMAL 8
 #define PYTHON_COMPLEX 9
+#define PYTHON_DATE 10
+#define PYTHON_TIME 11
+#define PYTHON_TIMESTAMP 12
 
 #define ENABLE_NUMERIC_LITERALS 1 /* Enable CLI numeric literals */
 

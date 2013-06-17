@@ -1,7 +1,7 @@
 #
 #  Licensed Materials - Property of IBM
 #
-#  (c) Copyright IBM Corp. 2007-2008
+#  (c) Copyright IBM Corp. 2007-2013
 #
 
 import unittest, sys
@@ -104,7 +104,7 @@ class IbmDbTestCase(unittest.TestCase):
 
       stmt = ibm_db.prepare(conn, sql)
       ibm_db.set_option(stmt, cursor_option, 0)
-      ibm_db.num_fields(stmt)
+      #ibm_db.num_fields(stmt)
       ibm_db.execute(stmt)
       print "Number of affected rows: %d" % ibm_db.get_num_result(stmt)
       row = ibm_db.fetch_tuple(stmt)
@@ -116,8 +116,8 @@ class IbmDbTestCase(unittest.TestCase):
 
 #__END__
 #__LUW_EXPECTED__
-#Number of affected rows: -2
-#Number of affected rows: -2
+#Number of affected rows: -1
+#Number of affected rows: -1
 #Number of affected rows: 0
 #Number of affected rows: -1
 #Number of affected rows: -1

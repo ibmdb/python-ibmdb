@@ -1,7 +1,7 @@
 # 
 #  Licensed Materials - Property of IBM
 #
-#  (c) Copyright IBM Corp. 2007-2008
+#  (c) Copyright IBM Corp. 2007-2013
 #
 
 import unittest, sys
@@ -68,21 +68,21 @@ class IbmDbTestCase(unittest.TestCase):
 #2:timestamp
 #10:42:34
 #1981-07-08
-#1981-07-08 10:42:34.000000
+#1981-07-08 10:42:34
 #__ZOS_EXPECTED__
 #0:time
 #1:date
 #2:timestamp
 #10:42:34
 #1981-07-08
-#1981-07-08 10:42:34.000000
+#1981-07-08 10:42:34
 #__SYSTEMI_EXPECTED__
 #0:time
 #1:date
 #2:timestamp
 #10:42:34
 #1981-07-08
-#1981-07-08 10:42:34.000000
+#1981-07-08 10:42:34
 #__IDS_EXPECTED__
 #0:time
 #1:date

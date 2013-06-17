@@ -7,7 +7,7 @@ from setuptools import setup, find_packages
 from distutils.core import setup, Extension
 
 PACKAGE = 'ibm_db'
-VERSION = '2.0.2'
+VERSION = '2.0.3'
 LICENSE = 'Apache License 2.0'
 
 machine_bits =  8 * struct.calcsize("P")
@@ -29,17 +29,17 @@ else:
 try:
     ibm_db_home = os.environ['IBM_DB_HOME']
     ibm_db_dir = ibm_db_home
-    ibm_db_lib = ibm_db_dir + '/' + libDir
+    ibm_db_lib = os.path.join(ibm_db_dir, libDir)
 except (KeyError):   
     try:
         ibm_db_dir = os.environ['IBM_DB_DIR']
-        ibm_db_lib = ibm_db_dir + '/' + libDir
+        ibm_db_lib = os.path.join(ibm_db_dir, libDir)
     except (KeyError):
         sys.stdout.write("Environment variable IBM_DB_HOME is not set. Set it to your DB2/IBM_Data_Server_Driver installation directory and retry ibm_db module install.\n")
         sys.exit()
 
 if not os.path.isdir(ibm_db_lib):
-    ibm_db_lib = ibm_db_dir + '/lib'
+    ibm_db_lib = os.path.join(ibm_db_dir, 'lib')
     if not os.path.isdir(ibm_db_lib):
         sys.stdout.write("Cannot find %s directory. Check if you have set the IBM_DB_HOME environment variable's value correctly\n " %(ibm_db_lib))
         sys.exit()
@@ -50,7 +50,8 @@ if not os.path.isdir(ibm_db_lib):
         notifyString = notifyString + "32-bit package "
     notifyString = notifyString + "of IBM_Data_Server_Driver and retry the ibm_db module install\n "
     warnings.warn(notifyString)
-if not os.path.isdir(ibm_db_dir + '/include'):
+ibm_db_include = os.path.join(ibm_db_dir, 'include')
+if not os.path.isdir(ibm_db_include):
     sys.stdout.write(" %s/include folder not found. Check if you have set the IBM_DB_HOME environment variable's value correctly\n " %(ibm_db_dir))
     sys.exit()
     
