@@ -5565,6 +5565,16 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
 						/* This option should handle most other types such as DATE, 
 						* VARCHAR etc 
 						*/
+					case SQL_TYPE_TIMESTAMP:
+						valueType = SQL_C_CHAR;
+						curr->bind_indicator = curr->ivalue;
+						if (curr->param_type == SQL_PARAM_OUTPUT || curr->param_type == SQL_PARAM_INPUT_OUTPUT) {
+							curr->bind_indicator = SQL_NTS;
+						}
+						if(curr->svalue[10] == 'T'){
+							curr->svalue[10] = ' ';
+						}
+						paramValuePtr = (SQLPOINTER)(curr->svalue);
 					default:
 						valueType = SQL_C_CHAR;
 						curr->bind_indicator = curr->ivalue;
