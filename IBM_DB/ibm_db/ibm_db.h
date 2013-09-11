@@ -35,7 +35,6 @@
 #define MOD_RETURN_ERROR		
 #define MOD_RETURN_VAL(mod)			
 #define INIT_ibm_db			initibm_db
-#define MOD_DEF(m, name, methods, doc)	m = Py_InitModule3(name, methods, doc);
 #else
 #define PyInt_Check			PyLong_Check
 #define PyInt_FromLong          	PyLong_FromLong
@@ -48,10 +47,6 @@
 #define MOD_RETURN_ERROR		NULL
 #define MOD_RETURN_VAL(mod)		mod
 #define INIT_ibm_db PyInit_ibm_db
-#define MOD_DEF(m, name, methods, doc) \
-	static struct PyModuleDef moduledef = { \
-		PyModuleDef_HEAD_INIT, name, doc, -1, methods, }; \
-	m = PyModule_Create(&moduledef);
 #endif
 
 #define NUM2LONG(data) PyInt_AsLong(data)

@@ -196,7 +196,7 @@ def Binary(string):
     inserting it into a binary type column in the database.
 
     """
-    if not isinstance( string, types.StringType):
+    if not isinstance( string, (types.StringType, types.BufferType) ):
         raise InterfaceError("Binary function expects type string argument.")
     return buffer(string)
 

@@ -148,3 +148,7 @@ only optimize for N rows issue #2 (defect #154260)
   - Enhanced: Added a new method in ibm_db to check indicated column in result set is nullable or not, cursor's description of ibm_db_dbi now keep the nullable column info also
   - Fixed: callproc api now return long type object instead of string for BIGINT field type
   - Added: New test case test_InsertRetrieveDateTimeTypeColumn.py for handling of datetime object in ibm_db driver
+  
+2013/09/11 (setup.py 2.0.4, ibm_db-2.0.4, ibm_db_dbi-2.0.4)
+  - Fixed: ISO8601 datetime with 'T' delimiter (defect #495080)
+  - Fixed: Build error for Python-3.3.x with Visual Studio (defect #495080)

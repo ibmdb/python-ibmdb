@@ -21,7 +21,7 @@
 +--------------------------------------------------------------------------+
 */
 
-#define MODULE_RELEASE "2.0.3"
+#define MODULE_RELEASE "2.0.4"
 
 #include <Python.h>
 #include <datetime.h>
@@ -10622,6 +10622,16 @@ static PyMethodDef ibm_db_Methods[] = {
 #define PyMODINIT_FUNC void
 #endif
 
+#if PY_MAJOR_VERSION >= 3
+static struct PyModuleDef moduledef = {
+		PyModuleDef_HEAD_INIT,
+		"ibm_db",
+		"IBM DataServer Driver for Python.",
+		-1,
+		ibm_db_Methods,
+	};
+#endif
+
 /* Module initialization function */
 PyMODINIT_FUNC
 INIT_ibm_db(void) {
@@ -10650,8 +10660,11 @@ INIT_ibm_db(void) {
 	if (PyType_Ready(&server_infoType) < 0)
 		return MOD_RETURN_ERROR;
 
-	MOD_DEF(m, "ibm_db", ibm_db_Methods,
-					  "IBM DataServer Driver for Python.");
+#if PY_MAJOR_VERSION < 3
+	m = Py_InitModule3("ibm_db", ibm_db_Methods,  "IBM DataServer Driver for Python.");
+#else
+	m = PyModule_Create(&moduledef);
+#endif
 
 	Py_INCREF(&conn_handleType);
 	PyModule_AddObject(m, "IBM_DBConnection", (PyObject *)&conn_handleType);
