@@ -5446,7 +5446,14 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
 						paramValuePtr = (SQLPOINTER)curr->uvalue;
 						valueType = SQL_C_WCHAR;
 						break;
-					
+					case SQL_TYPE_TIMESTAMP:
+						valueType = SQL_C_WCHAR;
+						curr->bind_indicator = SQL_NTS;
+						if(curr->uvalue[10] == 'T'){
+							curr->uvalue[10] = ' ';
+						}
+						paramValuePtr = (SQLPOINTER)(curr->uvalue);
+						break;
 					default:
 						valueType = SQL_C_WCHAR;
 						curr->bind_indicator = param_length;
