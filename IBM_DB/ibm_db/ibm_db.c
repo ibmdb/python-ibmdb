@@ -21,7 +21,7 @@
 +--------------------------------------------------------------------------+
 */
 
-#define MODULE_RELEASE "2.0.4"
+#define MODULE_RELEASE "2.0.4.1"
 
 #include <Python.h>
 #include <datetime.h>
@@ -5396,6 +5396,11 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
 					SQLWCHAR* tmp = (SQLWCHAR*)ALLOC_N(SQLWCHAR, curr->ivalue + 1);
 					memcpy(tmp, curr->uvalue, (param_length + sizeof(SQLWCHAR)));
 					curr->uvalue = tmp;
+				} else if (param_length <= curr->param_size) {
+					SQLWCHAR* tmp = (SQLWCHAR*)ALLOC_N(SQLWCHAR, curr->ivalue + 1);
+					memcpy(tmp, curr->uvalue, (param_length + sizeof(SQLWCHAR)));
+					PyMem_Del(curr->uvalue);
+					curr->uvalue = tmp;
 				}
 				
 				switch( curr->data_type){
@@ -5582,6 +5587,7 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
 							curr->svalue[10] = ' ';
 						}
 						paramValuePtr = (SQLPOINTER)(curr->svalue);
+						break;
 					default:
 						valueType = SQL_C_CHAR;
 						curr->bind_indicator = curr->ivalue;

@@ -26,17 +26,24 @@ class IbmDbTestCase(unittest.TestCase):
       except:
         pass
 
+      t_val = '10.42.34'
+      d_val = '1981-07-08'
+      ts_val = '1981-07-08-10.42.34'
+      ts_withT_val = '2013-06-06T15:30:39'
+      
       server = ibm_db.server_info( conn )
       if (server.DBMS_NAME[0:3] == 'IDS'):
-        statement = "CREATE TABLE table_6792 (col1 DATETIME HOUR TO SECOND, col2 DATE, col3 DATETIME YEAR TO SECOND)"
+        statement = "CREATE TABLE table_6792 (col1 DATETIME HOUR TO SECOND, col2 DATE, col3 DATETIME YEAR TO SECOND, col4 DATETIME YEAR TO SECOND)"
         result = ibm_db.exec_immediate(conn, statement)
-        statement = "INSERT INTO table_6792 (col1, col2, col3) values ('10:42:34', '1981-07-08', '1981-07-08 10:42:34')"
-        result = ibm_db.exec_immediate(conn, statement)
+        statement = "INSERT INTO table_6792 (col1, col2, col3, col4) values (?, ?, ?, ?)"
+        stmt = ibm_db.prepare(statement)
+        result = ibm_db.execute(stmt, (t_val, d_val, ts_val, ts_withT_val))
       else:
-        statement = "CREATE TABLE table_6792 (col1 TIME, col2 DATE, col3 TIMESTAMP)"
+        statement = "CREATE TABLE table_6792 (col1 TIME, col2 DATE, col3 TIMESTAMP, col4 TIMESTAMP)"
         result = ibm_db.exec_immediate(conn, statement)
-        statement = "INSERT INTO table_6792 (col1, col2, col3) values ('10.42.34', '1981-07-08', '1981-07-08-10.42.34')"
-        result = ibm_db.exec_immediate(conn, statement)
+        statement = "INSERT INTO table_6792 (col1, col2, col3, col4) values (?, ?, ?, ?)"
+        stmt = ibm_db.prepare(conn, statement)
+        result = ibm_db.execute(stmt, (t_val, d_val, ts_val, ts_withT_val))
 
       statement = "SELECT * FROM table_6792"
       result = ibm_db.exec_immediate(conn, statement)
@@ -52,9 +59,11 @@ class IbmDbTestCase(unittest.TestCase):
         row0 = ibm_db.result(stmt, 0)
         row1 = ibm_db.result(stmt, 1)
         row2 = ibm_db.result(stmt, 2)
+        row3 = ibm_db.result(stmt, 3)
         print row0
         print row1
         print row2
+        print row3
         result = ibm_db.fetch_row(stmt)
       
       ibm_db.close(conn)
@@ -66,27 +75,35 @@ class IbmDbTestCase(unittest.TestCase):
 #0:time
 #1:date
 #2:timestamp
+#3:timestamp
 #10:42:34
 #1981-07-08
 #1981-07-08 10:42:34
+#2013-06-06 15:30:39
 #__ZOS_EXPECTED__
 #0:time
 #1:date
 #2:timestamp
+#3:timestamp
 #10:42:34
 #1981-07-08
 #1981-07-08 10:42:34
+#2013-06-06 15:30:39
 #__SYSTEMI_EXPECTED__
 #0:time
 #1:date
 #2:timestamp
+#3:timestamp
 #10:42:34
 #1981-07-08
 #1981-07-08 10:42:34
+#2013-06-06 15:30:39
 #__IDS_EXPECTED__
 #0:time
 #1:date
 #2:timestamp
+#3:timestamp
 #10:42:34
 #1981-07-08
-#1981-07-08 10:42:34.000000
+#1981-07-08 10:42:34
+#2013-06-06 15:30:39

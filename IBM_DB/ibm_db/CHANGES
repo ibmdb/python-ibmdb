@@ -152,3 +152,7 @@ only optimize for N rows issue #2 (defect #154260)
 2013/09/11 (setup.py 2.0.4, ibm_db-2.0.4, ibm_db_dbi-2.0.4)
   - Fixed: ISO8601 datetime with 'T' delimiter (defect #495080)
   - Fixed: Build error for Python-3.3.x with Visual Studio (defect #495080)
+  
+2013/09/25 (setup.py 2.0.4.1, ibm_db-2.0.4.1, ibm_db_dbi-2.0.4.1)
+  - Fixed: unicode ISO8601 datetime with 'T' delimiter  (defect #495340)
+  - Modified test_6792_FieldTypeRetStrDatetimeTimestamp.py test case to add test for ISO8601 with 'T' delimiter (defect #495340) 
