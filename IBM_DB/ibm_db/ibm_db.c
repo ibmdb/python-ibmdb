@@ -172,9 +172,6 @@ typedef struct _ibm_db_result_set_info_struct {
 	SQLUINTEGER size;
 	SQLSMALLINT scale;
 	SQLSMALLINT nullable;
-	SQLINTEGER lob_loc;
-	SQLINTEGER loc_ind;
-	SQLSMALLINT loc_type;
 	unsigned char *mem_alloc;  /* Mem free */
 } ibm_db_result_set_info;
 
@@ -688,10 +685,6 @@ static int _python_ibm_db_get_result_set_info(stmt_handle *stmt_res)
 	memset(stmt_res->column_info, 0, sizeof(ibm_db_result_set_info)*nResultCols);
 	/* return a set of attributes for a column */
 	for (i = 0 ; i < nResultCols; i++) {
-	  stmt_res->column_info[i].lob_loc = 0;
-	  stmt_res->column_info[i].loc_ind = 0;
-	  stmt_res->column_info[i].loc_type = 0;
-
 	  Py_BEGIN_ALLOW_THREADS;
 	  rc = SQLDescribeCol((SQLHSTMT)stmt_res->hstmt, (SQLSMALLINT)(i + 1 ),
 						  (SQLCHAR *)&tmp_name, BUFSIZ, &name_length, 
@@ -1014,59 +1007,9 @@ static int _python_ibm_db_bind_column_helper(stmt_handle *stmt_res)
 				}
 				break;
 
-			case SQL_CLOB:
-				stmt_res->row_data[i].out_length = 0;
-				stmt_res->column_info[i].loc_type = SQL_CLOB_LOCATOR;
-
-				Py_BEGIN_ALLOW_THREADS;
-				rc = SQLBindCol((SQLHSTMT)stmt_res->hstmt, (SQLUSMALLINT)(i+1),
-					stmt_res->column_info[i].loc_type, 
-					&stmt_res->column_info[i].lob_loc, 4,
-					&stmt_res->column_info[i].loc_ind);
-				Py_END_ALLOW_THREADS;
-
-				if ( rc == SQL_ERROR ) {
-					_python_ibm_db_check_sql_errors((SQLHSTMT)stmt_res->hstmt, 
-						SQL_HANDLE_STMT, rc, 1, NULL, -1,
-						1);
-				}
-				break;
-			case SQL_DBCLOB:
-				stmt_res->row_data[i].out_length = 0;
-				stmt_res->column_info[i].loc_type = SQL_DBCLOB_LOCATOR;
-				stmt_res->column_info[i].loc_ind = 0;
-
-				Py_BEGIN_ALLOW_THREADS;
-				rc = SQLBindCol((SQLHSTMT)stmt_res->hstmt, (SQLUSMALLINT)(i+1),
-						stmt_res->column_info[i].loc_type,
-						&stmt_res->column_info[i].lob_loc, 4,
-						&stmt_res->column_info[i].loc_ind);
-				Py_END_ALLOW_THREADS;
-
-				if ( rc == SQL_ERROR ) {
-					_python_ibm_db_check_sql_errors((SQLHSTMT)stmt_res->hstmt,
-							SQL_HANDLE_STMT, rc, 1, NULL, -1,
-							1);
-				}
-				break;
-			
 			case SQL_BLOB:
-				stmt_res->row_data[i].out_length = 0;
-				stmt_res->column_info[i].loc_type = SQL_BLOB_LOCATOR;
-
-				Py_BEGIN_ALLOW_THREADS;
-				rc = SQLBindCol((SQLHSTMT)stmt_res->hstmt, (SQLUSMALLINT)(i+1),
-					stmt_res->column_info[i].loc_type, 
-					&stmt_res->column_info[i].lob_loc, 4,
-					&stmt_res->column_info[i].loc_ind);
-				Py_END_ALLOW_THREADS;
-
-				if ( rc == SQL_ERROR ) {
-					_python_ibm_db_check_sql_errors((SQLHSTMT)stmt_res->hstmt, 
-						SQL_HANDLE_STMT, rc, 1, NULL, -1,
-						1);
-				}
-				break;
+			case SQL_CLOB:
+			case SQL_DBCLOB:
 			case SQL_XML:
 				stmt_res->row_data[i].out_length = 0;
 				break;
@@ -7470,64 +7413,6 @@ static RETCODE _python_ibm_db_get_data(stmt_handle *stmt_res, int col_num, short
 	return rc;
 }
 
-/* {{{ static RETCODE _python_ibm_db_get_length(stmt_handle* stmt_res, SQLUSMALLINT col_num, SQLINTEGER *sLength) */
-static RETCODE _python_ibm_db_get_length(stmt_handle* stmt_res, SQLUSMALLINT col_num, SQLINTEGER *sLength)
-{
-	RETCODE rc = SQL_SUCCESS;
-	SQLHANDLE new_hstmt;
-
-	rc = SQLAllocHandle(SQL_HANDLE_STMT, stmt_res->hdbc, &new_hstmt);
-	if ( rc < SQL_SUCCESS ) {
-		_python_ibm_db_check_sql_errors(stmt_res->hdbc, SQL_HANDLE_STMT, rc, 1, 
-			NULL, -1, 1);
-		return SQL_ERROR;
-	}
-
-	Py_BEGIN_ALLOW_THREADS;
-	rc = SQLGetLength((SQLHSTMT)new_hstmt, 
-		stmt_res->column_info[col_num-1].loc_type,
-		stmt_res->column_info[col_num-1].lob_loc, sLength,
-		&stmt_res->column_info[col_num-1].loc_ind);
-	Py_END_ALLOW_THREADS;
-	
-	if ( rc == SQL_ERROR ) {
-		_python_ibm_db_check_sql_errors((SQLHSTMT)new_hstmt, SQL_HANDLE_STMT, rc,
-			1, NULL, -1, 1);
-	}
-
-	SQLFreeHandle(SQL_HANDLE_STMT, new_hstmt);
-
-	return rc;
-}
-		
-/* {{{ static RETCODE _python_ibm_db_get_data2(stmt_handle *stmt_res, int col_num, short ctype, void *buff, int in_length, SQLINTEGER *out_length) */
-static RETCODE _python_ibm_db_get_data2(stmt_handle *stmt_res, SQLUSMALLINT col_num, SQLSMALLINT ctype, SQLPOINTER buff, SQLLEN in_length, SQLINTEGER *out_length)
-{
-	RETCODE rc = SQL_SUCCESS;
-	SQLHANDLE new_hstmt;
-	SQLSMALLINT targetCType = ctype;
-
-	rc = SQLAllocHandle(SQL_HANDLE_STMT, stmt_res->hdbc, &new_hstmt);
-	if ( rc < SQL_SUCCESS ) {
-		return SQL_ERROR;
-	}
-
-	Py_BEGIN_ALLOW_THREADS;
-	rc = SQLGetSubString((SQLHSTMT)new_hstmt, 
-						stmt_res->column_info[col_num-1].loc_type,
-						stmt_res->column_info[col_num-1].lob_loc, 1, in_length,
-						targetCType, buff, in_length, out_length, 
-						&stmt_res->column_info[col_num-1].loc_ind);
-	Py_END_ALLOW_THREADS;
-	
-	if ( rc == SQL_ERROR ) {
-		_python_ibm_db_check_sql_errors((SQLHSTMT)new_hstmt, SQL_HANDLE_STMT, rc,
-									  1, NULL, -1, 1);
-	}
-	SQLFreeHandle(SQL_HANDLE_STMT, new_hstmt);
-	return rc;
-}
-
 /*!# ibm_db.result
  *
  * ===Description
@@ -7563,7 +7448,6 @@ static PyObject *ibm_db_result(PyObject *self, PyObject *args)
 	long col_num;
 	RETCODE rc;
 	void	*out_ptr;
-	SQLWCHAR *out_wchar_ptr;
 	DATE_STRUCT *date_ptr;
 	TIME_STRUCT *time_ptr;
 	TIMESTAMP_STRUCT *ts_ptr;
@@ -7571,7 +7455,7 @@ static PyObject *ibm_db_result(PyObject *self, PyObject *args)
 	SQLINTEGER in_length, out_length = -10; /* Initialize out_length to some
 						* meaningless value
 						* */
-	SQLSMALLINT column_type, lob_bind_type = SQL_C_BINARY;
+	SQLSMALLINT column_type, targetCType = SQL_C_CHAR, len_terChar = 0 ;
 	double double_val;
 	SQLINTEGER long_val;
 	PyObject *return_value = NULL;
@@ -7805,133 +7689,94 @@ static PyObject *ibm_db_result(PyObject *self, PyObject *args)
 			}
 			break;
 
-		case SQL_CLOB:
-		case SQL_DBCLOB:
-			out_wchar_ptr = NULL;
-			rc = _python_ibm_db_get_length(stmt_res, (SQLUSMALLINT) col_num+1, &in_length);
-			if ( rc == SQL_ERROR ) {
-				Py_RETURN_FALSE;
-			}
-			if (in_length == SQL_NULL_DATA) {
-				Py_RETURN_NONE;
-			}
-			out_wchar_ptr = (SQLWCHAR*)ALLOC_N(SQLWCHAR, in_length+1);
-			if ( out_wchar_ptr == NULL ) {
-				PyErr_SetString(PyExc_Exception, 
-						"Failed to Allocate Memory for LOB Data");
-				return NULL;
-			}
-			rc = _python_ibm_db_get_data2(stmt_res, (SQLUSMALLINT) col_num+1, SQL_C_WCHAR, 
-						  out_wchar_ptr, (in_length+1) * sizeof(SQLWCHAR), 
-						  &out_length);
-			if (rc == SQL_ERROR) {
-				if(out_wchar_ptr != NULL) {
-					PyMem_Del(out_wchar_ptr);
-					out_wchar_ptr = NULL;
-				}
-				PyErr_Clear();
-				Py_RETURN_FALSE;	
-			}
-
-			retVal = getSQLWCharAsPyUnicodeObject(out_wchar_ptr, in_length * sizeof(SQLWCHAR));
-			if(out_wchar_ptr != NULL) {
-				PyMem_Del(out_wchar_ptr);
-				out_wchar_ptr = NULL;
-			}
-		
-			return retVal;
-			break;
-
 		case SQL_BLOB:
 		case SQL_BINARY:
 #ifndef PASE /* i5/OS SQL_LONGVARCHAR is SQL_VARCHAR */
 		case SQL_LONGVARBINARY:
 #endif /* PASE */
 		case SQL_VARBINARY:
-			rc = _python_ibm_db_get_length(stmt_res, (SQLUSMALLINT)col_num + 1, &in_length);
-			if ( rc == SQL_ERROR ) {
-				PyErr_Clear();
-				Py_RETURN_FALSE;
-			}
-			if (in_length == SQL_NULL_DATA) {
-				Py_RETURN_NONE;
-			}
-
 			switch (stmt_res->s_bin_mode) {
 				case PASSTHRU:
 					return PyBytes_FromStringAndSize("", 0);
 					break;
 					/* returns here */
 				case CONVERT:
-					in_length *= 2;
-					lob_bind_type = SQL_C_CHAR;
-					/* fall-through */
-
-				case BINARY:
-
-					out_ptr = (SQLPOINTER)ALLOC_N(char, in_length);
-					if ( out_ptr == NULL ) {
-						PyErr_SetString(PyExc_Exception, 
-								"Failed to Allocate Memory for LOB Data");
-						return NULL;
-					}
-					rc = _python_ibm_db_get_data2(stmt_res, (SQLUSMALLINT)col_num + 1, 
-								lob_bind_type, (char *)out_ptr, 
-								in_length, &out_length);
-					if (rc == SQL_ERROR) {
-						if(out_ptr != NULL) {
-							PyMem_Del(out_ptr);
-							out_ptr = NULL;
-						}
-						PyErr_Clear();
-						Py_RETURN_FALSE;
-					}
-					retVal = PyBytes_FromStringAndSize((char*)out_ptr, out_length);
-					if(out_ptr != NULL) {
-						PyMem_Del(out_ptr);
-						out_ptr = NULL;
-					}
-					return retVal;
-				default:
+					targetCType = SQL_C_CHAR;
+					len_terChar = sizeof(char);
 					break;
+				case BINARY:
+					targetCType = SQL_C_BINARY;
+					len_terChar = 0;
+					break;
+				default:
+					Py_RETURN_FALSE;
 			}
-			break;
-
 		case SQL_XML:
-			rc = _python_ibm_db_get_data(stmt_res, (SQLUSMALLINT)col_num + 1, SQL_C_WCHAR, NULL, 
-					0, (SQLINTEGER *)&in_length);
-			if ( rc == SQL_ERROR ) {
-				PyErr_Clear();
-				Py_RETURN_FALSE;
+		case SQL_CLOB:
+		case SQL_DBCLOB:
+			if (column_type == SQL_XML) {
+				len_terChar = 0;
+				targetCType = SQL_C_BINARY;
+			} else if (column_type == SQL_CLOB || column_type == SQL_DBCLOB) {
+				len_terChar = sizeof(SQLWCHAR);
+				targetCType = SQL_C_WCHAR;
 			}
-			if (in_length == SQL_NULL_DATA) {
-				Py_RETURN_NONE;
-			}
-			in_length = in_length + 1;
-			out_ptr = (SQLPOINTER)ALLOC_N(SQLWCHAR, in_length);
+			out_ptr = PyMem_Malloc(INIT_BUFSIZ + len_terChar);
 			if ( out_ptr == NULL ) {
-				PyErr_SetString(PyExc_Exception, 
+				 PyErr_SetString(PyExc_Exception,
 						"Failed to Allocate Memory for XML Data");
 				return NULL;
 			}
-			rc = _python_ibm_db_get_data2(stmt_res, (SQLUSMALLINT)col_num + 1, SQL_C_BINARY, 
-						  (SQLPOINTER)out_ptr, in_length * sizeof(SQLWCHAR), 
-						  &out_length);
-			if (rc == SQL_ERROR) {
-				if(out_ptr != NULL) {
+			rc = _python_ibm_db_get_data(stmt_res, col_num + 1, targetCType, out_ptr, 
+					INIT_BUFSIZ + len_terChar, &out_length);
+			if ( rc == SQL_SUCCESS_WITH_INFO ) {
+				void *tmp_out_ptr = NULL;
+
+				tmp_out_ptr = (SQLWCHAR *)PyMem_Malloc(out_length + INIT_BUFSIZ + len_terChar);
+				memcpy(tmp_out_ptr, out_ptr, INIT_BUFSIZ);
+				PyMem_Del(out_ptr);
+				out_ptr = tmp_out_ptr;
+
+				rc = _python_ibm_db_get_data(stmt_res, col_num + 1, targetCType, (char *)out_ptr + INIT_BUFSIZ,
+					out_length + len_terChar, &out_length);
+				if (rc == SQL_ERROR) {
+					PyMem_Del(out_ptr);
+					out_ptr = NULL;
+					return NULL;
+				}
+				if (len_terChar == sizeof(SQLWCHAR)) {
+					retVal = getSQLWCharAsPyUnicodeObject(out_ptr, INIT_BUFSIZ + out_length);
+				} else {
+					retVal = PyBytes_FromStringAndSize((char *)out_ptr, INIT_BUFSIZ + out_length);
+				}
+				if (out_ptr != NULL) {
 					PyMem_Del(out_ptr);
 					out_ptr = NULL;
 				}
-				PyErr_Clear();
-				Py_RETURN_FALSE;
-			}
-			retVal = getSQLWCharAsPyUnicodeObject((SQLWCHAR*)out_ptr, out_length);
-			if(out_ptr != NULL) {
+			} else if ( rc == SQL_ERROR ) {
 				PyMem_Del(out_ptr);
 				out_ptr = NULL;
+				sprintf(error, "Failed to Fetch LOB Data: %s",
+					IBM_DB_G(__python_stmt_err_msg));
+				PyErr_SetString(PyExc_Exception, error);
+				return NULL;
+			} else {
+				if (out_length == SQL_NULL_DATA) {
+					Py_RETURN_NONE;
+				} else {
+					if (len_terChar == 0) {
+						retVal = PyBytes_FromStringAndSize((char *)out_ptr, out_length);
+					} else {
+						retVal = getSQLWCharAsPyUnicodeObject(out_ptr, out_length);
+					}
+					if (rc == SQL_ERROR) {
+						PyMem_Del(out_ptr);
+						out_ptr = NULL;
+					}
+				}
+
 			}
 			return retVal;
-
 		default:
 			break;
 		}
@@ -7939,20 +7784,6 @@ static PyObject *ibm_db_result(PyObject *self, PyObject *args)
 		PyErr_SetString(PyExc_Exception, "Supplied parameter is invalid");
 	}
 	Py_RETURN_FALSE;
-}
-
-/* Function to check if the value of the LOB in the column is null or not
-*/
-
-int isNullLOB(stmt_handle *stmt_res, int column_number, PyObject **value)
-{
-	if (stmt_res->column_info[column_number].loc_ind == SQL_NULL_DATA) {
-		Py_INCREF(Py_None);
-		*value = Py_None;
-		return 1;
- 	} else {
-		return 0;
-	}
 }
 
 /* static void _python_ibm_db_bind_fetch_helper(INTERNAL_FUNCTION_PARAMETERS, 
@@ -7964,11 +7795,13 @@ static PyObject *_python_ibm_db_bind_fetch_helper(PyObject *args, int op)
 	int column_number;
 	SQLINTEGER row_number = -1;
 	stmt_handle *stmt_res = NULL;
-	SQLSMALLINT column_type, lob_bind_type = SQL_C_BINARY;
+	SQLSMALLINT column_type ;
 	ibm_db_row_data_type *row_data;
-	SQLINTEGER out_length, tmp_length;
-	unsigned char *out_ptr = NULL;
+	SQLINTEGER out_length, tmp_length = 0;
+	void *out_ptr = NULL;
 	SQLWCHAR *wout_ptr = NULL;
+	int len_terChar = 0;
+	SQLSMALLINT targetCType = SQL_C_CHAR;
 	PyObject *py_stmt_res = NULL;
 	PyObject *return_value = NULL;
 	PyObject *key = NULL;
@@ -8205,142 +8038,98 @@ static PyObject *_python_ibm_db_bind_fetch_helper(PyObject *args, int op)
 					break;
 
 				case SQL_BLOB:
-					out_ptr = NULL;
-					/*Check if the data value in the column is null*/
-					if (isNullLOB(stmt_res, column_number, &value)) {
+					switch (stmt_res->s_bin_mode) {
+						case PASSTHRU:
+							Py_RETURN_NONE;
+							break;
+						case CONVERT:
+							len_terChar = sizeof(char);
+							targetCType = SQL_C_CHAR;
+							break;
+						case BINARY:
+							len_terChar = 0;
+							targetCType = SQL_C_BINARY;
+							break;
+						default:
+							len_terChar = -1;
+							break;
+					}
+				case SQL_XML:
+				case SQL_CLOB:
+				case SQL_DBCLOB:
+					if (column_type == SQL_XML) {
+						len_terChar = 0;
+						targetCType = SQL_C_BINARY;
+					} else if (column_type == SQL_CLOB || column_type == SQL_DBCLOB) {
+						len_terChar = sizeof(SQLWCHAR);
+						targetCType = SQL_C_WCHAR;
+					} else if (len_terChar == -1) {
 						break;
 					}
-					rc = _python_ibm_db_get_length(stmt_res, column_number + 1, &tmp_length);
-
-					if (tmp_length == SQL_NULL_DATA) {
-						Py_INCREF(Py_None);
-						value = Py_None; 
-					} else {
-						if (rc == SQL_ERROR) tmp_length = 0;
-						switch (stmt_res->s_bin_mode) {
-							case PASSTHRU:
-								value = Py_None; 
-								Py_INCREF(Py_None);
-								break;
-
-							case CONVERT:
-								tmp_length = 2*tmp_length + 1;
-								lob_bind_type = SQL_C_CHAR;
-								/* fall-through */
-
-							case BINARY:
-								out_ptr = (SQLPOINTER)ALLOC_N(char, tmp_length);
-								if ( out_ptr == NULL ) {
-									PyErr_SetString(PyExc_Exception, "Failed to Allocate Memory");
-									return NULL;
-								}
-								rc = _python_ibm_db_get_data2(stmt_res, column_number + 1, 
-								lob_bind_type, (char *)out_ptr, tmp_length, &out_length);
-								if (rc == SQL_ERROR) {
-									PyMem_Del(out_ptr);
-									out_ptr = NULL;
-									out_length = 0;
-								}
-								value = PyBytes_FromStringAndSize((char*)out_ptr, out_length);
-								if(out_ptr != NULL) {
-									PyMem_Del(out_ptr);
-									out_ptr = NULL;
-								}
-					
-								break;
-							default:
-								break;
-							}
-						}
-					break;				
-				
-			case SQL_XML:
-				wout_ptr = NULL;
-				/*Check if the data value in the column is null*/
-				if (isNullLOB(stmt_res, column_number, &value)) {
-					break;
-				}
-				rc = _python_ibm_db_get_data(stmt_res, column_number + 1, SQL_C_WCHAR, NULL, 
-					0, &tmp_length);
-				
-				if ( rc == SQL_ERROR ) {
-					sprintf(error, "Failed to Determine XML Size: %s", 
-						IBM_DB_G(__python_stmt_err_msg));
-					PyErr_SetString(PyExc_Exception, error);
-					return NULL;
-				}
-
-				if (tmp_length == SQL_NULL_DATA) {
-					Py_INCREF(Py_None);
-					value = Py_None;
-				} else {
-					tmp_length = tmp_length + 1;
-					wout_ptr = (SQLWCHAR *)ALLOC_N(SQLWCHAR, tmp_length);
-
-					if ( wout_ptr == NULL ) {
-						PyErr_SetString(PyExc_Exception, 
-							"Failed to Allocate Memory for XML Data");
-						return NULL;
-					}
-					rc = _python_ibm_db_get_data(stmt_res, column_number + 1, SQL_C_WCHAR, 
-						wout_ptr, tmp_length * sizeof(SQLWCHAR) , &out_length);
-					if (rc == SQL_ERROR) {
-						PyMem_Del(wout_ptr);
-						wout_ptr = NULL;
-						return NULL;
-					}
-					value = getSQLWCharAsPyUnicodeObject(wout_ptr, out_length);
-					if(wout_ptr != NULL) {
-						PyMem_Del(wout_ptr);
-						wout_ptr = NULL;
-					}
-				
-
-				}
-				break;
-
-			case SQL_CLOB:
-			case SQL_DBCLOB:
-				wout_ptr = NULL;
-				/*Check if the data value in the column is null*/
-				if (isNullLOB(stmt_res, column_number, &value)) {
-					break;
-				}
-				rc = _python_ibm_db_get_length(stmt_res, column_number + 1, &tmp_length);
-				if (tmp_length == SQL_NULL_DATA) {
-					Py_INCREF(Py_None);
-					value = Py_None; 
-				} else {
-					if (rc == SQL_ERROR) tmp_length = 0;
-					wout_ptr = (SQLPOINTER)ALLOC_N(SQLWCHAR, tmp_length + 1);
-					if ( wout_ptr == NULL ) {
-						PyErr_SetString(PyExc_Exception, 
+					out_ptr = (void *)ALLOC_N(char, INIT_BUFSIZ + len_terChar);
+					if (out_ptr == NULL) {
+						PyErr_SetString(PyExc_Exception,
 							"Failed to Allocate Memory for LOB Data");
 						return NULL;
 					}
-					rc = _python_ibm_db_get_data2(stmt_res, column_number + 1, SQL_C_WCHAR, 
-						wout_ptr , (tmp_length + 1) * sizeof(SQLWCHAR), 
-						&out_length);
-					if (rc == SQL_ERROR) {
-						PyMem_Del(wout_ptr);
-						wout_ptr = NULL;
-						tmp_length = 0;
-					} 
-					
-					value = getSQLWCharAsPyUnicodeObject(wout_ptr, (tmp_length) * sizeof(SQLWCHAR));
-				
-					if(wout_ptr != NULL) {
-						PyMem_Del(wout_ptr);
-						wout_ptr = NULL;
-					}					
-				}
-				break;
+					rc = _python_ibm_db_get_data(stmt_res, column_number + 1, targetCType, out_ptr,
+						INIT_BUFSIZ + len_terChar, &out_length);
+					if (rc == SQL_SUCCESS_WITH_INFO) {
+						void *tmp_out_ptr = NULL;
 
-			default:
-				Py_INCREF(Py_None);
-				value = Py_None;
-				break;
-			}
+						tmp_out_ptr = (void *)ALLOC_N(char, out_length + INIT_BUFSIZ + len_terChar);
+						memcpy(tmp_out_ptr, out_ptr, INIT_BUFSIZ);
+						PyMem_Del(out_ptr);
+						out_ptr = tmp_out_ptr;
+
+						rc = _python_ibm_db_get_data(stmt_res, column_number + 1, targetCType, (char *)out_ptr + INIT_BUFSIZ,
+							out_length + len_terChar, &out_length);
+						if (rc == SQL_ERROR) {
+							if (out_ptr != NULL) {
+								PyMem_Del(out_ptr);
+								out_ptr = NULL;
+							}
+							sprintf(error, "Failed to fetch LOB Data: %s",
+								IBM_DB_G(__python_stmt_err_msg));
+							PyErr_SetString(PyExc_Exception, error);
+							return NULL;
+						}
+						
+						if (len_terChar == sizeof(SQLWCHAR)) {
+							value = getSQLWCharAsPyUnicodeObject(out_ptr, INIT_BUFSIZ + out_length);
+						} else {
+							value = PyBytes_FromStringAndSize((char*)out_ptr, INIT_BUFSIZ + out_length);
+						}
+						if (out_ptr != NULL) {
+							PyMem_Del(out_ptr);
+							out_ptr = NULL;
+						}
+					} else if ( rc == SQL_ERROR ) {
+						PyMem_Del(out_ptr);
+						out_ptr = NULL;
+						sprintf(error, "Failed to LOB Data: %s", 
+							IBM_DB_G(__python_stmt_err_msg));
+						PyErr_SetString(PyExc_Exception, error);
+						return NULL;
+					} else {
+						if (out_length == SQL_NULL_DATA) {
+							Py_INCREF(Py_None);
+							value = Py_None;
+						} else {
+							if (len_terChar == sizeof(SQLWCHAR)) {
+								value =  getSQLWCharAsPyUnicodeObject(out_ptr, out_length);
+							} else {
+								value = PyBytes_FromStringAndSize((char*)out_ptr, out_length);
+							}
+						}
+					}
+					break;
+
+				default:
+					Py_INCREF(Py_None);
+					value = Py_None;
+					break;
+				}
 		}
 		if (op & FETCH_ASSOC) {
 			key = StringOBJ_FromASCII((char*)stmt_res->column_info[column_number].name);

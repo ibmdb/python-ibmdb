@@ -119,6 +119,9 @@
 /* strlen(" SQLCODE=") added in */
 #define DB2_MAX_ERR_MSG_LEN (SQL_MAX_MESSAGE_LENGTH + SQL_SQLSTATE_SIZE + 10)
 
+/* Default initail LOB buffer size */
+#define INIT_BUFSIZ 10240
+ 
 /* Used in _python_parse_options */
 #define DB2_ERRMSG 1
 #define DB2_ERR 2
