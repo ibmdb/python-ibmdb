@@ -7721,7 +7721,7 @@ static PyObject *ibm_db_result(PyObject *self, PyObject *args)
 				len_terChar = sizeof(SQLWCHAR);
 				targetCType = SQL_C_WCHAR;
 			}
-			out_ptr = PyMem_Malloc(INIT_BUFSIZ + len_terChar);
+			out_ptr = ALLOC_N(char, INIT_BUFSIZ + len_terChar);
 			if ( out_ptr == NULL ) {
 				 PyErr_SetString(PyExc_Exception,
 						"Failed to Allocate Memory for XML Data");
@@ -7732,7 +7732,7 @@ static PyObject *ibm_db_result(PyObject *self, PyObject *args)
 			if ( rc == SQL_SUCCESS_WITH_INFO ) {
 				void *tmp_out_ptr = NULL;
 
-				tmp_out_ptr = (SQLWCHAR *)PyMem_Malloc(out_length + INIT_BUFSIZ + len_terChar);
+				tmp_out_ptr = ALLOC_N(char, out_length + INIT_BUFSIZ + len_terChar);
 				memcpy(tmp_out_ptr, out_ptr, INIT_BUFSIZ);
 				PyMem_Del(out_ptr);
 				out_ptr = tmp_out_ptr;
@@ -7749,32 +7749,26 @@ static PyObject *ibm_db_result(PyObject *self, PyObject *args)
 				} else {
 					retVal = PyBytes_FromStringAndSize((char *)out_ptr, INIT_BUFSIZ + out_length);
 				}
-				if (out_ptr != NULL) {
-					PyMem_Del(out_ptr);
-					out_ptr = NULL;
-				}
 			} else if ( rc == SQL_ERROR ) {
 				PyMem_Del(out_ptr);
 				out_ptr = NULL;
-				sprintf(error, "Failed to Fetch LOB Data: %s",
-					IBM_DB_G(__python_stmt_err_msg));
-				PyErr_SetString(PyExc_Exception, error);
-				return NULL;
+				Py_RETURN_FALSE;
 			} else {
 				if (out_length == SQL_NULL_DATA) {
-					Py_RETURN_NONE;
+					Py_INCREF(Py_None);
+					retVal = Py_None;
 				} else {
 					if (len_terChar == 0) {
 						retVal = PyBytes_FromStringAndSize((char *)out_ptr, out_length);
 					} else {
 						retVal = getSQLWCharAsPyUnicodeObject(out_ptr, out_length);
 					}
-					if (rc == SQL_ERROR) {
-						PyMem_Del(out_ptr);
-						out_ptr = NULL;
-					}
 				}
 
+			}
+			if (out_ptr != NULL) {
+				PyMem_Del(out_ptr);
+				out_ptr = NULL;
 			}
 			return retVal;
 		default:
@@ -8100,10 +8094,6 @@ static PyObject *_python_ibm_db_bind_fetch_helper(PyObject *args, int op)
 						} else {
 							value = PyBytes_FromStringAndSize((char*)out_ptr, INIT_BUFSIZ + out_length);
 						}
-						if (out_ptr != NULL) {
-							PyMem_Del(out_ptr);
-							out_ptr = NULL;
-						}
 					} else if ( rc == SQL_ERROR ) {
 						PyMem_Del(out_ptr);
 						out_ptr = NULL;
@@ -8122,6 +8112,10 @@ static PyObject *_python_ibm_db_bind_fetch_helper(PyObject *args, int op)
 								value = PyBytes_FromStringAndSize((char*)out_ptr, out_length);
 							}
 						}
+					}
+					if (out_ptr != NULL) {
+						PyMem_Del(out_ptr);
+						out_ptr = NULL;
 					}
 					break;
 
