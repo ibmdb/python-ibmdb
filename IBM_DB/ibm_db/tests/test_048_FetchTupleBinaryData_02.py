@@ -20,8 +20,13 @@ class IbmDbTestCase(unittest.TestCase):
     if (not conn):
       print "Could not make a connection." 
       return 0
+    server = ibm_db.server_info( conn )
+    
     fp = open("tests/spook_out.png", "wb")
-    result = ibm_db.exec_immediate(conn, "SELECT picture, LENGTH(picture) FROM animal_pics WHERE name = 'Spook'")
+    if (server.DBMS_NAME[0:3] == 'IDS'):
+        result = ibm_db.exec_immediate(conn, "SELECT picture FROM animal_pics WHERE name = 'Spook'")
+    else:
+        result = ibm_db.exec_immediate(conn, "SELECT picture, LENGTH(picture) FROM animal_pics WHERE name = 'Spook'")
     if (not result):
       print "Could not execute SELECT statement."
       return 0

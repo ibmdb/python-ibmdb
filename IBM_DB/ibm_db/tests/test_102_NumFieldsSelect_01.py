@@ -22,7 +22,7 @@ class IbmDbTestCase(unittest.TestCase):
       print ibm_db.conn_errormsg()
     
     server = ibm_db.server_info( conn )
-    if ((server.DBMS_NAME[0:2] != "AS") and (server.DBMS_NAME != "DB2")):
+    if ((server.DBMS_NAME[0:2] != "AS") and (server.DBMS_NAME != "DB2") and (server.DBMS_NAME[0:3] != "IDS")):
       result = ibm_db.exec_immediate(conn, "VALUES(1)")
       #throw :unsupported unless result
       if (not result):

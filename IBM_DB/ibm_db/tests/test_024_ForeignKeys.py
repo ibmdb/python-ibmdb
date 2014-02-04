@@ -99,13 +99,14 @@ class IbmDbTestCase(unittest.TestCase):
           print ibm_db.stmt_errormsg()
 
       if (server.DBMS_NAME[0:3] == 'IDS'):
-        stmt = ibm_db.foreign_keys(conn, None, config.user, 'test_keys', None, config.user)
+        stmt = ibm_db.foreign_keys(conn, None, config.user, 'test_keys', None, 'dummy_schema')
       else:
-        stmt = ibm_db.foreign_keys(conn, None, None, 'TEST_KEYS', None, config.user)
+        stmt = ibm_db.foreign_keys(conn, None, None, 'TEST_KEYS', None, 'dummy_schema')
       row = ibm_db.fetch_tuple(stmt)
       if(not row):
         print "No Data Found"
-
+      else:
+        print row
       ibm_db.close(conn)
     else:
       print ibm_db.conn_errormsg()

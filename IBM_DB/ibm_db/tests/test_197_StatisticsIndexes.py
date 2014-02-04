@@ -34,6 +34,9 @@ class IbmDbTestCase(unittest.TestCase):
       else:
         result = ibm_db.statistics(conn,None,None,"INDEX_TEST",True)
       row = ibm_db.fetch_tuple(result)
+      ## skipping table info row. statistics returns informtation about table itself for informix ###
+      if (server.DBMS_NAME[0:3] == 'IDS'):
+        row = ibm_db.fetch_tuple(result)
       print row[2]  # TABLE_NAME
       print row[3]  # NON_UNIQUE
       print row[5]  # INDEX_NAME
@@ -52,6 +55,9 @@ class IbmDbTestCase(unittest.TestCase):
       else:
         result = ibm_db.statistics(conn,None,None,"INDEX_TEST2",True)
       row = ibm_db.fetch_tuple(result)
+      ### skipping table info row. statistics returns informtation about table itself for informix ###
+      if (server.DBMS_NAME[0:3] == 'IDS'):
+        row = ibm_db.fetch_tuple(result)
       print row[2]  # TABLE_NAME
       print row[3]  # NON_UNIQUE
       print row[5]  # INDEX_NAME

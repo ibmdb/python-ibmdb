@@ -21,7 +21,7 @@
 +--------------------------------------------------------------------------+
 */
 
-#define MODULE_RELEASE "2.0.4.1"
+#define MODULE_RELEASE "2.0.5"
 
 #include <Python.h>
 #include <datetime.h>
@@ -7714,10 +7714,7 @@ static PyObject *ibm_db_result(PyObject *self, PyObject *args)
 		case SQL_XML:
 		case SQL_CLOB:
 		case SQL_DBCLOB:
-			if (column_type == SQL_XML) {
-				len_terChar = 0;
-				targetCType = SQL_C_BINARY;
-			} else if (column_type == SQL_CLOB || column_type == SQL_DBCLOB) {
+			if (column_type == SQL_CLOB || column_type == SQL_DBCLOB || column_type == SQL_XML) {
 				len_terChar = sizeof(SQLWCHAR);
 				targetCType = SQL_C_WCHAR;
 			}
@@ -8051,10 +8048,7 @@ static PyObject *_python_ibm_db_bind_fetch_helper(PyObject *args, int op)
 				case SQL_XML:
 				case SQL_CLOB:
 				case SQL_DBCLOB:
-					if (column_type == SQL_XML) {
-						len_terChar = 0;
-						targetCType = SQL_C_BINARY;
-					} else if (column_type == SQL_CLOB || column_type == SQL_DBCLOB) {
+					if (column_type == SQL_CLOB || column_type == SQL_DBCLOB || column_type == SQL_XML) {
 						len_terChar = sizeof(SQLWCHAR);
 						targetCType = SQL_C_WCHAR;
 					} else if (len_terChar == -1) {
@@ -10538,6 +10532,7 @@ INIT_ibm_db(void) {
 	PyModule_AddIntConstant(m, "SQL_API_SQLROWCOUNT", SQL_API_SQLROWCOUNT);
 	PyModule_AddIntConstant(m, "QUOTED_LITERAL_REPLACEMENT_ON", SET_QUOTED_LITERAL_REPLACEMENT_ON);
 	PyModule_AddIntConstant(m, "QUOTED_LITERAL_REPLACEMENT_OFF", SET_QUOTED_LITERAL_REPLACEMENT_OFF);
+	PyModule_AddIntConstant(m, "SQL_ATTR_INFO_PROGRAMNAME", SQL_ATTR_INFO_PROGRAMNAME);
 	PyModule_AddStringConstant(m, "__version__", MODULE_RELEASE);	
 
 	Py_INCREF(&stmt_handleType);

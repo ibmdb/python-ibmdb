@@ -25,7 +25,7 @@ class IbmDbTestCase(unittest.TestCase):
       server = ibm_db.server_info( conn )
       if (server.DBMS_NAME[0:3] == 'IDS'):
          op = {ibm_db.ATTR_CASE: ibm_db.CASE_UPPER}
-         ibm_db.set_option(conn, op, 0)
+         ibm_db.set_option(conn, op, 1)
 
       try:
         sql = 'drop table test'
@@ -123,14 +123,14 @@ class IbmDbTestCase(unittest.TestCase):
 #Number of affected rows: -1
 #Number of affected rows: -1
 #Number of affected rows: -1
-#1, some, here is a clob value, <?xml version="1.0" encoding="UTF-8" ?><test attribute="value"/>
+#1, some, here is a clob value, <?xml version="1.0" encoding="UTF-16" ?><test attribute="value"/>
 #2, value, clob data, None
 #2, in varchar, data2, None
 #Number of affected rows: 2
 #2, value
 #2, in varchar
 #Number of affected rows: -1
-#1, some, here is a clob value, <?xml version="1.0" encoding="UTF-8" ?><test attribute="value"/>
+#1, some, here is a clob value, <?xml version="1.0" encoding="UTF-16" ?><test attribute="value"/>
 #2, value, clob data, None
 #2, in varchar, data2, None
 #__ZOS_EXPECTED__
@@ -141,14 +141,14 @@ class IbmDbTestCase(unittest.TestCase):
 #Number of affected rows: -1
 #Number of affected rows: -2
 #Number of affected rows: 0
-#1, some, here is a clob value, <?xml version="1.0" encoding="UTF-8" ?><test attribute="value"/>
+#1, some, here is a clob value, <?xml version="1.0" encoding="UTF-16" ?><test attribute="value"/>
 #2, value, clob data, None
 #2, in varchar, data2, None
 #Number of affected rows: 2
 #2, value
 #2, in varchar
 #Number of affected rows: 0
-#1, some, here is a clob value, <?xml version="1.0" encoding="UTF-8" ?><test attribute="value"/>
+#1, some, here is a clob value, <?xml version="1.0" encoding="UTF-16" ?><test attribute="value"/>
 #2, value, clob data, None
 #2, in varchar, data2, None
 #__SYSTEMI_EXPECTED__
@@ -159,14 +159,14 @@ class IbmDbTestCase(unittest.TestCase):
 #Number of affected rows: -1
 #Number of affected rows: -2
 #Number of affected rows: 0
-#1, some, here is a clob value, <?xml version="1.0" encoding="UTF-8" ?><test attribute="value"/>
+#1, some, here is a clob value, <?xml version="1.0" encoding="UTF-16" ?><test attribute="value"/>
 #2, value, clob data, None
 #2, in varchar, data2, None
 #Number of affected rows: 2
 #2, value
 #2, in varchar
 #Number of affected rows: 0
-#1, some, here is a clob value, <?xml version="1.0" encoding="UTF-8" ?><test attribute="value"/>
+#1, some, here is a clob value, <?xml version="1.0" encoding="UTF-16" ?><test attribute="value"/>
 #2, value, clob data, None
 #2, in varchar, data2, None
 #__IDS_EXPECTED__
@@ -177,13 +177,13 @@ class IbmDbTestCase(unittest.TestCase):
 #Number of affected rows: -1
 #Number of affected rows: -1
 #Number of affected rows: 3
-#1, some, here is a clob value, <?xml version="1.0" encoding="UTF-8" ?><test attribute="value"/>
+#1, some, here is a clob value, <?xml version="1.0" encoding="UTF-16" ?><test attribute="value"/>
 #2, value, clob data, None
 #2, in varchar, data2, None
 #Number of affected rows: 2
 #2, value
 #2, in varchar
 #Number of affected rows: 3
-#1, some, here is a clob value, <?xml version="1.0" encoding="UTF-8" ?><test attribute="value"/>
+#1, some, here is a clob value, <?xml version="1.0" encoding="UTF-16" ?><test attribute="value"/>
 #2, value, clob data, None
-#2, in varchar, data2, None)
+#2, in varchar, data2, None

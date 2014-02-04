@@ -26,18 +26,18 @@ class IbmDbTestCase(unittest.TestCase):
       except:
         pass
 
-      t_val = '10.42.34'
+      t_val = '10:42:34'
       d_val = '1981-07-08'
-      ts_val = '1981-07-08-10.42.34'
+      ts_val = '1981-07-08 10:42:34'
       ts_withT_val = '2013-06-06T15:30:39'
       
       server = ibm_db.server_info( conn )
       if (server.DBMS_NAME[0:3] == 'IDS'):
         statement = "CREATE TABLE table_6792 (col1 DATETIME HOUR TO SECOND, col2 DATE, col3 DATETIME YEAR TO SECOND, col4 DATETIME YEAR TO SECOND)"
         result = ibm_db.exec_immediate(conn, statement)
-        statement = "INSERT INTO table_6792 (col1, col2, col3, col4) values (?, ?, ?, ?)"
-        stmt = ibm_db.prepare(statement)
-        result = ibm_db.execute(stmt, (t_val, d_val, ts_val, ts_withT_val))
+        statement = "INSERT INTO table_6792 (col1, col2, col3) values (?, ?, ?)"
+        stmt = ibm_db.prepare(conn, statement)
+        result = ibm_db.execute(stmt, (t_val, d_val, ts_val))
       else:
         statement = "CREATE TABLE table_6792 (col1 TIME, col2 DATE, col3 TIMESTAMP, col4 TIMESTAMP)"
         result = ibm_db.exec_immediate(conn, statement)

@@ -12,6 +12,8 @@ from testfunctions import IbmDbTestFunctions
 class IbmDbTestCase(unittest.TestCase):
     def test_createdbNX(self):
         obj = IbmDbTestFunctions()
+        if ((obj.server.DBMS_NAME == "DB2") or (obj.server.DBMS_NAME[0:3] != "DB2")):
+            raise unittest.SkipTest("createdbNX not Supported")
         obj.assert_expect(self.run_test_createdbNX)
 
     def run_test_createdbNX(self):

@@ -10,6 +10,9 @@ import ibm_db
 import config
 
 class IbmDbTestFunctions(unittest.TestCase):
+  prepconn = ibm_db.connect(config.database, config.user, config.password)
+  server = ibm_db.server_info(prepconn)
+  ibm_db.close(prepconn)
   
   # See the tests.py comments for this function.
   def setUp(self):
@@ -62,14 +65,11 @@ class IbmDbTestFunctions(unittest.TestCase):
   def assert_expect(self, testFuncName):
     callstack = inspect.stack(0)
     try:
-      prepconn = ibm_db.connect(config.database, config.user, config.password)
-      server = ibm_db.server_info(prepconn)
-      ibm_db.close(prepconn)
-      if (server.DBMS_NAME[0:2] == "AS"):
+      if (self.server.DBMS_NAME[0:2] == "AS"):
           self.assertEqual(self.capture(testFuncName), self.expected_AS(callstack[1][1]))
-      elif (server.DBMS_NAME == "DB2"):
+      elif (self.server.DBMS_NAME == "DB2"):
           self.assertEqual(self.capture(testFuncName), self.expected_ZOS(callstack[1][1]))
-      elif (server.DBMS_NAME[0:3] == "IDS"):
+      elif (self.server.DBMS_NAME[0:3] == "IDS"):
           self.assertEqual(self.capture(testFuncName), self.expected_IDS(callstack[1][1]))
       else:
           self.assertEqual(self.capture(testFuncName), self.expected_LUW(callstack[1][1]))
@@ -82,14 +82,11 @@ class IbmDbTestFunctions(unittest.TestCase):
   def assert_expectf(self, testFuncName):
     callstack = inspect.stack(0)
     try:
-      prepconn = ibm_db.connect(config.database, config.user, config.password)
-      server = ibm_db.server_info(prepconn)
-      ibm_db.close(prepconn)
-      if (server.DBMS_NAME[0:2] == "AS"):
+      if (self.server.DBMS_NAME[0:2] == "AS"):
           pattern = self.expected_AS(callstack[1][1])
-      elif (server.DBMS_NAME == "DB2"):
+      elif (self.server.DBMS_NAME == "DB2"):
           pattern = self.expected_ZOS(callstack[1][1])
-      elif (server.DBMS_NAME[0:3] == "IDS"):
+      elif (self.server.DBMS_NAME[0:3] == "IDS"):
           pattern = self.expected_IDS(callstack[1][1])
       else:
           pattern = self.expected_LUW(callstack[1][1])

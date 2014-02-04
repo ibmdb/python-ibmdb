@@ -23,7 +23,7 @@ class IbmDbTestCase(unittest.TestCase):
        server = ibm_db.server_info( conn )
        if (server.DBMS_NAME[0:3] == 'IDS'):
           op = {ibm_db.ATTR_CASE: ibm_db.CASE_UPPER}
-          ibm_db.set_option(conn, op, 0)
+          ibm_db.set_option(conn, op, 1)
 
        # Drop the tab_bigint table, in case it exists
        drop = 'DROP TABLE tab_bigint'

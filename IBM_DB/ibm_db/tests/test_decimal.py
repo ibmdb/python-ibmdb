@@ -103,4 +103,12 @@ class IbmDbTestCase(unittest.TestCase):
 #60 : Kaerci : 100.97
 #70 : Nirvana : 100.12
 #Requested row number must be a positive value
-
+#__IDS_EXPECTED__
+#10 : Megadeth : 100.00
+#20 : Zaral : 102.20
+#30 : Megabyte : 98.65
+#40 : Visarsoft : 123.34
+#50 : Mailersoft : 134.22
+#60 : Kaerci : 100.97
+#70 : Nirvana : 100.12
+#Requested row number must be a positive value

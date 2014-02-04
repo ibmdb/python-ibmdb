@@ -17,6 +17,7 @@ class IbmDbTestCase(unittest.TestCase):
 
   def run_test_062(self):
     conn = ibm_db.connect(config.database, config.user, config.password)
+    server = ibm_db.server_info( conn )
 
     create = 'CREATE SCHEMA AUTHORIZATION t'
     try:
@@ -49,7 +50,10 @@ class IbmDbTestCase(unittest.TestCase):
       pass
     
     if conn:
-      schema = 'T'
+      if (server.DBMS_NAME[0:3] == 'IDS'):
+        schema = 't'
+      else:
+        schema = 'T'
       result = ibm_db.tables(conn,None,schema);    
       i = 0
       row = ibm_db.fetch_both(result)
@@ -89,8 +93,8 @@ class IbmDbTestCase(unittest.TestCase):
 #T/T4/TABLE
 #done!
 #__IDS_EXPECTED__
-#T%s/t1/TABLE%s
-#T%s/t2/TABLE%s
-#T%s/t3/TABLE%s
-#T%s/t4/TABLE%s
+#t/t1/TABLE%s
+#t/t2/TABLE%s
+#t/t3/TABLE%s
+#t/t4/TABLE%s
 #done!

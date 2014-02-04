@@ -28,10 +28,10 @@ class IbmDbTestCase(unittest.TestCase):
       t_val = datetime.time(10, 42, 34)
       d_val = datetime.date(1981, 7, 8)
       #ts_val = datetime.datetime.today()
-      ts_val = datetime.datetime(1981, 7, 8, 10, 42, 34, 1)
+      ts_val = datetime.datetime(1981, 7, 8, 10, 42, 34, 10)
       server = ibm_db.server_info( conn )
       if (server.DBMS_NAME[0:3] == 'IDS'):
-        statement = "CREATE TABLE tab_datetime (col1 DATETIME HOUR TO SECOND, col2 DATE, col3 DATETIME YEAR TO SECOND)"
+        statement = "CREATE TABLE tab_datetime (col1 DATETIME HOUR TO SECOND, col2 DATE, col3 DATETIME YEAR TO FRACTION(5))"
         result = ibm_db.exec_immediate(conn, statement)
         statement = "INSERT INTO tab_datetime (col1, col2, col3) values (?, ?, ?)"
         stmt = ibm_db.prepare(conn, statement)
@@ -73,25 +73,25 @@ class IbmDbTestCase(unittest.TestCase):
 #2:timestamp
 #<%s 'datetime.time'> 10:42:34
 #<%s 'datetime.date'> 1981-07-08
-#<%s 'datetime.datetime'> 1981-07-08 10:42:34.000001
+#<%s 'datetime.datetime'> 1981-07-08 10:42:34.000010
 #__ZOS_EXPECTED__
 #0:time
 #1:date
 #2:timestamp
 #<%s 'datetime.time'> 10:42:34
 #<%s 'datetime.date'> 1981-07-08
-#<%s 'datetime.datetime'> 1981-07-08 10:42:34.000001
+#<%s 'datetime.datetime'> 1981-07-08 10:42:34.000010
 #__SYSTEMI_EXPECTED__
 #0:time
 #1:date
 #2:timestamp
 #<%s 'datetime.time'> 10:42:34
 #<%s 'datetime.date'> 1981-07-08
-#<%s 'datetime.datetime'> 1981-07-08 10:42:34.000001
+#<%s 'datetime.datetime'> 1981-07-08 10:42:34.000010
 #__IDS_EXPECTED__
 #0:time
 #1:date
 #2:timestamp
 #<%s 'datetime.time'> 10:42:34
 #<%s 'datetime.date'> 1981-07-08
-#<%s 'datetime.datetime'> 1981-07-08 10:42:34.000001
+#<%s 'datetime.datetime'> 1981-07-08 10:42:34.000010

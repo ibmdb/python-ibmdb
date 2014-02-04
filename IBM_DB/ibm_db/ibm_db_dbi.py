@@ -244,6 +244,9 @@ class DBAPITypeObject(frozenset):
         string as an argument. 
         """
         return cmp not in self.col_types
+        
+    def __hash__(self):
+        return id(self)
 
 # The user can use these objects to compare the database column types
 # with in order to determine the python type to provide in the 

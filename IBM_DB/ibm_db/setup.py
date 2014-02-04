@@ -7,7 +7,7 @@ from setuptools import setup, find_packages
 from distutils.core import setup, Extension
 
 PACKAGE = 'ibm_db'
-VERSION = '2.0.4.1'
+VERSION = '2.0.5'
 LICENSE = 'Apache License 2.0'
 
 machine_bits =  8 * struct.calcsize("P")
@@ -24,7 +24,7 @@ if machine_bits == 64:
 else:
     is64Bit = False
     libDir = 'lib32'
-    sys.stdout.write("Detected 32-bit Python\m")
+    sys.stdout.write("Detected 32-bit Python\n")
     
 try:
     ibm_db_home = os.environ['IBM_DB_HOME']

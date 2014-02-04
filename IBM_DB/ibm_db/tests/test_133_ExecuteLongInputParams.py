@@ -92,10 +92,10 @@ class IbmDbTestCase(unittest.TestCase):
 #Done
 #__IDS_EXPECTED__
 #Starting test ...
-#None
+#
 #SQLSTATE: 22001
-#Message: [IBM][CLI Driver][IDS%s] Value exceeds string column length.
+#Message: [IBM][CLI Driver][IDS%s] Value exceeds string column length. SQLCODE=-1279
 #True
 #SQLSTATE: 02000
-#Message: [IBM][CLI Driver][IDS%s] SQL0100W  No row was found for FETCH, UPDATE or DELETE; or the result of a query is an empty table.  SQLSTATE=02000
+#Message: [IBM][CLI Driver][IDS%s] SQL0100W  No row was found for FETCH, UPDATE or DELETE; or the result of a query is an empty table.  SQLSTATE=02000 SQLCODE=100
 #Done
