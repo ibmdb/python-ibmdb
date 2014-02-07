@@ -40,7 +40,6 @@ setup (
                           'http://pypi.python.org/pypi/Django/'],
     description       = 'DB2 support for Django framework.',
     long_description  = 'DB2 support for Django framework.',
-    download_url      = 'http://code.google.com/p/ibm-db/downloads/list',
     author            = 'Ambrish Bhargava, Tarun Pasrija, Rahul Priyadarshi',
     author_email      = 'opendev@us.ibm.com',
     maintainer        = 'IBM Application Development Team',

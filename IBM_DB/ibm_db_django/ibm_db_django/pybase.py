@@ -40,45 +40,61 @@ if ( djangoVersion[0:2] >= ( 1, 5 )):
     
 DatabaseError = Database.DatabaseError
 IntegrityError = Database.IntegrityError
-
+if ( djangoVersion[0:2] >= ( 1, 6 )):
+    Error = Database.Error
+    InterfaceError = Database.InterfaceError
+    DataError = Database.DataError
+    OperationalError = Database.OperationalError
+    InternalError = Database.InternalError
+    ProgrammingError = Database.ProgrammingError
+    NotSupportedError = Database.NotSupportedError
+    
 class DatabaseWrapper( object ):
-    # Over-riding _cursor method to return DB2 cursor.
-    def _cursor( self, connection, kwargs ):
-        if not connection: 
-            kwargsKeys = kwargs.keys()
-            if ( kwargsKeys.__contains__( 'port' ) and 
-                kwargsKeys.__contains__( 'host' ) ):
-                kwargs['dsn'] = "DATABASE=%s;HOSTNAME=%s;PORT=%s;PROTOCOL=TCPIP;" % ( 
-                         kwargs.get( 'database' ),
-                         kwargs.get( 'host' ),
-                         kwargs.get( 'port' )
-                )
-            else:
-                kwargs['dsn'] = kwargs.get( 'database' )
-            
-            # Setting AUTO COMMIT off on connection.
-            conn_options = {Database.SQL_ATTR_AUTOCOMMIT : Database.SQL_AUTOCOMMIT_OFF}
-            kwargs['conn_options'] = conn_options
-            if kwargsKeys.__contains__( 'options' ):
-                kwargs.update( kwargs.get( 'options' ) )
-                del kwargs['options']
-            if kwargsKeys.__contains__( 'port' ):
-                del kwargs['port']
-            
-            pconnect_flag = False
-            if kwargsKeys.__contains__( 'PCONNECT' ):
-                pconnect_flag = kwargs['PCONNECT']
-                del kwargs['PCONNECT']
-                
-            if pconnect_flag:
-                connection = Database.pconnect( **kwargs )
-            else:
-                connection = Database.connect( **kwargs )
-            connection.autocommit = connection.set_autocommit
-            return connection, DB2CursorWrapper( connection )
+    # Get new database connection for non persistance connection 
+    def get_new_connection(self, kwargs):
+        kwargsKeys = kwargs.keys()
+        if ( kwargsKeys.__contains__( 'port' ) and 
+            kwargsKeys.__contains__( 'host' ) ):
+            kwargs['dsn'] = "DATABASE=%s;HOSTNAME=%s;PORT=%s;PROTOCOL=TCPIP;" % ( 
+                     kwargs.get( 'database' ),
+                     kwargs.get( 'host' ),
+                     kwargs.get( 'port' )
+            )
         else:
-            return DB2CursorWrapper( connection )
+            kwargs['dsn'] = kwargs.get( 'database' )
         
+        # Before Django 1.6, autocommit was turned OFF
+        if ( djangoVersion[0:2] >= ( 1, 6 )):
+            conn_options = {Database.SQL_ATTR_AUTOCOMMIT : Database.SQL_AUTOCOMMIT_ON}
+        else:
+            conn_options = {Database.SQL_ATTR_AUTOCOMMIT : Database.SQL_AUTOCOMMIT_OFF}
+        kwargs['conn_options'] = conn_options
+        if kwargsKeys.__contains__( 'options' ):
+            kwargs.update( kwargs.get( 'options' ) )
+            del kwargs['options']
+        if kwargsKeys.__contains__( 'port' ):
+            del kwargs['port']
+        
+        pconnect_flag = False
+        if kwargsKeys.__contains__( 'PCONNECT' ):
+            pconnect_flag = kwargs['PCONNECT']
+            del kwargs['PCONNECT']
+            
+        if pconnect_flag:
+            connection = Database.pconnect( **kwargs )
+        else:
+            connection = Database.connect( **kwargs )
+        connection.autocommit = connection.set_autocommit
+        
+        return connection
+    
+    def is_active( self, connection ):
+        return Database.ibm_db.active(connection.conn_handler)
+        
+    # Over-riding _cursor method to return DB2 cursor.
+    def _cursor( self, connection ):
+        return DB2CursorWrapper( connection )
+                    
     def close( self, connection ):
         connection.close()
         
@@ -144,13 +160,22 @@ class DB2CursorWrapper( Database.Cursor ):
                     return super( DB2CursorWrapper, self ).execute( operation, parameters )
                 except IntegrityError, e:
                     if (djangoVersion[0:2] >= (1, 5)):
-                        six.reraise(utils.IntegrityError, utils.IntegrityError( *tuple( e ) ), sys.exc_info()[2])
+                        six.reraise(utils.IntegrityError, utils.IntegrityError( *tuple( six.PY3 and e.args or ( e._message, ) ) ), sys.exc_info()[2])
+                        raise
                     else:
                         raise utils.IntegrityError, utils.IntegrityError( *tuple( e ) ), sys.exc_info()[2]
-                    
+                        
+                except ProgrammingError, e:
+                    if (djangoVersion[0:2] >= (1, 5)):
+                        six.reraise(utils.ProgrammingError, utils.ProgrammingError( *tuple( six.PY3 and e.args or ( e._message, ) ) ), sys.exc_info()[2])
+                        raise
+                    else:
+                        raise utils.ProgrammingError, utils.ProgrammingError( *tuple( e ) ), sys.exc_info()[2]
+                        
                 except DatabaseError, e:
                     if (djangoVersion[0:2] >= (1, 5)):
-                        six.reraise(utils.DatabaseError, utils.DatabaseError( *tuple( e ) ), sys.exc_info()[2])
+                        six.reraise(utils.DatabaseError, utils.DatabaseError( *tuple( six.PY3 and e.args or ( e._message, ) ) ), sys.exc_info()[2])
+                        raise
                     else:
                         raise utils.DatabaseError, utils.DatabaseError( *tuple( e ) ), sys.exc_info()[2]  
         except ( TypeError ):
@@ -173,12 +198,14 @@ class DB2CursorWrapper( Database.Cursor ):
                     return super( DB2CursorWrapper, self ).executemany( operation, seq_parameters )
                 except IntegrityError, e:
                     if (djangoVersion[0:2] >= (1, 5)):
-                        six.reraise(utils.IntegrityError, utils.IntegrityError( *tuple( e ) ), sys.exc_info()[2])
+                        six.reraise(utils.IntegrityError, utils.IntegrityError( *tuple( six.PY3 and e.args or ( e._message, ) ) ), sys.exc_info()[2])
+                        raise
                     else:
                         raise utils.IntegrityError, utils.IntegrityError( *tuple( e ) ), sys.exc_info()[2]
                 except DatabaseError, e:
                     if (djangoVersion[0:2] >= (1, 5)):
-                        six.reraise(utils.DatabaseError, utils.DatabaseError( *tuple( e ) ), sys.exc_info()[2])
+                        six.reraise(utils.DatabaseError, utils.DatabaseError( *tuple( six.PY3 and e.args or ( e._message, ) ) ), sys.exc_info()[2])
+                        raise
                     else:
                         raise utils.DatabaseError, utils.DatabaseError( *tuple( e ) ), sys.exc_info()[2] 
         except ( IndexError, TypeError ):

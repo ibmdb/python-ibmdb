@@ -24,50 +24,68 @@ try:
 except ImportError, e:
     from django.core.exceptions import ImproperlyConfigured
     raise ImproperlyConfigured( "Error loading zxJDBC module: %s" % e )
+# For checking django's version
+from django import VERSION as djangoVersion
 
 DatabaseError = zxJDBC.DatabaseError
 IntegrityError = zxJDBC.IntegrityError
+if ( djangoVersion[0:2] >= ( 1, 6 )):
+    Error = zxJDBC.Error
+    InterfaceError = zxJDBC.InterfaceError
+    DataError = zxJDBC.DataError
+    OperationalError = zxJDBC.OperationalError
+    InternalError = zxJDBC.InternalError
+    ProgrammingError = zxJDBC.ProgrammingError
+    NotSupportedError = zxJDBC.NotSupportedError
 
 class DatabaseWrapper( object ):
-    # Over-riding _cursor method to return DB2 cursor.
-    def _cursor( self, connection, kwargs ):
-        if not connection: 
-            self.connectionFactory = kwargs.get( 'options' ) and kwargs.get( 'options' ).get( 'CONNECTION_FACTORY' ) or None
-            if self.connectionFactory:
-                con = self.connectionFactory.getConnection()
-                connection = PyConnection( con )
-            else:
-                host = kwargs.get( 'host' ) or 'localhost'
-                port = kwargs.get( 'port' ) and ( ':%s' % kwargs.get( 'port' )) or ''
-                DriverType = 4
-                kwargsKeys = kwargs.keys()
-                if kwargsKeys.__contains__( 'DriverType' ):
-                    DriverType = kwargs['DriverType']
-                if DriverType == 4:
-                    conn_string = "jdbc:db2://%s%s/%s" % ( host, port, kwargs.get( 'database' ) )
-                elif DriverType == 2:
-                    conn_string = "jdbc:db2:%s" % ( kwargs.get( 'database' ) )
-                else:
-                    raise ImproperlyConfigured( "Wrong Driver type" )
-                
-                # for Setting default AUTO COMMIT off on connection.
-                autocommit = False
-                
-                if kwargs.get( 'options' ) and kwargs.get( 'options' ).keys().__contains__( 'autocommit' ):
-                    autocommit = kwargs.get( 'options' ).get( 'autocommit' )
-                    del kwargs.get( 'options' )['autocommit']
-                    
-                connection = zxJDBC.connect( conn_string,
-                                               kwargs.get( 'user' ),
-                                               kwargs.get( 'password' ),
-                                               'com.ibm.db2.jcc.DB2Driver', kwargs.get( 'options' ) )
-                
-                # To prevent dirty reads 
-                self.__prevent_dirty_reads( connection )
-                connection.__connection__.setAutoCommit( autocommit )
-            return connection, DB2CursorWrapper( connection.cursor() )
+    # Get new database connection for non persistance connection 
+    def get_new_connection(self, kwargs):
+        self.connectionFactory = kwargs.get( 'options' ) and kwargs.get( 'options' ).get( 'CONNECTION_FACTORY' ) or None
+        if self.connectionFactory:
+            con = self.connectionFactory.getConnection()
+            connection = PyConnection( con )
         else:
-            return DB2CursorWrapper( connection.cursor() ) 
+            host = kwargs.get( 'host' ) or 'localhost'
+            port = kwargs.get( 'port' ) and ( ':%s' % kwargs.get( 'port' )) or ''
+            DriverType = 4
+            kwargsKeys = kwargs.keys()
+            if kwargsKeys.__contains__( 'DriverType' ):
+                DriverType = kwargs['DriverType']
+            if DriverType == 4:
+                conn_string = "jdbc:db2://%s%s/%s" % ( host, port, kwargs.get( 'database' ) )
+            elif DriverType == 2:
+                conn_string = "jdbc:db2:%s" % ( kwargs.get( 'database' ) )
+            else:
+                raise ImproperlyConfigured( "Wrong Driver type" )
+            
+            # for Setting default AUTO COMMIT off on connection.
+            autocommit = False
+            
+            if kwargs.get( 'options' ) and kwargs.get( 'options' ).keys().__contains__( 'autocommit' ):
+                autocommit = kwargs.get( 'options' ).get( 'autocommit' )
+                del kwargs.get( 'options' )['autocommit']
+                
+            connection = zxJDBC.connect( conn_string,
+                                           kwargs.get( 'user' ),
+                                           kwargs.get( 'password' ),
+                                           'com.ibm.db2.jcc.DB2Driver', kwargs.get( 'options' ) )
+            # To prevent dirty reads
+            self.__prevent_dirty_reads( connection )
+            connection.__connection__.setAutoCommit( autocommit )
+        return connection
+        
+    def is_active( self, connection ):
+        cursor = connection.cursor()
+        try:
+            cursor.execute("select 1 from sysibm.sysdummy1")
+            return True
+        except:
+            return False
+            
+    # Over-riding _cursor method to return DB2 cursor.
+    def _cursor( self, connection):
+        return DB2CursorWrapper( connection.cursor() ) 
         
     def close( self, connection ):
         if self.connectionFactory:

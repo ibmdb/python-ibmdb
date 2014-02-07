@@ -51,7 +51,6 @@ class DatabaseIntrospection( BaseDatabaseIntrospection ):
                 Database.DATE :             "DateField",
                 Database.TIME :             "TimeField",
                 Database.DATETIME :         "DateTimeField",
-                Database.BINARY :           "ImageField",
             }
         else:
             data_types_reverse = {
@@ -65,15 +64,15 @@ class DatabaseIntrospection( BaseDatabaseIntrospection ):
                 Database.DATE :             "DateField",
                 Database.TIME :             "TimeField",
                 Database.DATETIME :         "DateTimeField",
-                Database.BINARY :           "ImageField",
+                Database.BINARY :           "BinaryField",
             }
     else:
         data_types_reverse = {
             zxJDBC.CHAR:                "CharField",
             zxJDBC.BIGINT:              "BigIntegerField",
-            zxJDBC.BINARY:              "ImageField",
+            zxJDBC.BINARY:              "BinaryField",
             zxJDBC.BIT:                 "SmallIntegerField",
-            zxJDBC.BLOB:                "ImageField",
+            zxJDBC.BLOB:                "BinaryField",
             zxJDBC.CLOB:                "TextField",
             zxJDBC.DATE:                "DateField",
             zxJDBC.DECIMAL:             "DecimalField",
@@ -145,13 +144,42 @@ class DatabaseIntrospection( BaseDatabaseIntrospection ):
                 #col[16] is index of column in table
                 return col[16] - 1
     
+    def get_key_columns(self, cursor, table_name):
+        relations = []
+        if not _IS_JYTHON:
+            schema = cursor.connection.get_current_schema()
+            for fk in cursor.connection.foreign_keys( True, schema, table_name ):
+                relations.append( (fk['FKCOLUMN_NAME'].lower(), fk['PKTABLE_NAME'].lower(), fk['PKCOLUMN_NAME'].lower()) )
+        else:
+            cursor.execute( "select current_schema from sysibm.sysdummy1" )
+            schema = cursor.fetchone()[0]
+            # foreign_keys(String primaryCatalog, String primarySchema, String primaryTable, String foreignCatalog, String foreignSchema, String foreignTable) 
+            # gives a description of the foreign key columns in the foreign key table that reference the primary key columns 
+            # of the primary key table (describe how one table imports another's key.) This should normally return a single foreign key/primary key pair 
+            # (most tables only import a foreign key from a table once.) They are ordered by FKTABLE_CAT, FKTABLE_SCHEM, FKTABLE_NAME, and KEY_SEQ
+            cursor.foreignkeys( None, schema, table_name, None, '%', '%' )
+            for fk in cursor.fetchall():
+                # fk[2] is primary key table name, fk[3] is primary key column name, fk[7] is foreign key column name being exported
+                relations.append( (fk[7], fk[2], fk[3]) )
+        return relations
+        
     # Getting list of indexes associated with the table provided.
     def get_indexes( self, cursor, table_name ):
         indexes = {}
+        # To skip indexes across multiple fields
+        multifield_indexSet = set()
         if not _IS_JYTHON:
             schema = cursor.connection.get_current_schema()
-            for index in cursor.connection.indexes( True, schema, table_name ):
+            all_indexes = cursor.connection.indexes( True, schema, table_name )
+            for index in all_indexes:
+                if (index['ORDINAL_POSITION'] is not None) and (index['ORDINAL_POSITION']== 2):
+                    multifield_indexSet.add(index['INDEX_NAME'])
+                    
+            for index in all_indexes:
                 temp = {}
+                if index['INDEX_NAME'] in multifield_indexSet:
+                    continue
+                
                 if ( index['NON_UNIQUE'] ):
                     temp['unique'] = False
                 else:
@@ -166,8 +194,17 @@ class DatabaseIntrospection( BaseDatabaseIntrospection ):
             schema = cursor.fetchone()[0]
             # statistics(String catalog, String schema, String table, boolean unique, boolean approximate) returns a description of a table's indices and statistics. 
             cursor.statistics( None, schema, table_name, 0, 0 )
-            for index in cursor.fetchall():
+            all_indexes = cursor.fetchall()
+            for index in all_indexes:
+                #index[7] indicate ORDINAL_POSITION within index, and index[5] is index name
+                if index[7] == 2:
+                    multifield_indexSet.add(index[5])
+                    
+            for index in all_indexes:
                 temp = {}
+                if index[5] in multifield_indexSet:
+                    continue
+                
                 # index[3] indicate non-uniqueness of column
                 if ( index[3] != None ):
                     if ( index[3] ) == 1:

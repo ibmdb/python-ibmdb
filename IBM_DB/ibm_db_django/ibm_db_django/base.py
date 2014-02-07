@@ -37,15 +37,26 @@ from ibm_db_django.creation import DatabaseCreation
 from ibm_db_django.introspection import DatabaseIntrospection
 from ibm_db_django.operations import DatabaseOperations
 if not _IS_JYTHON:
-    import ibm_db_django.pybase as Database
+    import ibm_db_django.pybase as Base
+    import ibm_db_dbi as Database
 else:
-    import ibm_db_django.jybase as Database
+    import ibm_db_django.jybase as Base
+    from com.ziclix.python.sql import zxJDBC as Database
     
 # For checking django's version
 from django import VERSION as djangoVersion
 
 DatabaseError = Database.DatabaseError
 IntegrityError = Database.IntegrityError
+if ( djangoVersion[0:2] >= ( 1, 6 )):
+    Error = Database.Error
+    InterfaceError = Database.InterfaceError
+    DataError = Database.DataError
+    OperationalError = Database.OperationalError
+    InternalError = Database.InternalError
+    ProgrammingError = Database.ProgrammingError
+    NotSupportedError = Database.NotSupportedError
+    
 
 if _IS_JYTHON:
     dbms_name = 'dbname'
@@ -78,6 +89,8 @@ class DatabaseFeatures( BaseDatabaseFeatures ):
     has_select_for_update = True
     supports_long_model_names = False
     can_distinct_on_fields = False
+    supports_paramstyle_pyformat = False
+    supports_sequence_reset = True
     
 class DatabaseValidation( BaseDatabaseValidation ):    
     #Need to do validation for DB2 and ibm_db version
@@ -106,7 +119,8 @@ class DatabaseWrapper( BaseDatabaseWrapper ):
         "istartswith":  "LIKE %s ESCAPE '\\'",
         "iendswith":    "LIKE %s ESCAPE '\\'",
     }
-
+    if( djangoVersion[0:2] >= ( 1, 6 ) ):
+        Database = Database
     # Constructor of DB2 backend support. Initializing all other classes.
     def __init__( self, *args ):
         super( DatabaseWrapper, self ).__init__( *args )
@@ -125,84 +139,112 @@ class DatabaseWrapper( BaseDatabaseWrapper ):
             self.validation = DatabaseValidation()
         else:
             self.validation = DatabaseValidation( self )
-        self.databaseWrapper = Database.DatabaseWrapper()
+        self.databaseWrapper = Base.DatabaseWrapper()
     
     # Method to check if connection is live or not.
     def __is_connection( self ):
         return self.connection is not None
-        
-    # Over-riding _cursor method to return DB2 cursor.
-    def _cursor( self, settings = None ):
-        if not self.__is_connection():
-            kwargs = { }
-            if ( djangoVersion[0:2] <= ( 1, 0 ) ):
-                database_name = settings.DATABASE_NAME
-                database_user = settings.DATABASE_USER
-                database_pass = settings.DATABASE_PASSWORD
-                database_host = settings.DATABASE_HOST
-                database_port = settings.DATABASE_PORT
-                database_options = settings.DATABASE_OPTIONS
-            elif ( djangoVersion[0:2] <= ( 1, 1 ) ):
-                settings_dict = self.settings_dict
-                database_name = settings_dict['DATABASE_NAME']
-                database_user = settings_dict['DATABASE_USER']
-                database_pass = settings_dict['DATABASE_PASSWORD']
-                database_host = settings_dict['DATABASE_HOST']
-                database_port = settings_dict['DATABASE_PORT']
-                database_options = settings_dict['DATABASE_OPTIONS']
-            else:
-                settings_dict = self.settings_dict
-                database_name = settings_dict['NAME']
-                database_user = settings_dict['USER']
-                database_pass = settings_dict['PASSWORD']
-                database_host = settings_dict['HOST']
-                database_port = settings_dict['PORT']
-                database_options = settings_dict['OPTIONS']
-            
-            if database_name != '' and isinstance( database_name, basestring ):
-                kwargs['database'] = database_name
-            else:
-                raise ImproperlyConfigured( "Please specify the valid database Name to connect to" )
-                
-            if isinstance( database_user, basestring ):
-                kwargs['user'] = database_user
-            
-            if isinstance( database_pass, basestring ):
-                kwargs['password'] = database_pass
-            
-            if isinstance( database_host, basestring ):
-                kwargs['host'] = database_host
-            
-            if isinstance( database_port, basestring ):
-                kwargs['port'] = database_port
-                
-            if isinstance( database_host, basestring ):
-                kwargs['host'] = database_host
-            
-            if isinstance( database_options, dict ):
-                kwargs['options'] = database_options
-            
-            if ( djangoVersion[0:2] <= ( 1, 0 ) ):
-               if( hasattr( settings, 'PCONNECT' ) ):
-                   kwargs['PCONNECT'] = settings.PCONNECT
-            else:
-                if ( settings_dict.keys() ).__contains__( 'PCONNECT' ):
-                    kwargs['PCONNECT'] = settings_dict['PCONNECT']
-            self.connection, cursor = self.databaseWrapper._cursor( None, kwargs )
-            
-            if( djangoVersion[0:3] <= ( 1, 2, 2 ) ):
-                connection_created.send( sender = self.__class__ )
-            else:
-                connection_created.send( sender = self.__class__, connection = self )
+    
+    # To get dict of connection parameters 
+    def get_connection_params(self):
+        kwargs = { }
+        if ( djangoVersion[0:2] <= ( 1, 0 ) ):
+            database_name = self.settings.DATABASE_NAME
+            database_user = self.settings.DATABASE_USER
+            database_pass = self.settings.DATABASE_PASSWORD
+            database_host = self.settings.DATABASE_HOST
+            database_port = self.settings.DATABASE_PORT
+            database_options = self.settings.DATABASE_OPTIONS
+        elif ( djangoVersion[0:2] <= ( 1, 1 ) ):
+            settings_dict = self.settings_dict
+            database_name = settings_dict['DATABASE_NAME']
+            database_user = settings_dict['DATABASE_USER']
+            database_pass = settings_dict['DATABASE_PASSWORD']
+            database_host = settings_dict['DATABASE_HOST']
+            database_port = settings_dict['DATABASE_PORT']
+            database_options = settings_dict['DATABASE_OPTIONS']
         else:
-            cursor = self.databaseWrapper._cursor( self.connection, None )
+            settings_dict = self.settings_dict
+            database_name = settings_dict['NAME']
+            database_user = settings_dict['USER']
+            database_pass = settings_dict['PASSWORD']
+            database_host = settings_dict['HOST']
+            database_port = settings_dict['PORT']
+            database_options = settings_dict['OPTIONS']
+        
+        if database_name != '' and isinstance( database_name, basestring ):
+            kwargs['database'] = database_name
+        else:
+            raise ImproperlyConfigured( "Please specify the valid database Name to connect to" )
             
-        if getattr(self.connection, dbms_name) == 'DB2':
+        if isinstance( database_user, basestring ):
+            kwargs['user'] = database_user
+        
+        if isinstance( database_pass, basestring ):
+            kwargs['password'] = database_pass
+        
+        if isinstance( database_host, basestring ):
+            kwargs['host'] = database_host
+        
+        if isinstance( database_port, basestring ):
+            kwargs['port'] = database_port
+            
+        if isinstance( database_host, basestring ):
+            kwargs['host'] = database_host
+        
+        if isinstance( database_options, dict ):
+            kwargs['options'] = database_options
+        
+        if ( djangoVersion[0:2] <= ( 1, 0 ) ):
+           if( hasattr( settings, 'PCONNECT' ) ):
+               kwargs['PCONNECT'] = settings.PCONNECT
+        else:
+            if ( settings_dict.keys() ).__contains__( 'PCONNECT' ):
+                kwargs['PCONNECT'] = settings_dict['PCONNECT']
+        return kwargs
+    
+    # To get new connection from Database
+    def get_new_connection(self, conn_params):
+        connection = self.databaseWrapper.get_new_connection(conn_params)
+        if getattr(connection, dbms_name) == 'DB2':
             self.features.has_bulk_insert = False
         else:
-            self.features.has_bulk_insert = True    
-        return cursor
-    
+            self.features.has_bulk_insert = True
+        return connection
+        
+    # Over-riding _cursor method to return DB2 cursor.
+    if ( djangoVersion[0:2] < ( 1, 6 )):
+        def _cursor( self, settings = None ):
+            if not self.__is_connection():
+                if ( djangoVersion[0:2] <= ( 1, 0 ) ):
+                    self.settings = settings
+                    
+                self.connection = self.get_new_connection(self.get_connection_params())
+                cursor = self.databaseWrapper._cursor(self.connection)
+                
+                if( djangoVersion[0:3] <= ( 1, 2, 2 ) ):
+                    connection_created.send( sender = self.__class__ )
+                else:
+                    connection_created.send( sender = self.__class__, connection = self )
+            else:
+                cursor = self.databaseWrapper._cursor( self.connection )  
+            return cursor
+    else:
+        def create_cursor( self ):
+            return self.databaseWrapper._cursor( self.connection )
+            
+        def init_connection_state( self ):
+            pass
+        
+        def is_usable(self):
+            if self.databaseWrapper.is_active(connection):
+                return True
+            else:
+                return False
+            
+    def _set_autocommit(self, autocommit):
+        self.connection.set_autocommit( autocommit )
+     
     def close( self ):
         if( djangoVersion[0:2] >= ( 1, 5 ) ):
             self.validate_thread_sharing()

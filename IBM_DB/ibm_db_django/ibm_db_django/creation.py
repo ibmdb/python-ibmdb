@@ -70,6 +70,7 @@ class DatabaseCreation ( BaseDatabaseCreation ):
         'USStateField':                 'VARCHAR(2)',
         'URLField':                     'VARCHAR2(%(max_length)s)',
         'XMLField':                     'XML',
+        'BinaryField':                  'BLOB',
     }
     
     def sql_indexes_for_field( self, model, f, style ):
@@ -212,7 +213,7 @@ class DatabaseCreation ( BaseDatabaseCreation ):
             self.connection.settings_dict['NAME'] = test_database
             self.connection.settings_dict['PCONNECT'] = False     
             # Confirm the feature set of the test database
-            if( ( 1, 2 ) <= djangoVersion[0:2] < (1,5) ):
+            if( ( 1, 2 ) < djangoVersion[0:2] < (1,5) ):
                 self.connection.features.confirm()
             
             call_command( 'syncdb', database = self.connection.alias, verbosity = verbosity, interactive = False, load_initial_data = False )

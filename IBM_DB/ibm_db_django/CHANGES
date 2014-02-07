@@ -1,12 +1,24 @@
 Change Log
 =============
+2014/02/06 (setup.py 1.0.6)
+ - Added support for Django-1.6, with backward compatibility
+ - Added support for Django's persistence connection
+ - Added cache culling sql for IBM databases to retrieves the first cache key greater than the n smallest
+ - Added time zone-aware day, month and day-of-week lookups
+ - Added time zone-aware truncated timestamps on the basis of lookup type
+ - Enhanced Regex lookup implementation to add non string field regex lookup
+ - Added support for sequence reset by sequence name
+ - Added support to get list of keys columns of a given table
+ - Changed the implementation to remove multi field indexes from index list
+ - Added new setting property FETCH_DISTINCT_ON_TEXT, if one set it to False then 'DISTINCT' will get removed silently from select query when it contains LOB values in projection list.
+ 
 2013/05/10 (setup.py 1.0.5)
- - Added support for Django-1.5, with backward compatibilty
+ - Added support for Django-1.5, with backward compatibility
  - Added support for regrex lookup
  
 2012/05/15 (setup.py 1.0.4)
  - Added support for Django-1.4
- - Backward compatibilty - Same codebase works with older supported version of Django 
+ - Backward compatibility - Same codebase works with older supported version of Django 
  - Added support to enable Django's USE_TZ feature
  - Added support for Django's bulk_create
  - Added support for 'SELECT FOR UPDATE'

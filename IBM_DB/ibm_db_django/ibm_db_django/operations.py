@@ -19,8 +19,15 @@
 from django.db.backends import BaseDatabaseOperations
 from ibm_db_django import query
 from django import VERSION as djangoVersion
-import sys
-
+import sys, datetime
+try:
+    import pytz
+except ImportError:
+    pytz = None
+    
+if ( djangoVersion[0:2] > ( 1, 1 ) ):
+    from django.db import utils
+    
 _IS_JYTHON = sys.platform.startswith( 'java' )
 if( djangoVersion[0:2] >= ( 1, 4 ) ):
     from django.utils.timezone import is_aware, is_naive, utc 
@@ -41,7 +48,12 @@ class DatabaseOperations ( BaseDatabaseOperations ):
         
     if( djangoVersion[0:2] >= ( 1, 2 ) ):
         compiler_module = "ibm_db_django.compiler"
-            
+    
+    def cache_key_culling_sql(self):
+        return '''SELECT cache_key 
+                    FROM (SELECT cache_key, ( ROW_NUMBER() OVER() ) AS ROWNUM FROM %s ORDER BY cache_key)
+                    WHERE ROWNUM = %%s + 1
+        '''
     def check_aggregate_support( self, aggregate ):
         # In DB2 data type of the result is the same as the data type of the argument values for AVG aggregation
         # But Django aspect in Float regardless of data types of argument value
@@ -86,8 +98,41 @@ class DatabaseOperations ( BaseDatabaseOperations ):
             return " DAYOFWEEK(%s) " % ( field_name )
         else:
             return " %s(%s) " % ( lookup_type.upper(), field_name )
-     
-    # Rounding of date on the basic of looktype.
+    
+    def _get_utcoffset(self, tzname):
+        if pytz is None and tzname is not None:
+            NotSupportedError("Not supported without pytz")
+        else:
+            hr = 0
+            min = 0
+            tz = pytz.timezone(tzname)
+            td = tz.utcoffset(datetime.datetime(2012,1,1))
+            if td.days is -1:
+                min = (td.seconds % (60*60))/60 - 60
+                if min:
+                    hr = td.seconds/(60*60) - 23
+                else:
+                    hr = td.seconds/(60*60) - 24
+            else:
+                hr = td.seconds/(60*60)
+                min = (td.seconds % (60*60))/60
+            return hr, min
+            
+    # Function to extract time zone-aware day, month or day of week from timestamps   
+    def datetime_extract_sql(self, lookup_type, field_name, tzname):
+        if settings.USE_TZ:
+            hr, min = self._get_utcoffset(tzname)
+            if hr < 0:
+                field_name = "%s - %s HOURS - %s MINUTES" % (field_name, -hr, -min)
+            else:
+                field_name = "%s + %s HOURS + %s MINUTES" % (field_name, hr, min)
+                
+        if lookup_type.upper() == 'WEEK_DAY':
+            return " DAYOFWEEK(%s) " % ( field_name ), []
+        else:
+            return " %s(%s) " % ( lookup_type.upper(), field_name ), []
+            
+    # Truncating the date value on the basic of lookup type.
     # e.g If input is 2008-12-04 and month then output will be 2008-12-01 00:00:00
     # Reference: http://www.ibm.com/developerworks/data/library/samples/db2/0205udfs/index.html
     def date_trunc_sql( self, lookup_type, field_name ):
@@ -98,9 +143,34 @@ class DatabaseOperations ( BaseDatabaseOperations ):
             sql = sql % ( field_name, 7, '-01' )
         elif lookup_type.upper() == 'YEAR':
             sql = sql % ( field_name, 4, '-01-01' )
-
-        return sql
+        if( djangoVersion[0:2] < ( 1, 6 ) ):
+            return sql
+        else:
+            return sql
     
+    # Truncating the time zone-aware timestamps value on the basic of lookup type
+    def datetime_trunc_sql( self, lookup_type, field_name, tzname ):
+        sql = "TIMESTAMP(SUBSTR(CHAR(%s), 1, %d) || '%s')"
+        if settings.USE_TZ:
+            hr, min = self._get_utcoffset(tzname)
+            if hr < 0:
+                field_name = "%s - %s HOURS - %s MINUTES" % (field_name, -hr, -min)
+            else:
+                field_name = "%s + %s HOURS + %s MINUTES" % (field_name, hr, min)
+        if lookup_type.upper() == 'SECOND':
+            sql = sql % ( field_name, 19, '.000000' )
+        if lookup_type.upper() == 'MINUTE':
+            sql = sql % ( field_name, 16, '.00.000000' )
+        elif lookup_type.upper() == 'HOUR':
+            sql = sql % ( field_name, 13, '.00.00.000000' )
+        elif lookup_type.upper() == 'DAY':
+            sql = sql % ( field_name, 10, '-00.00.00.000000' )
+        elif lookup_type.upper() == 'MONTH':
+            sql = sql % ( field_name, 7, '-01-00.00.00.000000' )
+        elif lookup_type.upper() == 'YEAR':
+            sql = sql % ( field_name, 4, '-01-01-00.00.00.000000' )
+        return sql, []
+        
     # Function to Implements the date interval functionality for expressions
     def date_interval_sql( self, sql, connector, timedelta ):
         date_interval_token = []
@@ -132,7 +202,7 @@ class DatabaseOperations ( BaseDatabaseOperations ):
         return "ALTER TABLE %s ALTER COLUMN ID DROP IDENTITY" % ( self.quote_name( table ) )
     
     #This function casts the field and returns it for use in the where clause
-    def field_cast_sql( self, db_type ):
+    def field_cast_sql( self, db_type, internal_type=None ):
         if db_type == 'CLOB':
             return "VARCHAR(%s, 4096)"
         else:
@@ -203,9 +273,9 @@ class DatabaseOperations ( BaseDatabaseOperations ):
     
     def regex_lookup(self, lookup_type):
         if lookup_type == 'regex':
-            return '''xmlcast( xmlquery('fn:matches($c, "%%s")' passing %s as "c") as varchar(5)) = 'true' db2regexExtraField(%s)'''
+            return '''xmlcast( xmlquery('fn:matches(xs:string($c), "%%s")' passing %s as "c") as varchar(5)) = 'true' db2regexExtraField(%s)'''
         else:
-            return '''xmlcast( xmlquery('fn:matches($c, "%%s", "i")' passing %s as "c") as varchar(5)) = 'true' db2regexExtraField(%s)'''
+            return '''xmlcast( xmlquery('fn:matches(xs:string($c), "%%s", "i")' passing %s as "c") as varchar(5)) = 'true' db2regexExtraField(%s)'''
         
     # As save-point is supported by DB2, following function will return SQL to create savepoint.
     def savepoint_create_sql( self, sid ):
@@ -221,7 +291,7 @@ class DatabaseOperations ( BaseDatabaseOperations ):
     
     # Deleting all the rows from the list of tables provided and resetting all the
     # sequences.
-    def sql_flush( self, style, tables, sequences ):
+    def sql_flush( self, style, tables, sequences, allow_cascade=False ):
         curr_schema = self.connection.connection.get_current_schema().upper()
         sqls = []
         if tables:
@@ -354,6 +424,16 @@ class DatabaseOperations ( BaseDatabaseOperations ):
             
         return sqls
     
+    # Returns sqls to reset the passed sequences
+    def sequence_reset_by_name_sql(self, style, sequences):
+        sqls = []
+        for seq in sequences:
+            sqls.append( style.SQL_KEYWORD( "ALTER TABLE" ) + " " + 
+                         style.SQL_TABLE( "%s" % self.quote_name( seq.get('table') ) ) +
+                         " " + style.SQL_KEYWORD( "ALTER COLUMN" ) + " %s " % self.quote_name( seq.get('column') ) + 
+                         style.SQL_KEYWORD( "RESTART WITH %s" % ( 1 ) ))
+        return sqls
+    
     def tablespace_sql( self, tablespace, inline = False ):
         # inline is used for column indexes defined in-line with column definition, like:
         #   CREATE TABLE "TABLE1" ("ID_OTHER" VARCHAR(20) NOT NULL UNIQUE) IN "TABLESPACE1";
@@ -400,9 +480,9 @@ class DatabaseOperations ( BaseDatabaseOperations ):
                 return value
                     
     def year_lookup_bounds_for_date_field( self, value ):
-        lower_bound = "%s-01-01"
-        upper_bound = "%s-12-31"
-        return [lower_bound % value, upper_bound % value]
+        lower_bound = datetime.date(long(value), 1, 1)
+        upper_bound = datetime.date(long(value), 12, 31)
+        return [lower_bound, upper_bound]
     
     def bulk_insert_sql(self, fields, num_values):
         values_sql = "( %s )" %(", ".join( ["%s"] * len(fields)))
@@ -412,7 +492,10 @@ class DatabaseOperations ( BaseDatabaseOperations ):
     def for_update_sql(self, nowait=False):
         #DB2 doesn't support nowait select for update
         if nowait:
-            raise ValueError( "Nowait Select for update not supported " )
+            if ( djangoVersion[0:2] > ( 1, 1 ) ):
+                raise utils.DatabaseError( "Nowait Select for update not supported " )
+            else:
+                raise ValueError( "Nowait Select for update not supported " )
         else:
             return 'WITH RS USE AND KEEP UPDATE LOCKS'
 

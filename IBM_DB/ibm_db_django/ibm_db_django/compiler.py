@@ -23,6 +23,8 @@ if sys.version_info >= (3, ):
         from itertools import zip_longest
     except ImportError:
         from itertools import izip_longest as zip_longest
+# For checking django's version
+from django import VERSION as djangoVersion
         
 class SQLCompiler( compiler.SQLCompiler ):
     __rownum = 'Z.__ROWNUM'
@@ -30,6 +32,17 @@ class SQLCompiler( compiler.SQLCompiler ):
     # To get ride of LIMIT/OFFSET problem in DB2, this method has been implemented.
     def as_sql( self, with_limits = True, with_col_aliases = False ):
         self.__do_filter( self.query.where.children )
+        self.pre_sql_setup()
+        if self.query.distinct:
+            if ((self.connection.settings_dict.keys()).__contains__('FETCH_DISTINCT_ON_TEXT')) and not self.connection.settings_dict['FETCH_DISTINCT_ON_TEXT']:
+                out_cols = self.get_columns(False)
+                for col in out_cols:
+                    col = col.split(".")[1].replace('"', '').lower()
+                    field = self.query.model._meta.get_field_by_name(col)[0]
+                    fieldType = field.get_internal_type()
+                    if fieldType == 'TextField':
+                        self.query.distinct = False
+                        break
         if not ( with_limits and ( self.query.high_mark is not None or self.query.low_mark ) ):
             return super( SQLCompiler, self ).as_sql( False, with_col_aliases )
         else:
@@ -37,6 +50,8 @@ class SQLCompiler( compiler.SQLCompiler ):
                 return '', ()
             
             sql_ori, params = super( SQLCompiler, self ).as_sql( False, with_col_aliases )
+            if self.query.low_mark is 0:
+                return sql_ori + " FETCH FIRST %s ROWS ONLY" % ( self.query.high_mark ), params
             sql_split = sql_ori.split( " FROM " )
             
             sql_sec = ""
@@ -144,3 +159,6 @@ class SQLAggregateCompiler( compiler.SQLAggregateCompiler, SQLCompiler ):
 class SQLDateCompiler( compiler.SQLDateCompiler, SQLCompiler ):
     pass
 
+if ( djangoVersion[0:2] >= ( 1, 6 )):
+    class SQLDateTimeCompiler(compiler.SQLDateTimeCompiler, SQLCompiler):
+        pass
