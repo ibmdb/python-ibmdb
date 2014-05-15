@@ -237,7 +237,7 @@ class DatabaseWrapper( BaseDatabaseWrapper ):
             pass
         
         def is_usable(self):
-            if self.databaseWrapper.is_active(connection):
+            if self.databaseWrapper.is_active( self.connection ):
                 return True
             else:
                 return False
