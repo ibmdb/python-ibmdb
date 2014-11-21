@@ -1,7 +1,7 @@
 # +--------------------------------------------------------------------------+
 # |  Licensed Materials - Property of IBM                                    |
 # |                                                                          |
-# | (C) Copyright IBM Corporation 2009-2013.                                      |
+# | (C) Copyright IBM Corporation 2009-2014.                                      |
 # +--------------------------------------------------------------------------+
 # | This module complies with Django 1.0 and is                              |
 # | Licensed under the Apache License, Version 2.0 (the "License");          |
@@ -46,6 +46,9 @@ else:
 # For checking django's version
 from django import VERSION as djangoVersion
 
+if ( djangoVersion[0:2] >= ( 1, 7 )):
+    from ibm_db_django.schemaEditor import DB2SchemaEditor
+
 DatabaseError = Database.DatabaseError
 IntegrityError = Database.IntegrityError
 if ( djangoVersion[0:2] >= ( 1, 6 )):
@@ -64,7 +67,7 @@ else:
     dbms_name = 'dbms_name'
     
 class DatabaseFeatures( BaseDatabaseFeatures ):    
-    can_use_chunked_reads = False
+    can_use_chunked_reads = True
     
     #Save point is supported by DB2.
     uses_savepoints = True
@@ -78,6 +81,7 @@ class DatabaseFeatures( BaseDatabaseFeatures ):
     
     supports_tablespaces = True
     
+    uppercases_column_names = True
     interprets_empty_strings_as_nulls = False
     allows_primary_key_0 = True
     can_defer_constraint_checks = False
@@ -91,6 +95,17 @@ class DatabaseFeatures( BaseDatabaseFeatures ):
     can_distinct_on_fields = False
     supports_paramstyle_pyformat = False
     supports_sequence_reset = True
+    #DB2 doesn't take default values as parameter
+    requires_literal_defaults = True
+    has_case_insensitive_like = True
+    can_introspect_big_integer_field = True
+    can_introspect_boolean_field = False
+    can_introspect_positive_integer_field = False
+    can_introspect_small_integer_field = True
+    can_introspect_null = True
+    can_introspect_max_length = True
+    can_introspect_ip_address_field = False
+    can_introspect_time_field = True
     
 class DatabaseValidation( BaseDatabaseValidation ):    
     #Need to do validation for DB2 and ibm_db version
@@ -256,6 +271,9 @@ class DatabaseWrapper( BaseDatabaseWrapper ):
         if not self.connection:
             self.cursor()
         return self.databaseWrapper.get_server_version( self.connection )
+    
+    def schema_editor(self, *args, **kwargs):
+        return DB2SchemaEditor(self, *args, **kwargs)
    
     
     

@@ -1,7 +1,7 @@
 # +--------------------------------------------------------------------------+
 # |  Licensed Materials - Property of IBM                                    |
 # |                                                                          |
-# | (C) Copyright IBM Corporation 2009-2013.                                      |
+# | (C) Copyright IBM Corporation 2009-2014.                                      |
 # +--------------------------------------------------------------------------+
 # | This module complies with Django 1.0 and is                              |
 # | Licensed under the Apache License, Version 2.0 (the "License");          |
@@ -80,6 +80,8 @@ class DatabaseOperations ( BaseDatabaseOperations ):
             return 'BITAND(%s, %s)' % ( sub_expressions[0], sub_expressions[1] )
         elif operator == '|': 
             return 'BITOR(%s, %s)' % ( sub_expressions[0], sub_expressions[1] )
+        elif operator == '^':
+            return 'POWER(%s, %s)' % ( sub_expressions[0], sub_expressions[1] )
         else:
             return super( DatabaseOperations, self ).combine_expression( operator, sub_expressions )
     

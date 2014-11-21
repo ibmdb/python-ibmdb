@@ -1,6 +1,13 @@
 Change Log
 =============
-2014/02/06 (setup.py 1.0.6)
+2014/11/21 (setup.py 1.0.7)
+ - Added support for Django-1.7, with backward compatibility
+ - Added Schema migration support for Django's schema migration implementation
+ - Added support to get SmallIntegerField field reverse mapping
+ - Added support to get all the constraints from given table
+ - Added Django's power operator('^') support in query
+
+2014/02/07 (setup.py 1.0.6)
  - Added support for Django-1.6, with backward compatibility
  - Added support for Django's persistence connection
  - Added cache culling sql for IBM databases to retrieves the first cache key greater than the n smallest
