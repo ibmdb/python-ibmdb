@@ -162,3 +162,6 @@ only optimize for N rows issue #2 (defect #154260)
  - Added: SQL_ATTR_INFO_PROGRAMNAME connection attribute (issue #144)
  - Fixed: Unhashable type issue with 'DBAPITypeObject' (issue #145)
  - Fixed: Tests adjustments for IBM Informix (issue #139)  
+ 
+2015/01/01 (setup.py 2.0.5.1, ibm_db-2.0.5.1, ibm_db_dbi-2.0.5.1)
+ - Enhanced installation to pull IBM Data Server Driver automatically if not present
