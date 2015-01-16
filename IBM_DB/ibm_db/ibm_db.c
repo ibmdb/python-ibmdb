@@ -4691,7 +4691,7 @@ static int _python_ibm_db_do_prepare(SQLHANDLE hdbc, SQLWCHAR *stmt, int stmt_si
 	/* alloc handle and return only if it errors */
 	rc = SQLAllocHandle(SQL_HANDLE_STMT, hdbc, &(stmt_res->hstmt));
 	if ( rc == SQL_ERROR ) {
-		_python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, rc, 
+		_python_ibm_db_check_sql_errors(hdbc, SQL_HANDLE_DBC, rc, 
 										1, NULL, -1, 1);
 		return rc;
 	}
