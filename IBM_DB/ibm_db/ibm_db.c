@@ -26,6 +26,7 @@
 #include <Python.h>
 #include <datetime.h>
 #include "ibm_db.h"
+#include "ibm_db_tchar.h"
 #include <ctype.h>
 #ifdef _WIN32
 #include <windows.h>
@@ -38,8 +39,9 @@ static struct _ibm_db_globals *ibm_db_globals;
 
 static void _python_ibm_db_check_sql_errors( SQLHANDLE handle, SQLSMALLINT hType, int rc, int cpy_to_global, char* ret_str, int API, SQLSMALLINT recno );
 static int _python_ibm_db_assign_options( void* handle, int type, long opt_key, PyObject *data );
-static SQLWCHAR* getUnicodeDataAsSQLWCHAR(PyObject *pyobj, int *isNewBuffer);
-static PyObject* getSQLWCharAsPyUnicodeObject(SQLWCHAR* sqlwcharData, int sqlwcharBytesLen);
+
+static SQLTCHAR* getUnicodeDataAsSQLTCHAR(PyObject *pyobj, int *isNewBuffer);
+static PyObject* getSQLTCharAsPyUnicodeObject(SQLTCHAR* str, Py_ssize_t byte_len);
 
 const int _check_i = 1;
 #define is_bigendian() ( (*(char*)&_check_i) == 0 )
@@ -53,12 +55,40 @@ static int is_systemi, is_informix;	  /* 1 == TRUE; 0 == FALSE; */
 #define DLOPEN dlopen
 #define DLSYM dlsym
 #define DLCLOSE dlclose
+#ifndef PASE
 #define LIBDB2 "libdb2.a"
+#else
+#define LIBDB2 "libdb400.a"
+#endif
 #else
 #define DLOPEN dlopen
 #define DLSYM dlsym
 #define DLCLOSE dlclose
 #define LIBDB2 "libdb2.so.1"
+#endif
+
+#ifndef SQL_C_TYPE_DATE
+#define SQL_C_TYPE_DATE SQL_TYPE_DATE
+#endif
+
+#ifndef SQL_C_TYPE_TIME
+#define SQL_C_TYPE_TIME SQL_TYPE_TIME
+#endif
+
+#ifndef SQL_C_TYPE_TIMESTAMP
+#define SQL_C_TYPE_TIMESTAMP SQL_TYPE_TIMESTAMP
+#endif
+
+#ifdef PASE
+// TODO: Remove these definitions
+#define SQL_SCROLL_FORWARD_ONLY 1
+#define SQL_DIAG_CURSOR_ROW_COUNT 2
+#define SQL_ATTR_CHAINING_BEGIN 3
+#define SQL_IS_POINTER 4
+#define SQL_ATTR_CHAINING_END 5
+#define SQL_INDEX_CLUSTERED 6
+#define SQL_ATTR_CURRENT_SCHEMA 7
+#define SQL_ATTR_INFO_PROGRAMNAME 8
 #endif
 
 /* Defines a linked list structure for error messages */
@@ -83,7 +113,7 @@ typedef struct _param_cache_node {
 	SQLINTEGER	  ivalue;		/* Temp storage value */
 	double	fvalue;				/* Temp storage value */
 	char	  *svalue;			/* Temp storage value */
-	SQLWCHAR *uvalue;			/* Temp storage value */
+	SQLTCHAR *uvalue;			/* Temp storage value */
 	DATE_STRUCT *date_value;		/* Temp storage value */
 	TIME_STRUCT *time_value;		/* Temp storage value */
 	TIMESTAMP_STRUCT *ts_value;		/* Temp storage value */
@@ -154,7 +184,7 @@ typedef union {
 	SQLSMALLINT s_val;
 	SQLCHAR *str_val;
 	SQLREAL r_val;
-	SQLWCHAR *w_val;
+	SQLTCHAR *w_val;
 	TIMESTAMP_STRUCT *ts_val;
 	DATE_STRUCT *date_val;
 	TIME_STRUCT *time_val;
@@ -357,12 +387,16 @@ static void _python_ibm_db_free_result_struct(stmt_handle* handle) {
 				switch (handle->column_info[i].type) {
 					case SQL_CHAR:
 					case SQL_VARCHAR:
+#ifndef PASE
 					case SQL_LONGVARCHAR:
+#endif
 					case SQL_WCHAR:
 					case SQL_WVARCHAR:
 					case SQL_GRAPHIC:
 					case SQL_VARGRAPHIC:
+#ifndef PASE
 					case SQL_LONGVARGRAPHIC:
+#endif
 					case SQL_BIGINT:
 					case SQL_DECIMAL:
 					case SQL_NUMERIC:
@@ -533,7 +567,7 @@ static int _python_ibm_db_assign_options( void *handle, int type, long opt_key, 
 {
 	int rc = 0;
 	long option_num = 0;
-	SQLWCHAR *option_str = NULL;
+	SQLTCHAR *option_str = NULL;
 	int isNewBuffer;
 
 	/* First check to see if it is a non-cli attribut */
@@ -576,8 +610,8 @@ static int _python_ibm_db_assign_options( void *handle, int type, long opt_key, 
 	} else if (type == SQL_HANDLE_STMT) {
 		if (PyString_Check(data)|| PyUnicode_Check(data)) {
 			data = PyUnicode_FromObject(data);
-			option_str = getUnicodeDataAsSQLWCHAR(data, &isNewBuffer);
-			rc = SQLSetStmtAttrW((SQLHSTMT)((stmt_handle *)handle)->hstmt, opt_key, (SQLPOINTER)option_str, SQL_IS_INTEGER );
+			option_str = getUnicodeDataAsSQLTCHAR(data, &isNewBuffer);
+			rc = SQLSetStmtAttrT((SQLHSTMT)((stmt_handle *)handle)->hstmt, opt_key, (SQLPOINTER)option_str, SQL_IS_INTEGER );
 			if ( rc == SQL_ERROR ) {
 				_python_ibm_db_check_sql_errors((SQLHSTMT)((stmt_handle *)handle)->hstmt, SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
 			}
@@ -596,8 +630,8 @@ static int _python_ibm_db_assign_options( void *handle, int type, long opt_key, 
 	} else if (type == SQL_HANDLE_DBC) {
 		if (PyString_Check(data)|| PyUnicode_Check(data)) {
 			data = PyUnicode_FromObject(data);
-			option_str = getUnicodeDataAsSQLWCHAR(data, &isNewBuffer);
-			rc = SQLSetConnectAttrW((SQLHSTMT)((conn_handle*)handle)->hdbc, opt_key, (SQLPOINTER)option_str, SQL_NTS);
+			option_str = getUnicodeDataAsSQLTCHAR(data, &isNewBuffer);
+			rc = SQLSetConnectAttrT((SQLHSTMT)((conn_handle*)handle)->hdbc, opt_key, (SQLPOINTER)option_str, SQL_NTS);
 			if ( rc == SQL_ERROR ) {
 				_python_ibm_db_check_sql_errors((SQLHSTMT)((stmt_handle *)handle)->hstmt, SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
 			}
@@ -608,7 +642,7 @@ static int _python_ibm_db_assign_options( void *handle, int type, long opt_key, 
 			option_num = NUM2LONG(data);
 			if (opt_key == SQL_ATTR_AUTOCOMMIT && option_num == SQL_AUTOCOMMIT_OFF) ((conn_handle*)handle)->auto_commit = 0;
 			else if (opt_key == SQL_ATTR_AUTOCOMMIT && option_num == SQL_AUTOCOMMIT_ON) ((conn_handle*)handle)->auto_commit = 1;
-			rc = SQLSetConnectAttrW((SQLHSTMT)((conn_handle*)handle)->hdbc, opt_key, (SQLPOINTER)option_num, SQL_IS_INTEGER);
+			rc = SQLSetConnectAttrT((SQLHSTMT)((conn_handle*)handle)->hdbc, opt_key, (SQLPOINTER)option_num, SQL_IS_INTEGER);
 			if ( rc == SQL_ERROR ) {
 				_python_ibm_db_check_sql_errors((SQLHSTMT)((stmt_handle *)handle)->hstmt, SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
 			}
@@ -763,16 +797,20 @@ static int _python_ibm_db_bind_column_helper(stmt_handle *stmt_res)
 		switch(column_type) {
 			case SQL_CHAR:
 			case SQL_VARCHAR:
+#ifndef PASE
 			case SQL_LONGVARCHAR:
+#endif
 			case SQL_WCHAR:
 			case SQL_WVARCHAR:
 			case SQL_GRAPHIC:
 			case SQL_VARGRAPHIC:
+#ifndef PASE
 			case SQL_LONGVARGRAPHIC:
+#endif
 				in_length = stmt_res->column_info[i].size+1;
-				row_data->w_val = (SQLWCHAR *) ALLOC_N(SQLWCHAR, in_length);
+				row_data->w_val = (SQLTCHAR *) ALLOC_N(SQLTCHAR, in_length);
 				rc = SQLBindCol((SQLHSTMT)stmt_res->hstmt, (SQLUSMALLINT)(i+1),
-					SQL_C_WCHAR, row_data->w_val, in_length * sizeof(SQLWCHAR),
+					SQL_C_TCHAR, row_data->w_val, in_length * sizeof(SQLTCHAR),
 					(SQLINTEGER *)(&stmt_res->row_data[i].out_length));
 				if ( rc == SQL_ERROR ) {
 					_python_ibm_db_check_sql_errors((SQLHSTMT)stmt_res->hstmt, 
@@ -782,7 +820,9 @@ static int _python_ibm_db_bind_column_helper(stmt_handle *stmt_res)
 				break;
 
 			case SQL_BINARY:
+#ifndef PASE
 			case SQL_LONGVARBINARY:
+#endif
 			case SQL_VARBINARY:
 				if ( stmt_res->s_bin_mode == CONVERT ) {
 					in_length = 2*(stmt_res->column_info[i].size)+1;
@@ -1034,9 +1074,9 @@ static PyObject *_python_ibm_db_connect_helper( PyObject *self, PyObject *args, 
 	PyObject *databaseObj = NULL;
 	PyObject *uidObj = NULL;
 	PyObject *passwordObj = NULL;
-	SQLWCHAR *database = NULL;
-	SQLWCHAR *uid = NULL;
-	SQLWCHAR *password = NULL;
+	SQLTCHAR *database = NULL;
+	SQLTCHAR *uid = NULL;
+	SQLTCHAR *password = NULL;
 	PyObject *options = NULL;
 	PyObject *literal_replacementObj = NULL;
 	SQLINTEGER literal_replacement;
@@ -1082,7 +1122,7 @@ static PyObject *_python_ibm_db_connect_helper( PyObject *self, PyObject *args, 
 						rc, 1, NULL, -1, 1);
 					reused = 1;
 				} /* else will re-connect since connection is dead */
-#endif /* PASE */
+#endif
 				reused = 1;
 			}
 		} else {
@@ -1100,6 +1140,11 @@ static PyObject *_python_ibm_db_connect_helper( PyObject *self, PyObject *args, 
 			conn_res->henv = 0;
 			conn_res->hdbc = 0;
 		}
+		
+#ifdef PASE
+        // Ensure we're running in UTF-8 mode
+        SQLOverrideCCSID400(1208);
+#endif
 
 		/* We need to set this early, in case we get an error below,
 		so we know how to free the connection */
@@ -1112,8 +1157,10 @@ static PyObject *_python_ibm_db_connect_helper( PyObject *self, PyObject *args, 
 					1, NULL, -1, 1);
 				break;
 			}
+#ifndef PASE
 			rc = SQLSetEnvAttr((SQLHENV)conn_res->henv, SQL_ATTR_ODBC_VERSION, 
 				(void *)SQL_OV_ODBC3, 0);
+#endif
 		}
 
 		if (!reused) {
@@ -1129,8 +1176,15 @@ static PyObject *_python_ibm_db_connect_helper( PyObject *self, PyObject *args, 
 		/* Set this after the connection handle has been allocated to avoid
 		unnecessary network flows. Initialize the structure to default values */
 		conn_res->auto_commit = SQL_AUTOCOMMIT_ON;
+#ifndef PASE
 		rc = SQLSetConnectAttr((SQLHDBC)conn_res->hdbc, SQL_ATTR_AUTOCOMMIT, 
 			(SQLPOINTER)(conn_res->auto_commit), SQL_NTS);
+#else
+        {
+          int auto_commit = conn_res->auto_commit;
+          rc = SQLSetConnectAttr((SQLHDBC)conn_res->hdbc, SQL_ATTR_AUTOCOMMIT, &auto_commit, 0);
+        }
+#endif
 
 		conn_res->c_bin_mode = IBM_DB_G(bin_mode);
 		conn_res->c_case_mode = CASE_NATURAL;
@@ -1163,9 +1217,9 @@ static PyObject *_python_ibm_db_connect_helper( PyObject *self, PyObject *args, 
 				PyErr_SetString(PyExc_Exception, "Supplied Parameter is invalid");
 				return NULL;
 			}
-			database = getUnicodeDataAsSQLWCHAR(databaseObj, &isNewBuffer);
+			database = getUnicodeDataAsSQLTCHAR(databaseObj, &isNewBuffer);
 			if ( PyUnicode_Contains(databaseObj, equal) > 0 ) {
-				rc = SQLDriverConnectW((SQLHDBC)conn_res->hdbc, (SQLHWND)NULL,
+				rc = SQLDriverConnectT((SQLHDBC)conn_res->hdbc, (SQLHWND)NULL,
 					database, SQL_NTS, NULL, 0, NULL, 
 					SQL_DRIVER_NOPROMPT );
 			} else {
@@ -1173,9 +1227,9 @@ static PyObject *_python_ibm_db_connect_helper( PyObject *self, PyObject *args, 
 					PyErr_SetString(PyExc_Exception, "Supplied Parameter is invalid");
 					return NULL;
 				}
-				uid = getUnicodeDataAsSQLWCHAR(uidObj, &isNewBuffer);
-				password = getUnicodeDataAsSQLWCHAR(passwordObj, &isNewBuffer);
-				rc = SQLConnectW((SQLHDBC)conn_res->hdbc,
+				uid = getUnicodeDataAsSQLTCHAR(uidObj, &isNewBuffer);
+				password = getUnicodeDataAsSQLTCHAR(passwordObj, &isNewBuffer);
+                rc = SQLConnectT((SQLHDBC)conn_res->hdbc,
 					database,
 					PyUnicode_GetSize(databaseObj),
 					uid, 
@@ -1276,74 +1330,6 @@ static PyObject *_python_ibm_db_connect_helper( PyObject *self, PyObject *args, 
 		return NULL;						  
 	} 
 	return (PyObject *)conn_res;
-}
-
-
-/**
-*This function takes a SQLWCHAR buffer (UCS-2) and returns back a PyUnicode object 
-* of it that is in the correct current UCS encoding (either UCS2 or UCS4)of
-* the current executing python VM
-*
-* @sqlwcharBytesLen - the length of sqlwcharData in bytes (not characters)
-**/
-static PyObject* getSQLWCharAsPyUnicodeObject(SQLWCHAR* sqlwcharData, int sqlwcharBytesLen)
-{
-	PyObject *sysmodule = NULL, *maxuni = NULL;
-	long maxuniValue;
-	PyObject* u;
-	sysmodule = PyImport_ImportModule("sys");
-	maxuni = PyObject_GetAttrString(sysmodule, "maxunicode");
-	maxuniValue = PyInt_AsLong(maxuni);
-
-	if (maxuniValue <= 65536) {
-	/* this is UCS2 python.. nothing to do really */
-		return PyUnicode_FromUnicode((Py_UNICODE *)sqlwcharData, sqlwcharBytesLen / sizeof(SQLWCHAR));
-    	}
-	
-	if (is_bigendian()) {
-		int bo = 1;
-		u = PyUnicode_DecodeUTF16((char *)sqlwcharData, sqlwcharBytesLen, "strict", &bo);
-	} else {
-		int bo = -1;
-		u = PyUnicode_DecodeUTF16((char *)sqlwcharData, sqlwcharBytesLen, "strict", &bo);
-	}
-	return u;
-}
-
-
-/**
-*This function takes value as pyObject and convert it to SQLWCHAR and return it 
-*
-**/
-static SQLWCHAR* getUnicodeDataAsSQLWCHAR(PyObject *pyobj, int *isNewBuffer)
-{	
-	PyObject *sysmodule = NULL, *maxuni = NULL;
-	long maxuniValue;
-	PyObject *pyUTFobj;
-	SQLWCHAR* pNewBuffer = NULL;
-	int nCharLen = PyUnicode_GET_SIZE(pyobj);
-
-	sysmodule = PyImport_ImportModule("sys");
-	maxuni = PyObject_GetAttrString(sysmodule, "maxunicode");
-	maxuniValue = PyInt_AsLong(maxuni);
-
-	if (maxuniValue <= 65536) {
-		*isNewBuffer = 0;
-		return (SQLWCHAR*)PyUnicode_AS_UNICODE(pyobj);
-	}
-
-	*isNewBuffer = 1;
-	pNewBuffer = (SQLWCHAR *)ALLOC_N(SQLWCHAR, nCharLen + 1);
-	memset(pNewBuffer, 0, sizeof(SQLWCHAR) * (nCharLen + 1));
-	if (is_bigendian()) {
-		pyUTFobj = PyCodec_Encode(pyobj, "utf-16-be", "strict");
-	} else {
-		pyUTFobj = PyCodec_Encode(pyobj, "utf-16-le", "strict");
-	}
-	memcpy(pNewBuffer, PyBytes_AsString(pyUTFobj), sizeof(SQLWCHAR) * (nCharLen) );
-	Py_DECREF(pyUTFobj);
-	return pNewBuffer;
-
 }
 
 
@@ -1659,9 +1645,9 @@ static PyObject *ibm_db_pconnect(PyObject *self, PyObject *args)
 }
 
 /*
- * static void _python_clear_local_var(PyObject *dbNameObj, SQLWCHAR *dbName, PyObject *codesetObj, SQLWCHAR *codesetObj, PyObject *modeObj, SQLWCHAR *mode, int isNewBuffer)
+ * static void _python_clear_local_var(PyObject *dbNameObj, SQLTCHAR *dbName, PyObject *codesetObj, SQLTCHAR *codesetObj, PyObject *modeObj, SQLTCHAR *mode, int isNewBuffer)
  */
-static void _python_clear_local_var(PyObject *dbNameObj, SQLWCHAR *dbName, PyObject *codesetObj, SQLWCHAR *codeset, PyObject *modeObj, SQLWCHAR *mode, int isNewBuffer)
+static void _python_clear_local_var(PyObject *dbNameObj, SQLTCHAR *dbName, PyObject *codesetObj, SQLTCHAR *codeset, PyObject *modeObj, SQLTCHAR *mode, int isNewBuffer)
 {
 	if ( !NIL_P( dbNameObj ) ) {
 		Py_XDECREF( dbNameObj );
@@ -1690,9 +1676,9 @@ static void _python_clear_local_var(PyObject *dbNameObj, SQLWCHAR *dbName, PyObj
  */
 static int _python_ibm_db_createdb(conn_handle *conn_res, PyObject *dbNameObj, PyObject *codesetObj, PyObject *modeObj, int createNX)
 {
-	SQLWCHAR *dbName = NULL;
-	SQLWCHAR *codeset = NULL;
-	SQLWCHAR *mode = NULL;
+	SQLTCHAR *dbName = NULL;
+	SQLTCHAR *codeset = NULL;
+	SQLTCHAR *mode = NULL;
 	SQLINTEGER sqlcode;
 	SQLSMALLINT length;
 	SQLCHAR msg[SQL_MAX_MESSAGE_LENGTH + 1];
@@ -1704,11 +1690,11 @@ static int _python_ibm_db_createdb(conn_handle *conn_res, PyObject *dbNameObj, P
 	FARPROC sqlcreatedb;
 #else
 	void *cliLib = NULL;
-	typedef int (*sqlcreatedbType)( SQLHDBC, SQLWCHAR *, SQLINTEGER, SQLWCHAR *, SQLINTEGER, SQLWCHAR *, SQLINTEGER );
+	typedef int (*sqlcreatedbType)( SQLHDBC, SQLTCHAR *, SQLINTEGER, SQLTCHAR *, SQLINTEGER, SQLTCHAR *, SQLINTEGER );
 	sqlcreatedbType sqlcreatedb;
 #endif
 
-#if defined __APPLE__ || defined _AIX
+#if defined __APPLE__ || defined _AIX || defined PASE
 	PyErr_SetString( PyExc_Exception, "Not supported: This function is currently not supported on this platform" );
 	return -1;
 #else
@@ -1726,7 +1712,7 @@ static int _python_ibm_db_createdb(conn_handle *conn_res, PyObject *dbNameObj, P
 
 		dbNameObj = PyUnicode_FromObject( dbNameObj );
 		if ( dbNameObj != NULL &&  dbNameObj != Py_None ) {
-			dbName = getUnicodeDataAsSQLWCHAR( dbNameObj, &isNewBuffer );
+			dbName = getUnicodeDataAsSQLTCHAR( dbNameObj, &isNewBuffer );
 		} else {
 			return -1;
 		}
@@ -1734,7 +1720,7 @@ static int _python_ibm_db_createdb(conn_handle *conn_res, PyObject *dbNameObj, P
 		if ( !NIL_P( codesetObj ) ) {
 			codesetObj = PyUnicode_FromObject( codesetObj );
 			if ( codesetObj != NULL &&  codesetObj != Py_None ) {
-				codeset = getUnicodeDataAsSQLWCHAR( codesetObj, &isNewBuffer );
+				codeset = getUnicodeDataAsSQLTCHAR( codesetObj, &isNewBuffer );
 			} else {
 				_python_clear_local_var( dbNameObj, dbName, NULL, NULL, NULL, NULL, isNewBuffer );
 				return -1;
@@ -1744,7 +1730,7 @@ static int _python_ibm_db_createdb(conn_handle *conn_res, PyObject *dbNameObj, P
 		if ( !NIL_P( modeObj ) ) {
 			modeObj = PyUnicode_FromObject( modeObj );
 			if ( codesetObj != NULL &&  codesetObj != Py_None ) {
-				mode = getUnicodeDataAsSQLWCHAR( modeObj, &isNewBuffer );	
+				mode = getUnicodeDataAsSQLTCHAR( modeObj, &isNewBuffer );	
 			} else {
 				_python_clear_local_var( dbNameObj, dbName, codesetObj, codeset, NULL, NULL, isNewBuffer );
 				return -1;
@@ -1811,7 +1797,7 @@ static int _python_ibm_db_createdb(conn_handle *conn_res, PyObject *dbNameObj, P
  */
 static int _python_ibm_db_dropdb(conn_handle *conn_res, PyObject *dbNameObj, int recreate)
 {
-	SQLWCHAR *dbName = NULL;
+	SQLTCHAR *dbName = NULL;
 	SQLINTEGER sqlcode;
 	SQLSMALLINT length;
 	SQLCHAR msg[SQL_MAX_MESSAGE_LENGTH + 1];
@@ -1822,12 +1808,12 @@ static int _python_ibm_db_dropdb(conn_handle *conn_res, PyObject *dbNameObj, int
 	FARPROC sqldropdb;
 	HINSTANCE cliLib = NULL;
 #else
-	typedef int (*sqldropdbType)( SQLHDBC, SQLWCHAR *, SQLINTEGER );
+	typedef int (*sqldropdbType)( SQLHDBC, SQLTCHAR *, SQLINTEGER );
 	sqldropdbType sqldropdb;	
 	void *cliLib;
 #endif
 
-#if defined __APPLE__ || defined _AIX
+#if defined __APPLE__ || defined _AIX || defined PASE
 	PyErr_SetString( PyExc_Exception, "Not supported: This function is currently not supported on this platform" );
 	return -1;
 #else
@@ -1845,7 +1831,7 @@ static int _python_ibm_db_dropdb(conn_handle *conn_res, PyObject *dbNameObj, int
 
 		dbNameObj = PyUnicode_FromObject( dbNameObj );
 		if ( dbNameObj != NULL &&  dbNameObj != Py_None ) {
-			dbName = getUnicodeDataAsSQLWCHAR( dbNameObj, &isNewBuffer );	
+			dbName = getUnicodeDataAsSQLTCHAR( dbNameObj, &isNewBuffer );	
 		} else {
 			return -1;
 		}
@@ -2167,7 +2153,7 @@ static PyObject *ibm_db_autocommit(PyObject *self, PyObject *args)
 #ifndef PASE
 				rc = SQLSetConnectAttr((SQLHDBC)conn_res->hdbc, SQL_ATTR_AUTOCOMMIT, (SQLPOINTER) (autocommit == 0 ? SQL_AUTOCOMMIT_OFF : SQL_AUTOCOMMIT_ON), SQL_IS_INTEGER);
 #else
-				rc = SQLSetConnectAttr((SQLHDBC)conn_res->hdbc, SQL_ATTR_AUTOCOMMIT, (SQLPOINTER)&autocommit, SQL_IS_INTEGER);
+				rc = SQLSetConnectAttr((SQLHDBC)conn_res->hdbc, SQL_ATTR_AUTOCOMMIT, &autocommit, SQL_IS_INTEGER);
 #endif
 				if ( rc == SQL_ERROR ) {
 					_python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, 
@@ -2273,7 +2259,11 @@ static PyObject *_python_ibm_db_bind_param_helper(int argc, stmt_handle *stmt_re
 			param_type = SQL_PARAM_INPUT;
 
 			Py_BEGIN_ALLOW_THREADS;
-			rc = SQLDescribeParam((SQLHSTMT)stmt_res->hstmt, (SQLUSMALLINT)param_no, &sql_data_type, &sql_precision, &sql_scale, &sql_nullable);
+			rc = SQLDescribeParam((SQLHSTMT)stmt_res->hstmt, (SQLUSMALLINT)param_no, &sql_data_type, 
+#ifdef PASE
+                                  (SQLINTEGER*)
+#endif
+                                  &sql_precision, &sql_scale, &sql_nullable);
 			Py_END_ALLOW_THREADS;
 
 			if ( rc == SQL_ERROR ) {
@@ -2293,7 +2283,10 @@ static PyObject *_python_ibm_db_bind_param_helper(int argc, stmt_handle *stmt_re
 		case 4:
 			Py_BEGIN_ALLOW_THREADS;
 			rc = SQLDescribeParam((SQLHSTMT)stmt_res->hstmt, 
-								(SQLUSMALLINT)param_no, &sql_data_type, 
+								(SQLUSMALLINT)param_no, &sql_data_type,
+#ifdef PASE
+                                (SQLINTEGER*)
+#endif
 								&sql_precision, &sql_scale, &sql_nullable);
 			Py_END_ALLOW_THREADS;
 
@@ -2316,6 +2309,9 @@ static PyObject *_python_ibm_db_bind_param_helper(int argc, stmt_handle *stmt_re
 			Py_BEGIN_ALLOW_THREADS;
 			rc = SQLDescribeParam((SQLHSTMT)stmt_res->hstmt, 
 								(SQLUSMALLINT)param_no, &sql_data_type, 
+#ifdef PASE
+                                (SQLINTEGER*)
+#endif
 								&sql_precision, &sql_scale, &sql_nullable);
 			Py_END_ALLOW_THREADS;
 
@@ -2338,7 +2334,10 @@ static PyObject *_python_ibm_db_bind_param_helper(int argc, stmt_handle *stmt_re
 		case 6:
 			Py_BEGIN_ALLOW_THREADS;
 			rc = SQLDescribeParam((SQLHSTMT)stmt_res->hstmt, 
-								(SQLUSMALLINT)param_no, &sql_data_type, 
+								(SQLUSMALLINT)param_no, &sql_data_type,
+#ifdef PASE
+                                (SQLINTEGER*)
+#endif
 							&sql_precision, &sql_scale, &sql_nullable);
 			Py_END_ALLOW_THREADS;
 
@@ -2676,10 +2675,10 @@ static PyObject *ibm_db_close(PyObject *self, PyObject *args)
  */
 static PyObject *ibm_db_column_privileges(PyObject *self, PyObject *args)
 {
-	SQLWCHAR *qualifier = NULL;
-	SQLWCHAR *owner = NULL;
-	SQLWCHAR *table_name = NULL;
-	SQLWCHAR *column_name = NULL;
+	SQLTCHAR *qualifier = NULL;
+	SQLTCHAR *owner = NULL;
+	SQLTCHAR *table_name = NULL;
+	SQLTCHAR *column_name = NULL;
 	PyObject *py_qualifier = NULL;
 	PyObject *py_owner = NULL;
 	PyObject *py_table_name = NULL;
@@ -2770,14 +2769,14 @@ static PyObject *ibm_db_column_privileges(PyObject *self, PyObject *args)
 			Py_RETURN_FALSE;
 		}
 		if (py_qualifier && py_qualifier != Py_None )
-			qualifier = getUnicodeDataAsSQLWCHAR(py_qualifier, &isNewBuffer);
+			qualifier = getUnicodeDataAsSQLTCHAR(py_qualifier, &isNewBuffer);
 		if (py_owner &&  py_owner != Py_None )
-			owner = getUnicodeDataAsSQLWCHAR(py_owner, &isNewBuffer);
+			owner = getUnicodeDataAsSQLTCHAR(py_owner, &isNewBuffer);
 		if (py_table_name && py_table_name != Py_None )
-			table_name = getUnicodeDataAsSQLWCHAR(py_table_name, &isNewBuffer);
+			table_name = getUnicodeDataAsSQLTCHAR(py_table_name, &isNewBuffer);
 
 		Py_BEGIN_ALLOW_THREADS;
-		rc = SQLColumnPrivilegesW((SQLHSTMT)stmt_res->hstmt, qualifier, SQL_NTS,
+		rc = SQLColumnPrivilegesT((SQLHSTMT)stmt_res->hstmt, qualifier, SQL_NTS,
 							owner, SQL_NTS, table_name, SQL_NTS, column_name,
 							SQL_NTS);
 		Py_END_ALLOW_THREADS;
@@ -2876,10 +2875,10 @@ static PyObject *ibm_db_column_privileges(PyObject *self, PyObject *args)
  */
 static PyObject *ibm_db_columns(PyObject *self, PyObject *args)			
 {
-	SQLWCHAR *qualifier = NULL;
-	SQLWCHAR *owner = NULL;
-	SQLWCHAR *table_name = NULL;
-	SQLWCHAR *column_name = NULL;
+	SQLTCHAR *qualifier = NULL;
+	SQLTCHAR *owner = NULL;
+	SQLTCHAR *table_name = NULL;
+	SQLTCHAR *column_name = NULL;
 	PyObject *py_qualifier = NULL;
 	PyObject *py_owner = NULL;
 	PyObject *py_table_name = NULL;
@@ -2972,16 +2971,16 @@ static PyObject *ibm_db_columns(PyObject *self, PyObject *args)
 		}
 
 		if (py_qualifier && py_qualifier != Py_None )
-			qualifier = getUnicodeDataAsSQLWCHAR(py_qualifier, &isNewBuffer);
+			qualifier = getUnicodeDataAsSQLTCHAR(py_qualifier, &isNewBuffer);
 		if (py_owner &&  py_owner != Py_None )
-			owner = getUnicodeDataAsSQLWCHAR(py_owner, &isNewBuffer);
+			owner = getUnicodeDataAsSQLTCHAR(py_owner, &isNewBuffer);
 		if (py_table_name && py_table_name != Py_None )
-			table_name = getUnicodeDataAsSQLWCHAR(py_table_name, &isNewBuffer);
+			table_name = getUnicodeDataAsSQLTCHAR(py_table_name, &isNewBuffer);
 		if (py_column_name && py_column_name != Py_None )
-			column_name = getUnicodeDataAsSQLWCHAR(py_column_name, &isNewBuffer);
+			column_name = getUnicodeDataAsSQLTCHAR(py_column_name, &isNewBuffer);
 
 		Py_BEGIN_ALLOW_THREADS;
-		rc = SQLColumnsW((SQLHSTMT)stmt_res->hstmt, qualifier, SQL_NTS,
+		rc = SQLColumnsT((SQLHSTMT)stmt_res->hstmt, qualifier, SQL_NTS,
 			owner,SQL_NTS, table_name, SQL_NTS, column_name, SQL_NTS);
 		Py_END_ALLOW_THREADS;
 
@@ -3088,12 +3087,12 @@ static PyObject *ibm_db_columns(PyObject *self, PyObject *args)
  */
 static PyObject *ibm_db_foreign_keys(PyObject *self, PyObject *args)
 {
-	SQLWCHAR *pk_qualifier = NULL;
-	SQLWCHAR *pk_owner = NULL;
-	SQLWCHAR *pk_table_name = NULL;
-	SQLWCHAR *fk_qualifier = NULL;
-	SQLWCHAR *fk_owner = NULL;
-	SQLWCHAR *fk_table_name = NULL;
+	SQLTCHAR *pk_qualifier = NULL;
+	SQLTCHAR *pk_owner = NULL;
+	SQLTCHAR *pk_table_name = NULL;
+	SQLTCHAR *fk_qualifier = NULL;
+	SQLTCHAR *fk_owner = NULL;
+	SQLTCHAR *fk_table_name = NULL;
 	int rc;
 	conn_handle *conn_res = NULL;
 	stmt_handle *stmt_res;
@@ -3231,20 +3230,20 @@ static PyObject *ibm_db_foreign_keys(PyObject *self, PyObject *args)
 		}
 
 		if(py_pk_qualifier && py_pk_qualifier != Py_None)
-			pk_qualifier = getUnicodeDataAsSQLWCHAR(py_pk_qualifier, &isNewBuffer);
+			pk_qualifier = getUnicodeDataAsSQLTCHAR(py_pk_qualifier, &isNewBuffer);
 		if(py_pk_owner && py_pk_owner != Py_None)
-			pk_owner = getUnicodeDataAsSQLWCHAR(py_pk_owner, &isNewBuffer);
+			pk_owner = getUnicodeDataAsSQLTCHAR(py_pk_owner, &isNewBuffer);
 		if(py_pk_table_name && py_pk_table_name != Py_None)
-			pk_table_name = getUnicodeDataAsSQLWCHAR(py_pk_table_name, &isNewBuffer);
+			pk_table_name = getUnicodeDataAsSQLTCHAR(py_pk_table_name, &isNewBuffer);
 		if(py_fk_qualifier && py_fk_qualifier != Py_None)
-			fk_qualifier = getUnicodeDataAsSQLWCHAR(py_fk_qualifier, &isNewBuffer);
+			fk_qualifier = getUnicodeDataAsSQLTCHAR(py_fk_qualifier, &isNewBuffer);
 		if(py_fk_owner && py_fk_owner != Py_None)
-			fk_owner = getUnicodeDataAsSQLWCHAR(py_fk_owner, &isNewBuffer);
+			fk_owner = getUnicodeDataAsSQLTCHAR(py_fk_owner, &isNewBuffer);
 		if(py_fk_table_name && py_fk_table_name != Py_None)
-			fk_table_name = getUnicodeDataAsSQLWCHAR(py_fk_table_name, &isNewBuffer);
+			fk_table_name = getUnicodeDataAsSQLTCHAR(py_fk_table_name, &isNewBuffer);
 
 		Py_BEGIN_ALLOW_THREADS;
-		rc = SQLForeignKeysW((SQLHSTMT)stmt_res->hstmt, pk_qualifier, SQL_NTS,
+		rc = SQLForeignKeysT((SQLHSTMT)stmt_res->hstmt, pk_qualifier, SQL_NTS,
 						pk_owner, SQL_NTS, pk_table_name, SQL_NTS, fk_qualifier, SQL_NTS,
 						fk_owner, SQL_NTS, fk_table_name, SQL_NTS);
 		Py_END_ALLOW_THREADS;
@@ -3330,9 +3329,9 @@ static PyObject *ibm_db_foreign_keys(PyObject *self, PyObject *args)
  */
 static PyObject *ibm_db_primary_keys(PyObject *self, PyObject *args)
 {
-	SQLWCHAR *qualifier = NULL;
-	SQLWCHAR *owner = NULL;
-	SQLWCHAR *table_name = NULL;
+	SQLTCHAR *qualifier = NULL;
+	SQLTCHAR *owner = NULL;
+	SQLTCHAR *table_name = NULL;
 	int rc;
 	conn_handle *conn_res;
 	stmt_handle *stmt_res;
@@ -3408,14 +3407,14 @@ static PyObject *ibm_db_primary_keys(PyObject *self, PyObject *args)
 			Py_RETURN_FALSE;
 		}
 		if (py_qualifier && py_qualifier != Py_None )
-			qualifier = getUnicodeDataAsSQLWCHAR(py_qualifier, &isNewBuffer);
+			qualifier = getUnicodeDataAsSQLTCHAR(py_qualifier, &isNewBuffer);
 		if (py_owner &&  py_owner != Py_None )
-			owner = getUnicodeDataAsSQLWCHAR(py_owner, &isNewBuffer);
+			owner = getUnicodeDataAsSQLTCHAR(py_owner, &isNewBuffer);
 		if (py_table_name && py_table_name != Py_None )
-			table_name = getUnicodeDataAsSQLWCHAR(py_table_name, &isNewBuffer);
+			table_name = getUnicodeDataAsSQLTCHAR(py_table_name, &isNewBuffer);
 
 		Py_BEGIN_ALLOW_THREADS;	
-		rc = SQLPrimaryKeysW((SQLHSTMT)stmt_res->hstmt, qualifier, SQL_NTS,
+		rc = SQLPrimaryKeysT((SQLHSTMT)stmt_res->hstmt, qualifier, SQL_NTS,
 			owner, SQL_NTS, table_name, SQL_NTS);
 		Py_END_ALLOW_THREADS;
 
@@ -3527,10 +3526,10 @@ static PyObject *ibm_db_primary_keys(PyObject *self, PyObject *args)
  */
 static PyObject *ibm_db_procedure_columns(PyObject *self, PyObject *args)
 {
-	SQLWCHAR *qualifier = NULL;
-	SQLWCHAR *owner = NULL;
-	SQLWCHAR *proc_name = NULL;
-	SQLWCHAR *column_name = NULL;
+	SQLTCHAR *qualifier = NULL;
+	SQLTCHAR *owner = NULL;
+	SQLTCHAR *proc_name = NULL;
+	SQLTCHAR *column_name = NULL;
 	PyObject *py_qualifier = NULL;
 	PyObject *py_owner = NULL;
 	PyObject *py_proc_name = NULL;
@@ -3622,16 +3621,16 @@ static PyObject *ibm_db_procedure_columns(PyObject *self, PyObject *args)
 			Py_RETURN_FALSE;
 		}
 		if (py_qualifier && py_qualifier != Py_None )
-			qualifier = getUnicodeDataAsSQLWCHAR(py_qualifier, &isNewBuffer);
+			qualifier = getUnicodeDataAsSQLTCHAR(py_qualifier, &isNewBuffer);
 		if (py_owner &&  py_owner != Py_None )
-			owner = getUnicodeDataAsSQLWCHAR(py_owner, &isNewBuffer);
+			owner = getUnicodeDataAsSQLTCHAR(py_owner, &isNewBuffer);
 		if (py_proc_name && py_proc_name != Py_None )
-			proc_name = getUnicodeDataAsSQLWCHAR(py_proc_name, &isNewBuffer);
+			proc_name = getUnicodeDataAsSQLTCHAR(py_proc_name, &isNewBuffer);
 		if (py_column_name && py_column_name != Py_None )
-			column_name = getUnicodeDataAsSQLWCHAR(py_column_name, &isNewBuffer);
+			column_name = getUnicodeDataAsSQLTCHAR(py_column_name, &isNewBuffer);
 
 		Py_BEGIN_ALLOW_THREADS;
-		rc = SQLProcedureColumnsW((SQLHSTMT)stmt_res->hstmt, qualifier, SQL_NTS, 
+		rc = SQLProcedureColumnsT((SQLHSTMT)stmt_res->hstmt, qualifier, SQL_NTS, 
 			owner, SQL_NTS, proc_name, SQL_NTS, column_name, 
 			SQL_NTS);
 		Py_END_ALLOW_THREADS;
@@ -3715,9 +3714,9 @@ static PyObject *ibm_db_procedure_columns(PyObject *self, PyObject *args)
  */
 static PyObject *ibm_db_procedures(PyObject *self, PyObject *args)			
 {
-	SQLWCHAR *qualifier = NULL;
-	SQLWCHAR *owner = NULL;
-	SQLWCHAR *proc_name = NULL;
+	SQLTCHAR *qualifier = NULL;
+	SQLTCHAR *owner = NULL;
+	SQLTCHAR *proc_name = NULL;
 	int rc = 0;
 	conn_handle *conn_res;
 	stmt_handle *stmt_res;
@@ -3794,14 +3793,14 @@ static PyObject *ibm_db_procedures(PyObject *self, PyObject *args)
 			Py_RETURN_FALSE;
 		}
 		if (py_qualifier && py_qualifier != Py_None )
-			qualifier = getUnicodeDataAsSQLWCHAR(py_qualifier, &isNewBuffer);
+			qualifier = getUnicodeDataAsSQLTCHAR(py_qualifier, &isNewBuffer);
 		if (py_owner &&  py_owner != Py_None )
-			owner = getUnicodeDataAsSQLWCHAR(py_owner, &isNewBuffer);
+			owner = getUnicodeDataAsSQLTCHAR(py_owner, &isNewBuffer);
 		if (py_proc_name && py_proc_name != Py_None )
-			proc_name = getUnicodeDataAsSQLWCHAR(py_proc_name, &isNewBuffer);
+			proc_name = getUnicodeDataAsSQLTCHAR(py_proc_name, &isNewBuffer);
 
 		Py_BEGIN_ALLOW_THREADS;
-		rc = SQLProceduresW((SQLHSTMT)stmt_res->hstmt, qualifier, SQL_NTS, owner,
+		rc = SQLProceduresT((SQLHSTMT)stmt_res->hstmt, qualifier, SQL_NTS, owner,
 			SQL_NTS, proc_name, SQL_NTS);
 		Py_END_ALLOW_THREADS;
 
@@ -3910,9 +3909,9 @@ static PyObject *ibm_db_procedures(PyObject *self, PyObject *args)
  */
 static PyObject *ibm_db_special_columns(PyObject *self, PyObject *args)
 {
-	SQLWCHAR *qualifier = NULL;
-	SQLWCHAR *owner = NULL;
-	SQLWCHAR *table_name = NULL;
+	SQLTCHAR *qualifier = NULL;
+	SQLTCHAR *owner = NULL;
+	SQLTCHAR *table_name = NULL;
 	int scope = 0;
 	conn_handle *conn_res;
 	stmt_handle *stmt_res;
@@ -3998,14 +3997,14 @@ static PyObject *ibm_db_special_columns(PyObject *self, PyObject *args)
 			Py_RETURN_FALSE;
 		}
 		if (py_qualifier && py_qualifier != Py_None )
-			qualifier = getUnicodeDataAsSQLWCHAR(py_qualifier, &isNewBuffer);
+			qualifier = getUnicodeDataAsSQLTCHAR(py_qualifier, &isNewBuffer);
 		if (py_owner &&  py_owner != Py_None )
-			owner = getUnicodeDataAsSQLWCHAR(py_owner, &isNewBuffer);
+			owner = getUnicodeDataAsSQLTCHAR(py_owner, &isNewBuffer);
 		if (py_table_name && py_table_name != Py_None )
-			table_name = getUnicodeDataAsSQLWCHAR(py_table_name, &isNewBuffer);
+			table_name = getUnicodeDataAsSQLTCHAR(py_table_name, &isNewBuffer);
 
 		Py_BEGIN_ALLOW_THREADS;
-		rc = SQLSpecialColumnsW((SQLHSTMT)stmt_res->hstmt, SQL_BEST_ROWID, 
+		rc = SQLSpecialColumnsT((SQLHSTMT)stmt_res->hstmt, SQL_BEST_ROWID, 
 			qualifier, SQL_NTS, owner, SQL_NTS, table_name,
 			SQL_NTS, scope, SQL_NULLABLE);
 		Py_END_ALLOW_THREADS;
@@ -4126,9 +4125,9 @@ static PyObject *ibm_db_special_columns(PyObject *self, PyObject *args)
  */ 
 static PyObject *ibm_db_statistics(PyObject *self, PyObject *args)
 {
-	SQLWCHAR *qualifier = NULL;
-	SQLWCHAR *owner = NULL;
-	SQLWCHAR *table_name = NULL;
+	SQLTCHAR *qualifier = NULL;
+	SQLTCHAR *owner = NULL;
+	SQLTCHAR *table_name = NULL;
 	int unique = 0;
 	int rc = 0;
 	SQLUSMALLINT sql_unique;
@@ -4221,14 +4220,14 @@ static PyObject *ibm_db_statistics(PyObject *self, PyObject *args)
 			Py_RETURN_FALSE;
 		}
 		if (py_qualifier && py_qualifier != Py_None )
-			qualifier = getUnicodeDataAsSQLWCHAR(py_qualifier, &isNewBuffer);
+			qualifier = getUnicodeDataAsSQLTCHAR(py_qualifier, &isNewBuffer);
 		if (py_owner &&  py_owner != Py_None )
-			owner = getUnicodeDataAsSQLWCHAR(py_owner, &isNewBuffer);
+			owner = getUnicodeDataAsSQLTCHAR(py_owner, &isNewBuffer);
 		if (py_table_name && py_table_name != Py_None )
-			table_name = getUnicodeDataAsSQLWCHAR(py_table_name, &isNewBuffer);
+			table_name = getUnicodeDataAsSQLTCHAR(py_table_name, &isNewBuffer);
 
 		Py_BEGIN_ALLOW_THREADS;
-		rc = SQLStatisticsW((SQLHSTMT)stmt_res->hstmt, qualifier, SQL_NTS, owner,
+		rc = SQLStatisticsT((SQLHSTMT)stmt_res->hstmt, qualifier, SQL_NTS, owner,
 			SQL_NTS, table_name, SQL_NTS, sql_unique, SQL_QUICK);
 		Py_END_ALLOW_THREADS;
 
@@ -4307,9 +4306,9 @@ static PyObject *ibm_db_statistics(PyObject *self, PyObject *args)
  */
 static PyObject *ibm_db_table_privileges(PyObject *self, PyObject *args)
 {
-	SQLWCHAR *qualifier = NULL;
-	SQLWCHAR *owner = NULL;
-	SQLWCHAR *table_name = NULL;
+	SQLTCHAR *qualifier = NULL;
+	SQLTCHAR *owner = NULL;
+	SQLTCHAR *table_name = NULL;
 	conn_handle *conn_res;
 	stmt_handle *stmt_res;
 	int rc;
@@ -4390,14 +4389,14 @@ static PyObject *ibm_db_table_privileges(PyObject *self, PyObject *args)
 			Py_RETURN_FALSE;
 		}
 		if (py_qualifier && py_qualifier != Py_None )
-			qualifier = getUnicodeDataAsSQLWCHAR(py_qualifier, &isNewBuffer);
+			qualifier = getUnicodeDataAsSQLTCHAR(py_qualifier, &isNewBuffer);
 		if (py_owner &&  py_owner != Py_None )
-			owner = getUnicodeDataAsSQLWCHAR(py_owner, &isNewBuffer);
+			owner = getUnicodeDataAsSQLTCHAR(py_owner, &isNewBuffer);
 		if (py_table_name && py_table_name != Py_None )
-			table_name = getUnicodeDataAsSQLWCHAR(py_table_name, &isNewBuffer);
+			table_name = getUnicodeDataAsSQLTCHAR(py_table_name, &isNewBuffer);
 
 		Py_BEGIN_ALLOW_THREADS;
-		rc = SQLTablePrivilegesW((SQLHSTMT)stmt_res->hstmt, qualifier, SQL_NTS, 
+		rc = SQLTablePrivilegesT((SQLHSTMT)stmt_res->hstmt, qualifier, SQL_NTS, 
 			owner, SQL_NTS, table_name, SQL_NTS);
 		Py_END_ALLOW_THREADS;
 
@@ -4478,10 +4477,10 @@ static PyObject *ibm_db_table_privileges(PyObject *self, PyObject *args)
  */
 static PyObject *ibm_db_tables(PyObject *self, PyObject *args)
 {
-	SQLWCHAR *qualifier = NULL;
-	SQLWCHAR *owner = NULL;
-	SQLWCHAR *table_name = NULL;
-	SQLWCHAR *table_type = NULL;
+	SQLTCHAR *qualifier = NULL;
+	SQLTCHAR *owner = NULL;
+	SQLTCHAR *table_name = NULL;
+	SQLTCHAR *table_type = NULL;
 	PyObject *py_qualifier = NULL;
 	PyObject *py_owner = NULL;
 	PyObject *py_table_name = NULL;
@@ -4573,16 +4572,16 @@ static PyObject *ibm_db_tables(PyObject *self, PyObject *args)
 			Py_RETURN_FALSE;
 		}
 		if (py_qualifier && py_qualifier != Py_None )
-			qualifier = getUnicodeDataAsSQLWCHAR(py_qualifier, &isNewBuffer);
+			qualifier = getUnicodeDataAsSQLTCHAR(py_qualifier, &isNewBuffer);
 		if (py_owner &&  py_owner != Py_None )
-			owner = getUnicodeDataAsSQLWCHAR(py_owner, &isNewBuffer);
+			owner = getUnicodeDataAsSQLTCHAR(py_owner, &isNewBuffer);
 		if (py_table_name && py_table_name != Py_None )
-			table_name = getUnicodeDataAsSQLWCHAR(py_table_name, &isNewBuffer);
+			table_name = getUnicodeDataAsSQLTCHAR(py_table_name, &isNewBuffer);
 		if(py_table_type && py_table_type != Py_None)
-			table_type = getUnicodeDataAsSQLWCHAR(py_table_type, &isNewBuffer);
+			table_type = getUnicodeDataAsSQLTCHAR(py_table_type, &isNewBuffer);
 
 		Py_BEGIN_ALLOW_THREADS;
-		rc = SQLTablesW((SQLHSTMT)stmt_res->hstmt, qualifier, SQL_NTS, owner,
+		rc = SQLTablesT((SQLHSTMT)stmt_res->hstmt, qualifier, SQL_NTS, owner,
 			SQL_NTS, table_name, SQL_NTS, table_type, SQL_NTS);
 		Py_END_ALLOW_THREADS;
 
@@ -4684,7 +4683,7 @@ static PyObject *ibm_db_commit(PyObject *self, PyObject *args)
 
 /* static int _python_ibm_db_do_prepare(SQLHANDLE hdbc, char *stmt_string, stmt_handle *stmt_res, PyObject *options)
 */
-static int _python_ibm_db_do_prepare(SQLHANDLE hdbc, SQLWCHAR *stmt, int stmt_size, stmt_handle *stmt_res, PyObject *options)
+static int _python_ibm_db_do_prepare(SQLHANDLE hdbc, SQLTCHAR *stmt, int stmt_size, stmt_handle *stmt_res, PyObject *options)
 {
 	int rc;
 
@@ -4721,7 +4720,7 @@ static int _python_ibm_db_do_prepare(SQLHANDLE hdbc, SQLWCHAR *stmt, int stmt_si
 	*/
 
 	Py_BEGIN_ALLOW_THREADS;
-	rc = SQLPrepareW((SQLHSTMT)stmt_res->hstmt, stmt, 
+	rc = SQLPrepareT((SQLHSTMT)stmt_res->hstmt, stmt, 
 				stmt_size);
 	Py_END_ALLOW_THREADS;
 
@@ -4794,7 +4793,7 @@ static PyObject *ibm_db_exec(PyObject *self, PyObject *args)
 							 * _python_ibm_db_check_sql_errors to return err 
 							 * strings 
 							 */
-	SQLWCHAR *stmt = NULL;
+	SQLTCHAR *stmt = NULL;
 	PyObject *py_stmt = NULL;
 
 	/* This function basically is a wrap of the _python_ibm_db_do_prepare and 
@@ -4861,11 +4860,11 @@ static PyObject *ibm_db_exec(PyObject *self, PyObject *args)
 			}
 		}
 		if (py_stmt != NULL && py_stmt != Py_None){
-			stmt = getUnicodeDataAsSQLWCHAR(py_stmt, &isNewBuffer);
+			stmt = getUnicodeDataAsSQLTCHAR(py_stmt, &isNewBuffer);
      		}
 
 		Py_BEGIN_ALLOW_THREADS;
-		rc = SQLExecDirectW((SQLHSTMT)stmt_res->hstmt, stmt, SQL_NTS);
+		rc = SQLExecDirectT((SQLHSTMT)stmt_res->hstmt, stmt, SQL_NTS);
 		Py_END_ALLOW_THREADS;
 
 		if ( rc < SQL_SUCCESS ) {
@@ -4961,7 +4960,7 @@ static PyObject *_python_ibm_db_prepare_helper(conn_handle *conn_res, PyObject *
 	stmt_handle *stmt_res;
 	int rc;
 	char error[DB2_MAX_ERR_MSG_LEN];
-	SQLWCHAR *stmt = NULL;
+	SQLTCHAR *stmt = NULL;
 	int stmt_size = 0;
 	int isNewBuffer;
 
@@ -4997,7 +4996,7 @@ static PyObject *_python_ibm_db_prepare_helper(conn_handle *conn_res, PyObject *
 	/* Prepares the statement */
 	/* returns the stat_handle back to the calling function */
 	if( py_stmt && py_stmt != Py_None)
-		stmt = getUnicodeDataAsSQLWCHAR(py_stmt, &isNewBuffer);
+		stmt = getUnicodeDataAsSQLTCHAR(py_stmt, &isNewBuffer);
 		
 	rc = _python_ibm_db_do_prepare(conn_res->hdbc, stmt, stmt_size, stmt_res, options);
 	if (isNewBuffer) {
@@ -5181,7 +5180,11 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
 		Py_BEGIN_ALLOW_THREADS;
 		rc = SQLBindFileToParam((SQLHSTMT)stmt_res->hstmt, curr->param_num,
 					curr->data_type, (SQLCHAR*)curr->svalue,
-					(SQLSMALLINT*)&(curr->ivalue), &(curr->file_options), 
+					(SQLSMALLINT*)&(curr->ivalue),
+#ifdef PASE
+                    (SQLINTEGER*)
+#endif
+                    &(curr->file_options), 
 					(SQLSMALLINT) curr->ivalue, &(curr->bind_indicator));
 		Py_END_ALLOW_THREADS;
 
@@ -5307,28 +5310,28 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
 						PyMem_Del(curr->uvalue);
 						curr->uvalue = NULL;
 					}
-					curr->uvalue = getUnicodeDataAsSQLWCHAR(bind_data, &isNewBuffer);
+					curr->uvalue = getUnicodeDataAsSQLTCHAR(bind_data, &isNewBuffer);
 					curr->ivalue = PyUnicode_GetSize(bind_data);
-					curr->ivalue = curr->ivalue * sizeof(SQLWCHAR);
+					curr->ivalue = curr->ivalue * sizeof(SQLTCHAR);
 				}
 				param_length = curr->ivalue;
 				if (curr->size != 0) {
-					curr->ivalue = (curr->size + 1) * sizeof(SQLWCHAR);
+					curr->ivalue = (curr->size + 1) * sizeof(SQLTCHAR);
 				}
 
 				if (curr->param_type == SQL_PARAM_OUTPUT || curr->param_type == SQL_PARAM_INPUT_OUTPUT) {
 					if (curr->size == 0) {
 						if ((curr->data_type == SQL_BLOB) || (curr->data_type == SQL_CLOB) || (curr->data_type == SQL_BINARY)
-#ifndef PASE /* i5/OS SQL_LONGVARBINARY is SQL_VARBINARY */
+#ifndef PASE
 								|| (curr->data_type == SQL_LONGVARBINARY)
-#endif /* PASE */
+#endif
 								|| (curr->data_type == SQL_VARBINARY) || (curr->data_type == SQL_XML)) {
 							if (curr->ivalue <= curr->param_size) {
-								curr->ivalue = curr->param_size + sizeof(SQLWCHAR);
+								curr->ivalue = curr->param_size + sizeof(SQLTCHAR);
 							}
 						} else {
-							if (curr->ivalue <= (curr->param_size * sizeof(SQLWCHAR))) {
-								curr->ivalue = (curr->param_size + 1) * sizeof(SQLWCHAR);
+							if (curr->ivalue <= (curr->param_size * sizeof(SQLTCHAR))) {
+								curr->ivalue = (curr->param_size + 1) * sizeof(SQLTCHAR);
 							}
 						}
 					}
@@ -5336,12 +5339,12 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
 				
 				if (isNewBuffer == 0 ){
 					/* actually make a copy, since this will uvalue will be freed explicitly */
-					SQLWCHAR* tmp = (SQLWCHAR*)ALLOC_N(SQLWCHAR, curr->ivalue + 1);
-					memcpy(tmp, curr->uvalue, (param_length + sizeof(SQLWCHAR)));
+					SQLTCHAR* tmp = (SQLTCHAR*)ALLOC_N(SQLTCHAR, curr->ivalue + 1);
+					memcpy(tmp, curr->uvalue, (param_length + sizeof(SQLTCHAR)));
 					curr->uvalue = tmp;
 				} else if (param_length <= curr->param_size) {
-					SQLWCHAR* tmp = (SQLWCHAR*)ALLOC_N(SQLWCHAR, curr->ivalue + 1);
-					memcpy(tmp, curr->uvalue, (param_length + sizeof(SQLWCHAR)));
+					SQLTCHAR* tmp = (SQLTCHAR*)ALLOC_N(SQLTCHAR, curr->ivalue + 1);
+					memcpy(tmp, curr->uvalue, (param_length + sizeof(SQLTCHAR)));
 					PyMem_Del(curr->uvalue);
 					curr->uvalue = tmp;
 				}
@@ -5360,7 +5363,7 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
 							paramValuePtr = (SQLPOINTER)&(curr);
 #endif
 						}
-						valueType = SQL_C_WCHAR;
+						valueType = SQL_C_TCHAR;
 						break;
 					
 					case SQL_BLOB:
@@ -5379,9 +5382,9 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
 						break;
 					
 					case SQL_BINARY:
-#ifndef PASE /* i5/OS SQL_LONGVARBINARY is SQL_VARBINARY */
+#ifndef PASE
 					case SQL_LONGVARBINARY:
-#endif /* PASE */
+#endif
 					case SQL_VARBINARY:
 						/* account for bin_mode settings as well */
 						curr->bind_indicator = param_length;
@@ -5392,10 +5395,10 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
 					case SQL_XML:
 						curr->bind_indicator = param_length;
 						paramValuePtr = (SQLPOINTER)curr->uvalue;
-						valueType = SQL_C_WCHAR;
+						valueType = SQL_C_TCHAR;
 						break;
 					case SQL_TYPE_TIMESTAMP:
-						valueType = SQL_C_WCHAR;
+						valueType = SQL_C_TCHAR;
 						curr->bind_indicator = SQL_NTS;
 						if(curr->uvalue[10] == 'T'){
 							curr->uvalue[10] = ' ';
@@ -5403,7 +5406,7 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
 						paramValuePtr = (SQLPOINTER)(curr->uvalue);
 						break;
 					default:
-						valueType = SQL_C_WCHAR;
+						valueType = SQL_C_TCHAR;
 						curr->bind_indicator = param_length;
 						paramValuePtr = (SQLPOINTER)(curr->uvalue);
 				}
@@ -5501,9 +5504,9 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
 						break;
 	
 					case SQL_BINARY:
-#ifndef PASE /* i5/OS SQL_LONGVARBINARY is SQL_VARBINARY */
+#ifndef PASE
 					case SQL_LONGVARBINARY:
-#endif /* PASE */
+#endif
 					case SQL_VARBINARY:
 					case SQL_XML:
 						/* account for bin_mode settings as well */
@@ -5712,7 +5715,11 @@ static int _python_ibm_db_execute_helper2(stmt_handle *stmt_res, PyObject *data,
 
 				Py_BEGIN_ALLOW_THREADS;
 				rc = SQLDescribeParam((SQLHSTMT)stmt_res->hstmt, param_no,
-					(SQLSMALLINT*)&data_type, &precision, (SQLSMALLINT*)&scale,
+					(SQLSMALLINT*)&data_type, 
+#ifdef PASE
+                    (SQLINTEGER*)
+#endif
+                    &precision, (SQLSMALLINT*)&scale,
 					(SQLSMALLINT*)&nullable);
 				Py_END_ALLOW_THREADS;
 
@@ -7519,10 +7526,10 @@ static PyObject *ibm_db_result(PyObject *self, PyObject *args)
 		case SQL_WVARCHAR:
 		case SQL_GRAPHIC:
 		case SQL_VARGRAPHIC:
-#ifndef PASE /* i5/OS SQL_LONGVARCHAR is SQL_VARCHAR */
+#ifndef PASE
 		case SQL_LONGVARCHAR:
 		case SQL_LONGVARGRAPHIC:
-#endif /* PASE */
+#endif
 		case SQL_BIGINT:
 		case SQL_DECIMAL:
 		case SQL_NUMERIC:
@@ -7541,7 +7548,7 @@ static PyObject *ibm_db_result(PyObject *self, PyObject *args)
 				return NULL;
 			}
 
-			rc = _python_ibm_db_get_data(stmt_res, col_num+1, SQL_C_WCHAR, 
+			rc = _python_ibm_db_get_data(stmt_res, col_num+1, SQL_C_TCHAR, 
 						 out_ptr, in_length * sizeof(Py_UNICODE), &out_length);
 
 			if ( rc == SQL_ERROR ) {
@@ -7558,7 +7565,7 @@ static PyObject *ibm_db_result(PyObject *self, PyObject *args)
 			} else if (column_type == SQL_BIGINT){
 				return_value = PyLong_FromString(out_ptr, NULL, 0);
 			} else {
-				return_value = getSQLWCharAsPyUnicodeObject(out_ptr, out_length);
+				return_value = getSQLTCharAsPyUnicodeObject(out_ptr, out_length);
 			}
 			PyMem_Del(out_ptr);
 			out_ptr = NULL;
@@ -7691,9 +7698,9 @@ static PyObject *ibm_db_result(PyObject *self, PyObject *args)
 
 		case SQL_BLOB:
 		case SQL_BINARY:
-#ifndef PASE /* i5/OS SQL_LONGVARCHAR is SQL_VARCHAR */
+#ifndef PASE
 		case SQL_LONGVARBINARY:
-#endif /* PASE */
+#endif
 		case SQL_VARBINARY:
 			switch (stmt_res->s_bin_mode) {
 				case PASSTHRU:
@@ -7715,8 +7722,8 @@ static PyObject *ibm_db_result(PyObject *self, PyObject *args)
 		case SQL_CLOB:
 		case SQL_DBCLOB:
 			if (column_type == SQL_CLOB || column_type == SQL_DBCLOB || column_type == SQL_XML) {
-				len_terChar = sizeof(SQLWCHAR);
-				targetCType = SQL_C_WCHAR;
+				len_terChar = sizeof(SQLTCHAR);
+				targetCType = SQL_C_TCHAR;
 			}
 			out_ptr = ALLOC_N(char, INIT_BUFSIZ + len_terChar);
 			if ( out_ptr == NULL ) {
@@ -7741,8 +7748,8 @@ static PyObject *ibm_db_result(PyObject *self, PyObject *args)
 					out_ptr = NULL;
 					return NULL;
 				}
-				if (len_terChar == sizeof(SQLWCHAR)) {
-					retVal = getSQLWCharAsPyUnicodeObject(out_ptr, INIT_BUFSIZ + out_length);
+				if (len_terChar == sizeof(SQLTCHAR)) {
+					retVal = getSQLTCharAsPyUnicodeObject(out_ptr, INIT_BUFSIZ + out_length);
 				} else {
 					retVal = PyBytes_FromStringAndSize((char *)out_ptr, INIT_BUFSIZ + out_length);
 				}
@@ -7758,7 +7765,7 @@ static PyObject *ibm_db_result(PyObject *self, PyObject *args)
 					if (len_terChar == 0) {
 						retVal = PyBytes_FromStringAndSize((char *)out_ptr, out_length);
 					} else {
-						retVal = getSQLWCharAsPyUnicodeObject(out_ptr, out_length);
+						retVal = getSQLTCharAsPyUnicodeObject(out_ptr, out_length);
 					}
 				}
 
@@ -7790,7 +7797,7 @@ static PyObject *_python_ibm_db_bind_fetch_helper(PyObject *args, int op)
 	ibm_db_row_data_type *row_data;
 	SQLINTEGER out_length, tmp_length = 0;
 	void *out_ptr = NULL;
-	SQLWCHAR *wout_ptr = NULL;
+	SQLTCHAR *wout_ptr = NULL;
 	int len_terChar = 0;
 	SQLSMALLINT targetCType = SQL_C_CHAR;
 	PyObject *py_stmt_res = NULL;
@@ -7841,6 +7848,7 @@ static PyObject *_python_ibm_db_bind_fetch_helper(PyObject *args, int op)
 	}
 	/* check if row_number is present */
 	if (PyTuple_Size(args) == 2 && row_number > 0) {
+      // TODO: Fix this
 #ifndef PASE /* i5/OS problem with SQL_FETCH_ABSOLUTE (temporary until fixed) */
 		if (is_systemi) {
 
@@ -7860,7 +7868,7 @@ static PyObject *_python_ibm_db_bind_fetch_helper(PyObject *args, int op)
 				row_number);
 			Py_END_ALLOW_THREADS;
 		}
-#else /* PASE */
+#else
 		Py_BEGIN_ALLOW_THREADS;
 		rc = SQLFetchScroll((SQLHSTMT)stmt_res->hstmt, SQL_FETCH_FIRST, 
 			row_number);
@@ -7873,7 +7881,7 @@ static PyObject *_python_ibm_db_bind_fetch_helper(PyObject *args, int op)
 			row_number-1);
 
 			Py_END_ALLOW_THREADS;
-#endif /* PASE */
+#endif
 	} else if (PyTuple_Size(args) == 2 && row_number < 0) {
 		PyErr_SetString(PyExc_Exception, 
 			"Requested row number must be a positive value");
@@ -7935,28 +7943,29 @@ static PyObject *_python_ibm_db_bind_fetch_helper(PyObject *args, int op)
 				case SQL_WVARCHAR:
 				case SQL_GRAPHIC:
 				case SQL_VARGRAPHIC:
+#ifndef PASE
 				case SQL_LONGVARGRAPHIC:
+#endif
 					tmp_length = stmt_res->column_info[column_number].size;
-					value = getSQLWCharAsPyUnicodeObject(row_data->w_val, out_length);
+					value = getSQLTCharAsPyUnicodeObject(row_data->w_val, out_length);
 					break;
 
-#ifndef PASE /* i5/OS SQL_LONGVARCHAR is SQL_VARCHAR */
+#ifndef PASE
 				case SQL_LONGVARCHAR:
 				case SQL_WLONGVARCHAR:
-
-#endif /* PASE */
-					/* i5/OS will xlate from EBCIDIC to ASCII (via SQLGetData) */
+#endif
+					/* IBM i will xlate from EBCIDIC to ASCII (via SQLGetData) */
 					tmp_length = stmt_res->column_info[column_number].size;
 
-					wout_ptr = (SQLWCHAR *)ALLOC_N(SQLWCHAR, tmp_length + 1);
+					wout_ptr = (SQLTCHAR *)ALLOC_N(SQLTCHAR, tmp_length + 1);
 					if ( wout_ptr == NULL ) {
 						PyErr_SetString(PyExc_Exception, "Failed to Allocate Memory");
 						return NULL;
 					}
 					
 					/*  _python_ibm_db_get_data null terminates all output. */
-					rc = _python_ibm_db_get_data(stmt_res, column_number + 1, SQL_C_WCHAR, wout_ptr,
-						(tmp_length * sizeof(SQLWCHAR) + 1), &out_length);
+					rc = _python_ibm_db_get_data(stmt_res, column_number + 1, SQL_C_TCHAR, wout_ptr,
+						(tmp_length * sizeof(SQLTCHAR) + 1), &out_length);
 					if ( rc == SQL_ERROR ) {
 						return NULL;
 					}
@@ -7964,7 +7973,7 @@ static PyObject *_python_ibm_db_bind_fetch_helper(PyObject *args, int op)
 						Py_INCREF(Py_None);
 						value = Py_None;
 					} else {
-						value = getSQLWCharAsPyUnicodeObject(wout_ptr, out_length);
+						value = getSQLTCharAsPyUnicodeObject(wout_ptr, out_length);
 					}
 					if (wout_ptr != NULL) {
 						PyMem_Del(wout_ptr);
@@ -8017,9 +8026,9 @@ static PyObject *_python_ibm_db_bind_fetch_helper(PyObject *args, int op)
 					break;
 
 				case SQL_BINARY:
-#ifndef PASE /* i5/OS SQL_LONGVARBINARY is SQL_VARBINARY */
+#ifndef PASE
 				case SQL_LONGVARBINARY:
-#endif /* PASE */
+#endif
 				case SQL_VARBINARY:
 					if ( stmt_res->s_bin_mode == PASSTHRU ) {
 						value = PyBytes_FromStringAndSize("", 0);
@@ -8049,8 +8058,8 @@ static PyObject *_python_ibm_db_bind_fetch_helper(PyObject *args, int op)
 				case SQL_CLOB:
 				case SQL_DBCLOB:
 					if (column_type == SQL_CLOB || column_type == SQL_DBCLOB || column_type == SQL_XML) {
-						len_terChar = sizeof(SQLWCHAR);
-						targetCType = SQL_C_WCHAR;
+						len_terChar = sizeof(SQLTCHAR);
+						targetCType = SQL_C_TCHAR;
 					} else if (len_terChar == -1) {
 						break;
 					}
@@ -8083,8 +8092,8 @@ static PyObject *_python_ibm_db_bind_fetch_helper(PyObject *args, int op)
 							return NULL;
 						}
 						
-						if (len_terChar == sizeof(SQLWCHAR)) {
-							value = getSQLWCharAsPyUnicodeObject(out_ptr, INIT_BUFSIZ + out_length);
+						if (len_terChar == sizeof(SQLTCHAR)) {
+							value = getSQLTCharAsPyUnicodeObject(out_ptr, INIT_BUFSIZ + out_length);
 						} else {
 							value = PyBytes_FromStringAndSize((char*)out_ptr, INIT_BUFSIZ + out_length);
 						}
@@ -8100,8 +8109,8 @@ static PyObject *_python_ibm_db_bind_fetch_helper(PyObject *args, int op)
 							Py_INCREF(Py_None);
 							value = Py_None;
 						} else {
-							if (len_terChar == sizeof(SQLWCHAR)) {
-								value =  getSQLWCharAsPyUnicodeObject(out_ptr, out_length);
+							if (len_terChar == sizeof(SQLTCHAR)) {
+								value =  getSQLTCharAsPyUnicodeObject(out_ptr, out_length);
 							} else {
 								value = PyBytes_FromStringAndSize((char*)out_ptr, out_length);
 							}
@@ -8206,12 +8215,13 @@ static PyObject *ibm_db_fetch_row(PyObject *self, PyObject *args)
 	}
 
 	/* check if row_number is present */
-	if (PyTuple_Size(args) == 2 && row_number > 0) { 
+	if (PyTuple_Size(args) == 2 && row_number > 0) {
+      // TODO: Fix this
 #ifndef PASE /* i5/OS problem with SQL_FETCH_ABSOLUTE */
 
 		rc = SQLFetchScroll((SQLHSTMT)stmt_res->hstmt, SQL_FETCH_ABSOLUTE, 
 						  row_number);
-#else /* PASE */
+#else
 		Py_BEGIN_ALLOW_THREADS;
 		rc = SQLFetchScroll((SQLHSTMT)stmt_res->hstmt, SQL_FETCH_FIRST, 
 						  row_number);
@@ -8222,7 +8232,7 @@ static PyObject *ibm_db_fetch_row(PyObject *self, PyObject *args)
 			rc = SQLFetchScroll((SQLHSTMT)stmt_res->hstmt, SQL_FETCH_RELATIVE, 
 							 row_number-1);
 			Py_END_ALLOW_THREADS;
-#endif /* PASE */
+#endif
 	} else if (PyTuple_Size(args) == 2 && row_number < 0) {
 		PyErr_SetString(PyExc_Exception, 
 				  "Requested row number must be a positive value");
@@ -8716,7 +8726,11 @@ static PyObject *ibm_db_server_info(PyObject *self, PyObject *args)
 				return_value->DBMS_VER = StringOBJ_FromASCII(buffer11);
 		}
 
-#ifndef PASE	  /* i5/OS DB_CODEPAGE handled natively */
+#ifdef PASE
+        // IBM i doesn't have the concept of a database-wide code page
+        // Instead, each field can be a different code page
+        return_value->DB_CODEPAGE = 0;
+#else
 		/* DB_CODEPAGE */
 		bufferint32 = 0;
 
@@ -8733,7 +8747,7 @@ static PyObject *ibm_db_server_info(PyObject *self, PyObject *args)
 		} else {
 			return_value->DB_CODEPAGE = PyInt_FromLong(bufferint32);
 		}
-#endif /* PASE */
+#endif
 
 		/* DB_NAME */
 		memset(buffer255, 0, sizeof(buffer255));
@@ -8907,6 +8921,7 @@ static PyObject *ibm_db_server_info(PyObject *self, PyObject *args)
 		}
 #endif /* PASE */
 
+#ifndef PASE
 		/* SQL_CONFORMANCE */
 		bufferint32 = 0;
 		memset(buffer255, 0, sizeof(buffer255));
@@ -8940,6 +8955,7 @@ static PyObject *ibm_db_server_info(PyObject *self, PyObject *args)
 			}
 			return_value->SQL_CONFORMANCE = StringOBJ_FromASCII(buffer255);
 		}
+#endif
 
 		/* PROCEDURES */
 		memset(buffer11, 0, sizeof(buffer11));
@@ -9611,7 +9627,7 @@ static PyObject *ibm_db_get_option(PyObject *self, PyObject *args)
 static int _ibm_db_chaining_flag(stmt_handle *stmt_res, SQLINTEGER flag, error_msg_node *error_list, int client_err_cnt) {
 	int rc;
 	Py_BEGIN_ALLOW_THREADS;
-	rc = SQLSetStmtAttrW((SQLHSTMT)stmt_res->hstmt, flag, (SQLPOINTER)SQL_TRUE, SQL_IS_INTEGER);
+	rc = SQLSetStmtAttrT((SQLHSTMT)stmt_res->hstmt, flag, (SQLPOINTER)SQL_TRUE, SQL_IS_INTEGER);
 	Py_END_ALLOW_THREADS;
 	if ( flag == SQL_ATTR_CHAINING_BEGIN ) {
 		if ( rc == SQL_ERROR ) {
@@ -9739,7 +9755,11 @@ static PyObject* ibm_db_execute_many (PyObject *self, PyObject *args) {
 			for ( i = 0; i < numOpts; i++) {
 				Py_BEGIN_ALLOW_THREADS;
 				rc = SQLDescribeParam((SQLHSTMT)stmt_res->hstmt, i + 1,
-					(SQLSMALLINT*)(data_type + i), &precision, (SQLSMALLINT*)&scale,
+					(SQLSMALLINT*)(data_type + i),
+#ifdef PASE
+                    (SQLINTEGER*)
+#endif
+                    &precision, (SQLSMALLINT*)&scale,
 					(SQLSMALLINT*)&nullable);
 				Py_END_ALLOW_THREADS;
 
@@ -9868,7 +9888,7 @@ static PyObject* ibm_db_execute_many (PyObject *self, PyObject *args) {
 										valueType = SQL_C_BINARY;
 										break;
 									default:
-										valueType = SQL_C_WCHAR;
+										valueType = SQL_C_TCHAR;
 								}
 								break;
 							case PYTHON_STRING:
@@ -10158,7 +10178,7 @@ static PyObject* ibm_db_callproc(PyObject *self, PyObject *args){
 									PyTuple_SetItem(outTuple, paramCount, StringOBJ_FromASCII(tmp_curr->svalue));
 									paramCount++;
 								} else if (!NIL_P(tmp_curr->uvalue)) {
-									PyTuple_SetItem(outTuple, paramCount, getSQLWCharAsPyUnicodeObject(tmp_curr->uvalue, tmp_curr->bind_indicator));
+									PyTuple_SetItem(outTuple, paramCount, getSQLTCharAsPyUnicodeObject(tmp_curr->uvalue, tmp_curr->bind_indicator));
 									paramCount++;
 								} else {
 									Py_INCREF(Py_None);
@@ -10201,7 +10221,11 @@ static PyObject* ibm_db_check_function_support(PyObject *self, PyObject *args)
 	PyObject *py_funtion_id = NULL;
 	int funtion_id = 0;
 	conn_handle *conn_res = NULL;
-	int supported = 0;
+#ifdef PASE
+    SQLSMALLINT supported = 0;
+#else
+	SQLUSMALLINT supported = 0;
+#endif
 	int rc = 0;
 
 	if (!PyArg_ParseTuple(args, "OO", &py_conn_res, &py_funtion_id)) {
@@ -10230,7 +10254,7 @@ static PyObject* ibm_db_check_function_support(PyObject *self, PyObject *args)
 		 }
 
 		Py_BEGIN_ALLOW_THREADS;
-		rc = SQLGetFunctions(conn_res->hdbc, (SQLUSMALLINT) funtion_id, (SQLUSMALLINT*) &supported);
+		rc = SQLGetFunctions(conn_res->hdbc, (SQLUSMALLINT) funtion_id, &supported);
 		Py_END_ALLOW_THREADS;
 
 		if (rc == SQL_ERROR) {
@@ -10545,3 +10569,135 @@ INIT_ibm_db(void) {
 	PyModule_AddObject(m, "IBM_DBServerInfo", (PyObject *)&server_infoType);
 	return MOD_RETURN_VAL(m);
 }
+
+static int isPythonEncodingUTF16()
+{
+  PyObject *sysmodule = NULL, *maxunicode = NULL;
+  static long max_unicode_long = 0; 
+  
+  if(max_unicode_long == 0)
+  {
+    sysmodule = PyImport_ImportModule("sys");
+    maxunicode = PyObject_GetAttrString(sysmodule, "maxunicode");
+    max_unicode_long = PyInt_AsLong(maxunicode);
+  }
+  
+  return max_unicode_long < 65536;
+}
+
+static int isPythonEncodingUTF8()
+{
+  PyObject* sys_module = NULL;
+  PyObject* defaultencoding_func = NULL;
+  PyObject* arglist = NULL;
+  PyObject* defaultencoding = NULL;
+  
+  sys_module = PyImport_ImportModule("sys");
+
+  arglist = Py_BuildValue("()");
+  defaultencoding = PyEval_CallObject(defaultencoding_func, arglist);
+  
+  return 1;
+}
+
+#ifndef IBM_DB_UTF8
+/**
+ * This function takes a SQLTCHAR buffer (UCS-2) and returns back a PyUnicode object 
+ * of it that is in the correct current UCS encoding (either UCS2 or UCS4)of
+ * the current executing python VM
+ *
+ * @sqlwcharBytesLen - the length of sqlwcharData in bytes (not characters)
+ **/
+static PyObject* getSQLTCharAsPyUnicodeObject(SQLTCHAR* sqlwcharData, Py_ssize_t sqlwcharBytesLen)
+{
+  PyObject* u;
+  
+  if (isPythonEncodingUTF16()) {
+    /* this is UCS2 python.. nothing to do really */
+    return PyUnicode_FromUnicode((Py_UNICODE *)sqlwcharData, sqlwcharBytesLen / sizeof(SQLTCHAR));
+  }
+  
+  if (is_bigendian()) {
+    int bo = 1;
+    u = PyUnicode_DecodeUTF16((char *)sqlwcharData, sqlwcharBytesLen, "strict", &bo);
+  } else {
+    int bo = -1;
+    u = PyUnicode_DecodeUTF16((char *)sqlwcharData, sqlwcharBytesLen, "strict", &bo);
+  }
+  return u;
+}
+
+
+/**
+ * This function takes value as pyObject and convert it to SQLTCHAR and return it 
+ *
+ **/
+static SQLTCHAR* getUnicodeDataAsSQLTCHAR(PyObject *pyobj, int *isNewBuffer)
+{   
+  PyObject *pyUTFobj;
+  SQLTCHAR* pNewBuffer = NULL;
+  int nCharLen = PyUnicode_GET_SIZE(pyobj);
+  
+  if (isPythonEncodingUTF16()) {
+    *isNewBuffer = 0;
+    return (SQLTCHAR*)PyUnicode_AS_UNICODE(pyobj);
+  }
+  
+  *isNewBuffer = 1;
+  pNewBuffer = (SQLTCHAR *)ALLOC_N(SQLTCHAR, nCharLen + 1);
+  memset(pNewBuffer, 0, sizeof(SQLTCHAR) * (nCharLen + 1));
+  if (is_bigendian()) {
+    pyUTFobj = PyCodec_Encode(pyobj, "utf-16-be", "strict");
+  } else {
+    pyUTFobj = PyCodec_Encode(pyobj, "utf-16-le", "strict");
+  }
+  memcpy(pNewBuffer, PyBytes_AsString(pyUTFobj), sizeof(SQLTCHAR) * (nCharLen) );
+  Py_DECREF(pyUTFobj);
+  return pNewBuffer;
+  
+}
+#else
+
+/**
+ * This function takes a SQLTCHAR buffer (UTF-8) and returns back a PyUnicode object 
+ * of it that is in the correct current UCS encoding (either UCS2 or UCS4) of
+ * the current executing python VM
+ *
+ * @length - the length of data in bytes
+ **/
+static PyObject* getSQLTCharAsPyUnicodeObject(SQLTCHAR* data, Py_ssize_t length)
+{
+  if(length == SQL_NTS)
+  {
+    length = strlen((char*) data);
+  }
+  
+  return PyUnicode_DecodeUTF8((const char *)data, length, "strict");
+}
+
+
+/**
+ * This function takes value as pyObject and convert it to SQLTCHAR and return it 
+ *
+ **/
+static SQLTCHAR* getUnicodeDataAsSQLTCHAR(PyObject* obj, int* isNewBuffer)
+{
+  SQLTCHAR* buf = NULL;
+  char* utf8 = NULL;
+  Py_ssize_t utf8_len = 0;
+  
+  *isNewBuffer = 0;
+  
+  utf8 = PyUnicode_AsUTF8AndSize(obj, &utf8_len);
+  if(utf8 == NULL) return NULL;
+  
+  *isNewBuffer = 1;
+  
+  buf = (SQLTCHAR *) ALLOC_N(SQLTCHAR, utf8_len+1);
+  
+  memcpy(buf, utf8, utf8_len);
+  utf8[utf8_len] = '\0';
+  
+  return utf8;
+}
+#endif

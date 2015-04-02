@@ -5,6 +5,7 @@ import warnings
 import tarfile
 import zipfile
 import shutil
+import platform
 
 if sys.version_info >= (3, ):
     from urllib import request
@@ -30,15 +31,23 @@ ibm_db_lib = ''
 ibm_db_lib_runtime = ''
 license_agreement = False
 prebuildIbmdbPYD = False
-    
-if machine_bits == 64:
-    is64Bit = True
-    libDir = 'lib64'
-    sys.stdout.write("Detected 64-bit Python\n")
+
+
+if platform.system() == 'OS400':
+    libDir = 'lib'
+    os.environ['IBM_DB_HOME'] = '/usr'
+    #ibm_db_home = '/usr'
+    #ibm_db_dir = ibm_db_home
+    #ibm_db_lib = '/usr/lib'
 else:
-    is64Bit = False
-    libDir = 'lib32'
-    sys.stdout.write("Detected 32-bit Python\n")
+    if machine_bits == 64:
+        is64Bit = True
+        libDir = 'lib64'
+        sys.stdout.write("Detected 64-bit Python\n")
+    else:
+        is64Bit = False
+        libDir = 'lib32'
+        sys.stdout.write("Detected 32-bit Python\n")
 
 # check if val exists in list
 def _checkOSList(list, val):
@@ -201,8 +210,12 @@ ibm_db_include = os.path.join(ibm_db_dir, 'include')
 if not prebuildIbmdbPYD and not os.path.isdir(ibm_db_include):
     sys.stdout.write(" %s/include folder not found. Check if you have set the IBM_DB_HOME environment variable's value correctly\n " %(ibm_db_dir))
     sys.exit()
-    
-library = ['db2']
+
+if platform.system() == 'OS400':
+    library = ['db400']
+else:
+    library = ['db2']
+
 package_data = { 'tests': [ '*.png', '*.jpg']}
 data_files = [ ('', ['./README']),
                ('', ['./CHANGES']),
@@ -226,7 +239,7 @@ if sys.version_info >= (3, ):
 setup( name    = PACKAGE, 
        version = VERSION,
        license = LICENSE,
-       description      = 'Python DBI driver for DB2 (LUW, zOS, i5) and IDS',
+       description      = 'Python DBI driver for DB2 (LUW, zOS, IBM i) and IDS',
        author           = 'IBM Application Development Team',
        author_email     = 'opendev@us.ibm.com',
        url              = 'http://pypi.python.org/pypi/ibm_db/',
@@ -241,8 +254,8 @@ setup( name    = PACKAGE,
 
        long_description = '''
                       This extension is the implementation of Python Database API Specification v2.0
-                      The extension supports DB2 (LUW, zOS, i5) and IDS (Informix Dynamic Server)''',
-       platforms = 'Linux32/64, Win32/64, aix32/64, ppc32/64, sunamd32/64, sun32/64',
+                      The extension supports DB2 (LUW, zOS, IBM i) and IDS (Informix Dynamic Server)''',
+       platforms = 'Linux32/64, Win32/64, aix32/64, ppc32/64, sunamd32/64, sun32/64, OS400',
        ext_modules  = ext_modules,
        py_modules   = modules,
        packages     = find_packages(),

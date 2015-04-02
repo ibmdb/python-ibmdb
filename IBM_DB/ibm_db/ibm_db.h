@@ -166,6 +166,7 @@
 /*
  *  * Enum for Decfloat Rounding Modes
  *   * */
+#ifndef ROUND_HALF_EVEN
 enum
 {
         ROUND_HALF_EVEN = 0,
@@ -174,6 +175,7 @@ enum
         ROUND_CEILING,
         ROUND_FLOOR
 }ROUNDING_MODE;
+#endif
 
 /*
 * Declare any global variables you may need between the BEGIN
