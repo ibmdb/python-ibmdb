@@ -1,0 +1,4 @@
+__pycache__/
+build
+dist
+ibm_db.egg-info
