@@ -26,9 +26,9 @@ class IbmDbTestCase(unittest.TestCase):
     row = ibm_db.fetch_tuple(result)
     while ( row ):
       if (row[1] == 'gif'):
-        print "<img src='test_047.php?EMPNO=%s&FORMAT=%s'><br>\n" % (row[0], row[1])
+        print("<img src='test_047.php?EMPNO=%s&FORMAT=%s'><br>\n" % (row[0], row[1]))
       if (row[1] != 'xwd'):
-        print "<a href='test_047.php?EMPNO=%s&FORMAT=%s' target=_blank>%s - %s - %s bytes</a>\n<br>" % (row[0], row[1], row[0], row[1], row[2])
+        print("<a href='test_047.php?EMPNO=%s&FORMAT=%s' target=_blank>%s - %s - %s bytes</a>\n<br>" % (row[0], row[1], row[0], row[1], row[2]))
       row = ibm_db.fetch_tuple(result)
 #__END__
 #__LUW_EXPECTED__

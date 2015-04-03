@@ -21,12 +21,12 @@ class IbmDbTestCase(unittest.TestCase):
 
     stmt = ibm_db.exec_immediate(conn, "SELECT * FROM animals")
     val = ibm_db.get_option(stmt, ibm_db.SQL_ATTR_CURSOR_TYPE, 0)
-    print val
+    print(val)
 
     op = {ibm_db.SQL_ATTR_CURSOR_TYPE: ibm_db.SQL_CURSOR_FORWARD_ONLY}
     stmt = ibm_db.exec_immediate(conn, "SELECT * FROM animals", op)
     val = ibm_db.get_option(stmt, ibm_db.SQL_ATTR_CURSOR_TYPE, 0)
-    print val
+    print(val)
 
     if (serverinfo.DBMS_NAME[0:3] != 'IDS'):
       op = {ibm_db.SQL_ATTR_CURSOR_TYPE: ibm_db.SQL_CURSOR_KEYSET_DRIVEN}
@@ -34,12 +34,12 @@ class IbmDbTestCase(unittest.TestCase):
       op = {ibm_db.SQL_ATTR_CURSOR_TYPE: ibm_db.SQL_CURSOR_STATIC}
     stmt = ibm_db.exec_immediate(conn, "SELECT * FROM animals", op)
     val = ibm_db.get_option(stmt, ibm_db.SQL_ATTR_CURSOR_TYPE, 0)
-    print val
+    print(val)
 
     op = {ibm_db.SQL_ATTR_CURSOR_TYPE: ibm_db.SQL_CURSOR_STATIC}
     stmt = ibm_db.exec_immediate(conn, "SELECT * FROM animals", op)
     val = ibm_db.get_option(stmt, ibm_db.SQL_ATTR_CURSOR_TYPE, 0)
-    print val
+    print(val)
 
 #__END__
 #__LUW_EXPECTED__

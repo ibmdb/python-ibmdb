@@ -18,14 +18,14 @@ class IbmDbTestCase(unittest.TestCase):
   def run_test_080(self):
     try:
       conn = ibm_db.connect("x", config.user, config.password)
-      print "??? No way."
+      print("??? No way.")
     except:
-      print ibm_db.conn_error()
+      print(ibm_db.conn_error())
  
     #if conn:
-    #  print "??? No way."
+    #  print("??? No way.")
     #else:
-    #  print ibm_db.conn_error()
+    #  print(ibm_db.conn_error())
 
 #__END__
 #__LUW_EXPECTED__

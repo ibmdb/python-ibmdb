@@ -43,19 +43,19 @@ class IbmDbTestCase(unittest.TestCase):
         name7 = ibm_db.field_name(stmt, '"Number"')
         name8 = ibm_db.field_name(stmt, "NUMBER")
       
-      print "string(%d) \"%s\"" % (len(name1), name1)
-      print "string(%d) \"%s\"" % (len(name2), name2)
-      print "%s" % name3
-      print "%s" % name4
+      print("string(%d) \"%s\"" % (len(name1), name1))
+      print("string(%d) \"%s\"" % (len(name2), name2))
+      print("%s" % name3)
+      print("%s" % name4)
 
-      print "string(%d) \"%s\"" % (len(name5), name5)
-      print "%s" % name6
-      print "%s" % name7
-      print "string(%d) \"%s\"" % (len(name8), name8)
+      print("string(%d) \"%s\"" % (len(name5), name5))
+      print("%s" % name6)
+      print("%s" % name7)
+      print("string(%d) \"%s\"" % (len(name8), name8))
 
       ibm_db.rollback(conn)
     else:
-      print "Connection failed."
+      print("Connection failed.")
 
 #__END__
 #__LUW_EXPECTED__

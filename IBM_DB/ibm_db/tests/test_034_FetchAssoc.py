@@ -34,7 +34,7 @@ class IbmDbTestCase(unittest.TestCase):
       #printf("%15s ", row['SALARY'])
       #printf("%10s ", row['COMM'])
       #puts ""
-      print "%5d %-10s %5d %-7s %5d %15s %10s" % (row['ID'], row['NAME'], row['DEPT'], row['JOB'], row['YEARS'], row['SALARY'], row['COMM'])
+      print("%5d %-10s %5d %-7s %5d %15s %10s" % (row['ID'], row['NAME'], row['DEPT'], row['JOB'], row['YEARS'], row['SALARY'], row['COMM']))
     
     ibm_db.close(conn)
 

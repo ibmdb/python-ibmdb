@@ -20,7 +20,7 @@ class IbmDbTestCase(unittest.TestCase):
      
     ac = ibm_db.autocommit(conn)
       
-    print ac
+    print(ac)
 
 #__END__
 #__LUW_EXPECTED__

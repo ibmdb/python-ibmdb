@@ -28,9 +28,9 @@ class IbmDbTestCase(unittest.TestCase):
     except:
       r3 = None
     
-    print r1
-    print r2
-    print r3
+    print(r1)
+    print(r2)
+    print(r3)
 
 #__END__
 #__LUW_EXPECTED__

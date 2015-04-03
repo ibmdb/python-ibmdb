@@ -32,13 +32,13 @@ class IbmDbTestCase(unittest.TestCase):
           ibm_db.bind_param(stmt, 3, name)
        
           error = ibm_db.execute(stmt)
-          print "Should not make it this far"
+          print("Should not make it this far")
       except:
           excp = sys.exc_info()
           # slot 1 contains error message
-          print excp[1]
+          print(excp[1])
     else:
-      print "Connection failed."
+      print("Connection failed.")
 
 #__END__
 #__LUW_EXPECTED__

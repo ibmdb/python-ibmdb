@@ -36,10 +36,10 @@ class IbmDbTestCase(unittest.TestCase):
       value3 = row['table_name']
     if (row.has_key('column_name')):
       value4 = row['column_name']
-    print value1
-    print value2
-    print value3
-    print value4
+    print(value1)
+    print(value2)
+    print(value3)
+    print(value4)
 
     op = {ibm_db.ATTR_CASE: ibm_db.CASE_UPPER}
     ibm_db.set_option(conn, op, 1)
@@ -60,10 +60,10 @@ class IbmDbTestCase(unittest.TestCase):
       value3 = row['table_name']
     if (row.has_key('column_name')):
       value4 = row['column_name']
-    print value1
-    print value2
-    print value3
-    print value4
+    print(value1)
+    print(value2)
+    print(value3)
+    print(value4)
     
     op = {ibm_db.ATTR_CASE: ibm_db.CASE_LOWER}
     ibm_db.set_option(conn, op, 1)
@@ -84,10 +84,10 @@ class IbmDbTestCase(unittest.TestCase):
       value3 = row['table_name']
     if (row.has_key('column_name')):
       value4 = row['column_name']
-    print value1
-    print value2
-    print value3
-    print value4
+    print(value1)
+    print(value2)
+    print(value3)
+    print(value4)
 
 #__END__
 #__LUW_EXPECTED__

@@ -19,9 +19,9 @@ class IbmDbTestCase(unittest.TestCase):
     try:
       conn = ibm_db.connect("sample", "not_a_user", "inv_pass")
     except:
-      print "connect failed, test succeeded"
+      print("connect failed, test succeeded")
       return -1
-    print "connect succeeded? Test failed"
+    print("connect succeeded? Test failed")
 
 #__END__
 #__LUW_EXPECTED__

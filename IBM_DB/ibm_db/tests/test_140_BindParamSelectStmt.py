@@ -29,10 +29,10 @@ class IbmDbTestCase(unittest.TestCase):
         while ( row ): 
           #roiw.each { |child| puts child }
           for i in row:
-            print i
+            print(i)
           row = ibm_db.fetch_tuple(stmt)
     else:
-      print "Connection failed."
+      print("Connection failed.")
 
 #__END__
 #__LUW_EXPECTED__

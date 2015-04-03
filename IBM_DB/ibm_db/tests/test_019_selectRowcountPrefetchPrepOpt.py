@@ -23,14 +23,14 @@ class IbmDbTestCase(unittest.TestCase):
       result = ibm_db.execute(stmt)
       if result:
         rows = ibm_db.num_rows(stmt)
-        print "affected row:", rows
+        print("affected row:"), rows
         ibm_db.free_result(stmt)
       else:
-        print ibm_db.stmt_errormsg()
+        print(ibm_db.stmt_errormsg())
 
       ibm_db.close(conn)
     else:
-      print "no connection:", ibm_db.conn_errormsg()
+      print("no connection:"), ibm_db.conn_errormsg()
 
 #__END__
 #__LUW_EXPECTED__

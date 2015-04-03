@@ -27,18 +27,18 @@ class IbmDbTestCase(unittest.TestCase):
 
     row = ibm_db.fetch_assoc(result)    
     while ( row ):
-      #print "%5d  " % row['ID']
-      #print "%-10s " % row['NAME']
-      #print "%5d " % row['DEPT']
-      #print "%-7s " % row['JOB']
-      #print "%5d " % row['YEARS']
-      #print "%15s " % row['SALARY']
-      #print "%10s " % row['COMM']
+      #print("%5d  " % row['ID'])
+      #print("%-10s " % row['NAME'])
+      #print("%5d " % row['DEPT'])
+      #print("%-7s " % row['JOB'])
+      #print("%5d " % row['YEARS'])
+      #print("%15s " % row['SALARY'])
+      #print("%10s " % row['COMM'])
       if (row['YEARS'] == None):
         row['YEARS'] = 0
       if (row['COMM'] == None):
         row['COMM'] = ''
-      print "%5d  %-10s %5d %-7s %5s %15s %10s " % (row['ID'], row['NAME'], row['DEPT'], row['JOB'], row['YEARS'], row['SALARY'], row['COMM'])
+      print("%5d  %-10s %5d %-7s %5s %15s %10s " % (row['ID'], row['NAME'], row['DEPT'], row['JOB'], row['YEARS'], row['SALARY'], row['COMM']))
       row = ibm_db.fetch_assoc(result)
 
 #__END__

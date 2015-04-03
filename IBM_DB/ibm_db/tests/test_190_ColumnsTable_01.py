@@ -29,11 +29,11 @@ class IbmDbTestCase(unittest.TestCase):
       row = ibm_db.fetch_tuple(result)
       while ( row ):
         str = row[1] + "/" + row[3]
-        print str
+        print(str)
         row = ibm_db.fetch_tuple(result)
-      print "done!"
+      print("done!")
     else:
-      print "no connection:", ibm_db.conn_errormsg()
+      print("no connection:"), ibm_db.conn_errormsg()
 
 #__END__
 #__LUW_EXPECTED__

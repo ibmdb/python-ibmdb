@@ -47,11 +47,11 @@ class IbmDbTestCase(unittest.TestCase):
       while ( result ):
         row0 = ibm_db.result(stmt, 0)
         row1 = ibm_db.result(stmt, 1)
-        print row0
-        print row1
+        print(row0)
+        print(row1)
         result = ibm_db.fetch_row( stmt )
     else:
-      print "Connection failed."
+      print("Connection failed.")
 
 #__END__
 #__LUW_EXPECTED__

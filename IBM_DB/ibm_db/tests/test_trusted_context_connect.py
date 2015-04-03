@@ -79,7 +79,7 @@ class IbmDbTestCase(unittest.TestCase):
 					result = ibm_db.execute(stmt, value)
 			ibm_db.close(conn)
 		else:
-			print "Connection failed."
+			print("Connection failed.")
 
 		options = {ibm_db.SQL_ATTR_USE_TRUSTED_CONTEXT: ibm_db.SQL_TRUE}
 		tc_options = {
@@ -96,39 +96,39 @@ class IbmDbTestCase(unittest.TestCase):
 		# Makeing normal connection and playing with it.
 		tc_conn = ibm_db.connect(dsn, "", "")
 		if tc_conn:
-			print "Normal connection established."
+			print("Normal connection established.")
 			result = ibm_db.set_option(tc_conn, tc_options, 1)
-			print ibm_db.conn_errormsg(tc_conn)
+			print(ibm_db.conn_errormsg(tc_conn))
 			ibm_db.close(tc_conn)
 
 		tc_conn = ibm_db.connect(dsn, "", "")
 		if tc_conn:
-			print "Normal connection established."
+			print("Normal connection established.")
 			result = ibm_db.set_option(tc_conn, tc_all_options, 1)
-			print ibm_db.conn_errormsg(tc_conn)
+			print(ibm_db.conn_errormsg(tc_conn))
 			ibm_db.close(tc_conn)
 
 		tc_conn = ibm_db.connect(dsn, "", "", tc_all_options)
 		if tc_conn:
 			val = ibm_db.get_option(tc_conn, ibm_db.SQL_ATTR_USE_TRUSTED_CONTEXT, 1)
 			if val:
-				print "Trusted connection succeeded."
+				print("Trusted connection succeeded.")
 				get_tc_user = ibm_db.get_option(tc_conn, ibm_db.SQL_ATTR_TRUSTED_CONTEXT_USERID, 1)
 				if config.tc_user != get_tc_user:
-					print "But trusted user is not switched."
+					print("But trusted user is not switched.")
 		ibm_db.close(tc_conn)
 
 		# Making trusted connection and performing normal operations.
 		tc_conn = ibm_db.connect(dsn, "", "", options)
 		if tc_conn:
-			print "Trusted connection succeeded."
+			print("Trusted connection succeeded.")
 			val = ibm_db.get_option(tc_conn, ibm_db.SQL_ATTR_USE_TRUSTED_CONTEXT, 1)
 			if val:
 				userBefore = ibm_db.get_option(tc_conn, ibm_db.SQL_ATTR_TRUSTED_CONTEXT_USERID, 1)
 				ibm_db.set_option(tc_conn, tc_options, 1)
 				userAfter = ibm_db.get_option(tc_conn, ibm_db.SQL_ATTR_TRUSTED_CONTEXT_USERID, 1)
 				if userBefore != userAfter:
-					print "User has been switched."
+					print("User has been switched.")
 					
 					# Inserting into table using trusted_user.
 					sql_insert = "INSERT INTO " + config.user + ".trusted_table (i1, i2) VALUES (?, ?)"
@@ -140,11 +140,11 @@ class IbmDbTestCase(unittest.TestCase):
 					try:
 						stmt = ibm_db.exec_immediate(tc_conn, sql_update)
 					except:
-						print ibm_db.stmt_errormsg()
+						print(ibm_db.stmt_errormsg())
 			
 			ibm_db.close(tc_conn)
 		else:
-			print "Trusted connection failed."
+			print("Trusted connection failed.")
 
 		# Making trusted connection and switching to fake user.
 		tc_conn = ibm_db.connect(dsn, "", "", options)
@@ -152,17 +152,17 @@ class IbmDbTestCase(unittest.TestCase):
 		if tc_conn:
 			val = ibm_db.get_option(tc_conn, ibm_db.SQL_ATTR_USE_TRUSTED_CONTEXT, 1)
 			if val:
-				print "Trusted connection succeeded."
+				print("Trusted connection succeeded.")
 				ibm_db.set_option(tc_conn, {ibm_db.SQL_ATTR_TRUSTED_CONTEXT_USERID: "fakeuser", ibm_db.SQL_ATTR_TRUSTED_CONTEXT_PASSWORD: "fakepassword"}, 1)
 
 				sql_update = "UPDATE " + config.user + ".trusted_table set i1 = 400 WHERE i2 = 500"
 				try:
 					stmt = ibm_db.exec_immediate(tc_conn, sql_update)
 				except:
-					print ibm_db.stmt_errormsg()
+					print(ibm_db.stmt_errormsg())
 			ibm_db.close(tc_conn)
 		else:
-			print "Connection failed."
+			print("Connection failed.")
 
 		# Making trusted connection and passing password first then user while switching.
 		tc_conn = ibm_db.connect(dsn, "", "", options)
@@ -171,15 +171,15 @@ class IbmDbTestCase(unittest.TestCase):
 		if tc_conn:
 			val = ibm_db.get_option(tc_conn, ibm_db.SQL_ATTR_USE_TRUSTED_CONTEXT, 1)
 			if val:
-				print "Trusted connection succeeded."
+				print("Trusted connection succeeded.")
 				userBefore = ibm_db.get_option(tc_conn, ibm_db.SQL_ATTR_TRUSTED_CONTEXT_USERID, 1)
 				ibm_db.set_option(tc_conn, tc_options_reversed, 1)
 				userAfter = ibm_db.get_option(tc_conn, ibm_db.SQL_ATTR_TRUSTED_CONTEXT_USERID, 1)
 				if userBefore != userAfter:
-					print "User has been switched."
+					print("User has been switched.")
 			ibm_db.close(tc_conn)
 		else:
-			print "Connection failed."	
+			print("Connection failed.")	
 
 		# Making trusted connection and passing password first then user while switching.
 		tc_conn = ibm_db.connect(dsn, "", "", options)
@@ -187,24 +187,24 @@ class IbmDbTestCase(unittest.TestCase):
 		tc_pass_options = {ibm_db.SQL_ATTR_TRUSTED_CONTEXT_PASSWORD: config.tc_pass}
 
 		if tc_conn:
-			print "Trusted connection succeeded."
+			print("Trusted connection succeeded.")
 			val = ibm_db.get_option(tc_conn, ibm_db.SQL_ATTR_USE_TRUSTED_CONTEXT, 1)
 			if val:
 				userBefore = ibm_db.get_option(tc_conn, ibm_db.SQL_ATTR_TRUSTED_CONTEXT_USERID, 1)
 				try:
 					ibm_db.set_option(tc_conn, tc_pass_options, 1)
 				except:
-					print ibm_db.conn_errormsg(tc_conn)			
+					print(ibm_db.conn_errormsg(tc_conn)         )
 			ibm_db.close(tc_conn)
 		else:
-			print "Connection failed."
+			print("Connection failed.")
 		
 
 		# Making trusted connection and passing only user while switching when both user and password are required.
 		tc_conn = ibm_db.connect(dsn, "", "", options)
 
 		if tc_conn:
-			print "Trusted connection succeeded."
+			print("Trusted connection succeeded.")
 			val = ibm_db.get_option(tc_conn, ibm_db.SQL_ATTR_USE_TRUSTED_CONTEXT, 1)
 			if val:
 				ibm_db.set_option(tc_conn, tc_user_options, 1)
@@ -213,10 +213,10 @@ class IbmDbTestCase(unittest.TestCase):
 				try:
 					stmt = ibm_db.exec_immediate(tc_conn, sql_update)
 				except:
-					print ibm_db.stmt_errormsg()			
+					print(ibm_db.stmt_errormsg()            )
 			ibm_db.close(tc_conn)
 		else:
-			print "Connection failed."
+			print("Connection failed.")
 		
 
 		# Make a connection
@@ -258,39 +258,39 @@ class IbmDbTestCase(unittest.TestCase):
 			# Closing connection
 			ibm_db.close(conn)
 		else: 
-			print "Connection failed."			
+			print("Connection failed.")			
 
 		# Making trusted connection
 		tc_conn = ibm_db.connect(dsn, "", "", options)
 		if tc_conn:
-			print "Trusted connection succeeded."
+			print("Trusted connection succeeded.")
 			val = ibm_db.get_option(tc_conn, ibm_db.SQL_ATTR_USE_TRUSTED_CONTEXT, 1)
 			if val:
 				userBefore = ibm_db.get_option(tc_conn, ibm_db.SQL_ATTR_TRUSTED_CONTEXT_USERID, 1)
 				ibm_db.set_option(tc_conn, tc_user_options, 1)
 				userAfter = ibm_db.get_option(tc_conn, ibm_db.SQL_ATTR_TRUSTED_CONTEXT_USERID, 1)
 				if userBefore != userAfter:
-					print "User has been switched."
+					print("User has been switched.")
 					
 					# Inserting into table using trusted_user.
 					sql_insert = "INSERT INTO " + config.user + ".trusted_table (i1, i2) VALUES (300, 500)"
 					try:
 						stmt = ibm_db.exec_immediate(tc_conn, sql_insert)
 					except:
-						print ibm_db.stmt_errormsg()
+						print(ibm_db.stmt_errormsg())
 
 					# Updating table using trusted_user.
 					sql_update = "UPDATE " + config.user + ".trusted_table set i1 = 400 WHERE i2 = 20"
 					stmt = ibm_db.exec_immediate(tc_conn, sql_update)
 			ibm_db.close(tc_conn)
 		else:
-			print "Connection failed."	
+			print("Connection failed.")	
 
 		# Cleaning up database.
 		conn = ibm_db.connect(config.database, config.user, config.password)
 
 		if conn:
-			print "Connection succeeded."
+			print("Connection succeeded.")
 
 			try:
 				result = ibm_db.exec_immediate(conn, sql_drop_trusted_context)
@@ -306,7 +306,7 @@ class IbmDbTestCase(unittest.TestCase):
 				pass
 			ibm_db.close(conn)
 		else:
-			print "Connection failed."
+			print("Connection failed.")
 			
 #__END__
 #__LUW_EXPECTED__

@@ -33,14 +33,14 @@ class IbmDbTestCase(unittest.TestCase):
         stmt = ibm_db.exec_immediate(conn, select)
         row = ibm_db.fetch_tuple(stmt)
         while ( row ):
-          #row.each { |child| print child }
+          #row.each { |child| print(child })
           for i in row:
-            print i
+            print(i)
           row = ibm_db.fetch_tuple(stmt)
 
       ibm_db.rollback(conn)
     else:
-      print "Connection failed."
+      print("Connection failed.")
 
 #__END__
 #__LUW_EXPECTED__

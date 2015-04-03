@@ -1,7 +1,10 @@
 import os
 import sys
 import unittest
-import StringIO
+if sys.version_info >= (3, ):
+    from io import StringIO
+else:
+    from cStringIO import StringIO
 import re
 import glob
 import inspect
@@ -20,7 +23,7 @@ class IbmDbTestFunctions(unittest.TestCase):
  
   # This function captures the output of the current test file.
   def capture(self, func):
-    buffer = StringIO.StringIO()
+    buffer = StringIO()
     sys.stdout = buffer
     func()
     sys.stdout = sys.__stdout__

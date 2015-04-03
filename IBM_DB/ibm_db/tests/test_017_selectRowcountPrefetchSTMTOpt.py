@@ -21,32 +21,32 @@ class IbmDbTestCase(unittest.TestCase):
       result = ibm_db.exec_immediate(conn,"SELECT * from animals WHERE weight < 10.0", { ibm_db.SQL_ATTR_CURSOR_TYPE : ibm_db.SQL_CURSOR_KEYSET_DRIVEN})
       if result:
         rows = ibm_db.num_rows(result)
-        print "affected row:", rows
+        print("affected row:"), rows
       else:
-        print ibm_db.stmt_errormsg()
+        print(ibm_db.stmt_errormsg())
       result = ibm_db.exec_immediate(conn,"SELECT * from animals WHERE weight < 10.0", {ibm_db.SQL_ATTR_CURSOR_TYPE : ibm_db.SQL_CURSOR_FORWARD_ONLY})
       if result:
         rows = ibm_db.num_rows(result)
-        print "affected row:", rows
+        print("affected row:"), rows
       else:
-        print ibm_db.stmt_errormsg()
+        print(ibm_db.stmt_errormsg())
       result = ibm_db.exec_immediate(conn,"SELECT * from animals WHERE weight < 10.0", {ibm_db.SQL_ATTR_ROWCOUNT_PREFETCH : ibm_db.SQL_ROWCOUNT_PREFETCH_ON})
       if result:
         rows = ibm_db.num_rows(result)
-        print "affected row:", rows
+        print("affected row:"), rows
       else:
-        print ibm_db.stmt_errormsg()
+        print(ibm_db.stmt_errormsg())
       result = ibm_db.exec_immediate(conn,"SELECT * from animals WHERE weight < 10.0", {ibm_db.SQL_ATTR_ROWCOUNT_PREFETCH : ibm_db.SQL_ROWCOUNT_PREFETCH_OFF})
       if result:
         rows = ibm_db.num_rows(result)
-        print "affected row:", rows
+        print("affected row:"), rows
       else:
-        print ibm_db.stmt_errormsg()
+        print(ibm_db.stmt_errormsg())
 
 
       ibm_db.close(conn)
     else:
-      print "no connection:", ibm_db.conn_errormsg()
+      print("no connection:"), ibm_db.conn_errormsg()
 
 #__END__
 #__LUW_EXPECTED__

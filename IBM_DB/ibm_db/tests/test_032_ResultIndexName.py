@@ -33,13 +33,13 @@ class IbmDbTestCase(unittest.TestCase):
             breed = ibm_db.result(stmt, "BREED")
             name = ibm_db.result(stmt, "NAME")
             weight = ibm_db.result(stmt, "WEIGHT")
-          print "int(%d)" % id
-          print "string(%d) \"%s\"" % (len(breed), breed)
-          print "string(%d) \"%s\"" % (len(name), name)
-          print "string(%d) \"%s\"" % (len(str(weight)), weight)
+          print("int(%d)" % id)
+          print("string(%d) \"%s\"" % (len(breed), breed))
+          print("string(%d) \"%s\"" % (len(name), name))
+          print("string(%d) \"%s\"" % (len(str(weight)), weight))
         ibm_db.close(conn)
       else:
-        print "Connection failed."
+        print("Connection failed.")
 
 #__END__
 #__LUW_EXPECTED__

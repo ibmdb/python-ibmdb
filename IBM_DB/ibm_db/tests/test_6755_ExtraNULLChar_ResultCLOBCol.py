@@ -45,12 +45,12 @@ class IbmDbTestCase(unittest.TestCase):
         #printf("\"%s\" from VARCHAR is %d bytes long, \"%s\" from CLOB is %d bytes long.\n",
         #    row[0], row[0].length,
         #    row[1], row[1].length)
-        print "\"%s\" from VARCHAR is %d bytes long, \"%s\" from CLOB is %d bytes long." % (row[0], len(row[0]), row[1], len(row[1]))
+        print("\"%s\" from VARCHAR is %d bytes long, \"%s\" from CLOB is %d bytes long." % (row[0], len(row[0]), row[1], len(row[1])))
         row = ibm_db.fetch_tuple(result)
       
       ibm_db.close(conn)
     else:
-      print "Connection failed."
+      print("Connection failed.")
 
 #__END__
 #__LUW_EXPECTED__

@@ -25,13 +25,13 @@ class IbmDbTestCase(unittest.TestCase):
       
       cols = ibm_db.fetch_tuple( stmt )
       while( cols ):
-        print "%s %s %s %s " % (cols[0], cols[1], cols[2], cols[3])
+        print("%s %s %s %s " % (cols[0], cols[1], cols[2], cols[3]))
         i+=1
         cols = ibm_db.fetch_tuple( stmt )
       
-      print "\nNumber of rows: %d" % i
+      print("\nNumber of rows: %d" % i)
     else:
-      print "Connection failed."
+      print("Connection failed.")
 
 #__END__
 #__LUW_EXPECTED__

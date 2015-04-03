@@ -1,7 +1,10 @@
 import os
 import sys
 import unittest
-import StringIO
+if sys.version_info >= (3, ):
+    from io import StringIO
+else:
+    from cStringIO import StringIO
 import re
 import glob
 import config

@@ -30,21 +30,21 @@ class IbmDbTestCase(unittest.TestCase):
       ibm_db.execute(stmt)
       data = ibm_db.fetch_both(stmt)
       while ( data ):
-        print data[0].strip()
+        print(data[0].strip())
         data = ibm_db.fetch_both(stmt)
 
-      print ""
+      print("")
       
       stmt = ibm_db.prepare(conn, "SELECT name FROM animals WHERE weight < 10.0", options1)
       ibm_db.execute(stmt)
       data = ibm_db.fetch_both(stmt)
       while ( data ):
-        print data[0].strip()
+        print(data[0].strip())
         data = ibm_db.fetch_both(stmt)
     
       ibm_db.close(conn)
     else:
-      print "Connection failed."
+      print("Connection failed.")
 
 #__END__
 #__LUW_EXPECTED__

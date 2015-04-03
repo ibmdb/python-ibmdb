@@ -52,7 +52,7 @@ class IbmDbTestCase(unittest.TestCase):
         row.DATA = ibm_db.result(stmt, 'DATA')
       else:
         row.DATA = ibm_db.result(stmt, 'data')
-      print row.DATA
+      print(row.DATA)
 
       insert = "UPDATE numericliteral SET data = '@@@@@@@@@@' WHERE id = '12'"
       ibm_db.exec_immediate(conn, insert)
@@ -66,9 +66,9 @@ class IbmDbTestCase(unittest.TestCase):
         row.DATA = ibm_db.result(stmt, 'DATA')
       else:
         row.DATA = ibm_db.result(stmt, 'data')
-      print row.DATA
+      print(row.DATA)
     else:
-      print "Connection failed."
+      print("Connection failed.")
 
 #__END__
 #__LUW_EXPECTED__

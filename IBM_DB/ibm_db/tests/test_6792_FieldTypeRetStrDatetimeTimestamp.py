@@ -49,7 +49,7 @@ class IbmDbTestCase(unittest.TestCase):
       result = ibm_db.exec_immediate(conn, statement)
       
       for i in range(0, ibm_db.num_fields(result)):
-        print str(i) + ":" + ibm_db.field_type(result,i)
+        print(str(i) + ":" + ibm_db.field_type(result,i))
 
       statement = "SELECT * FROM table_6792"
       stmt = ibm_db.prepare(conn, statement)
@@ -60,15 +60,15 @@ class IbmDbTestCase(unittest.TestCase):
         row1 = ibm_db.result(stmt, 1)
         row2 = ibm_db.result(stmt, 2)
         row3 = ibm_db.result(stmt, 3)
-        print row0
-        print row1
-        print row2
-        print row3
+        print(row0)
+        print(row1)
+        print(row2)
+        print(row3)
         result = ibm_db.fetch_row(stmt)
       
       ibm_db.close(conn)
     else:
-      print "Connection failed."
+      print("Connection failed.")
 
 #__END__
 #__LUW_EXPECTED__
