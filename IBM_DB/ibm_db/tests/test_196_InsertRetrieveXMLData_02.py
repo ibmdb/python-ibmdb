@@ -33,9 +33,9 @@ class IbmDbTestCase(unittest.TestCase):
       ibm_db.execute(stmt)
       result = ibm_db.fetch_both(stmt)
       while( result ):
-        print("Result ID:"), result[0]
-        print("Result DATA:"), result[1]
-        print("Result XMLCOL:"), result[2]
+        print("Result ID: " + str(result[0]))
+        print("Result DATA: " + str(result[1]))
+        print("Result XMLCOL: " + repr(result[2]))
         result = ibm_db.fetch_both(stmt)
 
       sql = "SELECT XMLSERIALIZE(XMLQUERY('for $i in $t/address where $i/city = \"Olathe\" return <zip>{$i/zip/text()}</zip>' passing c.xmlcol as \"t\") AS CLOB(32k)) FROM xml_test c WHERE id = 1"
@@ -43,7 +43,7 @@ class IbmDbTestCase(unittest.TestCase):
       ibm_db.execute(stmt)
       result = ibm_db.fetch_both(stmt)
       while( result ):
-        print("Result from XMLSerialize and XMLQuery:"), result[0]
+        print("Result from XMLSerialize and XMLQuery: " + str(result[0]))
         result = ibm_db.fetch_both(stmt)
 
       sql = "select xmlquery('for $i in $t/address where $i/city = \"Olathe\" return <zip>{$i/zip/text()}</zip>' passing c.xmlcol as \"t\") from xml_test c where id = 1"
@@ -51,7 +51,7 @@ class IbmDbTestCase(unittest.TestCase):
       ibm_db.execute(stmt)
       result = ibm_db.fetch_both(stmt)
       while( result ):
-        print("Result from only XMLQuery:"), result[0]
+        print("Result from only XMLQuery: " + repr(result[0]))
         result = ibm_db.fetch_both(stmt)
     else:
       print('Native XML datatype is not supported.')
@@ -60,15 +60,15 @@ class IbmDbTestCase(unittest.TestCase):
 #__LUW_EXPECTED__
 #Result ID: 1
 #Result DATA: xml test 1
-#Result XMLCOL:%s<address><street>12485 S Pine St.</street><city>Olathe</city><state>KS</state><zip>66061</zip></address>
+#Result XMLCOL: u'%s<address><street>12485 S Pine St.</street><city>Olathe</city><state>KS</state><zip>66061</zip></address>'
 #Result from XMLSerialize and XMLQuery: <zip>66061</zip>
-#Result from only XMLQuery:%s<zip>66061</zip>
+#Result from only XMLQuery: u'%s<zip>66061</zip>'
 #__ZOS_EXPECTED__
 #Result ID: 1
 #Result DATA: xml test 1
-#Result XMLCOL:%s<address><street>12485 S Pine St.</street><city>Olathe</city><state>KS</state><zip>66061</zip></address>
+#Result XMLCOL: u'%s<address><street>12485 S Pine St.</street><city>Olathe</city><state>KS</state><zip>66061</zip></address>'
 #Result from XMLSerialize and XMLQuery: <zip>66061</zip>
-#Result from only XMLQuery:%s<zip>66061</zip>
+#Result from only XMLQuery: u'%s<zip>66061</zip>'
 #__SYSTEMI_EXPECTED__
 #Native XML datatype is not supported.
 #__IDS_EXPECTED__

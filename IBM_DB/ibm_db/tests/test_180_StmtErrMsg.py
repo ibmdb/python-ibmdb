@@ -26,9 +26,9 @@ class IbmDbTestCase(unittest.TestCase):
         pass
       if result:
         cols = ibm_db.num_fields(result)
-        print("col:", cols,", ") 
+        print("col: %d , " % cols)
         rows = ibm_db.num_rows(result)
-        print("affected row:"), rows
+        print("affected row: %d" % rows)
       else:
         print(ibm_db.stmt_errormsg())
       try:
@@ -37,9 +37,9 @@ class IbmDbTestCase(unittest.TestCase):
         pass
       if result:
         cols = ibm_db.num_fields(result)
-        print("col:", cols,", ")
+        print("col: %d , " % cols)
         rows = ibm_db.num_rows(result)
-        print("affected row:"), rows
+        print("affected row: %d" % rows)
       else:
         print(ibm_db.stmt_errormsg())
     

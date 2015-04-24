@@ -38,7 +38,7 @@ class IbmDbTestCase(unittest.TestCase):
       ibm_db.execute(stmt)
       result = ibm_db.fetch_assoc(stmt)
       while( result ):
-        print("Output:"), result
+        print("Output: %s" % result)
         result = ibm_db.fetch_assoc(stmt)
       ibm_db.close(conn)
     else:

@@ -25,7 +25,7 @@ class IbmDbTestCase(unittest.TestCase):
       conn = pconn[22]
       ibm_db.autocommit(conn, ibm_db.SQL_AUTOCOMMIT_OFF)
       stmt = ibm_db.exec_immediate(pconn[33], "UPDATE animals SET name = 'flyweight' WHERE weight < 10.0")
-      print("Number of affected rows:"), ibm_db.num_rows( stmt )
+      print("Number of affected rows: %d" % ibm_db.num_rows( stmt ))
       ibm_db.rollback(conn)
       ibm_db.close(pconn[33])
     else:

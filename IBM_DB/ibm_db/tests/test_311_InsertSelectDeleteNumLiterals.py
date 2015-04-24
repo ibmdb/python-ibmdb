@@ -35,7 +35,7 @@ class IbmDbTestCase(unittest.TestCase):
    
        insert = "INSERT INTO tab_num_literals values ('11.22', '33.44', '55.66')"
        res = ibm_db.exec_immediate(conn, insert)
-       print("Number of inserted rows:"), ibm_db.num_rows(res)
+       print("Number of inserted rows: %d" % ibm_db.num_rows(res))
 
        stmt = ibm_db.prepare(conn, "SELECT col1, col2, col3 FROM tab_num_literals WHERE col1 = '11'")
        ibm_db.execute(stmt)
@@ -48,7 +48,7 @@ class IbmDbTestCase(unittest.TestCase):
 
        sql = "UPDATE tab_num_literals SET col1 = 77 WHERE col2 = 33.44"
        res = ibm_db.exec_immediate(conn, sql)
-       print("Number of updated rows:"), ibm_db.num_rows(res)
+       print("Number of updated rows: %d" % ibm_db.num_rows(res))
 
        stmt = ibm_db.prepare(conn, "SELECT col1, col2, col3 FROM tab_num_literals WHERE col2 > '33'")
        ibm_db.execute(stmt)
@@ -61,7 +61,7 @@ class IbmDbTestCase(unittest.TestCase):
 	 
        sql = "DELETE FROM tab_num_literals WHERE col1 > '10.0'"
        res = ibm_db.exec_immediate(conn, sql)
-       print("Number of deleted rows:"), ibm_db.num_rows(res)
+       print("Number of deleted rows: %d" % ibm_db.num_rows(res))
 
        stmt = ibm_db.prepare(conn, "SELECT col1, col2, col3 FROM tab_num_literals WHERE col3 < '56'")
        ibm_db.execute(stmt)

@@ -41,7 +41,7 @@ class IbmDbTestCase(unittest.TestCase):
 
        insert = "INSERT INTO tab_bigint values (-9223372036854775807, 9223372036854775807, 0, NULL)"
        res = ibm_db.exec_immediate(conn, insert)
-       print("Number of inserted rows:"), ibm_db.num_rows(res)
+       print("Number of inserted rows: %d" % ibm_db.num_rows(res))
 
        stmt = ibm_db.prepare(conn, "SELECT * FROM tab_bigint")
        ibm_db.execute(stmt)
