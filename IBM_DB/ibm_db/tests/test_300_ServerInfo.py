@@ -21,21 +21,21 @@ class IbmDbTestCase(unittest.TestCase):
     server = ibm_db.server_info(conn)
     
     if server:
-      print("DBMS_NAME: string(%d) \"%s\"" % (len(server.DBMS_NAME), server.DBMS_NAME))
-      print("DBMS_VER: string(%d) \"%s\"" % (len(server.DBMS_VER), server.DBMS_VER))
+      print("DBMS_NAME: string(%d \"%s\")" % (len(server.DBMS_NAME), server.DBMS_NAME))
+      print("DBMS_VER: string(%d \"%s\")" % (len(server.DBMS_VER), server.DBMS_VER))
       print("DB_CODEPAGE: int(%d)" % server.DB_CODEPAGE)
-      print("DB_NAME: string(%d) \"%s\"" % (len(server.DB_NAME), server.DB_NAME))
-      print("INST_NAME: string(%d) \"%s\"" % (len(server.INST_NAME), server.INST_NAME))
-      print("SPECIAL_CHARS: string(%d) \"%s\"" % (len(server.SPECIAL_CHARS), server.SPECIAL_CHARS))
+      print("DB_NAME: string(%d \"%s\")" % (len(server.DB_NAME), server.DB_NAME))
+      print("INST_NAME: string(%d \"%s\")" % (len(server.INST_NAME), server.INST_NAME))
+      print("SPECIAL_CHARS: string(%d \"%s\")" % (len(server.SPECIAL_CHARS), server.SPECIAL_CHARS))
       print("KEYWORDS: int(%d)" % len(server.KEYWORDS))
-      print("DFT_ISOLATION: string(%d) \"%s\"" % (len(server.DFT_ISOLATION), server.DFT_ISOLATION))
+      print("DFT_ISOLATION: string(%d \"%s\")" % (len(server.DFT_ISOLATION), server.DFT_ISOLATION))
       il = ''
       for opt in server.ISOLATION_OPTION:
         il += opt + " "
-      print("ISOLATION_OPTION: string(%d) \"%s\"" % (len(il), il))
-      print("SQL_CONFORMANCE: string(%d) \"%s\"" % (len(server.SQL_CONFORMANCE), server.SQL_CONFORMANCE))
+      print("ISOLATION_OPTION: string(%d \"%s\")" % (len(il), il))
+      print("SQL_CONFORMANCE: string(%d \"%s\")" % (len(server.SQL_CONFORMANCE), server.SQL_CONFORMANCE))
       print("PROCEDURES:"), server.PROCEDURES
-      print("IDENTIFIER_QUOTE_CHAR: string(%d) \"%s\"" % (len(server.IDENTIFIER_QUOTE_CHAR), server.IDENTIFIER_QUOTE_CHAR))
+      print("IDENTIFIER_QUOTE_CHAR: string(%d \"%s\")" % (len(server.IDENTIFIER_QUOTE_CHAR), server.IDENTIFIER_QUOTE_CHAR))
       print("LIKE_ESCAPE_CLAUSE:"), server.LIKE_ESCAPE_CLAUSE
       print("MAX_COL_NAME_LEN: int(%d)" % server.MAX_COL_NAME_LEN)
       print("MAX_ROW_SIZE: int(%d)" % server.MAX_ROW_SIZE)

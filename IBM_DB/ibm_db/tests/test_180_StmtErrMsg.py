@@ -26,7 +26,7 @@ class IbmDbTestCase(unittest.TestCase):
         pass
       if result:
         cols = ibm_db.num_fields(result)
-        print("col:", cols,", ") 
+        print("col: " + str(cols) + " , ") 
         rows = ibm_db.num_rows(result)
         print("affected row:"), rows
       else:
@@ -37,7 +37,7 @@ class IbmDbTestCase(unittest.TestCase):
         pass
       if result:
         cols = ibm_db.num_fields(result)
-        print("col:", cols,", ")
+        print("col: " + str(cols) + " , ") 
         rows = ibm_db.num_rows(result)
         print("affected row:"), rows
       else:

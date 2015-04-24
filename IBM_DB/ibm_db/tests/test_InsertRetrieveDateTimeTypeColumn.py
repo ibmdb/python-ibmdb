@@ -57,9 +57,9 @@ class IbmDbTestCase(unittest.TestCase):
         row0 = ibm_db.result(stmt, 0)
         row1 = ibm_db.result(stmt, 1)
         row2 = ibm_db.result(stmt, 2)
-        print(type(row0), row0)
-        print(type(row1), row1)
-        print(type(row2), row2)
+        print("%s %s" % (type(row0), row0))
+        print("%s %s" % (type(row1), row1))
+        print("%s %s" % (type(row2), row2))
         result = ibm_db.fetch_row(stmt)
       
       ibm_db.close(conn)

@@ -28,7 +28,7 @@ class IbmDbTestCase(unittest.TestCase):
     # will only retrieve 10 records
     count = 1
     while ( row ):
-      print("Record ",count,": %6s  %-6s %3d %9s %10s %10s %6s " % (row[0], row[1], row[2], row['EMPTIME'], row['EMSTDATE'], row['EMENDATE'], row[0]))
+      print("Record  %d : %6s  %-6s %3d %9s %10s %10s %6s " % (count, row[0], row[1], row[2], row['EMPTIME'], row['EMSTDATE'], row['EMENDATE'], row[0]))
       
       result2 = ibm_db.exec_immediate(conn,"select * from employee where employee.empno='" + row['EMPNO'] + "'")
       row2 = ibm_db.fetch_both(result2)
