@@ -16,7 +16,7 @@ class IbmDbTestCase(unittest.TestCase):
     obj.assert_expect(self.run_test_221)
 
   def run_test_221(self):
-    pconn = range(100)
+    pconn = list(range(100))
     
     for i in range(100):
       pconn[i] = ibm_db.pconnect(config.database, config.user, config.password)

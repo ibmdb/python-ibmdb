@@ -63,9 +63,9 @@ class IbmDbTestCase(unittest.TestCase):
 #DFT_ISOLATION: string(%d %s)
 #ISOLATION_OPTION: string(%d %s)
 #SQL_CONFORMANCE: string(%d %s)
-#PROCEDURES: %s
+#PROCEDURES:%s
 #IDENTIFIER_QUOTE_CHAR: string(%d %s)
-#LIKE_ESCAPE_CLAUSE: %s
+#LIKE_ESCAPE_CLAUSE:%s
 #MAX_COL_NAME_LEN: int(%d)
 #MAX_ROW_SIZE: int(%d)
 #MAX_IDENTIFIER_LEN: int(%d)
@@ -74,7 +74,7 @@ class IbmDbTestCase(unittest.TestCase):
 #MAX_SCHEMA_NAME_LEN: int(%d)
 #MAX_STATEMENT_LEN: int(%d)
 #MAX_TABLE_NAME_LEN: int(%d)
-#NON_NULLABLE_COLUMNS: %s
+#NON_NULLABLE_COLUMNS:%s
 #__ZOS_EXPECTED__
 #DBMS_NAME: string(%d %s)
 #DBMS_VER: string(%d %s)
@@ -86,9 +86,9 @@ class IbmDbTestCase(unittest.TestCase):
 #DFT_ISOLATION: string(%d %s)
 #ISOLATION_OPTION: string(%d %s)
 #SQL_CONFORMANCE: string(%d %s)
-#PROCEDURES: %s
+#PROCEDURES:%s
 #IDENTIFIER_QUOTE_CHAR: string(%d %s)
-#LIKE_ESCAPE_CLAUSE: %s
+#LIKE_ESCAPE_CLAUSE:%s
 #MAX_COL_NAME_LEN: int(%d)
 #MAX_ROW_SIZE: int(%d)
 #MAX_IDENTIFIER_LEN: int(%d)
@@ -97,7 +97,7 @@ class IbmDbTestCase(unittest.TestCase):
 #MAX_SCHEMA_NAME_LEN: int(%d)
 #MAX_STATEMENT_LEN: int(%d)
 #MAX_TABLE_NAME_LEN: int(%d)
-#NON_NULLABLE_COLUMNS: %s
+#NON_NULLABLE_COLUMNS:%s
 #__SYSTEMI_EXPECTED__
 #DBMS_NAME: string(%d %s)
 #DBMS_VER: string(%d %s)
@@ -109,9 +109,9 @@ class IbmDbTestCase(unittest.TestCase):
 #DFT_ISOLATION: string(%d %s)
 #ISOLATION_OPTION: string(%d %s)
 #SQL_CONFORMANCE: string(%d %s)
-#PROCEDURES: %s
+#PROCEDURES:%s
 #IDENTIFIER_QUOTE_CHAR: string(%d %s)
-#LIKE_ESCAPE_CLAUSE: %s
+#LIKE_ESCAPE_CLAUSE:%s
 #MAX_COL_NAME_LEN: int(%d)
 #MAX_ROW_SIZE: int(%d)
 #MAX_IDENTIFIER_LEN: int(%d)
@@ -120,7 +120,7 @@ class IbmDbTestCase(unittest.TestCase):
 #MAX_SCHEMA_NAME_LEN: int(%d)
 #MAX_STATEMENT_LEN: int(%d)
 #MAX_TABLE_NAME_LEN: int(%d)
-#NON_NULLABLE_COLUMNS: %s
+#NON_NULLABLE_COLUMNS:%s
 #__IDS_EXPECTED__
 #DBMS_NAME: string(%d %s)
 #DBMS_VER: string(%d %s)
@@ -132,9 +132,9 @@ class IbmDbTestCase(unittest.TestCase):
 #DFT_ISOLATION: string(%d %s)
 #ISOLATION_OPTION: string(%d %s)
 #SQL_CONFORMANCE: string(%d %s)
-#PROCEDURES: %s
+#PROCEDURES:%s
 #IDENTIFIER_QUOTE_CHAR: string(%d %s)
-#LIKE_ESCAPE_CLAUSE: %s
+#LIKE_ESCAPE_CLAUSE:%s
 #MAX_COL_NAME_LEN: int(%d)
 #MAX_ROW_SIZE: int(%d)
 #MAX_IDENTIFIER_LEN: int(%d)
@@ -143,4 +143,4 @@ class IbmDbTestCase(unittest.TestCase):
 #MAX_SCHEMA_NAME_LEN: int(%d)
 #MAX_STATEMENT_LEN: int(%d)
 #MAX_TABLE_NAME_LEN: int(%d)
-#NON_NULLABLE_COLUMNS: %s
+#NON_NULLABLE_COLUMNS:%s

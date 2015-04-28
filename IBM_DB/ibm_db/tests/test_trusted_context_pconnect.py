@@ -113,7 +113,7 @@ class IbmDbTestCase(unittest.TestCase):
 			print("Trusted connection failed.")
 
 		# Creating 10 Persistance connections and checking if trusted context is enabled (Cataloged connections)
-		for i in xrange(10):
+		for i in range(10):
 			tc_conn = ibm_db.pconnect(dsn, "", "")
 			if tc_conn:
 				val = ibm_db.get_option(tc_conn, ibm_db.SQL_ATTR_USE_TRUSTED_CONTEXT, 1)

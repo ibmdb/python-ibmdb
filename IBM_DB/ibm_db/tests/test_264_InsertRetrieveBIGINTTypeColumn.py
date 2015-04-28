@@ -51,9 +51,14 @@ class IbmDbTestCase(unittest.TestCase):
          print(data[1])
          print(data[2])
          print(data[3])
-         print(type(data[0]) is long)
-         print(type(data[1]) is long )
-         print(type(data[2]) is long)
+         if sys.version_info >= (3, ):
+           print(type(data[0]) is int)
+           print(type(data[1]) is int)
+           print(type(data[2]) is int)
+         else:
+           print(type(data[0]) is long)
+           print(type(data[1]) is long)
+           print(type(data[2]) is long)
          data = ibm_db.fetch_both(stmt)
 
        ibm_db.close(conn)

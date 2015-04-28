@@ -60,15 +60,15 @@ class IbmDbTestCase(unittest.TestCase):
 #__LUW_EXPECTED__
 #Result ID: 1
 #Result DATA: xml test 1
-#Result XMLCOL: u'%s<address><street>12485 S Pine St.</street><city>Olathe</city><state>KS</state><zip>66061</zip></address>'
+#Result XMLCOL: u?'%s<address><street>12485 S Pine St.</street><city>Olathe</city><state>KS</state><zip>66061</zip></address>'
 #Result from XMLSerialize and XMLQuery: <zip>66061</zip>
-#Result from only XMLQuery: u'%s<zip>66061</zip>'
+#Result from only XMLQuery: u?'%s<zip>66061</zip>'
 #__ZOS_EXPECTED__
 #Result ID: 1
 #Result DATA: xml test 1
-#Result XMLCOL: u'%s<address><street>12485 S Pine St.</street><city>Olathe</city><state>KS</state><zip>66061</zip></address>'
+#Result XMLCOL: u?'%s<address><street>12485 S Pine St.</street><city>Olathe</city><state>KS</state><zip>66061</zip></address>'
 #Result from XMLSerialize and XMLQuery: <zip>66061</zip>
-#Result from only XMLQuery: u'%s<zip>66061</zip>'
+#Result from only XMLQuery: u?'%s<zip>66061</zip>'
 #__SYSTEMI_EXPECTED__
 #Native XML datatype is not supported.
 #__IDS_EXPECTED__
