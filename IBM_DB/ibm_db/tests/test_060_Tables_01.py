@@ -19,7 +19,10 @@ class IbmDbTestCase(unittest.TestCase):
     conn = ibm_db.connect(config.database, config.user, config.password)
     server = ibm_db.server_info( conn )
     
-    create = 'CREATE SCHEMA AUTHORIZATION t'
+    if (server.DBMS_NAME[0:2] == "AS"):
+        create = 'CREATE SCHEMA t'
+    else:
+        create = 'CREATE SCHEMA AUTHORIZATION t'
     try:
       result = ibm_db.exec_immediate(conn, create)
     except:

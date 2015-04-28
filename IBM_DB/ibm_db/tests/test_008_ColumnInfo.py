@@ -40,6 +40,8 @@ class IbmDbTestCase(unittest.TestCase):
     print(value2)
     print(value3)
     print(value4)
+    
+    ibm_db.free_stmt(result)
 
     op = {ibm_db.ATTR_CASE: ibm_db.CASE_UPPER}
     ibm_db.set_option(conn, op, 1)
@@ -64,6 +66,8 @@ class IbmDbTestCase(unittest.TestCase):
     print(value2)
     print(value3)
     print(value4)
+    
+    ibm_db.free_stmt(result)
     
     op = {ibm_db.ATTR_CASE: ibm_db.CASE_LOWER}
     ibm_db.set_option(conn, op, 1)

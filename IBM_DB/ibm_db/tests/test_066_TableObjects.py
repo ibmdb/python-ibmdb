@@ -56,7 +56,9 @@ class IbmDbTestCase(unittest.TestCase):
         print("Remarks: %s\n" % row.REMARKS)
 #      row = ibm_db.fetch_object(result)
       data = ibm_db.fetch_assoc(result)
-
+    
+    ibm_db.free_stmt(result)
+    
     if (server.DBMS_NAME[0:3] == 'IDS'):
       result = ibm_db.tables(conn, None, config.user.lower(), 'animal_pics')
     else:
@@ -88,7 +90,9 @@ class IbmDbTestCase(unittest.TestCase):
         print("Remarks: %s\n" % row.REMARKS)
 #      row = ibm_db.fetch_object(result)
       data = ibm_db.fetch_assoc(result)
-      
+    
+    ibm_db.free_stmt(result)
+    
     if (server.DBMS_NAME[0:3] == 'IDS'):
       result = ibm_db.tables(conn, None, config.user.lower(), 'anime_cat')
     else:

@@ -60,6 +60,8 @@ class IbmDbTestCase(unittest.TestCase):
       print(row[3])
       print(row[6])
       print(row[7])
+      
+      ibm_db.free_stmt(stmt)
 
       if (server.DBMS_NAME[0:3] == 'IDS'):
         stmt = ibm_db.foreign_keys(conn, None, None, None, None, config.user, 'test_keys')
@@ -70,6 +72,8 @@ class IbmDbTestCase(unittest.TestCase):
       print(row[3])
       print(row[6])
       print(row[7])
+      
+      ibm_db.free_stmt(stmt)
 
       if (server.DBMS_NAME[0:3] == 'IDS'):
         stmt = ibm_db.foreign_keys(conn, None, config.user, 'test_keys', None, None, None)
@@ -80,6 +84,8 @@ class IbmDbTestCase(unittest.TestCase):
       print(row[3])
       print(row[6])
       print(row[7])
+      
+      ibm_db.free_stmt(stmt)
 
       if (server.DBMS_NAME[0:3] == 'IDS'):
         stmt = ibm_db.foreign_keys(conn, None, config.user, 'test_keys', None, config.user, 'test_foreign_keys')
@@ -90,6 +96,8 @@ class IbmDbTestCase(unittest.TestCase):
       print(row[3])
       print(row[6])
       print(row[7])
+      
+      ibm_db.free_stmt(stmt)
 
       try:
         stmt = ibm_db.foreign_keys(conn, None, None, None, None, None, None)
@@ -97,6 +105,8 @@ class IbmDbTestCase(unittest.TestCase):
       except:
         if (not stmt):
           print(ibm_db.stmt_errormsg())
+          
+      ibm_db.free_stmt(stmt)
 
       if (server.DBMS_NAME[0:3] == 'IDS'):
         stmt = ibm_db.foreign_keys(conn, None, config.user, 'test_keys', None, 'dummy_schema')
@@ -169,6 +179,7 @@ class IbmDbTestCase(unittest.TestCase):
 #TEST_FOREIGN_KEYS
 #NAMEF
 #[IBM][CLI Driver] CLI0124E  Invalid argument value. SQLSTATE=HY009 SQLCODE=-99999
+#No Data Found
 #__IDS_EXPECTED__
 #test_primary_keys
 #id
