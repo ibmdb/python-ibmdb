@@ -101,8 +101,12 @@ class IbmDbTestFunctions(unittest.TestCase):
       pattern = re.sub('%s', '.*?', pattern)
       pattern = re.sub('%d', '\\d+', pattern)
 
-      result = re.match(pattern, self.capture(testFuncName))
-      self.assertNotEqual(result, None)
+      output = self.capture(testFuncName)
+      if sys.version_info >= (2, 7):
+        self.assertRegexpMatches(output, pattern)
+      else:
+        result = re.match(pattern, output)
+        self.assertNotEqual(result, None)
     finally:
       del callstack
       
