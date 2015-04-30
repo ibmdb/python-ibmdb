@@ -1,5 +1,6 @@
 import os
 import sys
+import platform
 import unittest
 if sys.version_info >= (3, ):
     from io import StringIO
@@ -68,11 +69,11 @@ class IbmDbTestFunctions(unittest.TestCase):
   def assert_expect(self, testFuncName):
     callstack = inspect.stack(0)
     try:
-      if (self.server.DBMS_NAME[0:2] == "AS"):
+      if (self.isServerIBMi(self.server)):
           self.assertEqual(self.capture(testFuncName), self.expected_AS(callstack[1][1]))
-      elif (self.server.DBMS_NAME == "DB2"):
+      elif (self.isServerZOS(self.server)):
           self.assertEqual(self.capture(testFuncName), self.expected_ZOS(callstack[1][1]))
-      elif (self.server.DBMS_NAME[0:3] == "IDS"):
+      elif (self.isServerInformix(self.server)):
           self.assertEqual(self.capture(testFuncName), self.expected_IDS(callstack[1][1]))
       else:
           self.assertEqual(self.capture(testFuncName), self.expected_LUW(callstack[1][1]))
@@ -85,11 +86,11 @@ class IbmDbTestFunctions(unittest.TestCase):
   def assert_expectf(self, testFuncName):
     callstack = inspect.stack(0)
     try:
-      if (self.server.DBMS_NAME[0:2] == "AS"):
+      if (self.isServerIBMi(self.server)):
           pattern = self.expected_AS(callstack[1][1])
-      elif (self.server.DBMS_NAME == "DB2"):
+      elif (self.isServerZOS(self.server)):
           pattern = self.expected_ZOS(callstack[1][1])
-      elif (self.server.DBMS_NAME[0:3] == "IDS"):
+      elif (self.isServerInformix(self.server)):
           pattern = self.expected_IDS(callstack[1][1])
       else:
           pattern = self.expected_LUW(callstack[1][1])
@@ -118,3 +119,18 @@ class IbmDbTestFunctions(unittest.TestCase):
   #   is any body to this function
   def runTest(self):
     pass
+  
+  def isServerIBMi(self, serverinfo):
+    return serverinfo.DBMS_NAME == 'AS'
+  
+  def isServerZOS(self, serverinfo):
+    return serverinfo.DBMS_NAME == 'DB2'
+  
+  def isServerInformix(self, serverinfo):
+    return serverinfo.DBMS_NAME[0:3] == 'IDS'
+  
+  def isServerLUW(self, serverinfo):
+    return serverinfo.DBMS_NAME[0:4] == 'DB2/'
+  
+  def isClientIBMi(self):
+    return platform.system() == 'OS400'
