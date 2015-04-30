@@ -81,7 +81,6 @@ static int is_systemi, is_informix;	  /* 1 == TRUE; 0 == FALSE; */
 
 #ifdef PASE
 // TODO: Remove these definitions
-#define SQL_SCROLL_FORWARD_ONLY 1
 #define SQL_DIAG_CURSOR_ROW_COUNT 2
 #define SQL_ATTR_CHAINING_BEGIN 3
 #define SQL_IS_POINTER 4
@@ -1196,7 +1195,7 @@ static PyObject *_python_ibm_db_connect_helper( PyObject *self, PyObject *args, 
 
 		conn_res->c_bin_mode = IBM_DB_G(bin_mode);
 		conn_res->c_case_mode = CASE_NATURAL;
-		conn_res->c_cursor_type = SQL_SCROLL_FORWARD_ONLY;
+		conn_res->c_cursor_type = SQL_CURSOR_FORWARD_ONLY;
 
 		conn_res->error_recno_tracker = 1;
 		conn_res->errormsg_recno_tracker = 1;
@@ -1551,7 +1550,7 @@ static void _python_ibm_db_clear_conn_err_cache(void)
  *			Passing the CASE_UPPER value specifies that column names are
  *			returned in upper case.
  *		SQL_ATTR_CURSOR_TYPE
- *			Passing the SQL_SCROLL_FORWARD_ONLY value specifies a forward-only
+ *			Passing the SQL_CURSOR_FORWARD_ONLY value specifies a forward-only
  *			cursor for a statement resource.
  *			This is the default cursor type and is supported on all database
  *			servers.
@@ -1625,7 +1624,7 @@ static PyObject *ibm_db_connect(PyObject *self, PyObject *args)
  * returned in upper case.
  *
  *		CURSOR
- *			 Passing the SQL_SCROLL_FORWARD_ONLY value specifies a
+ *			 Passing the SQL_CURSOR_FORWARD_ONLY value specifies a
  * forward-only cursor for a statement resource.  This is the default cursor
  * type and is supported on all database servers.
  *			 Passing the SQL_CURSOR_KEYSET_DRIVEN value specifies a scrollable
@@ -4774,7 +4773,7 @@ static int _python_ibm_db_do_prepare(SQLHANDLE hdbc, SQLTCHAR *stmt, int stmt_si
  * functionality.
  *
  *		SQL_ATTR_CURSOR_TYPE
- *			 Passing the SQL_SCROLL_FORWARD_ONLY value requests a forward-only
+ *			 Passing the SQL_CURSOR_FORWARD_ONLY value requests a forward-only
  *			 cursor for this SQL statement. This is the default type of
  *			 cursor, and it is supported by all database servers. It is also
  *			 much faster than a scrollable cursor.
@@ -5067,7 +5066,7 @@ static PyObject *_python_ibm_db_prepare_helper(conn_handle *conn_res, PyObject *
  *		functionality.
  *
  *		SQL_ATTR_CURSOR_TYPE
- *			 Passing the SQL_SCROLL_FORWARD_ONLY value requests a forward-only
+ *			 Passing the SQL_CURSOR_FORWARD_ONLY value requests a forward-only
  *			 cursor for this SQL statement. This is the default type of
  *			 cursor, and it is supported by all database servers. It is also
  *			 much faster than a scrollable cursor.
@@ -7284,7 +7283,7 @@ static PyObject *ibm_db_field_width(PyObject *self, PyObject *args)
  *
  * ===Return Values
  *
- * Returns either SQL_SCROLL_FORWARD_ONLY if the statement resource uses a
+ * Returns either SQL_CURSOR_FORWARD_ONLY if the statement resource uses a
  * forward-only cursor or SQL_CURSOR_KEYSET_DRIVEN if the statement resource
  * uses a scrollable cursor.
  */
@@ -7303,7 +7302,7 @@ static PyObject *ibm_db_cursor_type(PyObject *self, PyObject *args)
 		stmt_res = (stmt_handle *)py_stmt_res;
 	}
 
-	return PyInt_FromLong(stmt_res->cursor_type != SQL_SCROLL_FORWARD_ONLY);
+	return PyInt_FromLong(stmt_res->cursor_type != SQL_CURSOR_FORWARD_ONLY);
 }
 
 /*!# ibm_db.rollback
