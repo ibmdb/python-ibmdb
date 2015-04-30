@@ -1163,6 +1163,17 @@ static PyObject *_python_ibm_db_connect_helper( PyObject *self, PyObject *args, 
 #ifndef PASE
 			rc = SQLSetEnvAttr((SQLHENV)conn_res->henv, SQL_ATTR_ODBC_VERSION, 
 				(void *)SQL_OV_ODBC3, 0);
+#else
+			{
+				int val = SQL_TRUE;
+				rc = SQLSetEnvAttr((SQLHENV)conn_res->henv, SQL_ATTR_SERVER_MODE, &val, 0);
+				if ( rc == SQL_ERROR ) {
+					_python_ibm_db_check_sql_errors((SQLHENV)conn_res->henv,
+																					SQL_HANDLE_ENV, rc, 1, NULL,
+																					-1, 1);
+					break;
+				}
+			}
 #endif
 		}
 
