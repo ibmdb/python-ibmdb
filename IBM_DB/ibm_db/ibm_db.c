@@ -81,7 +81,6 @@ static int is_systemi, is_informix;	  /* 1 == TRUE; 0 == FALSE; */
 
 #ifdef PASE
 // TODO: Remove these definitions
-#define SQL_DIAG_CURSOR_ROW_COUNT 2
 #define SQL_ATTR_CHAINING_BEGIN 3
 #define SQL_IS_POINTER 4
 #define SQL_ATTR_CHAINING_END 5
@@ -6548,9 +6547,13 @@ static PyObject *ibm_db_get_num_result(PyObject *self, PyObject *args)
 		}
 
 		Py_BEGIN_ALLOW_THREADS;
+#ifndef PASE
 		rc = SQLGetDiagField(SQL_HANDLE_STMT, stmt_res->hstmt, 0,
 								SQL_DIAG_CURSOR_ROW_COUNT, &count, SQL_IS_INTEGER,
 								&strLenPtr);
+#else
+		rc = SQLRowCount(stmt_res->hstmt, &count);
+#endif
 		Py_END_ALLOW_THREADS;
 		
 		if ( rc == SQL_ERROR ) {
