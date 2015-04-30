@@ -13,7 +13,10 @@ class IbmDbTestCase(unittest.TestCase):
 
   def test_002_ConnDbUncatalogedConn(self):
     obj = IbmDbTestFunctions()
-    obj.assert_expect(self.run_test_002)
+    if obj.isClientIBMi():
+        raise unittest.SkipTest("Uncataloged connections not supported on IBM i")
+    else:
+        obj.assert_expect(self.run_test_002)
 
   def run_test_002(self):
     conn_str = "DATABASE=%s;HOSTNAME=%s;PORT=%d;PROTOCOL=TCPIP;UID=%s;PWD=%s;" % (config.database, config.hostname, config.port, config.user, config.password)
