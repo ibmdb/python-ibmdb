@@ -8729,9 +8729,9 @@ static PyObject *ibm_db_server_info(PyObject *self, PyObject *args)
 		}
 
 #ifdef PASE
-        // IBM i doesn't have the concept of a database-wide code page
-        // Instead, each field can be a different code page
-        return_value->DB_CODEPAGE = 0;
+		// IBM i doesn't have the concept of a database-wide code page
+		// Instead, each field can be a different code page
+		return_value->DB_CODEPAGE = 0;
 #else
 		/* DB_CODEPAGE */
 		bufferint32 = 0;
