@@ -611,7 +611,7 @@ static int _python_ibm_db_assign_options( void *handle, int type, long opt_key, 
 		if (PyString_Check(data)|| PyUnicode_Check(data)) {
 			data = PyUnicode_FromObject(data);
 			option_str = getUnicodeDataAsSQLTCHAR(data, &isNewBuffer);
-			rc = SQLSetStmtAttrT((SQLHSTMT)((stmt_handle *)handle)->hstmt, opt_key, (SQLPOINTER)option_str, SQL_IS_INTEGER );
+			rc = SQLSetStmtAttrT((SQLHSTMT)((stmt_handle *)handle)->hstmt, opt_key, (SQLPOINTER)option_str, SQL_NTS );
 			if ( rc == SQL_ERROR ) {
 				_python_ibm_db_check_sql_errors((SQLHSTMT)((stmt_handle *)handle)->hstmt, SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
 			}
@@ -622,7 +622,11 @@ static int _python_ibm_db_assign_options( void *handle, int type, long opt_key, 
 			option_num = NUM2LONG(data);
 			if (opt_key == SQL_ATTR_AUTOCOMMIT && option_num == SQL_AUTOCOMMIT_OFF) ((conn_handle*)handle)->auto_commit = 0;
 			else if (opt_key == SQL_ATTR_AUTOCOMMIT && option_num == SQL_AUTOCOMMIT_ON) ((conn_handle*)handle)->auto_commit = 1;
+#ifndef PASE
 			rc = SQLSetStmtAttr((SQLHSTMT)((stmt_handle *)handle)->hstmt, opt_key, (SQLPOINTER)option_num, SQL_IS_INTEGER );
+#else
+			rc = SQLSetStmtAttr((SQLHSTMT)((stmt_handle *)handle)->hstmt, opt_key, &option_num, 0 );
+#endif
 			if ( rc == SQL_ERROR ) {
 				_python_ibm_db_check_sql_errors((SQLHSTMT)((stmt_handle *)handle)->hstmt, SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
 			}
@@ -642,7 +646,11 @@ static int _python_ibm_db_assign_options( void *handle, int type, long opt_key, 
 			option_num = NUM2LONG(data);
 			if (opt_key == SQL_ATTR_AUTOCOMMIT && option_num == SQL_AUTOCOMMIT_OFF) ((conn_handle*)handle)->auto_commit = 0;
 			else if (opt_key == SQL_ATTR_AUTOCOMMIT && option_num == SQL_AUTOCOMMIT_ON) ((conn_handle*)handle)->auto_commit = 1;
+#ifndef PASE
 			rc = SQLSetConnectAttrT((SQLHSTMT)((conn_handle*)handle)->hdbc, opt_key, (SQLPOINTER)option_num, SQL_IS_INTEGER);
+#else
+			rc = SQLSetConnectAttrT((SQLHSTMT)((conn_handle*)handle)->hdbc, opt_key, &option_num, 0);
+#endif
 			if ( rc == SQL_ERROR ) {
 				_python_ibm_db_check_sql_errors((SQLHSTMT)((stmt_handle *)handle)->hstmt, SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
 			}
