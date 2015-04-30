@@ -5364,11 +5364,7 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
 							paramValuePtr = (SQLPOINTER)curr->uvalue;
 						} else {
 							curr->bind_indicator = SQL_DATA_AT_EXEC;	
-#ifndef PASE
 							paramValuePtr = (SQLPOINTER)(curr);
-#else
-							paramValuePtr = (SQLPOINTER)&(curr);
-#endif
 						}
 						valueType = SQL_C_TCHAR;
 						break;
@@ -5379,11 +5375,7 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
 							paramValuePtr = (SQLPOINTER)curr;
 						} else {
 							curr->bind_indicator = SQL_DATA_AT_EXEC;
-#ifndef PASE
 							paramValuePtr = (SQLPOINTER)(curr);
-#else
-							paramValuePtr = (SQLPOINTER)&(curr);
-#endif
 						}
 						valueType = SQL_C_BINARY;
 						break;
@@ -5484,11 +5476,7 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
 							/* The correct dataPtr will be set during SQLPutData with 
 							* the len from this struct 
 							*/
-#ifndef PASE
 							paramValuePtr = (SQLPOINTER)(curr);
-#else
-							paramValuePtr = (SQLPOINTER)&(curr);
-#endif
 						}
 						valueType = SQL_C_CHAR;
 						break;
@@ -5501,11 +5489,7 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
 							paramValuePtr = (SQLPOINTER)curr;
 						} else {
 							curr->bind_indicator = SQL_DATA_AT_EXEC;
-#ifndef PASE
 							paramValuePtr = (SQLPOINTER)(curr);
-#else
-							paramValuePtr = (SQLPOINTER)&(curr);
-#endif
 						}
 						valueType = SQL_C_BINARY;
 						break;
