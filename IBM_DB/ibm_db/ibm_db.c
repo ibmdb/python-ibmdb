@@ -1142,8 +1142,8 @@ static PyObject *_python_ibm_db_connect_helper( PyObject *self, PyObject *args, 
 		}
 		
 #ifdef PASE
-        // Ensure we're running in UTF-8 mode
-        SQLOverrideCCSID400(1208);
+		// Ensure we're running in UTF-8 mode
+		SQLOverrideCCSID400(1208);
 #endif
 
 		/* We need to set this early, in case we get an error below,
@@ -1180,10 +1180,10 @@ static PyObject *_python_ibm_db_connect_helper( PyObject *self, PyObject *args, 
 		rc = SQLSetConnectAttr((SQLHDBC)conn_res->hdbc, SQL_ATTR_AUTOCOMMIT, 
 			(SQLPOINTER)(conn_res->auto_commit), SQL_NTS);
 #else
-        {
-          int auto_commit = conn_res->auto_commit;
-          rc = SQLSetConnectAttr((SQLHDBC)conn_res->hdbc, SQL_ATTR_AUTOCOMMIT, &auto_commit, 0);
-        }
+		{
+			int auto_commit = conn_res->auto_commit;
+			rc = SQLSetConnectAttr((SQLHDBC)conn_res->hdbc, SQL_ATTR_AUTOCOMMIT, &auto_commit, 0);
+		}
 #endif
 
 		conn_res->c_bin_mode = IBM_DB_G(bin_mode);
@@ -1405,7 +1405,7 @@ static int _python_ibm_db_set_decfloat_rounding_mode_client(SQLHANDLE hdbc)
 #ifndef PASE
 	rc = SQLSetConnectAttr(hdbc, SQL_ATTR_DECFLOAT_ROUNDING_MODE, (SQLPOINTER)rounding_mode, SQL_NTS);
 #else
-	rc = SQLSetConnectAttr(hdbc, SQL_ATTR_DECFLOAT_ROUNDING_MODE, (SQLPOINTER)&rounding_mode, SQL_NTS);
+	rc = SQLSetConnectAttr(hdbc, SQL_ATTR_DECFLOAT_ROUNDING_MODE, &rounding_mode, 0);
 #endif
 
 	return rc;
@@ -10222,7 +10222,7 @@ static PyObject* ibm_db_check_function_support(PyObject *self, PyObject *args)
 	int funtion_id = 0;
 	conn_handle *conn_res = NULL;
 #ifdef PASE
-    SQLSMALLINT supported = 0;
+	SQLSMALLINT supported = 0;
 #else
 	SQLUSMALLINT supported = 0;
 #endif
