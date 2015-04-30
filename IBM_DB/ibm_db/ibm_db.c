@@ -81,9 +81,6 @@ static int is_systemi, is_informix;	  /* 1 == TRUE; 0 == FALSE; */
 
 #ifdef PASE
 // TODO: Remove these definitions
-#define SQL_ATTR_CHAINING_BEGIN 3
-#define SQL_IS_POINTER 4
-#define SQL_ATTR_CHAINING_END 5
 #define SQL_INDEX_CLUSTERED 6
 #define SQL_ATTR_CURRENT_SCHEMA 7
 #define SQL_ATTR_INFO_PROGRAMNAME 8
@@ -9618,6 +9615,7 @@ static PyObject *ibm_db_get_option(PyObject *self, PyObject *args)
 	Py_RETURN_FALSE;
 }
 
+#ifndef PASE
 static int _ibm_db_chaining_flag(stmt_handle *stmt_res, SQLINTEGER flag, error_msg_node *error_list, int client_err_cnt) {
 	int rc;
 	Py_BEGIN_ALLOW_THREADS;
@@ -9662,6 +9660,7 @@ static int _ibm_db_chaining_flag(stmt_handle *stmt_res, SQLINTEGER flag, error_m
 	}
 	return rc;
 }
+#endif
 
 static void _build_client_err_list(error_msg_node *head_error_list, char *err_msg) {
 	error_msg_node *tmp_err = NULL, *curr_err = head_error_list->next, *prv_err = NULL;
@@ -9935,6 +9934,7 @@ static PyObject* ibm_db_execute_many (PyObject *self, PyObject *args) {
 					j++;
 				}
 
+#ifndef PASE
 				if ( !chaining_start && ( error[0] == '\0' ) ) {
 					/* Set statement attribute SQL_ATTR_CHAINING_BEGIN */
 					rc = _ibm_db_chaining_flag(stmt_res, SQL_ATTR_CHAINING_BEGIN, NULL, 0);
@@ -9943,6 +9943,7 @@ static PyObject* ibm_db_execute_many (PyObject *self, PyObject *args) {
 						return NULL;
 					}
 				}
+#endif
 
 				if ( error[0] == '\0' ) {
 					Py_BEGIN_ALLOW_THREADS;
@@ -9980,6 +9981,7 @@ static PyObject* ibm_db_execute_many (PyObject *self, PyObject *args) {
 			
 		}
 		
+#ifndef PASE
 		/* Set statement attribute SQL_ATTR_CHAINING_END */
 		rc = _ibm_db_chaining_flag(stmt_res, SQL_ATTR_CHAINING_END, head_error_list->next, err_count);
 		if ( head_error_list != NULL ) {
@@ -9990,6 +9992,7 @@ static PyObject* ibm_db_execute_many (PyObject *self, PyObject *args) {
 				PyMem_Del(tmp_err);
 			}
 		}
+#endif
 		if ( rc != SQL_SUCCESS || err_count != 0 ) {
 			return NULL;
 		}
