@@ -7,6 +7,7 @@
 import unittest, sys
 import ibm_db
 import config
+import socket
 from testfunctions import IbmDbTestFunctions
 
 class IbmDbTestCase(unittest.TestCase):
@@ -18,6 +19,11 @@ class IbmDbTestCase(unittest.TestCase):
 		obj.assert_expectf(self.run_test_trusted_context_connect)
 		
 	def run_test_trusted_context_connect(self):
+		try:
+			local_hostname = config.local_hostname
+		except:
+			local_hostname = socket.gethostname()
+
 		sql_drop_role = "DROP ROLE role_01"
 		sql_create_role = "CREATE ROLE role_01"
 
@@ -26,7 +32,7 @@ class IbmDbTestCase(unittest.TestCase):
 		sql_create_trusted_context = "CREATE TRUSTED CONTEXT ctx BASED UPON CONNECTION USING SYSTEM AUTHID "
 		sql_create_trusted_context += config.auth_user
 		sql_create_trusted_context += " ATTRIBUTES (ADDRESS '"
-		sql_create_trusted_context += config.hostname
+		sql_create_trusted_context += local_hostname
 		sql_create_trusted_context += "') DEFAULT ROLE role_01 ENABLE WITH USE FOR "
 		sql_create_trusted_context += config.tc_user
 
@@ -118,7 +124,9 @@ class IbmDbTestCase(unittest.TestCase):
 				get_tc_user = ibm_db.get_option(tc_conn, ibm_db.SQL_ATTR_TRUSTED_CONTEXT_USERID, 1)
 				if config.tc_user != get_tc_user:
 					print("But trusted user is not switched.")
-		ibm_db.close(tc_conn)
+			ibm_db.close(tc_conn)
+		else:
+			print("Trusted connection failed.")
 
 		# Making trusted connection and performing normal operations.
 		tc_conn = ibm_db.connect(dsn, "", "", options)
@@ -314,12 +322,12 @@ class IbmDbTestCase(unittest.TestCase):
 #__LUW_EXPECTED__
 #Normal connection established.
 #[%s][%s] CLI0197E  A trusted context is not enabled on this connection. Invalid attribute value. SQLSTATE=HY010 SQLCODE=-99999
-#Normal connection established.[%s][%s] CLI0197E  A trusted context is not enabled on this connection. Invalid attribute value. SQLSTATE=HY010 SQLCODE=-99999
-#Trusted connection succeeded.
-#But trusted user is not switched.
+#Normal connection established.
+#[%s][%s] CLI0197E  A trusted context is not enabled on this connection. Invalid attribute value. SQLSTATE=HY010 SQLCODE=-99999
+#Trusted connection failed.
 #Trusted connection succeeded.
 #User has been switched.
-#[%s][%s][%s] SQL0551N  "%s" does not have the %s privilege to perform operation "UPDATE" on object "%s.TRUSTED_TABLE".  SQLSTATE=42501 SQLCODE=-551
+#[%s][%s][%s] SQL0551N  %s SQLSTATE=42501 SQLCODE=-551
 #Trusted connection succeeded.
 #[%s][%s][%s] SQL30082N  Security processing failed with reason "24" ("USERNAME AND/OR PASSWORD INVALID").  SQLSTATE=08001 SQLCODE=-30082
 #Trusted connection succeeded.
@@ -329,34 +337,14 @@ class IbmDbTestCase(unittest.TestCase):
 #[%s][%s][%s] SQL20361N  The switch user request using authorization ID "%s" within trusted context "CTX" failed with reason code "2".  SQLSTATE=42517 SQLCODE=-20361
 #Trusted connection succeeded.
 #User has been switched.
-#[%s][%s][%s] SQL0551N  "%s" does not have the %s privilege to perform operation "INSERT" on object "%s.TRUSTED_TABLE".  SQLSTATE=42501 SQLCODE=-551
+#[%s][%s][%s] SQL0551N  %s SQLSTATE=42501 SQLCODE=-551
 #Connection succeeded.
 #__ZOS_EXPECTED__
 #Normal connection established.
 #[%s][%s] CLI0197E  A trusted context is not enabled on this connection. Invalid attribute value. SQLSTATE=HY010 SQLCODE=-99999
-#Normal connection established.[%s][%s] CLI0197E  A trusted context is not enabled on this connection. Invalid attribute value. SQLSTATE=HY010 SQLCODE=-99999
-#Trusted connection succeeded.
-#But trusted user is not switched.
-#Trusted connection succeeded.
-#User has been switched.
-#[%s][%s][%s] SQL0551N  "%s" does not have the %s privilege to perform operation "UPDATE" on object "%s.TRUSTED_TABLE".  SQLSTATE=42501 SQLCODE=-551
-#Trusted connection succeeded.
-#[%s][%s][%s] SQL30082N  Security processing failed with reason "24" ("USERNAME AND/OR PASSWORD INVALID").  SQLSTATE=08001 SQLCODE=-30082
-#Trusted connection succeeded.
-#User has been switched.
-#Trusted connection succeeded.
-#Trusted connection succeeded.
-#[%s][%s][%s] SQL20361N  The switch user request using authorization ID "%s" within trusted context "CTX" failed with reason code "2".  SQLSTATE=42517 SQLCODE=-20361
-#Trusted connection succeeded.
-#User has been switched.
-#[%s][%s][%s] SQL0551N  "%s" does not have the %s privilege to perform operation "INSERT" on object "%s.TRUSTED_TABLE".  SQLSTATE=42501 SQLCODE=-551
-#Connection succeeded.
-#__SYSTEMI_EXPECTED__
 #Normal connection established.
 #[%s][%s] CLI0197E  A trusted context is not enabled on this connection. Invalid attribute value. SQLSTATE=HY010 SQLCODE=-99999
-#Normal connection established.[%s][%s] CLI0197E  A trusted context is not enabled on this connection. Invalid attribute value. SQLSTATE=HY010 SQLCODE=-99999
-#Trusted connection succeeded.
-#But trusted user is not switched.
+#Trusted connection failed.
 #Trusted connection succeeded.
 #User has been switched.
 #[%s][%s][%s] SQL0551N  "%s" does not have the %s privilege to perform operation "UPDATE" on object "%s.TRUSTED_TABLE".  SQLSTATE=42501 SQLCODE=-551
@@ -374,9 +362,9 @@ class IbmDbTestCase(unittest.TestCase):
 #__IDS_EXPECTED__
 #Normal connection established.
 #[%s][%s] CLI0197E  A trusted context is not enabled on this connection. Invalid attribute value. SQLSTATE=HY010 SQLCODE=-99999
-#Normal connection established.[%s][%s] CLI0197E  A trusted context is not enabled on this connection. Invalid attribute value. SQLSTATE=HY010 SQLCODE=-99999
-#Trusted connection succeeded.
-#But trusted user is not switched.
+#Normal connection established.
+#[%s][%s] CLI0197E  A trusted context is not enabled on this connection. Invalid attribute value. SQLSTATE=HY010 SQLCODE=-99999
+#Trusted connection failed.
 #Trusted connection succeeded.
 #User has been switched.
 #[%s][%s][%s] SQL0551N  "%s" does not have the %s privilege to perform operation "UPDATE" on object "%s.TRUSTED_TABLE".  SQLSTATE=42501 SQLCODE=-551

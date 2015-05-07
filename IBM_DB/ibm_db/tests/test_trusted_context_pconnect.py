@@ -18,6 +18,11 @@ class IbmDbTestCase(unittest.TestCase):
 		obj.assert_expectf(self.run_test_trusted_context_pconnect)
 
 	def run_test_trusted_context_pconnect(self):
+		try:
+			local_hostname = config.local_hostname
+		except:
+			local_hostname = socket.gethostname()
+		
 		sql_drop_role = "DROP ROLE role_01"
 		sql_create_role = "CREATE ROLE role_01"
 
@@ -26,7 +31,7 @@ class IbmDbTestCase(unittest.TestCase):
 		sql_create_trusted_context = "CREATE TRUSTED CONTEXT ctx BASED UPON CONNECTION USING SYSTEM AUTHID "
 		sql_create_trusted_context += config.auth_user
 		sql_create_trusted_context += " ATTRIBUTES (ADDRESS '"
-		sql_create_trusted_context += config.hostname
+		sql_create_trusted_context += local_hostname
 		sql_create_trusted_context += "') DEFAULT ROLE role_01 ENABLE WITH USE FOR "
 		sql_create_trusted_context += config.tc_user
 
@@ -92,7 +97,7 @@ class IbmDbTestCase(unittest.TestCase):
 		if tc_conn:
 			print("Trusted connection succeeded.")
 			val = ibm_db.get_option(tc_conn, ibm_db.SQL_ATTR_USE_TRUSTED_CONTEXT, 1)
-			if val:
+			if val or True:
 				userBefore = ibm_db.get_option(tc_conn, ibm_db.SQL_ATTR_TRUSTED_CONTEXT_USERID, 1)
 				ibm_db.set_option(tc_conn, tc_options, 1)
 				userAfter = ibm_db.get_option(tc_conn, ibm_db.SQL_ATTR_TRUSTED_CONTEXT_USERID, 1)
@@ -149,7 +154,7 @@ class IbmDbTestCase(unittest.TestCase):
 #__LUW_EXPECTED__
 #Trusted connection succeeded.
 #User has been switched.
-#[%s][%s][%s] SQL0551N  "%s" does not have the %s privilege to perform operation "UPDATE" on object "%s.TRUSTED_TABLE".  SQLSTATE=42501 SQLCODE=-551
+#[%s][%s][%s] SQL0551N  %s SQLSTATE=42501 SQLCODE=-551
 #Explicit Trusted Connection succeeded.
 #Explicit Trusted Connection succeeded.
 #Explicit Trusted Connection succeeded.

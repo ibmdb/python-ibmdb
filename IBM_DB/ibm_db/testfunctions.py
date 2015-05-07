@@ -29,14 +29,15 @@ class IbmDbTestFunctions(unittest.TestCase):
     func()
     sys.stdout = sys.__stdout__
     var = buffer.getvalue()
-    var = var.replace('\n', '').replace('\r', '')
+    #print('\n')
+    #print(var)
     return var
   
   # This function grabs the expected output of the current test function for LUW,
   #   located at the bottom of the current test file.
   def expected_LUW(self, fileName):
     fileHandle = open(fileName, 'r')
-    fileInput = fileHandle.read().split('#__LUW_EXPECTED__')[-1].split('#__ZOS_EXPECTED__')[0].replace('\n', '').replace('#', '')
+    fileInput = fileHandle.read().split('#__LUW_EXPECTED__\n')[-1].split('#__ZOS_EXPECTED__\n')[0]
     fileHandle.close()
     return fileInput
 
@@ -44,7 +45,7 @@ class IbmDbTestFunctions(unittest.TestCase):
   #   located at the bottom of the current test file.
   def expected_IDS(self, fileName):
     fileHandle = open(fileName, 'r')
-    fileInput = fileHandle.read().split('#__IDS_EXPECTED__')[-1].replace('\n', '').replace('#', '')
+    fileInput = fileHandle.read().split('#__IDS_EXPECTED__\n')[-1]
     fileHandle.close()
     return fileInput
 
@@ -52,7 +53,7 @@ class IbmDbTestFunctions(unittest.TestCase):
   #   located at the bottom of the current test file.
   def expected_ZOS(self, fileName):
     fileHandle = open(fileName, 'r')
-    fileInput = fileHandle.read().split('#__ZOS_EXPECTED__')[-1].split('#__SYSTEMI_EXPECTED__')[0].replace('\n', '').replace('#', '')
+    fileInput = fileHandle.read().split('#__ZOS_EXPECTED__\n')[-1].split('#__SYSTEMI_EXPECTED__\n')[0]
     fileHandle.close()
     return fileInput
 
@@ -60,7 +61,17 @@ class IbmDbTestFunctions(unittest.TestCase):
   #   located at the bottom of the current test file.
   def expected_AS(self, fileName):
     fileHandle = open(fileName, 'r')
-    fileInput = fileHandle.read().split('#__SYSTEMI_EXPECTED__')[-1].split('#__IDS_EXPECTED__')[0].replace('\n', '').replace('#', '')
+    data = fileHandle.read()
+    
+    start = '#__SYSTEMI_EXPECTED__\n'
+    end = '#__IDS_EXPECTED__\n'
+    
+    if(self.isClientIBMi() and '#__PASE_EXPECTED__' in data):
+      start = '#__PASE_EXPECTED__\n'
+    elif(not self.isClientIBMi() and '#__PASE_EXPECTED__' in data):
+      end = '#__PASE_EXPECTED__\n'
+    
+    fileInput = data.split(start)[-1].split(end)[0]
     fileHandle.close()
     return fileInput
     
@@ -68,18 +79,32 @@ class IbmDbTestFunctions(unittest.TestCase):
   #   the current test file.
   def assert_expect(self, testFuncName):
     callstack = inspect.stack(0)
+    expected = None
+    output = self.capture(testFuncName)
+    
     try:
       if (self.isServerIBMi(self.server)):
-          self.assertEqual(self.capture(testFuncName), self.expected_AS(callstack[1][1]))
+        expected = self.expected_AS(callstack[1][1])
       elif (self.isServerZOS(self.server)):
-          self.assertEqual(self.capture(testFuncName), self.expected_ZOS(callstack[1][1]))
+        expected = self.expected_ZOS(callstack[1][1])
       elif (self.isServerInformix(self.server)):
-          self.assertEqual(self.capture(testFuncName), self.expected_IDS(callstack[1][1]))
+        expected = self.expected_IDS(callstack[1][1])
       else:
-          self.assertEqual(self.capture(testFuncName), self.expected_LUW(callstack[1][1]))
-      
+        expected = self.expected_LUW(callstack[1][1])
     finally:
       del callstack
+    
+    expected = expected.replace('#', '')
+    expected = expected.replace('\n', '').replace('\r', '')
+    output = output.replace('\n', '').replace('\r', '')
+    
+    if sys.version_info >= (2, 7):
+      self.maxDiff = None
+      self.assertMultiLineEqual(expected, output)
+    else:
+      #expected = expected.replace('\n', '').replace('\r', '')
+      #output = output.replace('\n', '').replace('\r', '')
+      self.assertEqual(expected, output)
 
   # This function will compare using Regular Expressions
   # based on the servre
@@ -99,10 +124,15 @@ class IbmDbTestFunctions(unittest.TestCase):
       for chr in sym:
           pattern = re.sub(chr, '\\' + chr, pattern)
 
+      pattern = pattern.replace('#', '')
+      pattern = pattern.replace('\r', '')
+      pattern = pattern.replace('\n', '')
       pattern = re.sub('%s', '.*?', pattern)
       pattern = re.sub('%d', '\\d+', pattern)
 
       output = self.capture(testFuncName)
+      output = output.replace('\r', '')
+      output = output.replace('\n', '')
       if sys.version_info >= (2, 7):
         self.assertRegexpMatches(output, pattern)
       else:

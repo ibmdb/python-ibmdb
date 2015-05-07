@@ -316,14 +316,14 @@ char *strtolower(char *data, int max) {
 		data[max] = tolower(data[max]);
 	}
 	return data;
-} 
+}
 	
 char *strtoupper(char *data, int max) {
 	while (max--){
 		data[max] = toupper(data[max]);
 	}
 	return data;
-} 
+}
 
 /*	static void _python_ibm_db_free_conn_struct */
 static void _python_ibm_db_free_conn_struct(conn_handle *handle) {
@@ -630,9 +630,9 @@ static int _python_ibm_db_assign_options( void *handle, int type, long opt_key, 
 		if (PyString_Check(data)|| PyUnicode_Check(data)) {
 			data = PyUnicode_FromObject(data);
 			option_str = getUnicodeDataAsSQLTCHAR(data, &isNewBuffer);
-			rc = SQLSetConnectAttrT((SQLHSTMT)((conn_handle*)handle)->hdbc, opt_key, (SQLPOINTER)option_str, SQL_NTS);
+			rc = SQLSetConnectAttrT((SQLHDBC)((conn_handle*)handle)->hdbc, opt_key, (SQLPOINTER)option_str, SQL_NTS);
 			if ( rc == SQL_ERROR ) {
-				_python_ibm_db_check_sql_errors((SQLHSTMT)((stmt_handle *)handle)->hstmt, SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
+				_python_ibm_db_check_sql_errors((SQLHANDLE)((stmt_handle *)handle)->hdbc, SQL_HANDLE_DBC, rc, 1, NULL, -1, 1);
 			}
 			if (isNewBuffer)
 				PyMem_Del(option_str);
@@ -642,29 +642,31 @@ static int _python_ibm_db_assign_options( void *handle, int type, long opt_key, 
 			if (opt_key == SQL_ATTR_AUTOCOMMIT && option_num == SQL_AUTOCOMMIT_OFF) ((conn_handle*)handle)->auto_commit = 0;
 			else if (opt_key == SQL_ATTR_AUTOCOMMIT && option_num == SQL_AUTOCOMMIT_ON) ((conn_handle*)handle)->auto_commit = 1;
 #ifndef PASE
-			rc = SQLSetConnectAttrT((SQLHSTMT)((conn_handle*)handle)->hdbc, opt_key, (SQLPOINTER)option_num, SQL_IS_INTEGER);
+			rc = SQLSetConnectAttrT((SQLHDBC)((conn_handle*)handle)->hdbc, opt_key, (SQLPOINTER)option_num, SQL_IS_INTEGER);
 #else
-			rc = SQLSetConnectAttrT((SQLHSTMT)((conn_handle*)handle)->hdbc, opt_key, &option_num, 0);
+			rc = SQLSetConnectAttrT((SQLHDBC)((conn_handle*)handle)->hdbc, opt_key, &option_num, 0);
 #endif
 			if ( rc == SQL_ERROR ) {
-				_python_ibm_db_check_sql_errors((SQLHSTMT)((stmt_handle *)handle)->hstmt, SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
+				_python_ibm_db_check_sql_errors((SQLHSTMT)((stmt_handle *)handle)->hdbc, SQL_HANDLE_DBC, rc, 1, NULL, -1, 1);
 			}
 		}
 	} else {
 		PyErr_SetString(PyExc_Exception, "Connection or statement handle must be passed in.");
 		return -1;
 	}
-	return 0;
+	
+	return rc;
 }
 
 /*	static int _python_ibm_db_parse_options( PyObject *options, int type, void *handle)
 */
 static int _python_ibm_db_parse_options ( PyObject *options, int type, void *handle )
 {
-	int numOpts = 0, i = 0;
+	Py_ssize_t numOpts = 0, i = 0;
 	PyObject *keys = NULL;
 	PyObject *key = NULL; /* Holds the Option Index Key */
 	PyObject *data = NULL;
+	PyObject *tc_user = NULL;
 	PyObject *tc_pass = NULL;
 	int rc = 0;
 
@@ -673,26 +675,37 @@ static int _python_ibm_db_parse_options ( PyObject *options, int type, void *han
 		numOpts = PyList_Size(keys);
 
 		for ( i = 0; i < numOpts; i++) {
+			long key_long;
+			
 			key = PyList_GetItem(keys, i);
 			data = PyDict_GetItem(options, key);
-
-			if(NUM2LONG(key) == SQL_ATTR_TRUSTED_CONTEXT_PASSWORD) {
+			key_long = NUM2LONG(key);
+			
+			if(key_long == SQL_ATTR_TRUSTED_CONTEXT_USERID) {
+				tc_user = data;
+			} else if(key_long == SQL_ATTR_TRUSTED_CONTEXT_PASSWORD) {
 				tc_pass = data;
 			} else {
 				/* Assign options to handle. */
 				/* Sets the options in the handle with CLI/ODBC calls */
-				rc = _python_ibm_db_assign_options(handle, type, NUM2LONG(key), data);
+				rc = _python_ibm_db_assign_options(handle, type, key_long, data);
+				
+				if (rc) return rc;
 			}
-			if (rc)
-				return SQL_ERROR;
 		}
-		if (!NIL_P(tc_pass) ) {
-			rc = _python_ibm_db_assign_options(handle, type, SQL_ATTR_TRUSTED_CONTEXT_PASSWORD, tc_pass);
-		}
-		if (rc)
-			return SQL_ERROR;
 	}
-	return SQL_SUCCESS;
+	
+	if (!NIL_P(tc_user) ) {
+		rc =_python_ibm_db_assign_options(handle, type, SQL_ATTR_TRUSTED_CONTEXT_USERID, tc_user);
+		if (rc) return rc;
+	}
+	
+	if (!NIL_P(tc_pass) ) {
+		rc = _python_ibm_db_assign_options(handle, type, SQL_ATTR_TRUSTED_CONTEXT_PASSWORD, tc_pass);
+		if (rc) return rc;
+	}
+	
+	return rc;
 }
 
 /*	static int _python_ibm_db_get_result_set_info(stmt_handle *stmt_res)
@@ -724,7 +737,7 @@ static int _python_ibm_db_get_result_set_info(stmt_handle *stmt_res)
 	for (i = 0 ; i < nResultCols; i++) {
 	  Py_BEGIN_ALLOW_THREADS;
 	  rc = SQLDescribeCol((SQLHSTMT)stmt_res->hstmt, (SQLSMALLINT)(i + 1 ),
-						  (SQLCHAR *)&tmp_name, BUFSIZ, &name_length, 
+						  tmp_name, BUFSIZ, &name_length,
 						  &stmt_res->column_info[i].type,
 						  &stmt_res->column_info[i].size, 
 						  &stmt_res->column_info[i].scale,
@@ -1213,14 +1226,17 @@ static PyObject *_python_ibm_db_connect_helper( PyObject *self, PyObject *args, 
 		/* Set Options */
 		if ( !NIL_P(options) ) {
 			if(!PyDict_Check(options)) {
-				PyErr_SetString(PyExc_Exception, "options Parameter must be of type dictionay");
+				PyErr_SetString(PyExc_Exception, "options Parameter must be of type dictionary");
 				return NULL;
 			}
 			rc = _python_ibm_db_parse_options( options, SQL_HANDLE_DBC, conn_res );
+			
 			if (rc != SQL_SUCCESS) {
 				SQLFreeHandle(SQL_HANDLE_DBC, conn_res->hdbc);
 				SQLFreeHandle(SQL_HANDLE_ENV, conn_res->henv);
-				break;
+				
+				PyErr_Clear();
+				Py_RETURN_NONE;
 			}
 		}
 
@@ -8429,9 +8445,10 @@ static PyObject *ibm_db_set_option(PyObject *self, PyObject *args)
 	PyObject *conn_or_stmt = NULL;
 	PyObject *options = NULL;
 	PyObject *py_type = NULL;
+	PyObject *return_obj;
 	stmt_handle *stmt_res = NULL;
 	conn_handle *conn_res;
-	int rc = 0;
+	int rc = 1;
 	long type = 0;
 
 	if (!PyArg_ParseTuple(args, "OOO", &conn_or_stmt, &options, &py_type))
@@ -8454,13 +8471,9 @@ static PyObject *ibm_db_set_option(PyObject *self, PyObject *args)
 			conn_res = (conn_handle *)conn_or_stmt;
 
 			if ( !NIL_P(options) ) {
-				rc = _python_ibm_db_parse_options(options, SQL_HANDLE_DBC, 
-					conn_res);
-				if (rc == SQL_ERROR) {
-					PyErr_SetString(PyExc_Exception, 
-						"Options Array must have string indexes");
-					return NULL;
-				}
+				rc = _python_ibm_db_parse_options(options, SQL_HANDLE_DBC, conn_res);
+				// Clear any exception that might have been set
+				PyErr_Clear();
 			}
 		} else {
 			if (!PyObject_TypeCheck(conn_or_stmt, &stmt_handleType)) {
@@ -8470,21 +8483,16 @@ static PyObject *ibm_db_set_option(PyObject *self, PyObject *args)
 			stmt_res = (stmt_handle *)conn_or_stmt;				  
 
 			if ( !NIL_P(options) ) {
-				rc = _python_ibm_db_parse_options(options, SQL_HANDLE_STMT, 
-					stmt_res);
-				if (rc == SQL_ERROR) {
-					PyErr_SetString(PyExc_Exception, 
-						"Options Array must have string indexes");
-					return NULL;
-				}
+				rc = _python_ibm_db_parse_options(options, SQL_HANDLE_STMT, stmt_res);
+				// Clear any exception that might have been set
+				PyErr_Clear();
 			}
 		}
-		Py_INCREF(Py_True);
-		return Py_True;
-	} else {
-		Py_INCREF(Py_False);
-		return Py_False;
 	}
+	
+	return_obj = rc == 0 ? Py_True : Py_False;
+	Py_INCREF(return_obj);
+	return return_obj;
 }
 
 static PyObject *ibm_db_get_db_info(PyObject *self, PyObject *args) 
@@ -9529,101 +9537,92 @@ static PyObject *ibm_db_get_option(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "OOO", &conn_or_stmt, &py_op_integer, &py_type))
 		return NULL;
 
-	if (!NIL_P(conn_or_stmt)) {
-		if (!NIL_P(py_op_integer)) {
-			if (PyInt_Check(py_op_integer)) {
-				op_integer = (SQLINTEGER) PyInt_AsLong(py_op_integer);
-			} else {
-				PyErr_SetString(PyExc_Exception, "Supplied parameter is invalid");
-				return NULL;
-			}
-		}
-		if (!NIL_P(py_type)) {
-			if (PyInt_Check(py_type)) {
-				type = PyInt_AsLong(py_type);
-			} else {
-				PyErr_SetString(PyExc_Exception, "Supplied parameter is invalid");
-				return NULL;
-			}
-		}
-		/* Checking to see if we are getting a connection option (1) or a 
-		* statement option (non - 1) 
-		*/
-		if (type == 1) {
-			if (!PyObject_TypeCheck(conn_or_stmt, &conn_handleType)) {
-				PyErr_SetString( PyExc_Exception, "Supplied connection object Parameter is invalid" );
-				return NULL;
-			}
-			conn_res = (conn_handle *)conn_or_stmt;
-
-			/* Check to ensure the connection resource given is active */
-			if (!conn_res->handle_active) {
-				PyErr_SetString(PyExc_Exception, "Connection is not active");
-				return NULL;
-		 	}
-			/* Check that the option given is not null */
-			if (!NIL_P(py_op_integer)) {
-				/* ACCTSTR_LEN is the largest possible length of the options to 
-				* retrieve 
-			 */
-				value = (SQLCHAR*)ALLOC_N(char, ACCTSTR_LEN + 1);
-				if ( value == NULL ) {
-					PyErr_SetString(PyExc_Exception, "Failed to Allocate Memory");
-					return NULL;
-				}
-
-				rc = SQLGetConnectAttr((SQLHDBC)conn_res->hdbc, op_integer, 
-					(SQLPOINTER)value, ACCTSTR_LEN, NULL);
-				if (rc == SQL_ERROR) {
-					_python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, 
-						rc, 1, NULL, -1, 1);
-					if(value != NULL) {
-						PyMem_Del(value);
-						value = NULL;
-					}
-					PyErr_Clear();
-					Py_RETURN_FALSE;
-				}
-				retVal = StringOBJ_FromASCII((char *)value);
-				if(value != NULL) {
-					PyMem_Del(value);
-					value = NULL;
-				}
-				return retVal;
-			} else {
-				PyErr_SetString(PyExc_Exception, "Supplied parameter is invalid");
-				return NULL;
-		 }
-			/* At this point we know we are to retreive a statement option */
+	if (NIL_P(conn_or_stmt)) {
+		PyErr_SetString(PyExc_Exception, "Supplied parameter is invalid");
+		return NULL;
+	}
+		
+	if (!NIL_P(py_op_integer)) {
+		if (PyInt_Check(py_op_integer)) {
+			op_integer = (SQLINTEGER) PyInt_AsLong(py_op_integer);
 		} else {
-			stmt_res = (stmt_handle *)conn_or_stmt;
-
-			/* Check that the option given is not null */
-			if (!NIL_P(py_op_integer)) {
-				/* Checking that the option to get is the cursor type because that 
-				* is what we support here 
-				*/
-				if (op_integer == SQL_ATTR_CURSOR_TYPE) {
-					rc = SQLGetStmtAttr((SQLHSTMT)stmt_res->hstmt, op_integer, 
-						&value_int, SQL_IS_INTEGER, NULL);
-					if (rc == SQL_ERROR) {
-						_python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
-						PyErr_Clear();
-						Py_RETURN_FALSE;
-					}
-					return PyInt_FromLong(value_int);
-				} else {
-					PyErr_SetString(PyExc_Exception,"Supplied parameter is invalid");
-					return NULL;
-				}
-			} else {
-				PyErr_SetString(PyExc_Exception, "Supplied parameter is invalid");
-				return NULL;
-			}
+			PyErr_SetString(PyExc_Exception, "Supplied parameter is invalid");
+			return NULL;
 		}
 	}
-	PyErr_Clear();
-	Py_RETURN_FALSE;
+	
+	if (!NIL_P(py_type)) {
+		if (PyInt_Check(py_type)) {
+			type = PyInt_AsLong(py_type);
+		} else {
+			PyErr_SetString(PyExc_Exception, "Supplied parameter is invalid");
+			return NULL;
+		}
+	}
+	
+	/* Checking to see if we are getting a connection option (1) or a statement option (non - 1) */
+	if (type == 1) {
+		if (!PyObject_TypeCheck(conn_or_stmt, &conn_handleType)) {
+			PyErr_SetString( PyExc_Exception, "Supplied connection object Parameter is invalid" );
+			return NULL;
+		}
+		conn_res = (conn_handle *)conn_or_stmt;
+
+		/* Check to ensure the connection resource given is active */
+		if (!conn_res->handle_active) {
+			PyErr_SetString(PyExc_Exception, "Connection is not active");
+			return NULL;
+		}
+		
+		if(op_integer == SQL_ATTR_USE_TRUSTED_CONTEXT) {
+			rc = SQLGetConnectAttr((SQLHDBC)conn_res->hdbc, op_integer, &value_int, 0, NULL);
+			
+			if (rc == SQL_ERROR) {
+				_python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, rc, 1, NULL, -1, 1);
+				PyErr_Clear();
+				Py_RETURN_FALSE;
+			}
+			
+			return PyInt_FromLong(value_int);
+		} else {
+			/* ACCTSTR_LEN is the largest possible length of the options to retrieve */
+			value = (SQLCHAR*)ALLOC_N(char, ACCTSTR_LEN + 1);
+			if ( value == NULL ) {
+				PyErr_SetString(PyExc_Exception, "Failed to Allocate Memory");
+				return NULL;
+			}
+			
+			rc = SQLGetConnectAttr((SQLHDBC)conn_res->hdbc, op_integer, (SQLPOINTER)value, ACCTSTR_LEN, NULL);
+			if (rc == SQL_ERROR) {
+				_python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, rc, 1, NULL, -1, 1);
+				PyMem_Del(value);
+				PyErr_Clear();
+				Py_RETURN_FALSE;
+			}
+			retVal = StringOBJ_FromASCII((char *)value);
+			PyMem_Del(value);
+			return retVal;
+		}
+	/* At this point we know we are to retreive a statement option */
+	} else {
+		stmt_res = (stmt_handle *)conn_or_stmt;
+
+		/* Checking that the option to get is the cursor type because that
+		* is what we support here
+		*/
+		if (op_integer == SQL_ATTR_CURSOR_TYPE) {
+			rc = SQLGetStmtAttr((SQLHSTMT)stmt_res->hstmt, op_integer, &value_int, SQL_IS_INTEGER, NULL);
+			if (rc == SQL_ERROR) {
+				_python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
+				PyErr_Clear();
+				Py_RETURN_FALSE;
+			}
+			return PyInt_FromLong(value_int);
+		} else {
+			PyErr_SetString(PyExc_Exception,"Supplied parameter is invalid");
+			return NULL;
+		}
+	}
 }
 
 #ifndef PASE
