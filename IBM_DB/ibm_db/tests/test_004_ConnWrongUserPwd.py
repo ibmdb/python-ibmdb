@@ -16,12 +16,12 @@ class IbmDbTestCase(unittest.TestCase):
     obj.assert_expect(self.run_test_004)
 
   def run_test_004(self):
-    try:
-      conn = ibm_db.connect("sample", "not_a_user", "inv_pass")
-    except:
+    conn = ibm_db.connect("sample", "not_a_user", "inv_pass")
+    if conn:
+      ibm_db.close(conn)
+      print("connect succeeded? Test failed")
+    else:
       print("connect failed, test succeeded")
-      return -1
-    print("connect succeeded? Test failed")
 
 #__END__
 #__LUW_EXPECTED__

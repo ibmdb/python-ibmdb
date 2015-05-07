@@ -16,10 +16,10 @@ class IbmDbTestCase(unittest.TestCase):
     obj.assert_expect(self.run_test_091)
 
   def run_test_091(self):
-    try:
-      conn = ibm_db.connect(config.database, "y", config.password)
+    conn = ibm_db.connect(config.database, "y", config.password)
+    if conn:
       print("??? No way.")
-    except:
+    else:
       err = ibm_db.conn_errormsg()
       print(err)
 
@@ -30,5 +30,7 @@ class IbmDbTestCase(unittest.TestCase):
 #[IBM][CLI Driver] SQL30082N  Security processing failed with reason "15" ("PROCESSING FAILURE").  SQLSTATE=08001 SQLCODE=-30082
 #__SYSTEMI_EXPECTED__
 #[IBM][CLI Driver] SQL30082N  Security processing failed with reason "24" ("USERNAME AND/OR PASSWORD INVALID").  SQLSTATE=08001 SQLCODE=-30082
+#__PASE_EXPECTED__
+#Authorization failure on distributed database connection attempt. SQLSTATE=08001 SQLCODE=-30082
 #__IDS_EXPECTED__
 #[IBM][CLI Driver] SQL30082N  Security processing failed with reason "24" ("USERNAME AND/OR PASSWORD INVALID").  SQLSTATE=08001 SQLCODE=-30082

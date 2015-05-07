@@ -16,16 +16,11 @@ class IbmDbTestCase(unittest.TestCase):
     obj.assert_expect(self.run_test_080)
 
   def run_test_080(self):
-    try:
-      conn = ibm_db.connect("x", config.user, config.password)
+    conn = ibm_db.connect("x", config.user, config.password)
+    if conn:
       print("??? No way.")
-    except:
+    else:
       print(ibm_db.conn_error())
- 
-    #if conn:
-    #  print("??? No way.")
-    #else:
-    #  print(ibm_db.conn_error())
 
 #__END__
 #__LUW_EXPECTED__
@@ -34,5 +29,7 @@ class IbmDbTestCase(unittest.TestCase):
 #08001
 #__SYSTEMI_EXPECTED__
 #08001
+#__PASE_EXPECTED__
+#42705
 #__IDS_EXPECTED__
 #08001

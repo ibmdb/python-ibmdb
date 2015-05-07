@@ -21,11 +21,11 @@ class IbmDbTestCase(unittest.TestCase):
   def run_test_002(self):
     conn_str = "DATABASE=%s;HOSTNAME=%s;PORT=%d;PROTOCOL=TCPIP;UID=%s;PWD=%s;" % (config.database, config.hostname, config.port, config.user, config.password)
     
-    try:
-      conn = ibm_db.connect(conn_str, '', '')
+    conn = ibm_db.connect(conn_str, '', '')
+    if conn:
       print("Connection succeeded.")
       ibm_db.close(conn)
-    except:
+    else:
       print("Connection failed.")
 
 #__END__

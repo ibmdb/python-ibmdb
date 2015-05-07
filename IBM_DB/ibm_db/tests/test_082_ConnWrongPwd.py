@@ -16,10 +16,10 @@ class IbmDbTestCase(unittest.TestCase):
     obj.assert_expect(self.run_test_082)
 
   def run_test_082(self):
-    try:
-      conn = ibm_db.connect(config.database, config.user, "z")
+    conn = ibm_db.connect(config.database, config.user, "z")
+    if conn:
       print("??? No way.")
-    except:
+    else:
       err = ibm_db.conn_error()
       print(err)
 

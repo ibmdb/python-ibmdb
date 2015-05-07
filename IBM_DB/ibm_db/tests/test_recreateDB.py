@@ -24,11 +24,7 @@ class IbmDbTestCase(unittest.TestCase):
         conn_attach = ibm_db.connect(conn_str_attach, '', '')
 
         if conn_attach:
-            conn = False
-            try:
-                conn = ibm_db.connect(conn_str, '', '')
-            except:
-                pass
+            conn = ibm_db.connect(conn_str, '', '')
 
             if conn:
                 ibm_db.close(conn)
@@ -72,14 +68,13 @@ class IbmDbTestCase(unittest.TestCase):
                 #drop database
                 rc = ibm_db.dropdb(conn_attach, database)
                 if rc:
-                    try:
-                        conn = ibm_db.connect(conn_str, '', '')
-                    except:
-                        print('datbase droped sucessfully')
+                    conn = ibm_db.connect(conn_str, '', '')
                     if conn:
                         print('Errors occurred during drop database')
                         ibm_db.close(conn)
                         conn = False
+                    else:
+                        print('database dropped sucessfully')
                 else:
                     print('Errors occurred during drop database')
             except:
@@ -93,4 +88,4 @@ class IbmDbTestCase(unittest.TestCase):
 #__LUW_EXPECTED__
 #database created sucessfully
 #database with codeset created sucessfully
-#datbase droped sucessfully
+#database dropped sucessfully

@@ -16,10 +16,10 @@ class IbmDbTestCase(unittest.TestCase):
     obj.assert_expect(self.run_test_090)
 
   def run_test_090(self):
-    try:
-      conn = ibm_db.connect("x", config.user, config.password)
+    conn = ibm_db.connect("x", config.user, config.password)
+    if conn:
       print("??? No way.")
-    except:
+    else:
       err = ibm_db.conn_errormsg()
       print(err)
 
@@ -30,5 +30,7 @@ class IbmDbTestCase(unittest.TestCase):
 #[IBM][CLI Driver] SQL1013N  The database alias name or database name "X" could not be found.  SQLSTATE=42705 SQLCODE=-1013
 #__SYSTEMI_EXPECTED__
 #[IBM][CLI Driver] SQL1013N  The database alias name or database name "X" could not be found.  SQLSTATE=42705 SQLCODE=-1013
+#__PASE_EXPECTED__
+#Relational database x not in relational database directory. SQLSTATE=42705 SQLCODE=-950
 #__IDS_EXPECTED__
 #[IBM][CLI Driver] SQL1013N  The database alias name or database name "X" could not be found.  SQLSTATE=42705 SQLCODE=-1013

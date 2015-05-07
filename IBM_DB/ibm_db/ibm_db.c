@@ -1266,9 +1266,10 @@ static PyObject *_python_ibm_db_connect_helper( PyObject *self, PyObject *args, 
 			if ( rc == SQL_ERROR ) {
 				_python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, rc, 
 					1, NULL, -1, 1);
+				PyErr_Clear();
 				SQLFreeHandle(SQL_HANDLE_DBC, conn_res->hdbc);
 				SQLFreeHandle(SQL_HANDLE_ENV, conn_res->henv);
-				break;
+				Py_RETURN_NONE;
 			}
 			
 #ifdef CLI_DBC_SERVER_TYPE_DB2LUW

@@ -19,11 +19,11 @@ class IbmDbTestCase(unittest.TestCase):
     baduser = "non_user"
     badpass = "invalid_password"
     dsn = "DATABASE=" + config.database + ";UID=" + baduser + ";PWD=" + badpass + ";"
-    try:
-      conn = ibm_db.connect(dsn, "", "")
+    conn = ibm_db.connect(dsn, "", "")
+    if conn:
       print("odd, ibm_db.connect succeeded with an invalid user / password")
       ibm_db.close(conn)
-    except: 
+    else:
       print("Ooops")
 
 #__END__
