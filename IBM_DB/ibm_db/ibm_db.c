@@ -2630,11 +2630,13 @@ static PyObject *ibm_db_close(PyObject *self, PyObject *args)
 			}
 
 			rc = SQLFreeHandle(SQL_HANDLE_ENV, conn_res->henv);
+#ifndef PASE
 			if ( rc == SQL_ERROR ) {
 				_python_ibm_db_check_sql_errors(conn_res->henv, SQL_HANDLE_ENV, rc, 
 												1, NULL, -1, 1);
 				return NULL;
 			}
+#endif
 
 			conn_res->handle_active = 0;
 			Py_INCREF(Py_True);
