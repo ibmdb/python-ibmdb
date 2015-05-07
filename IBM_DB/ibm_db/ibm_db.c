@@ -497,24 +497,26 @@ static void _python_ibm_db_init_error_info(stmt_handle *stmt_res) {
 */
 static void _python_ibm_db_check_sql_errors( SQLHANDLE handle, SQLSMALLINT hType, int rc, int cpy_to_global, char* ret_str, int API, SQLSMALLINT recno )
 {
-	SQLCHAR msg[SQL_MAX_MESSAGE_LENGTH + 1];
-	SQLCHAR sqlstate[SQL_SQLSTATE_SIZE + 1];
-	SQLCHAR errMsg[DB2_MAX_ERR_MSG_LEN];
+	char msg[SQL_MAX_MESSAGE_LENGTH + 1];
+	char sqlstate[SQL_SQLSTATE_SIZE + 1];
+	char errMsg[DB2_MAX_ERR_MSG_LEN];
 	SQLINTEGER sqlcode;
 	SQLSMALLINT length;
 	char *p;
 
-	memset(errMsg, '\0', DB2_MAX_ERR_MSG_LEN);
-	memset(msg, '\0', SQL_MAX_MESSAGE_LENGTH + 1);
-	if ( SQLGetDiagRec(hType, handle, recno, sqlstate, &sqlcode, msg,
-		SQL_MAX_MESSAGE_LENGTH + 1, &length ) == SQL_SUCCESS) {
-
-			while ((p = strchr( (char *)msg, '\n' ))) {
+	memset(errMsg, '\0', sizeof(errMsg));
+	memset(msg, '\0', sizeof(msg));
+	if ( SQLGetDiagRec(hType, handle, recno, (SQLCHAR*) sqlstate, &sqlcode, (SQLCHAR*) msg, sizeof(msg), &length ) == SQL_SUCCESS) {
+			while ((p = strchr( msg, '\n' ))) {
 				*p = '\0';
 			}
-			sprintf((char*)errMsg, "%s SQLCODE=%d", (char*)msg, (int)sqlcode);
+#ifndef PASE
+			sprintf(errMsg, "%s SQLCODE=%d", msg, (int)sqlcode);
+#else
+			sprintf(errMsg, "%s SQLSTATE=%5.5s SQLCODE=%d", msg, sqlstate, (int)sqlcode);
+#endif
 			if (cpy_to_global != 0) {
-				PyErr_SetString(PyExc_Exception, (char *) errMsg);
+				PyErr_SetString(PyExc_Exception, errMsg);
 			}
 
 			switch (rc) {
@@ -524,13 +526,13 @@ static void _python_ibm_db_check_sql_errors( SQLHANDLE handle, SQLSMALLINT hType
 					if ( cpy_to_global ) {
 						switch (hType) {
 							case SQL_HANDLE_DBC:
-								strncpy(IBM_DB_G(__python_conn_err_state), (char*)sqlstate, SQL_SQLSTATE_SIZE+1);
-								strncpy(IBM_DB_G(__python_conn_err_msg), (char*)errMsg, DB2_MAX_ERR_MSG_LEN);
+								strncpy(IBM_DB_G(__python_conn_err_state), sqlstate, SQL_SQLSTATE_SIZE+1);
+								strncpy(IBM_DB_G(__python_conn_err_msg), errMsg, DB2_MAX_ERR_MSG_LEN);
 								break;
 
 							case SQL_HANDLE_STMT:
-								strncpy(IBM_DB_G(__python_stmt_err_state), (char*)sqlstate, SQL_SQLSTATE_SIZE+1);
-								strncpy(IBM_DB_G(__python_stmt_err_msg), (char*)errMsg, DB2_MAX_ERR_MSG_LEN);
+								strncpy(IBM_DB_G(__python_stmt_err_state), sqlstate, SQL_SQLSTATE_SIZE+1);
+								strncpy(IBM_DB_G(__python_stmt_err_msg), errMsg, DB2_MAX_ERR_MSG_LEN);
 								break;
 						}
 					}
@@ -539,12 +541,12 @@ static void _python_ibm_db_check_sql_errors( SQLHANDLE handle, SQLSMALLINT hType
 					switch (API) {
 						case DB2_ERR:
 							if ( ret_str != NULL ) {
-								strncpy(ret_str, (char*)sqlstate, SQL_SQLSTATE_SIZE+1);
+								strncpy(ret_str, sqlstate, SQL_SQLSTATE_SIZE+1);
 							}
 							return;
 						case DB2_ERRMSG:
 							if ( ret_str != NULL ) {
-								strncpy(ret_str, (char*)errMsg, DB2_MAX_ERR_MSG_LEN);
+								strncpy(ret_str, errMsg, DB2_MAX_ERR_MSG_LEN);
 							}
 							return;
 						default:
