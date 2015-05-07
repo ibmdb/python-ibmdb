@@ -5,3 +5,4 @@ ibm_db.egg-info
 *.pyc
 *.jpg
 *.png
+config.py

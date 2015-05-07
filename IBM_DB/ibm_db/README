@@ -98,11 +98,11 @@ Native DB2 UDB for zOS
 Testing
 -------
 Tests displaying Python ibm_db driver code examples are located in the tests 
-directory.  These tests can be run by using 'python tests.py' on Unix based 
-systems, and 'tests.py' on Windows based systems. Use vi to edit config.py to 
-your DB2 settings.
+directory. A valid config.py will need to be created to configure your DB2
+settings. A config.py.sample exists that can be copied and modified for your
+environment.
 
-The default config.py contains:
+The config.py should look like this:
 
 test_dir =      'tests'         # Location of testsuite file (relative to current directory)
 
