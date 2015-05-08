@@ -13,8 +13,8 @@ from testfunctions import IbmDbTestFunctions
 class IbmDbTestCase(unittest.TestCase):
 
   def test_197_StatisticsIndexes(self):
-    obj = IbmDbTestFunctions()
-    obj.assert_expect(self.run_test_197)
+    self.obj = IbmDbTestFunctions()
+    self.obj.assert_expect(self.run_test_197)
 
   def run_test_197(self):
     conn = ibm_db.connect(config.database, config.user, config.password)
@@ -29,13 +29,13 @@ class IbmDbTestCase(unittest.TestCase):
       rc = ibm_db.exec_immediate(conn, "CREATE UNIQUE INDEX index1 ON index_test (id)")
 
       print("Test first index table:")
-      if (server.DBMS_NAME[0:3] == 'IDS'):
+      if (self.obj.isServerInformix(server)):
         result = ibm_db.statistics(conn,None,config.user,"index_test",True)
       else:
         result = ibm_db.statistics(conn,None,None,"INDEX_TEST",True)
       row = ibm_db.fetch_tuple(result)
       ## skipping table info row. statistics returns informtation about table itself for informix ###
-      if (server.DBMS_NAME[0:3] == 'IDS'):
+      if (self.obj.isServerInformix(server)):
         row = ibm_db.fetch_tuple(result)
       print(row[2])  # TABLE_NAME
       print(row[3])  # NON_UNIQUE
@@ -50,13 +50,13 @@ class IbmDbTestCase(unittest.TestCase):
       rc = ibm_db.exec_immediate(conn, "CREATE INDEX index2 ON index_test2 (data)")
 
       print("Test second index table:")
-      if (server.DBMS_NAME[0:3] == 'IDS'):
+      if (self.obj.isServerInformix(server)):
         result = ibm_db.statistics(conn,None,config.user,"index_test2",True)
       else:
         result = ibm_db.statistics(conn,None,None,"INDEX_TEST2",True)
       row = ibm_db.fetch_tuple(result)
       ### skipping table info row. statistics returns informtation about table itself for informix ###
-      if (server.DBMS_NAME[0:3] == 'IDS'):
+      if (self.obj.isServerInformix(server)):
         row = ibm_db.fetch_tuple(result)
       print(row[2])  # TABLE_NAME
       print(row[3])  # NON_UNIQUE
@@ -64,7 +64,7 @@ class IbmDbTestCase(unittest.TestCase):
       print(row[8])  # COLUMN_NAME
 
       print("Test non-existent table:")
-      if (server.DBMS_NAME[0:3] == 'IDS'):
+      if (self.obj.isServerInformix(server)):
         result = ibm_db.statistics(conn,None,config.user,"non_existent_table",True)
       else:
         result = ibm_db.statistics(conn,None,None,"NON_EXISTENT_TABLE",True)

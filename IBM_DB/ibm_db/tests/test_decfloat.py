@@ -11,8 +11,8 @@ from testfunctions import IbmDbTestFunctions
 
 class IbmDbTestCase(unittest.TestCase):
     def test_decfloat(self):
-        obj = IbmDbTestFunctions()
-        obj.assert_expect(self.run_test_decfloat)
+        self.obj = IbmDbTestFunctions()
+        self.obj.assert_expect(self.run_test_decfloat)
 	
     def run_test_decfloat(self):
         conn = ibm_db.connect(config.database, config.user, config.password)
@@ -27,7 +27,7 @@ class IbmDbTestCase(unittest.TestCase):
                 pass
 			
             # Create the table stockprice
-            if (serverinfo.DBMS_NAME[0:3] == 'IDS'):
+            if (self.obj.isServerInformix(serverinfo)):
                 create = "CREATE TABLE STOCKPRICE (id SMALLINT NOT NULL, company VARCHAR(30), stockshare DECIMAL(7,2), stockprice DECIMAL(16))"
             else:
                 create = "CREATE TABLE STOCKPRICE (id SMALLINT NOT NULL, company VARCHAR(30), stockshare DECIMAL(7,2), stockprice DECFLOAT(16))"
@@ -68,7 +68,7 @@ class IbmDbTestCase(unittest.TestCase):
 			
             # Select the result from the table and
             query = 'SELECT * FROM STOCKPRICE ORDER BY id'
-            if (serverinfo.DBMS_NAME[0:3] != 'IDS'):
+            if (not self.obj.isServerInformix(serverinfo)):
                 stmt = ibm_db.prepare(conn, query, {ibm_db.SQL_ATTR_CURSOR_TYPE: ibm_db.SQL_CURSOR_KEYSET_DRIVEN})
             else:
                 stmt = ibm_db.prepare(conn, query)

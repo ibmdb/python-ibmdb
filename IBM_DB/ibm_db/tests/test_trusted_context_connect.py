@@ -13,10 +13,10 @@ from testfunctions import IbmDbTestFunctions
 class IbmDbTestCase(unittest.TestCase):
 
 	def test_trusted_context_connect(self):
-		obj = IbmDbTestFunctions()
-		if (obj.server.DBMS_NAME[0:2] == "AS"):
+		self.obj = IbmDbTestFunctions()
+		if (self.obj.isServerIBMi(self.obj.server)):
 			raise unittest.SkipTest("TRUSTED CONTEXT not Supported")
-		obj.assert_expectf(self.run_test_trusted_context_connect)
+		self.obj.assert_expectf(self.run_test_trusted_context_connect)
 		
 	def run_test_trusted_context_connect(self):
 		try:

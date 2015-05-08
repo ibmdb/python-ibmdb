@@ -13,14 +13,14 @@ from testfunctions import IbmDbTestFunctions
 class IbmDbTestCase(unittest.TestCase):
 
   def test_195_InsertRetrieveXMLData_01(self):
-    obj = IbmDbTestFunctions()
-    obj.assert_expectf(self.run_test_195)
+    self.obj = IbmDbTestFunctions()
+    self.obj.assert_expectf(self.run_test_195)
 
   def run_test_195(self):
     conn = ibm_db.connect(config.database, config.user, config.password)
     server = ibm_db.server_info( conn )
 
-    if ((server.DBMS_NAME[0:3] != 'IDS') and (server.DBMS_NAME[0:2] != "AS")):
+    if ((not self.obj.isServerInformix(server)) and (not self.obj.isServerIBMi(server))):
       drop = 'DROP TABLE test_195'
       try:
         result = ibm_db.exec_immediate(conn, drop)

@@ -12,8 +12,8 @@ from testfunctions import IbmDbTestFunctions
 class IbmDbTestCase(unittest.TestCase):
 
   def test_265_NoAffectedRows(self):
-    obj = IbmDbTestFunctions()
-    obj.assert_expect(self.run_test_265)
+    self.obj = IbmDbTestFunctions()
+    self.obj.assert_expect(self.run_test_265)
 
   def run_test_265(self):
     # Make a connection
@@ -23,7 +23,7 @@ class IbmDbTestCase(unittest.TestCase):
 
     if conn:
       server = ibm_db.server_info( conn )
-      if (server.DBMS_NAME[0:3] == 'IDS'):
+      if (self.obj.isServerInformix(server)):
          op = {ibm_db.ATTR_CASE: ibm_db.CASE_UPPER}
          ibm_db.set_option(conn, op, 1)
 
@@ -37,7 +37,7 @@ class IbmDbTestCase(unittest.TestCase):
       except:
         pass
 
-      if ((server.DBMS_NAME[0:3] == 'IDS') or (server.DBMS_NAME[0:2] == "AS")):
+      if ((self.obj.isServerInformix(server)) or (self.obj.isServerIBMi(server))):
         sql = "create table test(id integer, name VARCHAR(10), clob_col CLOB, some_var VARCHAR(100) )"
       else:
         sql = "create table test(id integer, name VARCHAR(10), clob_col CLOB, some_var XML )"
@@ -97,7 +97,7 @@ class IbmDbTestCase(unittest.TestCase):
         print("%s, %s\n" %(row[0], row[1]))
         row = ibm_db.fetch_tuple(stmt)
 
-      if (server.DBMS_NAME[0:3] == 'IDS'):
+      if (self.obj.isServerInformix(server)):
         sql = "select * from test"
       else:
         sql = 'select * from test fetch first 12 rows only optimize for 12 rows'

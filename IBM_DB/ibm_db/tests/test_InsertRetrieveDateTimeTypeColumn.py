@@ -12,8 +12,8 @@ from testfunctions import IbmDbTestFunctions
 class IbmDbTestCase(unittest.TestCase):
 
   def test_InsertRetrieveDateTimeTypeColumn(self):
-    obj = IbmDbTestFunctions()
-    obj.assert_expectf(self.run_test_InsertRetrieveDateTimeTypeColumn)
+    self.obj = IbmDbTestFunctions()
+    self.obj.assert_expectf(self.run_test_InsertRetrieveDateTimeTypeColumn)
 
   def run_test_InsertRetrieveDateTimeTypeColumn(self):
     conn = ibm_db.connect(config.database, config.user, config.password)
@@ -30,7 +30,7 @@ class IbmDbTestCase(unittest.TestCase):
       #ts_val = datetime.datetime.today()
       ts_val = datetime.datetime(1981, 7, 8, 10, 42, 34, 10)
       server = ibm_db.server_info( conn )
-      if (server.DBMS_NAME[0:3] == 'IDS'):
+      if (self.obj.isServerInformix(server)):
         statement = "CREATE TABLE tab_datetime (col1 DATETIME HOUR TO SECOND, col2 DATE, col3 DATETIME YEAR TO FRACTION(5))"
         result = ibm_db.exec_immediate(conn, statement)
         statement = "INSERT INTO tab_datetime (col1, col2, col3) values (?, ?, ?)"

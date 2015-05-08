@@ -16,8 +16,8 @@ picture = 'picture'
 class IbmDbTestCase(unittest.TestCase):
 
   def test_000_PrepareDb(self):
-    obj = IbmDbTestFunctions()
-    obj.assert_expect(self.run_test_000)
+    self.obj = IbmDbTestFunctions()
+    self.obj.assert_expect(self.run_test_000)
 
   def run_test_000(self):
     # Make a connection
@@ -429,7 +429,7 @@ class IbmDbTestCase(unittest.TestCase):
       pass
 
     # Create the stored procedure
-    if (server.DBMS_NAME[0:3] == 'IDS'):
+    if (self.obj.isServerInformix(server)):
       result = ibm_db.exec_immediate(conn, """
       CREATE PROCEDURE match_animal(first_name VARCHAR(128), INOUT second_name VARCHAR(128), OUT animal_weight DOUBLE PRECISION )
        DEFINE match_name INT;

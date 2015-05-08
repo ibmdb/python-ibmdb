@@ -12,21 +12,21 @@ from testfunctions import IbmDbTestFunctions
 class IbmDbTestCase(unittest.TestCase):
 
   def test_039_FetchRowIndexPosNested_02(self):
-    obj = IbmDbTestFunctions()
-    obj.assert_expect(self.run_test_039)
+    self.obj = IbmDbTestFunctions()
+    self.obj.assert_expect(self.run_test_039)
 
   def run_test_039(self):
     conn = ibm_db.connect(config.database, config.user, config.password)
     serverinfo = ibm_db.server_info( conn )
 
-    if (serverinfo.DBMS_NAME[0:3] != 'IDS'):
+    if (not self.obj.isServerInformix(serverinfo)):
       result = ibm_db.prepare(conn, "SELECT * FROM animals", {ibm_db.SQL_ATTR_CURSOR_TYPE: ibm_db.SQL_CURSOR_KEYSET_DRIVEN})
     else:
       result = ibm_db.prepare(conn, "SELECT * FROM animals")
     ibm_db.execute(result)
     row = ibm_db.fetch_row(result)
     while ( row ):
-      if (serverinfo.DBMS_NAME[0:3] != 'IDS'):
+      if (not self.obj.isServerInformix(serverinfo)):
         result2 = ibm_db.prepare(conn, "SELECT * FROM animals", {ibm_db.SQL_ATTR_CURSOR_TYPE: ibm_db.SQL_CURSOR_KEYSET_DRIVEN})
       else:
         result2 = ibm_db.prepare(conn, "SELECT * FROM animals")

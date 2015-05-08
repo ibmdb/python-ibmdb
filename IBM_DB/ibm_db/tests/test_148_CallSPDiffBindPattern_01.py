@@ -12,8 +12,8 @@ from testfunctions import IbmDbTestFunctions
 class IbmDbTestCase(unittest.TestCase):
 
   def test_148_CallSPDiffBindPattern_01(self):
-    obj = IbmDbTestFunctions()
-    obj.assert_expect(self.run_test_148)
+    self.obj = IbmDbTestFunctions()
+    self.obj.assert_expect(self.run_test_148)
 
   def run_test_148(self):
     conn = ibm_db.connect(config.database, config.user, config.password)
@@ -21,7 +21,6 @@ class IbmDbTestCase(unittest.TestCase):
     if conn:
       ##### Set up #####
       serverinfo = ibm_db.server_info( conn )
-      server = serverinfo.DBMS_NAME[0:3]
       try:
           sql = "DROP TABLE sptb"
           ibm_db.exec_immediate(conn, sql)
@@ -34,7 +33,7 @@ class IbmDbTestCase(unittest.TestCase):
       except:
           pass
       
-      if (server == 'IDS'):
+      if (self.obj.isServerInformix(serverinfo)):
         sql = "CREATE TABLE sptb (c1 INTEGER, c2 FLOAT, c3 VARCHAR(10), c4 INT8, c5 CLOB)"
       else:
         sql = "CREATE TABLE sptb (c1 INTEGER, c2 FLOAT, c3 VARCHAR(10), c4 BIGINT, c5 CLOB)"
@@ -44,7 +43,7 @@ class IbmDbTestCase(unittest.TestCase):
       sql = "INSERT INTO sptb (c1, c2, c3, c4, c5) VALUES (1, 5.01, 'varchar', 3271982, 'clob data clob data')"
       ibm_db.exec_immediate(conn, sql)
       
-      if (server == 'IDS'):
+      if (self.obj.isServerInformix(serverinfo)):
         sql = """CREATE PROCEDURE sp(OUT out1 INTEGER, OUT out2 FLOAT, OUT out3 VARCHAR(10), OUT out4 INT8, OUT out5 CLOB);
                  SELECT c1, c2, c3, c4, c5 INTO out1, out2, out3, out4, out5 FROM sptb; END PROCEDURE;"""
       else:

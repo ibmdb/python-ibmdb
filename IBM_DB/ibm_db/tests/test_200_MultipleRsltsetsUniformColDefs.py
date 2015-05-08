@@ -12,14 +12,13 @@ from testfunctions import IbmDbTestFunctions
 class IbmDbTestCase(unittest.TestCase):
 
   def test_200_MultipleRsltsetsUniformColDefs(self):
-    obj = IbmDbTestFunctions()
-    obj.assert_expect(self.run_test_200)
+    self.obj = IbmDbTestFunctions()
+    self.obj.assert_expect(self.run_test_200)
 
   def run_test_200(self):
     conn = ibm_db.connect(config.database, config.user, config.password)
     serverinfo = ibm_db.server_info( conn )
-    server = serverinfo.DBMS_NAME[0:3]
-    if (server == 'IDS'):
+    if (self.obj.isServerInformix(serverinfo)):
        procedure = """
         CREATE FUNCTION multiResults()
          RETURNING CHAR(16), INT;
@@ -81,7 +80,7 @@ class IbmDbTestCase(unittest.TestCase):
          print(i)
        row = ibm_db.fetch_tuple(stmt)
     
-     if (server == 'IDS'):
+     if (self.obj.isServerInformix(serverinfo)):
        print("Fetching second result set (should fail -- IDS does not support multiple result sets)")
      else:
        print("Fetching second result set")
@@ -93,7 +92,7 @@ class IbmDbTestCase(unittest.TestCase):
            print(i)
          row = ibm_db.fetch_tuple(res)
     
-     if (server == 'IDS'):
+     if (self.obj.isServerInformix(serverinfo)):
        print("Fetching third result set (should fail -- IDS does not support multiple result sets)")
      else:
        print("Fetching third result set")

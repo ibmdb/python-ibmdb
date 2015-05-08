@@ -12,8 +12,8 @@ from testfunctions import IbmDbTestFunctions
 class IbmDbTestCase(unittest.TestCase):
 
   def test_212_FieldDisplaySize_03(self):
-    obj = IbmDbTestFunctions()
-    obj.assert_expect(self.run_test_212)
+    self.obj = IbmDbTestFunctions()
+    self.obj.assert_expect(self.run_test_212)
 
   def run_test_212(self):
     conn = ibm_db.connect(config.database, config.user, config.password)
@@ -21,7 +21,7 @@ class IbmDbTestCase(unittest.TestCase):
 
     result = ibm_db.exec_immediate(conn, "select * from sales")
     
-    if (server.DBMS_NAME[0:3] == 'IDS'):
+    if (self.obj.isServerInformix(server)):
       i = "sales_person"
     else:
       i = "SALES_PERSON"

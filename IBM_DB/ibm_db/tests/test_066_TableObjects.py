@@ -12,14 +12,14 @@ from testfunctions import IbmDbTestFunctions
 class IbmDbTestCase(unittest.TestCase):
 
   def test_066_TableObjects(self):
-    obj = IbmDbTestFunctions()
-    obj.assert_expectf(self.run_test_066)
+    self.obj = IbmDbTestFunctions()
+    self.obj.assert_expectf(self.run_test_066)
 
   def run_test_066(self):
     conn = ibm_db.connect(config.database, config.user, config.password)
     server = ibm_db.server_info( conn )
 
-    if (server.DBMS_NAME[0:3] == 'IDS'):
+    if (self.obj.isServerInformix(server)):
       result = ibm_db.tables(conn, None, config.user.lower(), 'animals')
     else:
       result = ibm_db.tables(conn, None, config.user.upper(), 'ANIMALS')
@@ -34,7 +34,7 @@ class IbmDbTestCase(unittest.TestCase):
     data = ibm_db.fetch_assoc(result)
     while ( data ):
       row = Row()
-      if (server.DBMS_NAME[0:3] == 'IDS'):
+      if (self.obj.isServerInformix(server)):
         row.table_schem = data['table_schem']
         row.table_name = data['table_name']
         row.table_type = data['table_type']
@@ -59,7 +59,7 @@ class IbmDbTestCase(unittest.TestCase):
     
     ibm_db.free_stmt(result)
     
-    if (server.DBMS_NAME[0:3] == 'IDS'):
+    if (self.obj.isServerInformix(server)):
       result = ibm_db.tables(conn, None, config.user.lower(), 'animal_pics')
     else:
       result = ibm_db.tables(conn, None, config.user.upper(), 'ANIMAL_PICS')
@@ -68,7 +68,7 @@ class IbmDbTestCase(unittest.TestCase):
     data = ibm_db.fetch_assoc(result)
     while (data ):
       row = Row()
-      if (server.DBMS_NAME[0:3] == 'IDS'):
+      if (self.obj.isServerInformix(server)):
         row.table_schem = data['table_schem']
         row.table_name = data['table_name']
         row.table_type = data['table_type']
@@ -93,7 +93,7 @@ class IbmDbTestCase(unittest.TestCase):
     
     ibm_db.free_stmt(result)
     
-    if (server.DBMS_NAME[0:3] == 'IDS'):
+    if (self.obj.isServerInformix(server)):
       result = ibm_db.tables(conn, None, config.user.lower(), 'anime_cat')
     else:
       result = ibm_db.tables(conn, None, config.user.upper(), 'ANIME_CAT')
@@ -102,7 +102,7 @@ class IbmDbTestCase(unittest.TestCase):
     data = ibm_db.fetch_assoc(result)
     while ( data ): 
       row = Row()
-      if (server.DBMS_NAME[0:3] == 'IDS'):
+      if (self.obj.isServerInformix(server)):
         row.table_schem = data['table_schem']
         row.table_name = data['table_name']
         row.table_type = data['table_type']

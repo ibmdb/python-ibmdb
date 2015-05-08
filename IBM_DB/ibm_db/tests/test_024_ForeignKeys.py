@@ -13,8 +13,8 @@ from testfunctions import IbmDbTestFunctions
 class IbmDbTestCase(unittest.TestCase):
 
   def test_024_ForeignKeys(self):
-    obj = IbmDbTestFunctions()
-    obj.assert_expect(self.run_test_024)
+    self.obj = IbmDbTestFunctions()
+    self.obj.assert_expect(self.run_test_024)
 
   def run_test_024(self):
     conn = ibm_db.connect(config.database, config.user, config.password)
@@ -51,7 +51,7 @@ class IbmDbTestCase(unittest.TestCase):
       statement = "INSERT INTO test_foreign_keys VALUES ('vince', 1)"
       result = ibm_db.exec_immediate(conn, statement)
 
-      if (server.DBMS_NAME[0:3] == 'IDS'):
+      if (self.obj.isServerInformix(server)):
         stmt = ibm_db.foreign_keys(conn, None, config.user, 'test_primary_keys')
       else:
         stmt = ibm_db.foreign_keys(conn, None, None, 'TEST_PRIMARY_KEYS')
@@ -63,7 +63,7 @@ class IbmDbTestCase(unittest.TestCase):
       
       ibm_db.free_stmt(stmt)
 
-      if (server.DBMS_NAME[0:3] == 'IDS'):
+      if (self.obj.isServerInformix(server)):
         stmt = ibm_db.foreign_keys(conn, None, None, None, None, config.user, 'test_keys')
       else:
         stmt = ibm_db.foreign_keys(conn, None, None, None, None, None, 'TEST_KEYS')
@@ -75,7 +75,7 @@ class IbmDbTestCase(unittest.TestCase):
       
       ibm_db.free_stmt(stmt)
 
-      if (server.DBMS_NAME[0:3] == 'IDS'):
+      if (self.obj.isServerInformix(server)):
         stmt = ibm_db.foreign_keys(conn, None, config.user, 'test_keys', None, None, None)
       else:
         stmt = ibm_db.foreign_keys(conn, None, None, 'TEST_KEYS', None, None, None)
@@ -87,7 +87,7 @@ class IbmDbTestCase(unittest.TestCase):
       
       ibm_db.free_stmt(stmt)
 
-      if (server.DBMS_NAME[0:3] == 'IDS'):
+      if (self.obj.isServerInformix(server)):
         stmt = ibm_db.foreign_keys(conn, None, config.user, 'test_keys', None, config.user, 'test_foreign_keys')
       else:
         stmt = ibm_db.foreign_keys(conn, None, None, 'TEST_KEYS', None, None, 'TEST_FOREIGN_KEYS')
@@ -108,7 +108,7 @@ class IbmDbTestCase(unittest.TestCase):
           
       ibm_db.free_stmt(stmt)
 
-      if (server.DBMS_NAME[0:3] == 'IDS'):
+      if (self.obj.isServerInformix(server)):
         stmt = ibm_db.foreign_keys(conn, None, config.user, 'test_keys', None, 'dummy_schema')
       else:
         stmt = ibm_db.foreign_keys(conn, None, None, 'TEST_KEYS', None, 'dummy_schema')

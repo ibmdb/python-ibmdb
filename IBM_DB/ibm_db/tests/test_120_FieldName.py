@@ -12,8 +12,8 @@ from testfunctions import IbmDbTestFunctions
 class IbmDbTestCase(unittest.TestCase):
 
   def test_120_FieldName(self):
-    obj = IbmDbTestFunctions()
-    obj.assert_expect(self.run_test_120)
+    self.obj = IbmDbTestFunctions()
+    self.obj.assert_expect(self.run_test_120)
 
   def run_test_120(self):
     conn = ibm_db.connect(config.database, config.user, config.password)
@@ -29,7 +29,7 @@ class IbmDbTestCase(unittest.TestCase):
       name6 = ibm_db.field_name(stmt, 8)
       name7 = ibm_db.field_name(stmt, 0)
       
-      if (server.DBMS_NAME[0:3] == 'IDS'):
+      if (self.obj.isServerInformix(server)):
         name5 = ibm_db.field_name(stmt, "id")
         name8 = ibm_db.field_name(stmt, "WEIGHT")
       else:

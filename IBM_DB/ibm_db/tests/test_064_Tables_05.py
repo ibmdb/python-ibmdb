@@ -12,14 +12,14 @@ from testfunctions import IbmDbTestFunctions
 class IbmDbTestCase(unittest.TestCase):
 
   def test_064_Tables_05(self):
-    obj = IbmDbTestFunctions()
-    obj.assert_expectf(self.run_test_064)
+    self.obj = IbmDbTestFunctions()
+    self.obj.assert_expectf(self.run_test_064)
 
   def run_test_064(self):
     conn = ibm_db.connect(config.database, config.user, config.password)
     server = ibm_db.server_info( conn )
 
-    if (server.DBMS_NAME[0:2] == "AS"):
+    if (self.obj.isServerIBMi(server)):
         create = 'CREATE SCHEMA t'
     else:
         create = 'CREATE SCHEMA AUTHORIZATION t'
@@ -52,7 +52,7 @@ class IbmDbTestCase(unittest.TestCase):
     except:
       pass
     
-    if (server.DBMS_NAME[0:3] == 'IDS'):
+    if (self.obj.isServerInformix(server)):
         result = ibm_db.tables(conn, None, 't')
     else:
         result = ibm_db.tables(conn, None, 'T')

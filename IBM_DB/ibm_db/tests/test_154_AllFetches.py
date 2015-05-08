@@ -12,14 +12,14 @@ from testfunctions import IbmDbTestFunctions
 class IbmDbTestCase(unittest.TestCase):
 
   def test_154_AllFetches(self):
-    obj = IbmDbTestFunctions()
-    obj.assert_expect(self.run_test_154)
+    self.obj = IbmDbTestFunctions()
+    self.obj.assert_expect(self.run_test_154)
 
   def run_test_154(self):
     conn = ibm_db.connect(config.database, config.user, config.password)
 
     server = ibm_db.server_info( conn )
-    if (server.DBMS_NAME[0:3] == 'IDS'):
+    if (self.obj.isServerInformix(server)):
       op = {ibm_db.ATTR_CASE: ibm_db.CASE_UPPER}
       ibm_db.set_option(conn, op, 1)
 
@@ -30,7 +30,7 @@ class IbmDbTestCase(unittest.TestCase):
         pass
     
     server = ibm_db.server_info( conn )
-    if (server.DBMS_NAME[0:3] == 'IDS'):
+    if (self.obj.isServerInformix(server)):
       statement = 'CREATE TABLE fetch_test (col1 VARCHAR(20), col2 CLOB, col3 INTEGER)'
       st0 = "INSERT INTO fetch_test VALUES ('column 0', 'Data in the clob 0', 0)"
       st1 = "INSERT INTO fetch_test VALUES ('column 1', 'Data in the clob 1', 1)"

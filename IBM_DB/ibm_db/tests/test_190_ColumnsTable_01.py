@@ -13,15 +13,15 @@ from testfunctions import IbmDbTestFunctions
 class IbmDbTestCase(unittest.TestCase):
 
   def test_190_ColumnsTable_01(self):
-    obj = IbmDbTestFunctions()
-    obj.assert_expectf(self.run_test_190)
+    self.obj = IbmDbTestFunctions()
+    self.obj.assert_expectf(self.run_test_190)
 
   def run_test_190(self):
     conn = ibm_db.connect(config.database, config.user, config.password)
     server = ibm_db.server_info( conn )
 
     if conn:
-      if (server.DBMS_NAME[0:3] == 'IDS'):
+      if (self.obj.isServerInformix(server)):
         result = ibm_db.columns(conn,None,config.user,"employee")
       else:
         result = ibm_db.columns(conn,None,None,"EMPLOYEE")

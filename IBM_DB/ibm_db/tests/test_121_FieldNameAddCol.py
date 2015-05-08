@@ -12,8 +12,8 @@ from testfunctions import IbmDbTestFunctions
 class IbmDbTestCase(unittest.TestCase):
 
   def test_121_FieldNameAddCol(self):
-    obj = IbmDbTestFunctions()
-    obj.assert_expect(self.run_test_121)
+    self.obj = IbmDbTestFunctions()
+    self.obj.assert_expect(self.run_test_121)
 
   def run_test_121(self):
     conn = ibm_db.connect(config.database, config.user, config.password)
@@ -32,7 +32,7 @@ class IbmDbTestCase(unittest.TestCase):
       name3 = ibm_db.field_name(stmt, 2)
       name4 = ibm_db.field_name(stmt, 3)
       
-      if (server.DBMS_NAME[0:3] == 'IDS'):
+      if (self.obj.isServerInformix(server)):
         name5 = ibm_db.field_name(stmt, "breed")
         name6 = ibm_db.field_name(stmt, 7)
         name7 = ibm_db.field_name(stmt, '"nUMBER"')

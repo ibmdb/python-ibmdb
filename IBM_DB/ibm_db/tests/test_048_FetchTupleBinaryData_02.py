@@ -12,8 +12,8 @@ from testfunctions import IbmDbTestFunctions
 class IbmDbTestCase(unittest.TestCase):
 
   def test_048_FetchTupleBinaryData_02(self):
-    obj = IbmDbTestFunctions()
-    obj.assert_expect(self.run_test_048)
+    self.obj = IbmDbTestFunctions()
+    self.obj.assert_expect(self.run_test_048)
 
   def run_test_048(self):
     conn = ibm_db.connect(config.database, config.user, config.password)
@@ -23,7 +23,7 @@ class IbmDbTestCase(unittest.TestCase):
     server = ibm_db.server_info( conn )
     
     fp = open("tests/spook_out.png", "wb")
-    if (server.DBMS_NAME[0:3] == 'IDS'):
+    if (self.obj.isServerInformix(server)):
         result = ibm_db.exec_immediate(conn, "SELECT picture FROM animal_pics WHERE name = 'Spook'")
     else:
         result = ibm_db.exec_immediate(conn, "SELECT picture, LENGTH(picture) FROM animal_pics WHERE name = 'Spook'")

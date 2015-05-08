@@ -12,8 +12,8 @@ from testfunctions import IbmDbTestFunctions
 class IbmDbTestCase(unittest.TestCase):
 
   def test_146_CallSPINAndOUTParams(self):
-    obj = IbmDbTestFunctions()
-    obj.assert_expect(self.run_test_146)
+    self.obj = IbmDbTestFunctions()
+    self.obj.assert_expect(self.run_test_146)
 
   def run_test_146(self):      
     conn = ibm_db.connect(config.database, config.user, config.password)
@@ -33,7 +33,7 @@ class IbmDbTestCase(unittest.TestCase):
         print("Values of bound parameters _after_ CALL:")
         print("  1: %s 2: %s 3: %d\n" % (name, second_name, weight))
 
-        if (server.DBMS_NAME[0:3] != 'IDS'):
+        if (not self.obj.isServerInformix(server)):
           print("Results:")
           row = ibm_db.fetch_tuple(stmt)
           while ( row ): 

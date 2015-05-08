@@ -12,8 +12,8 @@ from testfunctions import IbmDbTestFunctions
 class IbmDbTestCase(unittest.TestCase):
 
   def test_52949_TestSPIntVarcharXml(self):
-    obj = IbmDbTestFunctions()
-    obj.assert_expect(self.run_test_52949)
+    self.obj = IbmDbTestFunctions()
+    self.obj.assert_expect(self.run_test_52949)
 
   def test_int(self, conn):
     return_value = 0
@@ -58,7 +58,6 @@ class IbmDbTestCase(unittest.TestCase):
 
    if conn:
      serverinfo = ibm_db.server_info(conn )
-     server = serverinfo.DBMS_NAME[0:3]
      result = ''
      self.drop_tables(conn)
 
@@ -83,13 +82,13 @@ class IbmDbTestCase(unittest.TestCase):
      except:
        pass
 
-     if (server == 'IDS'):
+     if (self.obj.isServerInformix(serverinfo)):
         st2 = "CREATE PROCEDURE processint(OUT risorsa int); SELECT age INTO risorsa FROM test_stored WHERE ID = 1; END PROCEDURE;"
      else:
         st2 = "CREATE PROCEDURE processint(OUT risorsa int) LANGUAGE SQL BEGIN SELECT age INTO risorsa FROM test_stored WHERE ID = 1; END"
      result = ibm_db.exec_immediate(conn, st2)
      
-     if (server == 'IDS'):
+     if (self.obj.isServerInformix(serverinfo)):
         st3 = "CREATE PROCEDURE processvar(OUT risorsa varchar(50)); SELECT name INTO risorsa FROM test_stored WHERE ID = 1; END PROCEDURE;"
      else:
         st3 = "CREATE PROCEDURE processvar(OUT risorsa varchar(50)) LANGUAGE SQL BEGIN SELECT name INTO risorsa FROM test_stored WHERE ID = 1; END"

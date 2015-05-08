@@ -12,8 +12,8 @@ from testfunctions import IbmDbTestFunctions
 class IbmDbTestCase(unittest.TestCase):
 
   def test_125_FieldNamePos_03(self):
-    obj = IbmDbTestFunctions()
-    obj.assert_expect(self.run_test_125)
+    self.obj = IbmDbTestFunctions()
+    self.obj.assert_expect(self.run_test_125)
 
   def run_test_125(self):
     conn = ibm_db.connect(config.database, config.user, config.password)
@@ -32,7 +32,7 @@ class IbmDbTestCase(unittest.TestCase):
     
     print("-----")
     
-    if (server.DBMS_NAME[0:3] == 'IDS'):
+    if (self.obj.isServerInformix(server)):
       print("Region:%s" % ibm_db.field_name(result, 'region'))
     else:
       print("Region:%s" % ibm_db.field_name(result, 'REGION'))

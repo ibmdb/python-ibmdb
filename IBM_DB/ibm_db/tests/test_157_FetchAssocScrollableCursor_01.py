@@ -12,8 +12,8 @@ from testfunctions import IbmDbTestFunctions
 class IbmDbTestCase(unittest.TestCase):
 
   def test_157_FetchAssocScrollableCursor_01(self):
-    obj = IbmDbTestFunctions()
-    obj.assert_expect(self.run_test_157)
+    self.obj = IbmDbTestFunctions()
+    self.obj.assert_expect(self.run_test_157)
 
   def run_test_157(self):
     conn = ibm_db.connect(config.database, config.user, config.password)
@@ -21,7 +21,7 @@ class IbmDbTestCase(unittest.TestCase):
 
     if conn:
       sql = "SELECT id, name, breed, weight FROM animals ORDER BY breed"
-      if (server.DBMS_NAME[0:3] != 'IDS'):
+      if (not self.obj.isServerInformix(server)):
         result = ibm_db.exec_immediate(conn, sql, {ibm_db.SQL_ATTR_CURSOR_TYPE: ibm_db.SQL_CURSOR_KEYSET_DRIVEN})
       else:
         result = ibm_db.exec_immediate(conn, sql, {ibm_db.SQL_ATTR_CURSOR_TYPE: ibm_db.SQL_CURSOR_STATIC})
@@ -29,7 +29,7 @@ class IbmDbTestCase(unittest.TestCase):
       i = 2
       row = ibm_db.fetch_assoc(result, i)
       while ( row ):
-        if (server.DBMS_NAME[0:3] == 'IDS'):
+        if (self.obj.isServerInformix(server)):
 	           print("%-5d %-16s %-32s %10s\n" % (row['id'], row['name'], row['breed'], row['weight']))
         else:
 	           print("%-5d %-16s %-32s %10s\n" % (row['ID'], row['NAME'], row['BREED'], row['WEIGHT']))

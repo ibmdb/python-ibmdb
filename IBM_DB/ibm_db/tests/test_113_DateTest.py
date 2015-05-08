@@ -12,8 +12,8 @@ from testfunctions import IbmDbTestFunctions
 class IbmDbTestCase(unittest.TestCase):
 
   def test_113_DateTest(self):
-    obj = IbmDbTestFunctions()
-    obj.assert_expect(self.run_test_113)
+    self.obj = IbmDbTestFunctions()
+    self.obj.assert_expect(self.run_test_113)
 
   def run_test_113(self):
     conn = ibm_db.connect(config.database, config.user, config.password)
@@ -29,7 +29,7 @@ class IbmDbTestCase(unittest.TestCase):
       ibm_db.exec_immediate(conn, create)
 
       server = ibm_db.server_info( conn )
-      if (server.DBMS_NAME[0:3] == 'IDS'):
+      if (self.obj.isServerInformix(server)):
         insert = "INSERT INTO datetest (id, mydate) VALUES (1,'1982-03-27')"
         ibm_db.exec_immediate(conn, insert)
         insert = "INSERT INTO datetest (id, mydate) VALUES (2,'1981-07-08')"

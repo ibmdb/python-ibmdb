@@ -12,8 +12,8 @@ from testfunctions import IbmDbTestFunctions
 class IbmDbTestCase(unittest.TestCase):
 
   def test_157a_FetchAssocWithoutScrollableCursorErr(self):
-    obj = IbmDbTestFunctions()
-    obj.assert_expect(self.run_test_157a)
+    self.obj = IbmDbTestFunctions()
+    self.obj.assert_expect(self.run_test_157a)
 
   def run_test_157a(self):
     conn = ibm_db.connect(config.database, config.user, config.password)
@@ -28,7 +28,7 @@ class IbmDbTestCase(unittest.TestCase):
           i = 2
           row = ibm_db.fetch_assoc(result, i)
           while ( row ):
-              if (server.DBMS_NAME[0:3] == 'IDS'):
+              if (self.obj.isServerInformix(server)):
                 print("%-5d %-16s %-32s %10s" % (row['id'], row['name'], row['breed'], row['weight']))
               else:
                 print("%-5d %-16s %-32s %10s" % (row['ID'], row['NAME'], row['BREED'], row['WEIGHT']))

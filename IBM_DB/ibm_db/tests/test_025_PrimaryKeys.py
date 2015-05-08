@@ -13,8 +13,8 @@ from testfunctions import IbmDbTestFunctions
 class IbmDbTestCase(unittest.TestCase):
 
   def test_025_PrimaryKeys(self):
-    obj = IbmDbTestFunctions()
-    obj.assert_expect(self.run_test_025)
+    self.obj = IbmDbTestFunctions()
+    self.obj.assert_expect(self.run_test_025)
 
   def run_test_025(self):
     conn = ibm_db.connect(config.database, config.user, config.password)
@@ -40,7 +40,7 @@ class IbmDbTestCase(unittest.TestCase):
       statement = "INSERT INTO test_foreign_keys VALUES (1)"
       result = ibm_db.exec_immediate(conn, statement)
       
-      if (server.DBMS_NAME[0:3] == 'IDS'):
+      if (self.obj.isServerInformix(server)):
         stmt = ibm_db.primary_keys(conn, None, config.user, 'test_primary_keys')
       else:
         stmt = ibm_db.primary_keys(conn, None, None, 'TEST_PRIMARY_KEYS')

@@ -12,8 +12,8 @@ from testfunctions import IbmDbTestFunctions
 class IbmDbTestCase(unittest.TestCase):
 
   def test_014_KeysetDrivenCursorNegativeRow(self):
-    obj = IbmDbTestFunctions()
-    obj.assert_expect(self.run_test_014)
+    self.obj = IbmDbTestFunctions()
+    self.obj.assert_expect(self.run_test_014)
 
   def run_test_014(self):
     conn = ibm_db.connect(config.database, config.user, config.password)
@@ -21,7 +21,7 @@ class IbmDbTestCase(unittest.TestCase):
 
     query = 'SELECT * FROM animals ORDER BY name'
 
-    if (serverinfo.DBMS_NAME[0:3] != 'IDS'):
+    if (not self.obj.isServerInformix(serverinfo)):
       stmt = ibm_db.prepare(conn, query, {ibm_db.SQL_ATTR_CURSOR_TYPE: ibm_db.SQL_CURSOR_KEYSET_DRIVEN})
     else:
       stmt = ibm_db.prepare(conn, query)

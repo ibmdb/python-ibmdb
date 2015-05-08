@@ -12,8 +12,8 @@ from testfunctions import IbmDbTestFunctions
 class IbmDbTestCase(unittest.TestCase):
 
   def test_6792_FieldTypeRetStrDatetimeTimestamp(self):
-    obj = IbmDbTestFunctions()
-    obj.assert_expect(self.run_test_6792)
+    self.obj = IbmDbTestFunctions()
+    self.obj.assert_expect(self.run_test_6792)
 
   def run_test_6792(self):
     conn = ibm_db.connect(config.database, config.user, config.password)
@@ -32,7 +32,7 @@ class IbmDbTestCase(unittest.TestCase):
       ts_withT_val = '2013-06-06T15:30:39'
       
       server = ibm_db.server_info( conn )
-      if (server.DBMS_NAME[0:3] == 'IDS'):
+      if (self.obj.isServerInformix(server)):
         statement = "CREATE TABLE table_6792 (col1 DATETIME HOUR TO SECOND, col2 DATE, col3 DATETIME YEAR TO SECOND, col4 DATETIME YEAR TO SECOND)"
         result = ibm_db.exec_immediate(conn, statement)
         statement = "INSERT INTO table_6792 (col1, col2, col3) values (?, ?, ?)"

@@ -12,8 +12,8 @@ from testfunctions import IbmDbTestFunctions
 class IbmDbTestCase(unittest.TestCase):
 
   def test_6528_ScopingProblemBindParam(self):
-    obj = IbmDbTestFunctions()
-    obj.assert_expect(self.run_test_6528)
+    self.obj = IbmDbTestFunctions()
+    self.obj.assert_expect(self.run_test_6528)
 
   def checked_db2_execute(self, stmt):
     ibm_db.execute(stmt)
@@ -26,7 +26,7 @@ class IbmDbTestCase(unittest.TestCase):
     server = ibm_db.server_info( conn )
     
     if conn:
-      if (server.DBMS_NAME[0:3] == 'IDS'):
+      if (self.obj.isServerInformix(server)):
         sql = "SELECT TRIM(TRAILING FROM name) FROM animals WHERE breed = ?"
       else:
         sql = "SELECT RTRIM(name) FROM animals WHERE breed = ?"

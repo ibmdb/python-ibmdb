@@ -12,8 +12,8 @@ from testfunctions import IbmDbTestFunctions
 class IbmDbTestCase(unittest.TestCase):
 
   def test_030_Result(self):
-    obj = IbmDbTestFunctions()
-    obj.assert_expect(self.run_test_030)
+    self.obj = IbmDbTestFunctions()
+    self.obj.assert_expect(self.run_test_030)
 
   def run_test_030(self):
     conn = ibm_db.connect(config.database, config.user, config.password)
@@ -25,7 +25,7 @@ class IbmDbTestCase(unittest.TestCase):
       while (ibm_db.fetch_row(stmt)):
         breed = ibm_db.result(stmt, 1)
         print("string(%d) \"%s\"" % (len(breed), breed))
-        if (server.DBMS_NAME[0:3] == 'IDS'):
+        if (self.obj.isServerInformix(server)):
           name = ibm_db.result(stmt, "name")
         else:
           name = ibm_db.result(stmt, "NAME")

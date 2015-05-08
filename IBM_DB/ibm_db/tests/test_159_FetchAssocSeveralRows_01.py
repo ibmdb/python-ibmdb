@@ -12,14 +12,14 @@ from testfunctions import IbmDbTestFunctions
 class IbmDbTestCase(unittest.TestCase):
 
   def test_159_FetchAssocSeveralRows_01(self):
-    obj = IbmDbTestFunctions()
-    obj.assert_expect(self.run_test_159)
+    self.obj = IbmDbTestFunctions()
+    self.obj.assert_expect(self.run_test_159)
 
   def run_test_159(self):
     conn = ibm_db.connect(config.database, config.user, config.password)
 
     server = ibm_db.server_info( conn )
-    if (server.DBMS_NAME[0:3] == 'IDS'):
+    if (self.obj.isServerInformix(server)):
       op = {ibm_db.ATTR_CASE: ibm_db.CASE_UPPER}
       ibm_db.set_option(conn, op, 1)
 

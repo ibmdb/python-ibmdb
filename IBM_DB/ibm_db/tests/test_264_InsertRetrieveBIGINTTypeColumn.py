@@ -12,8 +12,8 @@ from testfunctions import IbmDbTestFunctions
 class IbmDbTestCase(unittest.TestCase):
 
   def test_264_InsertRetrieveBIGINTTypeColumn(self):
-    obj = IbmDbTestFunctions()
-    obj.assert_expect(self.run_test_264)
+    self.obj = IbmDbTestFunctions()
+    self.obj.assert_expect(self.run_test_264)
 
   def run_test_264(self):
     # Make a connection
@@ -21,7 +21,7 @@ class IbmDbTestCase(unittest.TestCase):
 
     if conn:
        server = ibm_db.server_info( conn )
-       if (server.DBMS_NAME[0:3] == 'IDS'):
+       if (self.obj.isServerInformix(server)):
           op = {ibm_db.ATTR_CASE: ibm_db.CASE_UPPER}
           ibm_db.set_option(conn, op, 1)
 
@@ -33,7 +33,7 @@ class IbmDbTestCase(unittest.TestCase):
        except:
          pass
        # Create the tab_bigint table
-       if (server.DBMS_NAME[0:3] == 'IDS'):
+       if (self.obj.isServerInformix(server)):
           create = "CREATE TABLE tab_bigint (col1 INT8, col2 INT8, col3 INT8, col4 INT8)"
        else:
           create = "CREATE TABLE tab_bigint (col1 BIGINT, col2 BIGINT, col3 BIGINT, col4 BIGINT)"

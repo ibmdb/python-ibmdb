@@ -12,8 +12,8 @@ from testfunctions import IbmDbTestFunctions
 class IbmDbTestCase(unittest.TestCase):
 
   def test_155_FetchAssocSelect_05(self):
-    obj = IbmDbTestFunctions()
-    obj.assert_expect(self.run_test_155)
+    self.obj = IbmDbTestFunctions()
+    self.obj.assert_expect(self.run_test_155)
 
   def run_test_155(self):
     conn = ibm_db.connect(config.database, config.user, config.password)
@@ -24,7 +24,7 @@ class IbmDbTestCase(unittest.TestCase):
     row = ibm_db.fetch_assoc(result)
     while ( row ):
       i += 1
-      if (serverinfo.DBMS_NAME[0:3] == 'IDS'):
+      if (self.obj.isServerInformix(serverinfo)):
         if (row['midinit'] == None):
           row['midinit'] = ''
         print("%6s %12s %s %-15s%3s %4s %10s %-8s%4d %s%10s %12s %12s %12s" % \

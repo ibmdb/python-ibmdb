@@ -19,15 +19,15 @@ from testfunctions import IbmDbTestFunctions
 class IbmDbTestCase(unittest.TestCase):
   
   def test_023_ColumnPrivileges(self):
-    obj = IbmDbTestFunctions()
-    obj.assert_expectf(self.run_test_023)
+    self.obj = IbmDbTestFunctions()
+    self.obj.assert_expectf(self.run_test_023)
 
   def run_test_023(self):
     conn = ibm_db.connect(config.database, config.user, config.password)
     server = ibm_db.server_info( conn )
 
     if (conn != 0):
-      if (server.DBMS_NAME[0:3] == 'IDS'):
+      if (self.obj.isServerInformix(server)):
         stmt = ibm_db.column_privileges(conn, None, config.user, 'animals')
       else:
         stmt = ibm_db.column_privileges(conn, None, None, 'ANIMALS')

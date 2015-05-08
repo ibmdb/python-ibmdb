@@ -12,8 +12,8 @@ from testfunctions import IbmDbTestFunctions
 class IbmDbTestCase(unittest.TestCase):
 
   def test_054_CursorType(self):
-    obj = IbmDbTestFunctions()
-    obj.assert_expect(self.run_test_054)
+    self.obj = IbmDbTestFunctions()
+    self.obj.assert_expect(self.run_test_054)
 
   def run_test_054(self):
     conn = ibm_db.connect(config.database, config.user, config.password)
@@ -28,7 +28,7 @@ class IbmDbTestCase(unittest.TestCase):
     val = ibm_db.get_option(stmt, ibm_db.SQL_ATTR_CURSOR_TYPE, 0)
     print(val)
 
-    if (serverinfo.DBMS_NAME[0:3] != 'IDS'):
+    if (not self.obj.isServerInformix(serverinfo)):
       op = {ibm_db.SQL_ATTR_CURSOR_TYPE: ibm_db.SQL_CURSOR_KEYSET_DRIVEN}
     else:
       op = {ibm_db.SQL_ATTR_CURSOR_TYPE: ibm_db.SQL_CURSOR_STATIC}

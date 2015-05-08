@@ -12,8 +12,8 @@ from testfunctions import IbmDbTestFunctions
 class IbmDbTestCase(unittest.TestCase):
 
   def test_6755_ExtraNULLChar_ResultCLOBCol(self):
-    obj = IbmDbTestFunctions()
-    obj.assert_expect(self.run_test_6755)
+    self.obj = IbmDbTestFunctions()
+    self.obj.assert_expect(self.run_test_6755)
 
   def run_test_6755(self):
     conn = ibm_db.connect(config.database, config.user, config.password)
@@ -27,7 +27,7 @@ class IbmDbTestCase(unittest.TestCase):
       except:
         pass
 
-      if (server.DBMS_NAME[0:3] == 'IDS'):
+      if (self.obj.isServerInformix(server)):
         create = 'CREATE TABLE table_6755 (col1 VARCHAR(20), col2 CLOB)'
         insert = "INSERT INTO table_6755 VALUES ('database', 'database')"
       else:

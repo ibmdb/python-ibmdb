@@ -12,8 +12,8 @@ from testfunctions import IbmDbTestFunctions
 class IbmDbTestCase(unittest.TestCase):
   
   def test_006_ConnPassingOpts(self):
-    obj = IbmDbTestFunctions()
-    obj.assert_expect(self.run_test_006)
+    self.obj = IbmDbTestFunctions()
+    self.obj.assert_expect(self.run_test_006)
 	  
   def run_test_006(self):    
 
@@ -25,7 +25,7 @@ class IbmDbTestCase(unittest.TestCase):
     if conn:
       serverinfo = ibm_db.server_info( conn )
 
-      if (serverinfo.DBMS_NAME[0:3] == 'IDS'):
+      if (self.obj.isServerInformix(serverinfo)):
         options1 = options2
 
       stmt = ibm_db.prepare(conn, "SELECT name FROM animals WHERE weight < 10.0", options2)

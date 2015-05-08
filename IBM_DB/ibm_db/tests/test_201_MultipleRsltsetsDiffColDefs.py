@@ -12,15 +12,14 @@ from testfunctions import IbmDbTestFunctions
 class IbmDbTestCase(unittest.TestCase):
 
   def test_201_MultipleRsltsetsDiffColDefs(self):
-    obj = IbmDbTestFunctions()
-    obj.assert_expect(self.run_test_201)
+    self.obj = IbmDbTestFunctions()
+    self.obj.assert_expect(self.run_test_201)
 
   def run_test_201(self):
     conn = ibm_db.connect(config.database, config.user, config.password)
     
     serverinfo = ibm_db.server_info( conn )
-    server = serverinfo.DBMS_NAME[0:3]
-    if (server == 'IDS'):
+    if (self.obj.isServerInformix(serverinfo)):
         procedure = """CREATE FUNCTION multiResults ()
            RETURNING CHAR(16), INT, VARCHAR(32), NUMERIC(7,2);
            
@@ -78,7 +77,7 @@ class IbmDbTestCase(unittest.TestCase):
                 print(str(i).strip())
            row = ibm_db.fetch_tuple(stmt)
     
-        if (server == 'IDS') :
+        if (self.obj.isServerInformix(serverinfo)) :
            print("Fetching second result set (should fail -- IDS does not support multiple result sets)")
         else:
            print("Fetching second result set")
@@ -91,7 +90,7 @@ class IbmDbTestCase(unittest.TestCase):
                    print(str(i).strip())
                 row = ibm_db.fetch_tuple(res)
      
-        if (server == 'IDS'):
+        if (self.obj.isServerInformix(serverinfo)):
            print("Fetching third result set (should fail -- IDS does not support multiple result sets)")
         else:
            print("Fetching third result set")

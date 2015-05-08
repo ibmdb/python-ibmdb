@@ -12,8 +12,8 @@ from testfunctions import IbmDbTestFunctions
 class IbmDbTestCase(unittest.TestCase):
 
   def test_033_ResultOutSequenceColumn(self):
-    obj = IbmDbTestFunctions()
-    obj.assert_expect(self.run_test_033)
+    self.obj = IbmDbTestFunctions()
+    self.obj.assert_expect(self.run_test_033)
 	  
   def run_test_033(self): 
     conn = ibm_db.connect(config.database, config.user, config.password)
@@ -27,7 +27,7 @@ class IbmDbTestCase(unittest.TestCase):
         print("string(%d) \"%s\"" % (len(str(weight)), weight))
         breed = ibm_db.result(stmt, 1)
         print("string(%d) \"%s\"" % (len(breed), breed))
-        if (server.DBMS_NAME[0:3] == 'IDS'):
+        if (self.obj.isServerInformix(server)):
           name = ibm_db.result(stmt, "name")
         else:
           name = ibm_db.result(stmt, "NAME")

@@ -12,15 +12,15 @@ from testfunctions import IbmDbTestFunctions
 class IbmDbTestCase(unittest.TestCase):
 
   def test_012_KeysetDrivenCursorSelect01(self):
-    obj = IbmDbTestFunctions()
-    obj.assert_expect(self.run_test_012)
+    self.obj = IbmDbTestFunctions()
+    self.obj.assert_expect(self.run_test_012)
 
   def run_test_012(self):
       conn = ibm_db.connect(config.database, config.user, config.password)
       
       if conn:
         serverinfo = ibm_db.server_info( conn )
-        if (serverinfo.DBMS_NAME[0:3] != 'IDS'):
+        if (not self.obj.isServerInformix(serverinfo)):
           stmt = ibm_db.prepare(conn, "SELECT name FROM animals WHERE weight < 10.0", {ibm_db.SQL_ATTR_CURSOR_TYPE: ibm_db.SQL_CURSOR_KEYSET_DRIVEN})
         else:
           stmt = ibm_db.prepare(conn, "SELECT name FROM animals WHERE weight < 10.0")

@@ -13,15 +13,15 @@ from testfunctions import IbmDbTestFunctions
 class IbmDbTestCase(unittest.TestCase):
 
   def test_191_ColumnsTable_02(self):
-    obj = IbmDbTestFunctions()
-    obj.assert_expectf(self.run_test_191)
+    self.obj = IbmDbTestFunctions()
+    self.obj.assert_expectf(self.run_test_191)
 
   def run_test_191(self):
     conn = ibm_db.connect(config.database, config.user, config.password)
     server = ibm_db.server_info( conn )
 
     if conn:
-      if (server.DBMS_NAME[0:3] == 'IDS'):
+      if (self.obj.isServerInformix(server)):
         result = ibm_db.columns(conn,None,config.user,"emp_photo");    
       else:
         result = ibm_db.columns(conn,None,None,"EMP_PHOTO");    
@@ -29,7 +29,7 @@ class IbmDbTestCase(unittest.TestCase):
       i = 0
       row = ibm_db.fetch_both(result)
       while ( row ):
-        if (server.DBMS_NAME[0:3] == 'IDS'):
+        if (self.obj.isServerInformix(server)):
           if ( (row['column_name'] != 'emp_rowid') and (i < 3) ):
             print("%s,%s,%s,%s\n" % (row['table_schem'], row['table_name'], row['column_name'], row['is_nullable']))
         else :
