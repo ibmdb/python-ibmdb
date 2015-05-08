@@ -57,17 +57,17 @@ class IbmDbTestCase(unittest.TestCase):
     else:
         result = ibm_db.tables(conn, None, 'T')
     
+    fields = []
     for i in range(0, ibm_db.num_fields(result)):
-      print("%s, " % ibm_db.field_name(result, i))
-    print
-    print
-  
+      fields.append(ibm_db.field_name(result, i))
+    print(", ".join(fields))
+    
     i = 0
     row = ibm_db.fetch_tuple(result)
     while ( row ):
       ibm_db.num_fields(result)
       if (i < 4):
-        print(", " + row[1] + ", " + row[2] + ", " + row[3] + ", , \n")
+        print(", " + row[1] + ", " + row[2] + ", " + row[3] + ", ,")
       i = i + 1
       row = ibm_db.fetch_tuple(result)
 
@@ -80,30 +80,26 @@ class IbmDbTestCase(unittest.TestCase):
 
 #__END__
 #__LUW_EXPECTED__
-#TABLE_CAT, TABLE_SCHEM, TABLE_NAME, TABLE_TYPE, REMARKS, 
-#
-#, T, T1, TABLE, , 
-#, T, T2, TABLE, , 
-#, T, T3, TABLE, , 
-#, T, T4, TABLE, , 
+#TABLE_CAT, TABLE_SCHEM, TABLE_NAME, TABLE_TYPE, REMARKS
+#, T, T1, TABLE, ,
+#, T, T2, TABLE, ,
+#, T, T3, TABLE, ,
+#, T, T4, TABLE, ,
 #__ZOS_EXPECTED__
-#TABLE_CAT, TABLE_SCHEM, TABLE_NAME, TABLE_TYPE, REMARKS, 
-#
-#, T, T1, TABLE, , 
-#, T, T2, TABLE, , 
-#, T, T3, TABLE, , 
-#, T, T4, TABLE, , 
+#TABLE_CAT, TABLE_SCHEM, TABLE_NAME, TABLE_TYPE, REMARKS
+#, T, T1, TABLE, ,
+#, T, T2, TABLE, ,
+#, T, T3, TABLE, ,
+#, T, T4, TABLE, ,
 #__SYSTEMI_EXPECTED__
-#TABLE_CAT, TABLE_SCHEM, TABLE_NAME, TABLE_TYPE, REMARKS, 
-#
-#, T, T1, TABLE, , 
-#, T, T2, TABLE, , 
-#, T, T3, TABLE, , 
-#, T, T4, TABLE, , 
+#TABLE_CAT, TABLE_SCHEM, TABLE_NAME, TABLE_TYPE, REMARKS
+#, T, T1, TABLE, ,
+#, T, T2, TABLE, ,
+#, T, T3, TABLE, ,
+#, T, T4, TABLE, ,
 #__IDS_EXPECTED__
-#table_cat, table_schem, table_name, table_type, remarks, 
-#
-#, t, t1, TABLE%s, , 
-#, t, t2, TABLE%s, , 
-#, t, t3, TABLE%s, , 
+#table_cat, table_schem, table_name, table_type, remarks
+#, t, t1, TABLE%s, ,
+#, t, t2, TABLE%s, ,
+#, t, t3, TABLE%s, ,
 #, t, t4, TABLE%s, ,

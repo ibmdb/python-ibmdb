@@ -37,7 +37,7 @@ class IbmDbTestCase(unittest.TestCase):
       except:
         pass
 
-      if ((self.obj.isServerInformix(server)) or (self.obj.isServerIBMi(server))):
+      if (self.obj.isServerInformix(server)):
         sql = "create table test(id integer, name VARCHAR(10), clob_col CLOB, some_var VARCHAR(100) )"
       else:
         sql = "create table test(id integer, name VARCHAR(10), clob_col CLOB, some_var XML )"
@@ -83,7 +83,7 @@ class IbmDbTestCase(unittest.TestCase):
       print("Number of affected rows: %d" % ibm_db.get_num_result(stmt))
       row = ibm_db.fetch_tuple(stmt)
       while ( row ):
-        print("%s, %s, %s, %s\n" %(row[0], row[1], row[2], ((row[3] is not None) and row[3].startswith(u'\ufeff')) and  row[3][1:] or  row[3]))
+        print("%s, %s, %s, %s" %(row[0], row[1], row[2], ((row[3] is not None) and row[3].startswith(u'\ufeff')) and  row[3][1:] or  row[3]))
         row = ibm_db.fetch_tuple(stmt)
 
       sql = 'select id, name from test where id = ?'
@@ -94,7 +94,7 @@ class IbmDbTestCase(unittest.TestCase):
       print("Number of affected rows: %d" % ibm_db.get_num_result(stmt))
       row = ibm_db.fetch_tuple(stmt)
       while ( row ):
-        print("%s, %s\n" %(row[0], row[1]))
+        print("%s, %s" %(row[0], row[1]))
         row = ibm_db.fetch_tuple(stmt)
 
       if (self.obj.isServerInformix(server)):
@@ -109,7 +109,7 @@ class IbmDbTestCase(unittest.TestCase):
       print("Number of affected rows: %d" % ibm_db.get_num_result(stmt))
       row = ibm_db.fetch_tuple(stmt)
       while ( row ):
-        print("%s, %s, %s, %s\n" %(row[0], row[1], row[2], ((row[3] is not None) and row[3].startswith(u'\ufeff')) and  row[3][1:] or  row[3]))
+        print("%s, %s, %s, %s" %(row[0], row[1], row[2], ((row[3] is not None) and row[3].startswith(u'\ufeff')) and  row[3][1:] or  row[3]))
         row = ibm_db.fetch_tuple(stmt)
 
       ibm_db.close(conn)

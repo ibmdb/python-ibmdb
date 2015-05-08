@@ -31,10 +31,10 @@ class IbmDbTestCase(unittest.TestCase):
       while ( row ):
         if (self.obj.isServerInformix(server)):
           if ( (row['column_name'] != 'emp_rowid') and (i < 3) ):
-            print("%s,%s,%s,%s\n" % (row['table_schem'], row['table_name'], row['column_name'], row['is_nullable']))
+            print("%s,%s,%s,%s" % (row['table_schem'], row['table_name'], row['column_name'], row['is_nullable']))
         else :
           if ( (row['COLUMN_NAME'] != 'EMP_ROWID') and (i < 3) ):
-            print("%s,%s,%s,%s\n" % (row['TABLE_SCHEM'], row['TABLE_NAME'], row['COLUMN_NAME'], row['IS_NULLABLE']))
+            print("%s,%s,%s,%s" % (row['TABLE_SCHEM'], row['TABLE_NAME'], row['COLUMN_NAME'], row['IS_NULLABLE']))
         i = i + 1
         row = ibm_db.fetch_both(result)
       print("done!")

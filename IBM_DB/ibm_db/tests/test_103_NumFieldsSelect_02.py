@@ -24,9 +24,10 @@ class IbmDbTestCase(unittest.TestCase):
        j = 1
        row = ibm_db.fetch_tuple(result)
        while ( row ):
-          print("%d) " % j)
+          sys.stdout.write("%d) " % j)
           for i in range(0, cols):
-             print("%s " % row[i])
+             sys.stdout.write("%s " % row[i])
+          print("")
           j += 1
           if (j > 10):
              break

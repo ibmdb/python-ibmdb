@@ -44,7 +44,6 @@ class IbmDbTestCase(unittest.TestCase):
 #1:SALES_PERSON
 #2:REGION
 #3:SALES
-#
 #-----
 #0:ID
 #1:NAME
@@ -53,7 +52,6 @@ class IbmDbTestCase(unittest.TestCase):
 #4:YEARS
 #5:SALARY
 #6:COMM
-#
 #-----
 #Region:REGION
 #5:SALARY
@@ -62,7 +60,6 @@ class IbmDbTestCase(unittest.TestCase):
 #1:SALES_PERSON
 #2:REGION
 #3:SALES
-#
 #-----
 #0:ID
 #1:NAME
@@ -71,7 +68,6 @@ class IbmDbTestCase(unittest.TestCase):
 #4:YEARS
 #5:SALARY
 #6:COMM
-#
 #-----
 #Region:REGION
 #5:SALARY
@@ -80,7 +76,6 @@ class IbmDbTestCase(unittest.TestCase):
 #1:SALES_PERSON
 #2:REGION
 #3:SALES
-#
 #-----
 #0:ID
 #1:NAME
@@ -89,7 +84,6 @@ class IbmDbTestCase(unittest.TestCase):
 #4:YEARS
 #5:SALARY
 #6:COMM
-#
 #-----
 #Region:REGION
 #5:SALARY
@@ -98,7 +92,6 @@ class IbmDbTestCase(unittest.TestCase):
 #1:sales_person
 #2:region
 #3:sales
-#
 #-----
 #0:id
 #1:name
@@ -107,7 +100,6 @@ class IbmDbTestCase(unittest.TestCase):
 #4:years
 #5:salary
 #6:comm
-#
 #-----
 #Region:region
 #5:salary

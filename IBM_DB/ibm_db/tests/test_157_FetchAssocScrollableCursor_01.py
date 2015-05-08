@@ -30,9 +30,9 @@ class IbmDbTestCase(unittest.TestCase):
       row = ibm_db.fetch_assoc(result, i)
       while ( row ):
         if (self.obj.isServerInformix(server)):
-	           print("%-5d %-16s %-32s %10s\n" % (row['id'], row['name'], row['breed'], row['weight']))
+	           print("%-5d %-16s %-32s %10s" % (row['id'], row['name'], row['breed'], row['weight']))
         else:
-	           print("%-5d %-16s %-32s %10s\n" % (row['ID'], row['NAME'], row['BREED'], row['WEIGHT']))
+	           print("%-5d %-16s %-32s %10s" % (row['ID'], row['NAME'], row['BREED'], row['WEIGHT']))
         i = i + 2
         row = ibm_db.fetch_assoc(result, i)
 #

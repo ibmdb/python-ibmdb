@@ -26,7 +26,7 @@ class IbmDbTestCase(unittest.TestCase):
         pass
       if result:
         cols = ibm_db.num_fields(result)
-        print("col: %d , " % cols)
+        print("col: %d" % cols)
         rows = ibm_db.num_rows(result)
         print("affected row: %d" % rows)
       else:
@@ -37,7 +37,7 @@ class IbmDbTestCase(unittest.TestCase):
         pass
       if result:
         cols = ibm_db.num_fields(result)
-        print("col: %d , " % cols)
+        print("col: %d" % cols)
         rows = ibm_db.num_rows(result)
         print("affected row: %d" % rows)
       else:
@@ -48,10 +48,18 @@ class IbmDbTestCase(unittest.TestCase):
 
 #__END__
 #__LUW_EXPECTED__
-#[IBM][CLI Driver][DB2/%s] SQL0104N  An unexpected token "insert int0 t_string" was found following "BEGIN-OF-STATEMENT".  Expected tokens may include:  "<space>".  SQLSTATE=42601 SQLCODE=-104col: 0 , affected row: 0
+#[IBM][CLI Driver][DB2/%s] SQL0104N  An unexpected token "insert int0 t_string" was found following "BEGIN-OF-STATEMENT".  Expected tokens may include:  "<space>".  SQLSTATE=42601 SQLCODE=-104
+#col: 0
+#affected row: 0
 #__ZOS_EXPECTED__
-#[IBM][CLI Driver][DB2%s] SQL0104N  An unexpected token "INT0" was found following "".  Expected tokens may include:  "INTO".  SQLSTATE=42601 SQLCODE=-104col: 0 , affected row: 0
+#[IBM][CLI Driver][DB2%s] SQL0104N  An unexpected token "INT0" was found following "".  Expected tokens may include:  "INTO".  SQLSTATE=42601 SQLCODE=-104
+#col: 0
+#affected row: 0
 #__SYSTEMI_EXPECTED__
-#[IBM][CLI Driver][AS] SQL0104N  An unexpected token "INT0" was found following "".  Expected tokens may include:  "INTO".  SQLSTATE=42601 SQLCODE=-104col: 0 , affected row: 0
+#[IBM][CLI Driver][AS] SQL0104N  An unexpected token "INT0" was found following "".  Expected tokens may include:  "INTO".  SQLSTATE=42601 SQLCODE=-104
+#col: 0
+#affected row: 0
 #__IDS_EXPECTED__
-#[IBM][CLI Driver][IDS/%s] A syntax error has occurred. SQLCODE=-201col: 0 , affected row: 0
+#[IBM][CLI Driver][IDS/%s] A syntax error has occurred. SQLCODE=-201
+#col: 0
+#affected row: 0

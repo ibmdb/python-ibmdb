@@ -20,7 +20,7 @@ class IbmDbTestCase(unittest.TestCase):
     conn = ibm_db.connect(config.database, config.user, config.password)
     server = ibm_db.server_info( conn )
 
-    if ((not self.obj.isServerInformix(server)) and (not self.obj.isServerIBMi(server))):
+    if (not self.obj.isServerInformix(server)):
       drop = 'DROP TABLE test_195'
       try:
         result = ibm_db.exec_immediate(conn, drop)
@@ -38,7 +38,7 @@ class IbmDbTestCase(unittest.TestCase):
       ibm_db.execute(stmt)
       result = ibm_db.fetch_assoc(stmt)
       while( result ):
-        print("Output: %s" % result)
+        print("Output: %s" % repr(result['DATA']))
         result = ibm_db.fetch_assoc(stmt)
       ibm_db.close(conn)
     else:
@@ -46,10 +46,10 @@ class IbmDbTestCase(unittest.TestCase):
 
 #__END__
 #__LUW_EXPECTED__
-#Output:%s<TEST><def><xml/></def></TEST>
+#Output:%s<TEST><def><xml/></def></TEST>'
 #__ZOS_EXPECTED__
-#Output:%s<TEST><def><xml/></def></TEST>
+#Output:%s<TEST><def><xml/></def></TEST>'
 #__SYSTEMI_EXPECTED__
-#Native XML datatype is not supported.
+#Output:%s<TEST><def><xml/></def></TEST>'
 #__IDS_EXPECTED__
 #Native XML datatype is not supported.

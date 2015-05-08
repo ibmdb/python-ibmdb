@@ -76,7 +76,6 @@ class IbmDbTestCase(unittest.TestCase):
 #000320       RAMLAL V MEHTA          E21 9990 1965-07-07 FIELDREP  16 M1932-08-11     19950.00       400.00      1596.00
 #000330         WING   LEE            E21 2103 1976-02-23 FIELDREP  14 M1941-07-18     25370.00       500.00      2030.00
 #000340        JASON R GOUNOT         E21 5698 1947-05-05 FIELDREP  16 M1926-05-17     23840.00       500.00      1907.00
-#
 #32 record(s) selected.
 #__ZOS_EXPECTED__
 #000010    CHRISTINE I HAAS           A00 3978 1965-01-01 PRES      18 F1933-08-24     52750.00      1000.00      4220.00
@@ -111,7 +110,6 @@ class IbmDbTestCase(unittest.TestCase):
 #000320       RAMLAL V MEHTA          E21 9990 1965-07-07 FIELDREP  16 M1932-08-11     19950.00       400.00      1596.00
 #000330         WING   LEE            E21 2103 1976-02-23 FIELDREP  14 M1941-07-18     25370.00       500.00      2030.00
 #000340        JASON R GOUNOT         E21 5698 1947-05-05 FIELDREP  16 M1926-05-17     23840.00       500.00      1907.00
-#
 #32 record(s) selected.
 #__SYSTEMI_EXPECTED__
 #000010    CHRISTINE I HAAS           A00 3978 1965-01-01 PRES      18 F1933-08-24     52750.00      1000.00      4220.00
@@ -146,7 +144,6 @@ class IbmDbTestCase(unittest.TestCase):
 #000320       RAMLAL V MEHTA          E21 9990 1965-07-07 FIELDREP  16 M1932-08-11     19950.00       400.00      1596.00
 #000330         WING   LEE            E21 2103 1976-02-23 FIELDREP  14 M1941-07-18     25370.00       500.00      2030.00
 #000340        JASON R GOUNOT         E21 5698 1947-05-05 FIELDREP  16 M1926-05-17     23840.00       500.00      1907.00
-#
 #32 record(s) selected.
 #__IDS_EXPECTED__
 #000010    CHRISTINE I HAAS           A00 3978 1965-01-01 PRES      18 F1933-08-24     52750.00      1000.00      4220.00
@@ -181,5 +178,4 @@ class IbmDbTestCase(unittest.TestCase):
 #000320       RAMLAL V MEHTA          E21 9990 1965-07-07 FIELDREP  16 M1932-08-11     19950.00       400.00      1596.00
 #000330         WING   LEE            E21 2103 1976-02-23 FIELDREP  14 M1941-07-18     25370.00       500.00      2030.00
 #000340        JASON R GOUNOT         E21 5698 1947-05-05 FIELDREP  16 M1926-05-17     23840.00       500.00      1907.00
-#
 #32 record(s) selected.

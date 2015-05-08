@@ -95,15 +95,11 @@ class IbmDbTestFunctions(unittest.TestCase):
       del callstack
     
     expected = expected.replace('#', '')
-    expected = expected.replace('\n', '').replace('\r', '')
-    output = output.replace('\n', '').replace('\r', '')
     
     if sys.version_info >= (2, 7):
       self.maxDiff = None
       self.assertMultiLineEqual(expected, output)
     else:
-      #expected = expected.replace('\n', '').replace('\r', '')
-      #output = output.replace('\n', '').replace('\r', '')
       self.assertEqual(expected, output)
 
   # This function will compare using Regular Expressions
@@ -125,14 +121,12 @@ class IbmDbTestFunctions(unittest.TestCase):
           pattern = re.sub(chr, '\\' + chr, pattern)
 
       pattern = pattern.replace('#', '')
-      pattern = pattern.replace('\r', '')
-      pattern = pattern.replace('\n', '')
+      #pattern = pattern.replace('\r', '')
       pattern = re.sub('%s', '.*?', pattern)
       pattern = re.sub('%d', '\\d+', pattern)
 
       output = self.capture(testFuncName)
-      output = output.replace('\r', '')
-      output = output.replace('\n', '')
+      #output = output.replace('\r', '')
       if sys.version_info >= (2, 7):
         self.assertRegexpMatches(output, pattern)
       else:

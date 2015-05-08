@@ -39,7 +39,6 @@ class IbmDbTestCase(unittest.TestCase):
 
 #__END__
 #__LUW_EXPECTED__
-#
 #1995-12-31 LUCCHESSI       Ontario-South      1
 #1995-12-31 LEE             Ontario-South      3
 #1995-12-31 LEE             Quebec             1
@@ -82,7 +81,6 @@ class IbmDbTestCase(unittest.TestCase):
 #1996-04-01 GOUNOT          Quebec             3
 #1996-04-01 GOUNOT          Manitoba           7
 #__ZOS_EXPECTED__
-#
 #1995-12-31 LUCCHESSI       Ontario-South      1
 #1995-12-31 LEE             Ontario-South      3
 #1995-12-31 LEE             Quebec             1
@@ -125,7 +123,6 @@ class IbmDbTestCase(unittest.TestCase):
 #1996-04-01 GOUNOT          Quebec             3
 #1996-04-01 GOUNOT          Manitoba           7
 #__SYSTEMI_EXPECTED__
-#
 #1995-12-31 LUCCHESSI       Ontario-South      1
 #1995-12-31 LEE             Ontario-South      3
 #1995-12-31 LEE             Quebec             1
@@ -168,7 +165,6 @@ class IbmDbTestCase(unittest.TestCase):
 #1996-04-01 GOUNOT          Quebec             3
 #1996-04-01 GOUNOT          Manitoba           7
 #__IDS_EXPECTED__
-#
 #1995-12-31 LUCCHESSI       Ontario-South      1
 #1995-12-31 LEE             Ontario-South      3
 #1995-12-31 LEE             Quebec             1

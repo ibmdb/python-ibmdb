@@ -38,7 +38,6 @@ class IbmDbTestCase(unittest.TestCase):
 
 #__END__
 #__LUW_EXPECTED__
-#
 #  10 Head Office     160 Corporate New York      
 #  15 New England      50 Eastern   Boston        
 #  20 Mid Atlantic     10 Eastern   Washington    
@@ -48,7 +47,6 @@ class IbmDbTestCase(unittest.TestCase):
 #  66 Pacific         270 Western   San Francisco 
 #  84 Mountain        290 Western   Denver        
 #__ZOS_EXPECTED__
-#
 #  10 Head Office     160 Corporate New York      
 #  15 New England      50 Eastern   Boston        
 #  20 Mid Atlantic     10 Eastern   Washington    
@@ -58,7 +56,6 @@ class IbmDbTestCase(unittest.TestCase):
 #  66 Pacific         270 Western   San Francisco 
 #  84 Mountain        290 Western   Denver        
 #__SYSTEMI_EXPECTED__
-#
 #  10 Head Office     160 Corporate New York      
 #  15 New England      50 Eastern   Boston        
 #  20 Mid Atlantic     10 Eastern   Washington    
@@ -68,7 +65,6 @@ class IbmDbTestCase(unittest.TestCase):
 #  66 Pacific         270 Western   San Francisco 
 #  84 Mountain        290 Western   Denver        
 #__IDS_EXPECTED__
-#
 #  10 Head Office     160 Corporate New York      
 #  15 New England      50 Eastern   Boston        
 #  20 Mid Atlantic     10 Eastern   Washington    
@@ -77,4 +73,3 @@ class IbmDbTestCase(unittest.TestCase):
 #  51 Plains          140 Midwest   Dallas        
 #  66 Pacific         270 Western   San Francisco 
 #  84 Mountain        290 Western   Denver        
-#

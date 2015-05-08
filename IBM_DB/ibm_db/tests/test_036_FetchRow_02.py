@@ -27,7 +27,7 @@ class IbmDbTestCase(unittest.TestCase):
        j=0
        row2 = ibm_db.fetch_row(result2) 
        while ( row2 ):
-          print("%d)%d," % (i, j))
+          sys.stdout.write("%d)%d," % (i, j))
           j+=1
           row2 = ibm_db.fetch_row(result2)
        print("%d, " % i)

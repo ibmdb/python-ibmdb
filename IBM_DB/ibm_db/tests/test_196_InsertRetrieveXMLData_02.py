@@ -20,7 +20,7 @@ class IbmDbTestCase(unittest.TestCase):
     conn = ibm_db.connect(config.database, config.user, config.password)
     server = ibm_db.server_info( conn )
 
-    if ((not self.obj.isServerInformix(server)) and (not self.obj.isServerIBMi(server))):
+    if (not self.obj.isServerInformix(server)):
       try:
           rc = ibm_db.exec_immediate(conn, "DROP TABLE xml_test")
       except:
@@ -70,6 +70,10 @@ class IbmDbTestCase(unittest.TestCase):
 #Result from XMLSerialize and XMLQuery: <zip>66061</zip>
 #Result from only XMLQuery: u?'%s<zip>66061</zip>'
 #__SYSTEMI_EXPECTED__
-#Native XML datatype is not supported.
+#Result ID: 1
+#Result DATA: xml test 1
+#Result XMLCOL: u?'%s<address><street>12485 S Pine St.</street><city>Olathe</city><state>KS</state><zip>66061</zip></address>'
+#Result from XMLSerialize and XMLQuery: <zip>66061</zip>
+#Result from only XMLQuery: u?'%s<zip>66061</zip>'
 #__IDS_EXPECTED__
 #Native XML datatype is not supported.

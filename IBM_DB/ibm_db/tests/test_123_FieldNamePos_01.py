@@ -77,7 +77,6 @@ class IbmDbTestCase(unittest.TestCase):
 
 #__END__
 #__LUW_EXPECTED__
-#
 #ID:10
 #LASTNAME:ADAMSON
 #---------
@@ -3439,7 +3438,6 @@ class IbmDbTestCase(unittest.TestCase):
 #LASTNAME:YOSHIMURA
 #---------
 #__ZOS_EXPECTED__
-#
 #ID:10
 #LASTNAME:ADAMSON
 #---------
@@ -6801,7 +6799,6 @@ class IbmDbTestCase(unittest.TestCase):
 #LASTNAME:YOSHIMURA
 #---------
 #__SYSTEMI_EXPECTED__
-#
 #ID:10
 #LASTNAME:ADAMSON
 #---------
@@ -10163,7 +10160,6 @@ class IbmDbTestCase(unittest.TestCase):
 #LASTNAME:YOSHIMURA
 #---------
 #__IDS_EXPECTED__
-#
 #ID:10
 #LASTNAME:ADAMSON
 #---------

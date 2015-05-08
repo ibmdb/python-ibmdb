@@ -71,7 +71,7 @@ class IbmDbTestCase(unittest.TestCase):
 			ibm_db.execute(stmt)
 			data = ibm_db.fetch_both( stmt )
 			while ( data ):
-				print("%s : %s : %s\n" % (data[0], data[1], data[2]))
+				print("%s : %s : %s" % (data[0], data[1], data[2]))
 				data = ibm_db.fetch_both( stmt )
 			try:
 				stmt = ibm_db.prepare(conn, query, {ibm_db.SQL_ATTR_CURSOR_TYPE:  ibm_db.SQL_CURSOR_KEYSET_DRIVEN})

@@ -65,7 +65,6 @@ class IbmDbTestCase(unittest.TestCase):
 #__END__
 #__LUW_EXPECTED__
 #Starting test ...
-#
 #SQLSTATE: 22001
 #Message: [IBM][CLI Driver] CLI0109E  String data right truncation. SQLSTATE=22001 SQLCODE=-99999
 #True
@@ -74,7 +73,6 @@ class IbmDbTestCase(unittest.TestCase):
 #Done
 #__ZOS_EXPECTED__
 #Starting test ...
-#
 #SQLSTATE: 22001
 #Message: [IBM][CLI Driver] CLI0109E  String data right truncation. SQLSTATE=22001 SQLCODE=-99999
 #True
@@ -83,7 +81,6 @@ class IbmDbTestCase(unittest.TestCase):
 #Done
 #__SYSTEMI_EXPECTED__
 #Starting test ...
-#
 #SQLSTATE: 22001
 #Message: [IBM][CLI Driver] CLI0109E  String data right truncation. SQLSTATE=22001 SQLCODE=-99999
 #True
@@ -92,7 +89,6 @@ class IbmDbTestCase(unittest.TestCase):
 #Done
 #__IDS_EXPECTED__
 #Starting test ...
-#
 #SQLSTATE: 22001
 #Message: [IBM][CLI Driver][IDS%s] Value exceeds string column length. SQLCODE=-1279
 #True
