@@ -54,7 +54,10 @@ class IbmDbTestCase(unittest.TestCase):
       ibm_db.execute(stmt)
       print("Number of affected rows: %d" % ibm_db.get_num_result(stmt))
 
-      sql = "insert into test values( 1, 'some', 'here is a clob value', '<?xml version=\"1.0\" encoding=\"UTF-8\" ?><test attribute=\"value\"/>')"
+      if (self.obj.isServerIBMi(server)):
+        sql = "insert into test values( 1, 'some', 'here is a clob value', '<test attribute=\"value\"/>')"
+      else:
+        sql = "insert into test values( 1, 'some', 'here is a clob value', <?xml version=\"1.0\" ?><test attribute=\"value\"/>)"
 
       stmt = ibm_db.prepare(conn, sql)
       ibm_db.set_option(stmt, cursor_option, 0)
@@ -159,14 +162,14 @@ class IbmDbTestCase(unittest.TestCase):
 #Number of affected rows: -1
 #Number of affected rows: -1
 #Number of affected rows: -1
-#1, some, here is a clob value, <?xml version="1.0" encoding="UTF-8" ?><test attribute="value"/>
+#1, some, here is a clob value, <?xml version="1.0" encoding="UTF-16" ?><test attribute="value"/>
 #2, value, clob data, None
 #2, in varchar, data2, None
 #Number of affected rows: 2
 #2, value
 #2, in varchar
 #Number of affected rows: -1
-#1, some, here is a clob value, <?xml version="1.0" encoding="UTF-8" ?><test attribute="value"/>
+#1, some, here is a clob value, <?xml version="1.0" encoding="UTF-16" ?><test attribute="value"/>
 #2, value, clob data, None
 #2, in varchar, data2, None
 #__IDS_EXPECTED__
