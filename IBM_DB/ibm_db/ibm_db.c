@@ -1180,8 +1180,13 @@ static PyObject *_python_ibm_db_connect_helper( PyObject *self, PyObject *args, 
 				(void *)SQL_OV_ODBC3, 0);
 #else
 			{
-				int val = SQL_TRUE;
+				int val;
+				
+				val = SQL_TRUE;
 				SQLSetEnvAttr((SQLHENV)conn_res->henv, SQL_ATTR_SERVER_MODE, &val, 0);
+				
+				val = SQL_FALSE;
+				SQLSetEnvAttr((SQLHENV)conn_res->henv, SQL_ATTR_INCLUDE_NULL_IN_LEN, &val, 0);
 			}
 #endif
 		}
@@ -7434,6 +7439,7 @@ static RETCODE _python_ibm_db_get_data(stmt_handle *stmt_res, int col_num, short
 		_python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, rc, 1, 
 			NULL, -1, 1);
 	}
+	
 	return rc;
 }
 
@@ -7558,7 +7564,7 @@ static PyObject *ibm_db_result(PyObject *self, PyObject *args)
 			else{
 				in_length = stmt_res->column_info[col_num].size+1;
 			}
-			out_ptr = (SQLPOINTER)ALLOC_N(Py_UNICODE, in_length);
+			out_ptr = (SQLPOINTER)ALLOC_N(SQLTCHAR, in_length);
 
 			if ( out_ptr == NULL ) {
 				PyErr_SetString(PyExc_Exception, "Failed to Allocate Memory");
@@ -7566,7 +7572,7 @@ static PyObject *ibm_db_result(PyObject *self, PyObject *args)
 			}
 
 			rc = _python_ibm_db_get_data(stmt_res, col_num+1, SQL_C_TCHAR, 
-						 out_ptr, in_length * sizeof(Py_UNICODE), &out_length);
+						 out_ptr, in_length * sizeof(SQLTCHAR), &out_length);
 
 			if ( rc == SQL_ERROR ) {
 				if(out_ptr != NULL) {
