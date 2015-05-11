@@ -9480,15 +9480,20 @@ static PyObject *ibm_db_active(PyObject *self, PyObject *args)
 		} else {
 			conn_res = (conn_handle *)py_conn_res;
 		}
+		
+		if(conn_res->handle_active) {
 #ifndef PASE
-		rc = SQLGetConnectAttr(conn_res->hdbc, SQL_ATTR_PING_DB, 
-			(SQLPOINTER)&conn_alive, 0, NULL);
-		if ( rc == SQL_ERROR ) {
-			_python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, rc, 1,
-				NULL, -1, 1);
-			PyErr_Clear();
-		}
+			rc = SQLGetConnectAttr(conn_res->hdbc, SQL_ATTR_PING_DB, 
+				(SQLPOINTER)&conn_alive, 0, NULL);
+			if ( rc == SQL_ERROR ) {
+				_python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, rc, 1,
+					NULL, -1, 1);
+				PyErr_Clear();
+			}
+#else
+			conn_alive = 1;
 #endif /* PASE */
+		}
 	}
 	/*
 	* SQLGetConnectAttr with SQL_ATTR_PING_DB will return 0 on failure but will 
