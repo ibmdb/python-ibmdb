@@ -29,7 +29,11 @@ if not _IS_JYTHON:
 else:
     from com.ziclix.python.sql import zxJDBC
 
-from django.db.backends import BaseDatabaseIntrospection, FieldInfo
+try:
+    from django.db.backends import BaseDatabaseIntrospection, FieldInfo
+except ImportError:
+    from django.db.backends.base.introspection import BaseDatabaseIntrospection, FieldInfo
+
 from django import VERSION as djangoVersion
 
 class DatabaseIntrospection( BaseDatabaseIntrospection ):
