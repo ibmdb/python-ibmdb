@@ -26,9 +26,22 @@ _IS_JYTHON = sys.platform.startswith( 'java' )
 from django.core.exceptions import ImproperlyConfigured
 
 # Importing class from base module of django.db.backends
-from django.db.backends import BaseDatabaseFeatures
-from django.db.backends import BaseDatabaseWrapper
-from django.db.backends import BaseDatabaseValidation
+
+try:
+    from django.db.backends import BaseDatabaseFeatures
+except ImportError:
+    from django.db.backends.base.features import BaseDatabaseFeatures
+
+try:
+    from django.db.backends import BaseDatabaseWrapper
+except ImportError:
+    from django.db.backends.base.base import BaseDatabaseWrapper
+
+try:
+    from django.db.backends import BaseDatabaseValidation
+except ImportError:
+    from django.db.backends.base.validation import BaseDatabaseValidation
+
 from django.db.backends.signals import connection_created
 
 # Importing internal classes from ibm_db_django package.
