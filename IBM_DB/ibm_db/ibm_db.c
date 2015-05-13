@@ -8992,18 +8992,17 @@ static PyObject *ibm_db_server_info(PyObject *self, PyObject *args)
 				return_value->DBMS_VER = StringOBJ_FromASCII(buffer11);
 		}
 
-#ifdef PASE
-		// IBM i doesn't have the concept of a database-wide code page
-		// Instead, each field can be a different code page
-		return_value->DB_CODEPAGE = 0;
-#else
 		/* DB_CODEPAGE */
 		bufferint32 = 0;
-
+		
+		// IBM i doesn't have the concept of a database-wide code page
+		// Instead, each field can be a different code page
+#ifndef PASE
 		Py_BEGIN_ALLOW_THREADS;
 		rc = SQLGetInfo(conn_res->hdbc, SQL_DATABASE_CODEPAGE, &bufferint32, 
 						sizeof(bufferint32), NULL);
 		Py_END_ALLOW_THREADS;
+#endif
 
 		if ( rc == SQL_ERROR ) {
 			_python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, rc, 1, 
@@ -9013,7 +9012,6 @@ static PyObject *ibm_db_server_info(PyObject *self, PyObject *args)
 		} else {
 			return_value->DB_CODEPAGE = PyInt_FromLong(bufferint32);
 		}
-#endif
 
 		/* DB_NAME */
 		memset(buffer255, 0, sizeof(buffer255));
@@ -9032,14 +9030,15 @@ static PyObject *ibm_db_server_info(PyObject *self, PyObject *args)
 			return_value->DB_NAME = StringOBJ_FromASCII(buffer255);
 		}
 
-#ifndef PASE	  /* i5/OS INST_NAME handled natively */
 		/* INST_NAME */
 		memset(buffer255, 0, sizeof(buffer255));
 
+#ifndef PASE
 		Py_BEGIN_ALLOW_THREADS;
 		rc = SQLGetInfo(conn_res->hdbc, SQL_SERVER_NAME, (SQLPOINTER)buffer255, 
 					sizeof(buffer255), NULL);
 		Py_END_ALLOW_THREADS;
+#endif
 
 		if ( rc == SQL_ERROR ) {
 			_python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, rc, 1, 
@@ -9053,10 +9052,12 @@ static PyObject *ibm_db_server_info(PyObject *self, PyObject *args)
 		/* SPECIAL_CHARS */
 		memset(buffer255, 0, sizeof(buffer255));
 
+#ifndef PASE
 		Py_BEGIN_ALLOW_THREADS;
 		rc = SQLGetInfo(conn_res->hdbc, SQL_SPECIAL_CHARACTERS, 
 					(SQLPOINTER)buffer255, sizeof(buffer255), NULL);
 		Py_END_ALLOW_THREADS;
+#endif
 
 		if ( rc == SQL_ERROR ) {
 			_python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, rc, 1, 
@@ -9066,7 +9067,6 @@ static PyObject *ibm_db_server_info(PyObject *self, PyObject *args)
 		} else {
 			return_value->SPECIAL_CHARS = StringOBJ_FromASCII(buffer255);
 		}
-#endif /* PASE */
 
 		/* KEYWORDS */
 		memset(buffer2k, 0, sizeof(buffer2k));
@@ -9140,10 +9140,9 @@ static PyObject *ibm_db_server_info(PyObject *self, PyObject *args)
 			return_value->DFT_ISOLATION = StringOBJ_FromASCII(buffer11);
 		}
 
-#ifndef PASE	  /* i5/OS ISOLATION_OPTION handled natively */
 		/* ISOLATION_OPTION */
+#ifndef PASE
 		bitmask = 0;
-		memset(buffer11, 0, sizeof(buffer11));
 
 		Py_BEGIN_ALLOW_THREADS;
 		rc = SQLGetInfo(conn_res->hdbc, SQL_TXN_ISOLATION_OPTION, &bitmask, 
@@ -9185,9 +9184,19 @@ static PyObject *ibm_db_server_info(PyObject *self, PyObject *args)
 
 			return_value->ISOLATION_OPTION = array;
 		}
-#endif /* PASE */
+#else
+		{
+			PyObject *array = PyTuple_New(5);
+			PyTuple_SetItem(array, 0, StringOBJ_FromASCII("UR"));
+			PyTuple_SetItem(array, 1, StringOBJ_FromASCII("CS"));
+			PyTuple_SetItem(array, 2, StringOBJ_FromASCII("RS"));
+			PyTuple_SetItem(array, 3, StringOBJ_FromASCII("RR"));
+			PyTuple_SetItem(array, 4, StringOBJ_FromASCII("NC"));
 
-#ifndef PASE
+			return_value->ISOLATION_OPTION = array;
+		}
+#endif
+
 		/* SQL_CONFORMANCE */
 		bufferint32 = 0;
 		memset(buffer255, 0, sizeof(buffer255));
@@ -9221,7 +9230,6 @@ static PyObject *ibm_db_server_info(PyObject *self, PyObject *args)
 			}
 			return_value->SQL_CONFORMANCE = StringOBJ_FromASCII(buffer255);
 		}
-#endif
 
 		/* PROCEDURES */
 		memset(buffer11, 0, sizeof(buffer11));
@@ -9237,7 +9245,7 @@ static PyObject *ibm_db_server_info(PyObject *self, PyObject *args)
 			PyErr_Clear();
 			Py_RETURN_FALSE;
 		} else {
-			if( strcmp((char *)buffer11, "Y") == 0 ) {
+			if( strcmp(buffer11, "Y") == 0 ) {
 				Py_INCREF(Py_True);
 				return_value->PROCEDURES = Py_True;
 			} else {
@@ -9304,6 +9312,7 @@ static PyObject *ibm_db_server_info(PyObject *self, PyObject *args)
 		}
 
 		/* MAX_ROW_SIZE */
+#ifndef PASE
 		bufferint32 = 0;
 		
 		Py_BEGIN_ALLOW_THREADS;
@@ -9319,15 +9328,35 @@ static PyObject *ibm_db_server_info(PyObject *self, PyObject *args)
 		} else {
 			return_value->MAX_ROW_SIZE = PyInt_FromLong(bufferint32);
 		}
+#else
+		bufferint16 = 0;
+		
+		Py_BEGIN_ALLOW_THREADS;
+		rc = SQLGetInfo(conn_res->hdbc, SQL_MAX_ROW_SIZE, &bufferint16, 
+						sizeof(bufferint16), NULL);
+		Py_END_ALLOW_THREADS;
 
-#ifndef PASE	  /* i5/OS MAX_IDENTIFIER_LEN handled natively */
+		if ( rc == SQL_ERROR ) {
+			_python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, rc, 1, 
+											NULL, -1, 1);
+			PyErr_Clear();
+			Py_RETURN_FALSE;
+		} else {
+			return_value->MAX_ROW_SIZE = PyInt_FromLong(bufferint16);
+		}
+#endif
+
 		/* MAX_IDENTIFIER_LEN */
+#ifdef PASE
+		bufferint16 = 128;
+#else
 		bufferint16 = 0;
 
 		Py_BEGIN_ALLOW_THREADS;
 		rc = SQLGetInfo(conn_res->hdbc, SQL_MAX_IDENTIFIER_LEN, &bufferint16, 
 					sizeof(bufferint16), NULL);
 		Py_END_ALLOW_THREADS;
+#endif
 
 		if ( rc == SQL_ERROR ) {
 			_python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, rc, 1, 
@@ -9341,10 +9370,12 @@ static PyObject *ibm_db_server_info(PyObject *self, PyObject *args)
 		/* MAX_INDEX_SIZE */
 		bufferint32 = 0;
 
+#ifndef PASE
 		Py_BEGIN_ALLOW_THREADS;
 		rc = SQLGetInfo(conn_res->hdbc, SQL_MAX_INDEX_SIZE, &bufferint32, 
 					sizeof(bufferint32), NULL);
 		Py_END_ALLOW_THREADS;
+#endif
 
 		if ( rc == SQL_ERROR ) {
 			_python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, rc, 1, 
@@ -9356,12 +9387,16 @@ static PyObject *ibm_db_server_info(PyObject *self, PyObject *args)
 		}
 
 		/* MAX_PROC_NAME_LEN */
+#ifdef PASE
+		bufferint16 = 128;
+#else
 		bufferint16 = 0;
 
 		Py_BEGIN_ALLOW_THREADS;
 		rc = SQLGetInfo(conn_res->hdbc, SQL_MAX_PROCEDURE_NAME_LEN, &bufferint16, 
 						sizeof(bufferint16), NULL);
 		Py_END_ALLOW_THREADS;
+#endif
 
 		if ( rc == SQL_ERROR ) {
 			_python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, rc, 1, 
@@ -9371,7 +9406,6 @@ static PyObject *ibm_db_server_info(PyObject *self, PyObject *args)
 		} else {
 			return_value->MAX_PROC_NAME_LEN = PyInt_FromLong(bufferint16);
 		}
-#endif /* PASE */
 
 		/* MAX_SCHEMA_NAME_LEN */
 		bufferint16 = 0;
@@ -9602,14 +9636,15 @@ static PyObject *ibm_db_client_info(PyObject *self, PyObject *args)
 			return_value->DRIVER_ODBC_VER = StringOBJ_FromASCII(buffer255);
 		}
 
-#ifndef PASE	  /* i5/OS ODBC_VER handled natively */
 		/* ODBC_VER */
 		memset(buffer255, 0, sizeof(buffer255));
 
+#ifndef PASE
 		Py_BEGIN_ALLOW_THREADS;
 		rc = SQLGetInfo(conn_res->hdbc, SQL_ODBC_VER, (SQLPOINTER)buffer255, 
 						  sizeof(buffer255), NULL);
 		Py_END_ALLOW_THREADS;
+#endif
 	
 		if ( rc == SQL_ERROR ) {
 			_python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, rc, 1, 
@@ -9619,7 +9654,6 @@ static PyObject *ibm_db_client_info(PyObject *self, PyObject *args)
 		} else {
 			return_value->ODBC_VER = StringOBJ_FromASCII(buffer255);
 		}
-#endif /* PASE */
 
 		/* ODBC_SQL_CONFORMANCE */
 		bufferint16 = 0;
@@ -9652,14 +9686,17 @@ static PyObject *ibm_db_client_info(PyObject *self, PyObject *args)
 			return_value->ODBC_SQL_CONFORMANCE = StringOBJ_FromASCII(buffer255);
 		}
 	
-#ifndef	PASE	  /* i5/OS APPL_CODEPAGE handled natively */
 		/* APPL_CODEPAGE */
+#ifdef PASE
+		bufferint32 = 1208;
+#else
 		bufferint32 = 0;
 	
 		Py_BEGIN_ALLOW_THREADS;
 		rc = SQLGetInfo(conn_res->hdbc, SQL_APPLICATION_CODEPAGE, &bufferint32, 
 					  sizeof(bufferint32), NULL);
 		Py_END_ALLOW_THREADS;
+#endif
 	
 		if ( rc == SQL_ERROR ) {
 			_python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, rc, 1, 
@@ -9671,12 +9708,16 @@ static PyObject *ibm_db_client_info(PyObject *self, PyObject *args)
 		}
 	
 		/* CONN_CODEPAGE */
+#ifdef PASE
+		bufferint32 = 1208;
+#else
 		bufferint32 = 0;
 	
 		Py_BEGIN_ALLOW_THREADS;
 		rc = SQLGetInfo(conn_res->hdbc, SQL_CONNECT_CODEPAGE, &bufferint32, 
 						  sizeof(bufferint32), NULL);
 		Py_END_ALLOW_THREADS;
+#endif
 	
 		if ( rc == SQL_ERROR ) {
 			_python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, rc, 1, 
@@ -9686,7 +9727,6 @@ static PyObject *ibm_db_client_info(PyObject *self, PyObject *args)
 		} else {
 			return_value->CONN_CODEPAGE = PyInt_FromLong(bufferint32);
 		}
-#endif /* PASE */
 
 		return (PyObject *)return_value;
 	}
