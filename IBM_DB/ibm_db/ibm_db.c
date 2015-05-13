@@ -1345,8 +1345,16 @@ static PyObject *_python_ibm_db_connect_helper( PyObject *self, PyObject *args, 
 			(SQLPOINTER)(conn_res->auto_commit), SQL_NTS);
 #else
 		{
-			int auto_commit = conn_res->auto_commit;
-			rc = SQLSetConnectAttr((SQLHDBC)conn_res->hdbc, SQL_ATTR_AUTOCOMMIT, &auto_commit, 0);
+			int attr;
+			
+			attr = conn_res->auto_commit;
+			rc = SQLSetConnectAttr((SQLHDBC)conn_res->hdbc, SQL_ATTR_AUTOCOMMIT, &attr, 0);
+			
+			attr = SQL_TRUE;
+			rc = SQLSetConnectAttr((SQLHDBC)conn_res->hdbc, SQL_ATTR_NULLT_ARRAY_RESULTS, &attr, 0);
+			
+			attr = SQL_TRUE;
+			rc = SQLSetConnectAttr((SQLHDBC)conn_res->hdbc, SQL_ATTR_NULLT_OUTPUT_PARMS, &attr, 0);
 		}
 #endif
 
