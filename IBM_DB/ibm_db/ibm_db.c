@@ -325,6 +325,91 @@ char *strtoupper(char *data, int max) {
 	return data;
 }
 
+#ifdef PASE
+int ctoi(const char* int_string, size_t size) {
+	const unsigned char* is = (const unsigned char*) int_string;
+	int i = 0;
+	
+	for(size_t j = 0; j < size; ++j) {
+		i *= 10;
+		i += (is[j] & 0x0F);
+	}
+	
+	return i;
+}
+
+typedef struct {
+	char year[4];
+	char sep1;
+	char month[2];
+	char sep2;
+	char day[2];
+} iso_date_t;
+
+typedef struct {
+	char hour[2];
+	char sep1;
+	char minute[2];
+	char sep2;
+	char second[2];
+} iso_time_t;
+
+typedef struct {
+	char year[4];
+	char sep1;
+	char month[2];
+	char sep2;
+	char day[2];
+	char sep3;
+	char hour[2];
+	char sep4;
+	char minute[2];
+	char sep5;
+	char second[2];
+	char sep6;
+	char fraction[6];
+} iso_timestamp_t;
+
+
+DATE_STRUCT parse_ibmi_date(const void* date) {
+	DATE_STRUCT d;
+	iso_date_t* iso_date = (iso_date_t*) date;
+	
+	d.year = ctoi(iso_date->year, sizeof(iso_date->year));
+	d.month = ctoi(iso_date->month, sizeof(iso_date->month));
+	d.day = ctoi(iso_date->day, sizeof(iso_date->day));
+	
+	return d;
+}
+
+TIME_STRUCT parse_ibmi_time(const void* time) {
+	TIME_STRUCT t;
+	iso_time_t* iso_time = (iso_time_t*) time;
+	
+	t.hour = ctoi(iso_time->hour, sizeof(iso_time->hour));
+	t.minute = ctoi(iso_time->minute, sizeof(iso_time->minute));
+	t.second = ctoi(iso_time->second, sizeof(iso_time->second));
+	
+	return t;
+}
+
+TIMESTAMP_STRUCT parse_ibmi_timestamp(const void* timestamp, int precision) {
+	TIMESTAMP_STRUCT ts;
+	iso_timestamp_t* iso_timestamp = (iso_timestamp_t*) timestamp;
+	
+	ts.year = ctoi(iso_timestamp->year, sizeof(iso_timestamp->year));
+	ts.month = ctoi(iso_timestamp->month, sizeof(iso_timestamp->month));
+	ts.day = ctoi(iso_timestamp->day, sizeof(iso_timestamp->day));
+	
+	ts.hour = ctoi(iso_timestamp->hour, sizeof(iso_timestamp->hour));
+	ts.minute = ctoi(iso_timestamp->minute, sizeof(iso_timestamp->minute));
+	ts.second = ctoi(iso_timestamp->second, sizeof(iso_timestamp->second));
+	
+	ts.fraction = ctoi(iso_timestamp->fraction, precision) * 1000;
+	return ts;
+}
+#endif
+
 /*	static void _python_ibm_db_free_conn_struct */
 static void _python_ibm_db_free_conn_struct(conn_handle *handle) {
 
@@ -905,7 +990,13 @@ static int _python_ibm_db_bind_column_helper(stmt_handle *stmt_res)
 				break;
 
 			case SQL_TYPE_DATE:
+#ifndef PASE
+				in_length = sizeof(DATE_STRUCT);
 				row_data->date_val = ALLOC(DATE_STRUCT);
+#else
+				in_length = sizeof(iso_date_t)+1;
+				row_data->date_val = (DATE_STRUCT*) ALLOC_N(char, in_length);
+#endif
 				if ( row_data->date_val == NULL ) {
 					PyErr_SetString(PyExc_Exception, "Failed to Allocate Memory");
 					return -1;
@@ -913,7 +1004,7 @@ static int _python_ibm_db_bind_column_helper(stmt_handle *stmt_res)
 
 				Py_BEGIN_ALLOW_THREADS;
 				rc = SQLBindCol((SQLHSTMT)stmt_res->hstmt, (SQLUSMALLINT)(i+1),
-					SQL_C_TYPE_DATE, row_data->date_val, sizeof(DATE_STRUCT),
+					SQL_C_TYPE_DATE, row_data->date_val, in_length,
 					(SQLINTEGER *)(&stmt_res->row_data[i].out_length));
 				Py_END_ALLOW_THREADS;
 
@@ -924,7 +1015,13 @@ static int _python_ibm_db_bind_column_helper(stmt_handle *stmt_res)
 				break;
 
 			case SQL_TYPE_TIME:
+#ifndef PASE
+				in_length = sizeof(TIME_STRUCT);
 				row_data->time_val = ALLOC(TIME_STRUCT);
+#else
+				in_length = sizeof(iso_time_t)+1;
+				row_data->time_val = (TIME_STRUCT*) ALLOC_N(char, in_length);
+#endif
 				if ( row_data->time_val == NULL ) {
 					PyErr_SetString(PyExc_Exception, "Failed to Allocate Memory");
 					return -1;
@@ -932,7 +1029,7 @@ static int _python_ibm_db_bind_column_helper(stmt_handle *stmt_res)
 
 				Py_BEGIN_ALLOW_THREADS;
 				rc = SQLBindCol((SQLHSTMT)stmt_res->hstmt, (SQLUSMALLINT)(i+1),
-					SQL_C_TYPE_TIME, row_data->time_val, sizeof(TIME_STRUCT),
+					SQL_C_TYPE_TIME, row_data->time_val, in_length,
 					(SQLINTEGER *)(&stmt_res->row_data[i].out_length));
 				Py_END_ALLOW_THREADS;
 
@@ -943,7 +1040,13 @@ static int _python_ibm_db_bind_column_helper(stmt_handle *stmt_res)
 				break;
 
 			case SQL_TYPE_TIMESTAMP:
-				row_data->ts_val = ALLOC(TIMESTAMP_STRUCT);
+#ifndef PASE
+				in_length = sizeof(TIMESTAMP_STRUCT);
+				row_data->ts_val = ALLOC(TIME_STRUCT);
+#else
+				in_length = sizeof(iso_timestamp_t)+1;
+				row_data->ts_val = (TIMESTAMP_STRUCT*) ALLOC_N(char, in_length);
+#endif
 				if ( row_data->ts_val == NULL ) {
 					PyErr_SetString(PyExc_Exception, "Failed to Allocate Memory");
 					return -1;
@@ -951,7 +1054,7 @@ static int _python_ibm_db_bind_column_helper(stmt_handle *stmt_res)
 
 				Py_BEGIN_ALLOW_THREADS;
 				rc = SQLBindCol((SQLHSTMT)stmt_res->hstmt, (SQLUSMALLINT)(i+1),
-					SQL_C_TYPE_TIMESTAMP, row_data->time_val, sizeof(TIMESTAMP_STRUCT),
+					SQL_C_TYPE_TIMESTAMP, row_data->time_val, in_length,
 					(SQLINTEGER *)(&stmt_res->row_data[i].out_length));
 				Py_END_ALLOW_THREADS;
 
@@ -5613,10 +5716,21 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
 
 
 		case PYTHON_DATE:
+#ifndef PASE
 			curr->date_value = ALLOC(DATE_STRUCT);
 			curr->date_value->year = PyDateTime_GET_YEAR(bind_data);
 			curr->date_value->month = PyDateTime_GET_MONTH(bind_data);
 			curr->date_value->day = PyDateTime_GET_DAY(bind_data);
+#else
+			curr->date_value = (DATE_STRUCT*) ALLOC_N(char, sizeof(iso_date_t)+1);
+			{
+				int year = PyDateTime_GET_YEAR(bind_data);
+				int month = PyDateTime_GET_MONTH(bind_data);
+				int day = PyDateTime_GET_DAY(bind_data);
+				
+				sprintf((char*) curr->date_value, "%.4d-%.2d-%.2d", year, month, day);
+			}
+#endif
 
 			Py_BEGIN_ALLOW_THREADS;
 			rc = SQLBindParameter(stmt_res->hstmt, curr->param_num,
@@ -5626,10 +5740,21 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
 			break;
 
 		case PYTHON_TIME:
+#ifndef PASE
 			curr->time_value = ALLOC(TIME_STRUCT);
 			curr->time_value->hour = PyDateTime_TIME_GET_HOUR(bind_data);
 			curr->time_value->minute = PyDateTime_TIME_GET_MINUTE(bind_data);
 			curr->time_value->second = PyDateTime_TIME_GET_SECOND(bind_data);
+#else
+			curr->time_value = (TIME_STRUCT*) ALLOC_N(char, sizeof(iso_time_t)+1);
+			{
+				int hour = PyDateTime_TIME_GET_HOUR(bind_data);
+				int minute = PyDateTime_TIME_GET_MINUTE(bind_data);
+				int second = PyDateTime_TIME_GET_SECOND(bind_data);
+				
+				sprintf((char*) curr->time_value, "%.2d.%.2d.%.2d", hour, minute, second);
+			}
+#endif
 
 			Py_BEGIN_ALLOW_THREADS;
 			rc = SQLBindParameter(stmt_res->hstmt, curr->param_num,
@@ -5639,6 +5764,7 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
 			break;
 
 		case PYTHON_TIMESTAMP:
+#ifndef PASE
 			curr->ts_value = ALLOC(TIMESTAMP_STRUCT);
 			curr->ts_value->year = PyDateTime_GET_YEAR(bind_data);
 			curr->ts_value->month = PyDateTime_GET_MONTH(bind_data);
@@ -5647,6 +5773,24 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
 			curr->ts_value->minute = PyDateTime_DATE_GET_MINUTE(bind_data);
 			curr->ts_value->second = PyDateTime_DATE_GET_SECOND(bind_data);
 			curr->ts_value->fraction = PyDateTime_DATE_GET_MICROSECOND(bind_data) * 1000;
+#else
+			curr->ts_value = (TIMESTAMP_STRUCT*) ALLOC_N(char, sizeof(iso_timestamp_t)+1);
+			{
+				int year = PyDateTime_GET_YEAR(bind_data);
+				int month = PyDateTime_GET_MONTH(bind_data);
+				int day = PyDateTime_GET_DAY(bind_data);
+				int hour = PyDateTime_DATE_GET_HOUR(bind_data);
+				int minute = PyDateTime_DATE_GET_MINUTE(bind_data);
+				int second = PyDateTime_DATE_GET_SECOND(bind_data);
+				int fraction = PyDateTime_DATE_GET_MICROSECOND(bind_data);
+				char* ptr = (char*) curr->ts_value;
+				
+				sprintf(ptr, "%.4d-%.2d-%.2d-%.2d.%.2d.%.2d.%.6d", year, month, day, hour, minute, second, fraction);
+				for(int i = sizeof(iso_timestamp_t)-1; ptr[i] == ' '; --i) {
+					ptr[i] = '0';
+				}
+			}
+#endif
 
 			Py_BEGIN_ALLOW_THREADS;
 			rc = SQLBindParameter(stmt_res->hstmt, curr->param_num,
@@ -7595,14 +7739,20 @@ static PyObject *ibm_db_result(PyObject *self, PyObject *args)
 			return return_value;
 
 		case SQL_TYPE_DATE:
+#ifndef PASE
+			in_length = sizeof(DATE_STRUCT);
 			date_ptr = ALLOC(DATE_STRUCT);
+#else
+			in_length = sizeof(iso_date_t)+1;
+			date_ptr = (DATE_STRUCT *) ALLOC_N(char, in_length);
+#endif
 			if (date_ptr == NULL) {
 				PyErr_SetString(PyExc_Exception, "Failed to Allocate Memory");
 				return NULL;
 			}
 
 			rc = _python_ibm_db_get_data(stmt_res, col_num+1, SQL_C_TYPE_DATE,
-						date_ptr, sizeof(DATE_STRUCT), &out_length);
+						date_ptr, in_length, &out_length);
 
 			if ( rc == SQL_ERROR ) {
 				if(date_ptr != NULL) {
@@ -7617,7 +7767,15 @@ static PyObject *ibm_db_result(PyObject *self, PyObject *args)
 				date_ptr = NULL;
 				Py_RETURN_NONE;
 			} else {
+#ifndef PASE
 				return_value = PyDate_FromDate(date_ptr->year, date_ptr->month, date_ptr->day);
+#else
+				{
+					DATE_STRUCT d = parse_ibmi_date(date_ptr);
+					
+					return_value = PyDate_FromDate(d.year, d.month, d.day);
+				}
+#endif
 				PyMem_Del(date_ptr);
 				date_ptr = NULL;
 				return return_value;
@@ -7625,14 +7783,20 @@ static PyObject *ibm_db_result(PyObject *self, PyObject *args)
 			break;
 
 		case SQL_TYPE_TIME:
+#ifndef PASE
+			in_length = sizeof(TIME_STRUCT);
 			time_ptr = ALLOC(TIME_STRUCT);
+#else
+			in_length = sizeof(iso_time_t)+1;
+			time_ptr = (TIME_STRUCT *) ALLOC_N(char, in_length);
+#endif
 			if (time_ptr == NULL) {
 				PyErr_SetString(PyExc_Exception, "Failed to Allocate Memory");
 				return NULL;
 			}
 
 			rc = _python_ibm_db_get_data(stmt_res, col_num+1, SQL_C_TYPE_TIME,
-						time_ptr, sizeof(TIME_STRUCT), &out_length);
+						time_ptr, in_length, &out_length);
 
 			if ( rc == SQL_ERROR ) {
 				if(time_ptr != NULL) {
@@ -7648,7 +7812,15 @@ static PyObject *ibm_db_result(PyObject *self, PyObject *args)
 				time_ptr = NULL;
 				Py_RETURN_NONE;
 			} else {
+#ifndef PASE
 				return_value = PyTime_FromTime(time_ptr->hour, time_ptr->minute, time_ptr->second, 0);
+#else
+				{
+					TIME_STRUCT t = parse_ibmi_time(time_ptr);
+					
+					return_value = PyTime_FromTime(t.hour, t.minute, t.second, 0);
+				}
+#endif
 				PyMem_Del(time_ptr);
 				time_ptr = NULL;
 				return return_value;
@@ -7656,19 +7828,25 @@ static PyObject *ibm_db_result(PyObject *self, PyObject *args)
 			break;
 
 		case SQL_TYPE_TIMESTAMP:
+#ifndef PASE
+			in_length = sizeof(TIMESTAMP_STRUCT);
 			ts_ptr = ALLOC(TIMESTAMP_STRUCT);
+#else
+			in_length = sizeof(iso_timestamp_t)+1;
+			ts_ptr = (TIMESTAMP_STRUCT *) ALLOC_N(char, in_length);
+#endif
 			if (ts_ptr == NULL) {
 				PyErr_SetString(PyExc_Exception, "Failed to Allocate Memory");
 				return NULL;
 			}
 
 			rc = _python_ibm_db_get_data(stmt_res, col_num+1, SQL_C_TYPE_TIMESTAMP,
-						ts_ptr, sizeof(TIMESTAMP_STRUCT), &out_length);
+						ts_ptr, in_length, &out_length);
 
 			if ( rc == SQL_ERROR ) {
 				if(ts_ptr != NULL) {
 					PyMem_Del(ts_ptr);
-					time_ptr = NULL;
+					ts_ptr = NULL;
 				}
 				PyErr_Clear();
 				Py_RETURN_FALSE;
@@ -7679,7 +7857,15 @@ static PyObject *ibm_db_result(PyObject *self, PyObject *args)
 				ts_ptr = NULL;
 				Py_RETURN_NONE;
 			} else {
+#ifndef PASE
 				return_value = PyDateTime_FromDateAndTime(ts_ptr->year, ts_ptr->month, ts_ptr->day, ts_ptr->hour, ts_ptr->minute, ts_ptr->second, ts_ptr->fraction / 1000);
+#else
+				{
+					TIMESTAMP_STRUCT ts = parse_ibmi_timestamp(ts_ptr, 6);
+					
+					return_value = PyDateTime_FromDateAndTime(ts.year, ts.month, ts.day, ts.hour, ts.minute, ts.second, ts.fraction / 1000);
+				}
+#endif
 				PyMem_Del(ts_ptr);
 				ts_ptr = NULL;
 				return return_value;
@@ -8011,17 +8197,41 @@ static PyObject *_python_ibm_db_bind_fetch_helper(PyObject *args, int op)
 					break;
 
 				case SQL_TYPE_DATE:
+#ifndef PASE
 					value = PyDate_FromDate(row_data->date_val->year, row_data->date_val->month, row_data->date_val->day);
+#else
+					{
+						DATE_STRUCT d = parse_ibmi_date(row_data->date_val);
+						
+						value = PyDate_FromDate(d.year, d.month, d.day);
+					}
+#endif
 					break;
 
 				case SQL_TYPE_TIME:
+#ifndef PASE
 					value = PyTime_FromTime(row_data->time_val->hour, row_data->time_val->minute, row_data->time_val->second, 0);
+#else
+					{
+						TIME_STRUCT t = parse_ibmi_time(row_data->time_val);
+						
+						value = PyTime_FromTime(t.hour, t.minute, t.second, 0);
+					}
+#endif
 					break;
 
 				case SQL_TYPE_TIMESTAMP:
+#ifndef PASE
 					value = PyDateTime_FromDateAndTime(row_data->ts_val->year, row_data->ts_val->month, row_data->ts_val->day,
 									row_data->ts_val->hour, row_data->ts_val->minute, row_data->ts_val->second,
 									row_data->ts_val->fraction / 1000);
+#else
+					{
+						TIMESTAMP_STRUCT ts = parse_ibmi_timestamp(row_data->ts_val, 6);
+						
+						value = PyDateTime_FromDateAndTime(ts.year, ts.month, ts.day, ts.hour, ts.minute, ts.second, ts.fraction / 1000);
+					}
+#endif
 					break;
 
 				case SQL_BIGINT:
