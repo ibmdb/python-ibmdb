@@ -873,6 +873,39 @@ static int _python_ibm_db_get_result_set_info(stmt_handle *stmt_res)
 		 }
 
 	  }
+#ifdef PASE
+	  // TODO: Move this in to CLI
+	  switch(stmt_res->column_info[i].type)
+	  {
+		  case SQL_TINYINT:
+			  stmt_res->column_info[i].size = 5;
+			  break;
+			  
+		  case SQL_SMALLINT:
+			  stmt_res->column_info[i].size = 5;
+			  break;
+
+		  case SQL_INTEGER:
+			  stmt_res->column_info[i].size = 10;
+			  break;
+			  
+		  case SQL_BIGINT:
+			  stmt_res->column_info[i].size = 19;
+			  break;
+			  
+		  case SQL_REAL:
+			  stmt_res->column_info[i].size = 7;
+			  break;
+			  
+		  case SQL_FLOAT:
+		  case SQL_DOUBLE:
+			  stmt_res->column_info[i].size = 15;
+			  break;
+			  
+		  default:
+			  break;
+	  }
+#endif
 	}
 	return 0;
 }
