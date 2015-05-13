@@ -80,6 +80,17 @@ static int is_systemi, is_informix;	  /* 1 == TRUE; 0 == FALSE; */
 #endif
 
 #ifdef PASE
+// IBM i CLI does not return SQL_NO_TOTAL, since
+// it is an ODBC 2.0 level CLI interface. However,
+// someone defined it in the sqlcli.h and for
+// some reason it is 0, which is bad, since that
+// is a valid return length... The header file
+// will be updated in a future version.
+#if SQL_NO_TOTAL == 0
+#undef SQL_NO_TOTAL
+#define SQL_NO_TOTAL (-4)
+#endif
+
 // TODO: Remove these definitions
 #define SQL_INDEX_CLUSTERED 6
 #define SQL_ATTR_CURRENT_SCHEMA 7
