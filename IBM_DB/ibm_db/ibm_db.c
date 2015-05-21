@@ -91,6 +91,9 @@ static int is_systemi, is_informix;	  /* 1 == TRUE; 0 == FALSE; */
 #define SQL_NO_TOTAL (-4)
 #endif
 
+#ifndef SQL_DIAG_CURSOR_ROW_COUNT
+#define SQL_DIAG_CURSOR_ROW_COUNT 16
+#endif
 // TODO: Remove these definitions
 #define SQL_INDEX_CLUSTERED 6
 #define SQL_ATTR_CURRENT_SCHEMA 7
@@ -6771,13 +6774,13 @@ static PyObject *ibm_db_get_num_result(PyObject *self, PyObject *args)
 		}
 
 		Py_BEGIN_ALLOW_THREADS;
-#ifndef PASE
-		rc = SQLGetDiagField(SQL_HANDLE_STMT, stmt_res->hstmt, 0,
-								SQL_DIAG_CURSOR_ROW_COUNT, &count, SQL_IS_INTEGER,
-								&strLenPtr);
-#else
-		rc = SQLRowCount(stmt_res->hstmt, &count);
-#endif
+		rc = SQLGetDiagField(SQL_HANDLE_STMT,
+							stmt_res->hstmt,
+							0,
+							SQL_DIAG_CURSOR_ROW_COUNT,
+							&count,
+							SQL_IS_INTEGER,
+							&strLenPtr);
 		Py_END_ALLOW_THREADS;
 		
 		if ( rc == SQL_ERROR ) {
