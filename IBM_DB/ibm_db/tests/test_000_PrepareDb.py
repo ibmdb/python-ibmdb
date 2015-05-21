@@ -270,10 +270,7 @@ class IbmDbTestCase(unittest.TestCase):
       pass
     # Create the emp_photo table
     create = 'CREATE TABLE emp_photo (empno CHAR(6) NOT NULL, photo_format VARCHAR(10) NOT NULL, picture BLOB, PRIMARY KEY(empno, photo_format))'
-    try:
-      result = ibm_db.exec_immediate(conn, create)
-    except:
-      pass
+    result = ibm_db.exec_immediate(conn, create)
     # Populate the emp_photo table
     emp_photo = (\
       ('000130', 'jpg', 'pic1.jpg'),\
