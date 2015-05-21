@@ -96,10 +96,14 @@ static int is_systemi, is_informix;	  /* 1 == TRUE; 0 == FALSE; */
 #ifndef SQL_DIAG_CURSOR_ROW_COUNT
 #define SQL_DIAG_CURSOR_ROW_COUNT 16
 #endif
+
+#ifndef SQL_ATTR_INFO_PROGRAMNAME
+#define SQL_ATTR_INFO_PROGRAMNAME SQL_ATTR_INFO_PROGRAMID
+#endif
+
 // TODO: Remove these definitions
 #define SQL_INDEX_CLUSTERED 6
 #define SQL_ATTR_CURRENT_SCHEMA 7
-#define SQL_ATTR_INFO_PROGRAMNAME 8
 #endif
 
 /* Defines a linked list structure for error messages */
