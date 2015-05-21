@@ -172,6 +172,24 @@ class IbmDbTestCase(unittest.TestCase):
 #1, some, here is a clob value, <?xml version="1.0" encoding="UTF-16" ?><test attribute="value"/>
 #2, value, clob data, None
 #2, in varchar, data2, None
+#__PASE_EXPECTED__
+#Number of affected rows: -1
+#Number of affected rows: -1
+#Number of affected rows: 0
+#Number of affected rows: -1
+#Number of affected rows: -1
+#Number of affected rows: -1
+#Number of affected rows: 3
+#1, some, here is a clob value, <?xml version="1.0" encoding="UTF-8"?><test attribute="value"/>
+#2, value, clob data, None
+#2, in varchar, data2, None
+#Number of affected rows: 2
+#2, value
+#2, in varchar
+#Number of affected rows: 3
+#1, some, here is a clob value, <?xml version="1.0" encoding="UTF-8"?><test attribute="value"/>
+#2, value, clob data, None
+#2, in varchar, data2, None
 #__IDS_EXPECTED__
 #Number of affected rows: -1
 #Number of affected rows: -1
