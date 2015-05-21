@@ -13,7 +13,10 @@ class IbmDbTestCase(unittest.TestCase):
 
   def test_157a_FetchAssocWithoutScrollableCursorErr(self):
     self.obj = IbmDbTestFunctions()
-    self.obj.assert_expect(self.run_test_157a)
+    if self.obj.isClientIBMi():
+        self.obj.assert_expectf(self.run_test_157a)
+    else:
+        self.obj.assert_expect(self.run_test_157a)
 
   def run_test_157a(self):
     conn = ibm_db.connect(config.database, config.user, config.password)
@@ -55,6 +58,11 @@ class IbmDbTestCase(unittest.TestCase):
 #Starting...
 #SQLSTATE: HY106
 #Message: [IBM][CLI Driver] CLI0145E  Fetch type out of range. SQLSTATE=HY106 SQLCODE=-99999
+#DONE
+#__PASE_EXPECTED__
+#Starting...
+#SQLSTATE: 42872
+#Message: FETCH not valid; cursor %s not scrollable. SQLSTATE=42872 SQLCODE=-225
 #DONE
 #__IDS_EXPECTED__
 #Starting...

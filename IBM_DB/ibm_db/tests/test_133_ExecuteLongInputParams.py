@@ -87,6 +87,14 @@ class IbmDbTestCase(unittest.TestCase):
 #SQLSTATE: 02000
 #Message: [IBM][CLI Driver][AS] SQL0100W  No row was found for FETCH, UPDATE or DELETE; or the result of a query is an empty table.  SQLSTATE=02000 SQLCODE=100
 #Done
+#__PASE_EXPECTED__
+#Starting test ...
+#SQLSTATE: 22001
+#Message: Value for column or variable BREED too long. SQLSTATE=22001 SQLCODE=-404
+#True
+#SQLSTATE: 02000
+#Message: Row not found for %s. SQLSTATE=02000 SQLCODE=100
+#Done
 #__IDS_EXPECTED__
 #Starting test ...
 #SQLSTATE: 22001

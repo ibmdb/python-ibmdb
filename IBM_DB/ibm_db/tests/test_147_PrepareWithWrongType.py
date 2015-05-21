@@ -47,5 +47,7 @@ class IbmDbTestCase(unittest.TestCase):
 #Statement Execute Failed: [IBM][CLI Driver] CLI0112E  Error in assignment. SQLSTATE=22005 SQLCODE=-99999
 #__SYSTEMI_EXPECTED__
 #Statement Execute Failed: [IBM][CLI Driver] CLI0112E  Error in assignment. SQLSTATE=22005 SQLCODE=-99999
+#__PASE_EXPECTED__
+#Statement Execute Failed: Character in CAST argument not valid. SQLSTATE=22018 SQLCODE=-420
 #__IDS_EXPECTED__
 #Statement Execute Failed: [IBM][CLI Driver] CLI0112E  Error in assignment. SQLSTATE=22005 SQLCODE=-99999
