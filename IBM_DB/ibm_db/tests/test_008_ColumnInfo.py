@@ -18,6 +18,10 @@ class IbmDbTestCase(unittest.TestCase):
   def run_test_008(self):
     op = {ibm_db.ATTR_CASE: ibm_db.CASE_NATURAL}
     conn = ibm_db.connect(config.database, config.user, config.password, op)
+    if not conn:
+        print(ibm_db.conn_errormsg(conn))
+        return
+    
     server = ibm_db.server_info( conn )
     if (self.obj.isServerInformix(server)):
       result = ibm_db.columns(conn,None,None,"employee")
