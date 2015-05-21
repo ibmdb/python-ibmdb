@@ -889,7 +889,7 @@ static int _python_ibm_db_get_result_set_info(stmt_handle *stmt_res)
 	  switch(stmt_res->column_info[i].type)
 	  {
 		  case SQL_TINYINT:
-			  stmt_res->column_info[i].size = 5;
+			  stmt_res->column_info[i].size = 3;
 			  break;
 			  
 		  case SQL_SMALLINT:
