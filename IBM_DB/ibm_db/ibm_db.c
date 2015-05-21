@@ -7489,6 +7489,49 @@ static PyObject *ibm_db_field_width(PyObject *self, PyObject *args)
 		PyErr_Clear();
 		Py_RETURN_FALSE;
 	}
+#ifdef PASE
+	// TODO: Move this in to CLI?
+	switch(stmt_res->column_info[col].type)
+	{
+		case SQL_TINYINT:
+			colDataSize = 4;
+			break;
+			
+		case SQL_SMALLINT:
+			colDataSize = 6;
+			break;
+
+		case SQL_INTEGER:
+			colDataSize = 11;
+			break;
+			
+		case SQL_BIGINT:
+			colDataSize = 20;
+			break;
+			
+		case SQL_REAL:
+			colDataSize = 14;
+			break;
+			
+		case SQL_FLOAT:
+		case SQL_DOUBLE:
+			colDataSize = 24;
+			break;
+			
+		case SQL_DECIMAL:
+		{
+			int prec, scale;
+			
+			prec = colDataSize & 0x000000FF;
+			scale = (colDataSize & 0x0000FF00) >> 8;
+			
+			colDataSize = prec + scale;
+		}
+			
+		default:
+			break;
+	}
+#endif
 	return PyInt_FromLong(colDataSize);
 }
 
