@@ -64,6 +64,16 @@ class IbmDbTestCase(unittest.TestCase):
 #6 llama Sweater          150.00 
 #
 #Number of rows: 7
+#__PASE_EXPECTED__
+#4 budgerigar Gizmo            .20 
+#0 cat Pook             3.20 
+#1 dog Peaches          12.30 
+#5 goat Rickety Ride     9.70 
+#3 gold fish Bubbles          .10 
+#2 horse Smarty           350.00 
+#6 llama Sweater          150.00 
+#
+#Number of rows: 7
 #__IDS_EXPECTED__
 #4 budgerigar Gizmo            0.20 
 #0 cat Pook             3.20 

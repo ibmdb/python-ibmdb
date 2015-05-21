@@ -266,6 +266,59 @@ class IbmDbTestCase(unittest.TestCase):
 #Rickety Ride
 #Smarty
 #Sweater
+#__PASE_EXPECTED__
+#Fetching first result set
+#Bubbles
+#3
+#Gizmo
+#4
+#Peaches
+#1
+#Pook
+#0
+#Rickety Ride
+#5
+#Smarty
+#2
+#Sweater
+#6
+#Fetching second result set
+#Sweater
+#6
+#llama
+#150.00
+#Smarty
+#2
+#horse
+#350.00
+#Rickety Ride
+#5
+#goat
+#9.70
+#Pook
+#0
+#cat
+#3.20
+#Peaches
+#1
+#dog
+#12.30
+#Gizmo
+#4
+#budgerigar
+#.20
+#Bubbles
+#3
+#gold fish
+#.10
+#Fetching third result set
+#Bubbles
+#Gizmo
+#Peaches
+#Pook
+#Rickety Ride
+#Smarty
+#Sweater
 #__IDS_EXPECTED__
 #Fetching first result set
 #Sweater

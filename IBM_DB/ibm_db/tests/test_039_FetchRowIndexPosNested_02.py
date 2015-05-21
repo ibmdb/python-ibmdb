@@ -189,6 +189,56 @@ class IbmDbTestCase(unittest.TestCase):
 #4 : budgerigar : Gizmo            : 0.20
 #5 : goat : Rickety Ride     : 9.70
 #6 : llama : Sweater          : 150.00
+#__PASE_EXPECTED__
+#0 : cat : Pook             : 3.20
+#1 : dog : Peaches          : 12.30
+#2 : horse : Smarty           : 350.00
+#3 : gold fish : Bubbles          : .10
+#4 : budgerigar : Gizmo            : .20
+#5 : goat : Rickety Ride     : 9.70
+#6 : llama : Sweater          : 150.00
+#0 : cat : Pook             : 3.20
+#1 : dog : Peaches          : 12.30
+#2 : horse : Smarty           : 350.00
+#3 : gold fish : Bubbles          : .10
+#4 : budgerigar : Gizmo            : .20
+#5 : goat : Rickety Ride     : 9.70
+#6 : llama : Sweater          : 150.00
+#0 : cat : Pook             : 3.20
+#1 : dog : Peaches          : 12.30
+#2 : horse : Smarty           : 350.00
+#3 : gold fish : Bubbles          : .10
+#4 : budgerigar : Gizmo            : .20
+#5 : goat : Rickety Ride     : 9.70
+#6 : llama : Sweater          : 150.00
+#0 : cat : Pook             : 3.20
+#1 : dog : Peaches          : 12.30
+#2 : horse : Smarty           : 350.00
+#3 : gold fish : Bubbles          : .10
+#4 : budgerigar : Gizmo            : .20
+#5 : goat : Rickety Ride     : 9.70
+#6 : llama : Sweater          : 150.00
+#0 : cat : Pook             : 3.20
+#1 : dog : Peaches          : 12.30
+#2 : horse : Smarty           : 350.00
+#3 : gold fish : Bubbles          : .10
+#4 : budgerigar : Gizmo            : .20
+#5 : goat : Rickety Ride     : 9.70
+#6 : llama : Sweater          : 150.00
+#0 : cat : Pook             : 3.20
+#1 : dog : Peaches          : 12.30
+#2 : horse : Smarty           : 350.00
+#3 : gold fish : Bubbles          : .10
+#4 : budgerigar : Gizmo            : .20
+#5 : goat : Rickety Ride     : 9.70
+#6 : llama : Sweater          : 150.00
+#0 : cat : Pook             : 3.20
+#1 : dog : Peaches          : 12.30
+#2 : horse : Smarty           : 350.00
+#3 : gold fish : Bubbles          : .10
+#4 : budgerigar : Gizmo            : .20
+#5 : goat : Rickety Ride     : 9.70
+#6 : llama : Sweater          : 150.00
 #__IDS_EXPECTED__
 #0 : cat : Pook             : 3.20
 #1 : dog : Peaches          : 12.30

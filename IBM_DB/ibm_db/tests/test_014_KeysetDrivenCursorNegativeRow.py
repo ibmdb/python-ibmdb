@@ -68,6 +68,15 @@ class IbmDbTestCase(unittest.TestCase):
 #2 : horse : Smarty           : 350.00
 #6 : llama : Sweater          : 150.00
 #Requested row number must be a positive value
+#__PASE_EXPECTED__
+#3 : gold fish : Bubbles          : .10
+#4 : budgerigar : Gizmo            : .20
+#1 : dog : Peaches          : 12.30
+#0 : cat : Pook             : 3.20
+#5 : goat : Rickety Ride     : 9.70
+#2 : horse : Smarty           : 350.00
+#6 : llama : Sweater          : 150.00
+#Requested row number must be a positive value
 #__IDS_EXPECTED__
 #3 : gold fish : Bubbles          : 0.10
 #4 : budgerigar : Gizmo            : 0.20
