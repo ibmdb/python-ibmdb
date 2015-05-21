@@ -13,7 +13,10 @@ class IbmDbTestCase(unittest.TestCase):
 
   def test_019_selectRowcountPrefetchPrepOpt(self):
     obj = IbmDbTestFunctions()
-    obj.assert_expect(self.run_test_019)
+    if obj.isClientIBMi():
+        raise unittest.SkipTest("ibm_db.SQL_ROWCOUNT_PREFETCH_ON not supported on IBM i")
+    else:
+        obj.assert_expect(self.run_test_019)
 
   def run_test_019(self):
     conn = ibm_db.connect(config.database, config.user, config.password)

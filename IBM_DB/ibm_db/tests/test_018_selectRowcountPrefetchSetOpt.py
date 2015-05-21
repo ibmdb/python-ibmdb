@@ -63,6 +63,10 @@ class IbmDbTestCase(unittest.TestCase):
 #affected row: 4
 #affected row: -1
 #affected row: 4
+#__PASE_EXPECTED__
+#affected row: -1
+#affected row: -1
+#affected row: -1
 #__IDS_EXPECTED__
 #affected row: 4
 #affected row: -1

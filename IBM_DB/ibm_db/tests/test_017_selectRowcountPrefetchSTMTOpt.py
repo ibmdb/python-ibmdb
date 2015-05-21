@@ -18,29 +18,32 @@ class IbmDbTestCase(unittest.TestCase):
   def run_test_017(self):
     conn = ibm_db.connect(config.database, config.user, config.password)
     if conn:
-      result = ibm_db.exec_immediate(conn,"SELECT * from animals WHERE weight < 10.0", { ibm_db.SQL_ATTR_CURSOR_TYPE : ibm_db.SQL_CURSOR_KEYSET_DRIVEN})
-      if result:
+      try:
+        result = ibm_db.exec_immediate(conn,"SELECT * from animals WHERE weight < 10.0", { ibm_db.SQL_ATTR_CURSOR_TYPE : ibm_db.SQL_CURSOR_KEYSET_DRIVEN})
         rows = ibm_db.num_rows(result)
         print("affected row: %d" % rows)
-      else:
+      except:
         print(ibm_db.stmt_errormsg())
-      result = ibm_db.exec_immediate(conn,"SELECT * from animals WHERE weight < 10.0", {ibm_db.SQL_ATTR_CURSOR_TYPE : ibm_db.SQL_CURSOR_FORWARD_ONLY})
-      if result:
+      
+      try:
+        result = ibm_db.exec_immediate(conn,"SELECT * from animals WHERE weight < 10.0", {ibm_db.SQL_ATTR_CURSOR_TYPE : ibm_db.SQL_CURSOR_FORWARD_ONLY})
         rows = ibm_db.num_rows(result)
         print("affected row: %d" % rows)
-      else:
+      except:
         print(ibm_db.stmt_errormsg())
-      result = ibm_db.exec_immediate(conn,"SELECT * from animals WHERE weight < 10.0", {ibm_db.SQL_ATTR_ROWCOUNT_PREFETCH : ibm_db.SQL_ROWCOUNT_PREFETCH_ON})
-      if result:
+      
+      try:
+        result = ibm_db.exec_immediate(conn,"SELECT * from animals WHERE weight < 10.0", {ibm_db.SQL_ATTR_ROWCOUNT_PREFETCH : ibm_db.SQL_ROWCOUNT_PREFETCH_ON})
         rows = ibm_db.num_rows(result)
         print("affected row: %d" % rows)
-      else:
+      except:
         print(ibm_db.stmt_errormsg())
-      result = ibm_db.exec_immediate(conn,"SELECT * from animals WHERE weight < 10.0", {ibm_db.SQL_ATTR_ROWCOUNT_PREFETCH : ibm_db.SQL_ROWCOUNT_PREFETCH_OFF})
-      if result:
+      
+      try:
+        result = ibm_db.exec_immediate(conn,"SELECT * from animals WHERE weight < 10.0", {ibm_db.SQL_ATTR_ROWCOUNT_PREFETCH : ibm_db.SQL_ROWCOUNT_PREFETCH_OFF})
         rows = ibm_db.num_rows(result)
         print("affected row: %d" % rows)
-      else:
+      except:
         print(ibm_db.stmt_errormsg())
 
 
@@ -64,6 +67,11 @@ class IbmDbTestCase(unittest.TestCase):
 #affected row: -1
 #affected row: 4
 #affected row: -1
+#__PASE_EXPECTED__
+#affected row: -1
+#affected row: -1
+#Error occurred in SQL Call Level Interface SQLSTATE=HY009 SQLCODE=-99999
+#Error occurred in SQL Call Level Interface SQLSTATE=HY009 SQLCODE=-99999
 #__IDS_EXPECTED__
 #affected row: 4
 #affected row: -1
