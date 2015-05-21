@@ -89,6 +89,8 @@ static int is_systemi, is_informix;	  /* 1 == TRUE; 0 == FALSE; */
 #if SQL_NO_TOTAL == 0
 #undef SQL_NO_TOTAL
 #define SQL_NO_TOTAL (-4)
+#define SQL_ATTR_CHAINING_BEGIN -1
+#define SQL_ATTR_CHAINING_END   -2
 #endif
 
 #ifndef SQL_DIAG_CURSOR_ROW_COUNT
@@ -235,6 +237,7 @@ typedef struct _stmt_handle_struct {
 	int num_params;		  /* Number of Params */
 	int file_param;		  /* if option passed in is FILE_PARAM */
 	int num_columns;
+	int num_rows;
 	ibm_db_result_set_info *column_info;
 	ibm_db_row_type *row_data;
 } stmt_handle;
@@ -566,6 +569,7 @@ static stmt_handle *_ibm_db_new_stmt_struct(conn_handle* conn_res) {
 
 	stmt_res->column_info = NULL;
 	stmt_res->num_columns = 0;
+	stmt_res->num_rows = -1;
 
 	stmt_res->error_recno_tracker = 1;
 	stmt_res->errormsg_recno_tracker = 1;
@@ -6702,7 +6706,6 @@ static PyObject *ibm_db_num_rows(PyObject *self, PyObject *args)
 	PyObject *py_stmt_res = NULL;
 	stmt_handle *stmt_res;
 	int rc = 0;
-	SQLINTEGER count = 0;
 	char error[DB2_MAX_ERR_MSG_LEN];
 
 	if (!PyArg_ParseTuple(args, "O", &py_stmt_res))
@@ -6716,19 +6719,21 @@ static PyObject *ibm_db_num_rows(PyObject *self, PyObject *args)
 			stmt_res = (stmt_handle *)py_stmt_res;
 		}
 
-		Py_BEGIN_ALLOW_THREADS;
-		rc = SQLRowCount((SQLHSTMT)stmt_res->hstmt, &count);
-		Py_END_ALLOW_THREADS;
-		
-		if ( rc == SQL_ERROR ) {
-			_python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, rc, 
-											1, NULL, -1, 1);
-			sprintf(error, "SQLRowCount failed: %s", 
-					IBM_DB_G(__python_stmt_err_msg));
-			PyErr_SetString(PyExc_Exception, error);
-			return NULL;
+		if(stmt_res->num_rows < 0) {
+			Py_BEGIN_ALLOW_THREADS;
+			rc = SQLRowCount((SQLHSTMT)stmt_res->hstmt, &stmt_res->num_rows);
+			Py_END_ALLOW_THREADS;
+			
+			if ( rc == SQL_ERROR ) {
+				_python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, rc, 
+												1, NULL, -1, 1);
+				sprintf(error, "SQLRowCount failed: %s", 
+						IBM_DB_G(__python_stmt_err_msg));
+				PyErr_SetString(PyExc_Exception, error);
+				return NULL;
+			}
 		}
-		return PyInt_FromLong(count);
+		return PyInt_FromLong(stmt_res->num_rows);
 	} else {
 		PyErr_SetString(PyExc_Exception, "Supplied parameter is invalid");
 		return NULL;
@@ -9940,12 +9945,13 @@ static PyObject *ibm_db_get_option(PyObject *self, PyObject *args)
 	}
 }
 
-#ifndef PASE
 static int _ibm_db_chaining_flag(stmt_handle *stmt_res, SQLINTEGER flag, error_msg_node *error_list, int client_err_cnt) {
-	int rc;
+	int rc = SQL_SUCCESS;
+#ifndef PASE
 	Py_BEGIN_ALLOW_THREADS;
 	rc = SQLSetStmtAttrT((SQLHSTMT)stmt_res->hstmt, flag, (SQLPOINTER)SQL_TRUE, SQL_IS_INTEGER);
 	Py_END_ALLOW_THREADS;
+#endif
 	if ( flag == SQL_ATTR_CHAINING_BEGIN ) {
 		if ( rc == SQL_ERROR ) {
 			_python_ibm_db_check_sql_errors((SQLHSTMT)stmt_res->hstmt, SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
@@ -9959,7 +9965,7 @@ static int _ibm_db_chaining_flag(stmt_handle *stmt_res, SQLINTEGER flag, error_m
 			PyObject *err_msg = NULL, *err_fmtObj = NULL;
 			char *err_fmt = NULL;
 			if ( rc != SQL_SUCCESS ) {
-				SQLGetDiagField(SQL_HANDLE_STMT, (SQLHSTMT)stmt_res->hstmt, 0, SQL_DIAG_NUMBER, (SQLPOINTER) &err_cnt, SQL_IS_POINTER, NULL);
+				SQLGetDiagField(SQL_HANDLE_STMT, (SQLHSTMT)stmt_res->hstmt, 0, SQL_DIAG_NUMBER, (SQLPOINTER) &err_cnt, 0, NULL);
 			}
 			errTuple = PyTuple_New(err_cnt + client_err_cnt);
 			err_fmt = (char *)PyMem_Malloc(strlen("%s\nError %d :%s \n ") * (err_cnt + client_err_cnt));
@@ -9985,7 +9991,6 @@ static int _ibm_db_chaining_flag(stmt_handle *stmt_res, SQLINTEGER flag, error_m
 	}
 	return rc;
 }
-#endif
 
 static void _build_client_err_list(error_msg_node *head_error_list, char *err_msg) {
 	error_msg_node *tmp_err = NULL, *curr_err = head_error_list->next, *prv_err = NULL;
@@ -10027,7 +10032,6 @@ static PyObject* ibm_db_execute_many (PyObject *self, PyObject *args) {
 	SQLSMALLINT numOpts = 0;
 	int numOfRows = 0;
 	int numOfParam = 0;
-	SQLINTEGER row_cnt = 0;
 	int chaining_start = 0;
 
 	SQLSMALLINT *data_type;
@@ -10259,7 +10263,6 @@ static PyObject* ibm_db_execute_many (PyObject *self, PyObject *args) {
 					j++;
 				}
 
-#ifndef PASE
 				if ( !chaining_start && ( error[0] == '\0' ) ) {
 					/* Set statement attribute SQL_ATTR_CHAINING_BEGIN */
 					rc = _ibm_db_chaining_flag(stmt_res, SQL_ATTR_CHAINING_BEGIN, NULL, 0);
@@ -10268,7 +10271,6 @@ static PyObject* ibm_db_execute_many (PyObject *self, PyObject *args) {
 						return NULL;
 					}
 				}
-#endif
 
 				if ( error[0] == '\0' ) {
 					Py_BEGIN_ALLOW_THREADS;
@@ -10306,7 +10308,6 @@ static PyObject* ibm_db_execute_many (PyObject *self, PyObject *args) {
 			
 		}
 		
-#ifndef PASE
 		/* Set statement attribute SQL_ATTR_CHAINING_END */
 		rc = _ibm_db_chaining_flag(stmt_res, SQL_ATTR_CHAINING_END, head_error_list->next, err_count);
 		if ( head_error_list != NULL ) {
@@ -10317,6 +10318,8 @@ static PyObject* ibm_db_execute_many (PyObject *self, PyObject *args) {
 				PyMem_Del(tmp_err);
 			}
 		}
+#ifdef PASE
+		stmt_res->num_rows = numOfRows - err_count;
 #endif
 		if ( rc != SQL_SUCCESS || err_count != 0 ) {
 			return NULL;
@@ -10327,8 +10330,9 @@ static PyObject* ibm_db_execute_many (PyObject *self, PyObject *args) {
 	
 	}
 
+#ifndef PASE
 	Py_BEGIN_ALLOW_THREADS;
-	rc = SQLRowCount((SQLHSTMT)stmt_res->hstmt, &row_cnt);
+	rc = SQLRowCount((SQLHSTMT)stmt_res->hstmt, &stmt_res->num_rows);
 	Py_END_ALLOW_THREADS;
 	
 	if ( (rc == SQL_ERROR) && (stmt_res != NULL) ) {
@@ -10337,7 +10341,8 @@ static PyObject* ibm_db_execute_many (PyObject *self, PyObject *args) {
 		PyErr_SetString(PyExc_Exception, error);
 		return NULL;
 	}
-	return PyInt_FromLong(row_cnt);
+#endif
+	return PyInt_FromLong(stmt_res->num_rows);
 }
 
 /*
