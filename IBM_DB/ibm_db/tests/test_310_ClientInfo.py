@@ -29,10 +29,10 @@ class IbmDbTestCase(unittest.TestCase):
       print("ODBC_SQL_CONFORMANCE: string(%d \"%s\")" % (len(client.ODBC_SQL_CONFORMANCE), client.ODBC_SQL_CONFORMANCE))
       print("APPL_CODEPAGE: int(%s)" % client.APPL_CODEPAGE)
       print("CONN_CODEPAGE: int(%s)" % client.CONN_CODEPAGE)
-    
-      ibm_db.close(conn)
     else:
       print("Error.")
+    
+    ibm_db.close(conn)
 
 #__END__
 #__LUW_EXPECTED__
