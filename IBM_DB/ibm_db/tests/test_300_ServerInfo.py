@@ -34,9 +34,9 @@ class IbmDbTestCase(unittest.TestCase):
         il += opt + " "
       print("ISOLATION_OPTION: string(%d \"%s\")" % (len(il), il))
       print("SQL_CONFORMANCE: string(%d \"%s\")" % (len(server.SQL_CONFORMANCE), server.SQL_CONFORMANCE))
-      print("PROCEDURES:", server.PROCEDURES)
+      print("PROCEDURES: %s" % server.PROCEDURES)
       print("IDENTIFIER_QUOTE_CHAR: string(%d \"%s\")" % (len(server.IDENTIFIER_QUOTE_CHAR), server.IDENTIFIER_QUOTE_CHAR))
-      print("LIKE_ESCAPE_CLAUSE:", server.LIKE_ESCAPE_CLAUSE)
+      print("LIKE_ESCAPE_CLAUSE: %s" % server.LIKE_ESCAPE_CLAUSE)
       print("MAX_COL_NAME_LEN: int(%d)" % server.MAX_COL_NAME_LEN)
       print("MAX_ROW_SIZE: int(%d)" % server.MAX_ROW_SIZE)
       print("MAX_IDENTIFIER_LEN: int(%d)" % server.MAX_IDENTIFIER_LEN)
@@ -45,7 +45,7 @@ class IbmDbTestCase(unittest.TestCase):
       print("MAX_SCHEMA_NAME_LEN: int(%d)" % server.MAX_SCHEMA_NAME_LEN)
       print("MAX_STATEMENT_LEN: int(%d)" % server.MAX_STATEMENT_LEN)
       print("MAX_TABLE_NAME_LEN: int(%d)" % server.MAX_TABLE_NAME_LEN)
-      print("NON_NULLABLE_COLUMNS:", server.NON_NULLABLE_COLUMNS)
+      print("NON_NULLABLE_COLUMNS: %s" % server.NON_NULLABLE_COLUMNS)
     
       ibm_db.close(conn)
     else:
