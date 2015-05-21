@@ -15,7 +15,7 @@ class IbmDbTestCase(unittest.TestCase):
     self.obj = IbmDbTestFunctions()
     self.obj.assert_expect(self.run_test_006)
 	  
-  def run_test_006(self):    
+  def run_test_006(self):
 
     options1 = {ibm_db.SQL_ATTR_CURSOR_TYPE:  ibm_db.SQL_CURSOR_KEYSET_DRIVEN}
     options2 = {ibm_db.SQL_ATTR_CURSOR_TYPE: ibm_db.SQL_CURSOR_FORWARD_ONLY}
