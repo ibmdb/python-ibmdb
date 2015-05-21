@@ -57,6 +57,11 @@ class IbmDbTestCase(unittest.TestCase):
 #0
 #3
 #3
+#__PASE_EXPECTED__
+#0
+#0
+#1
+#1
 #__IDS_EXPECTED__
 #0
 #0
