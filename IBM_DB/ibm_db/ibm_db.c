@@ -292,7 +292,7 @@ static PyTypeObject stmt_handleType = {
 
 static void python_ibm_db_init_globals(struct _ibm_db_globals *ibm_db_globals) {
 	/* env handle */
-	ibm_db_globals->bin_mode = 1;
+	ibm_db_globals->bin_mode = BINARY;
 
 	memset(ibm_db_globals->__python_conn_err_msg, 0, DB2_MAX_ERR_MSG_LEN);
 	memset(ibm_db_globals->__python_stmt_err_msg, 0, DB2_MAX_ERR_MSG_LEN);
