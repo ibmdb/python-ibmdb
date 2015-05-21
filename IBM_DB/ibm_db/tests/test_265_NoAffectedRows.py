@@ -57,7 +57,7 @@ class IbmDbTestCase(unittest.TestCase):
       if (self.obj.isServerIBMi(server)):
         sql = "insert into test values( 1, 'some', 'here is a clob value', '<test attribute=\"value\"/>')"
       else:
-        sql = "insert into test values( 1, 'some', 'here is a clob value', <?xml version=\"1.0\" ?><test attribute=\"value\"/>)"
+        sql = "insert into test values( 1, 'some', 'here is a clob value', '<?xml version=\"1.0\" encoding=\"UTF-8\" ?><test attribute=\"value\"/>')"
 
       stmt = ibm_db.prepare(conn, sql)
       ibm_db.set_option(stmt, cursor_option, 0)
