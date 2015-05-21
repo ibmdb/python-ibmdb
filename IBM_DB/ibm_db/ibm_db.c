@@ -4416,8 +4416,8 @@ static PyObject *ibm_db_statistics(PyObject *self, PyObject *args)
 			Py_XDECREF(py_qualifier);
 			Py_XDECREF(py_owner);
 			Py_XDECREF(py_table_name);
-
-			Py_RETURN_FALSE;
+			
+			return NULL;
 		}
 		if (py_qualifier && py_qualifier != Py_None )
 			qualifier = getUnicodeDataAsSQLTCHAR(py_qualifier, &isNewBuffer);
@@ -4443,8 +4443,8 @@ static PyObject *ibm_db_statistics(PyObject *self, PyObject *args)
 			Py_XDECREF(py_qualifier);
 			Py_XDECREF(py_owner);
 			Py_XDECREF(py_table_name);
-
-			Py_RETURN_FALSE;
+			
+			return NULL;
 		}
 		Py_XDECREF(py_qualifier);
 		Py_XDECREF(py_owner);
