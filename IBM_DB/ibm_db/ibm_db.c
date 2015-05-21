@@ -241,7 +241,7 @@ typedef struct _stmt_handle_struct {
 	int num_params;		  /* Number of Params */
 	int file_param;		  /* if option passed in is FILE_PARAM */
 	int num_columns;
-	int num_rows;
+	SQLLEN num_rows;
 	ibm_db_result_set_info *column_info;
 	ibm_db_row_type *row_data;
 } stmt_handle;
@@ -6010,6 +6010,7 @@ static PyObject *_python_ibm_db_execute_helper1(stmt_handle *stmt_res, PyObject 
 
 	/* This ensures that each call to ibm_db.execute start from scratch */
 	stmt_res->current_node = stmt_res->head_cache_list;
+	stmt_res->num_rows = -1;
 	
 	Py_BEGIN_ALLOW_THREADS;
 	rc = SQLNumParams((SQLHSTMT)stmt_res->hstmt, (SQLSMALLINT*)&num);
@@ -10109,6 +10110,7 @@ static PyObject* ibm_db_execute_many (PyObject *self, PyObject *args) {
 		_python_ibm_db_clear_stmt_err_cache();
 		stmt_res->head_cache_list = NULL;
 		stmt_res->current_node = NULL;
+		stmt_res->num_rows = -1;
 
 		/* Bind parameters */
 		Py_BEGIN_ALLOW_THREADS;
