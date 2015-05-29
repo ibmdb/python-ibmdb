@@ -30,7 +30,8 @@ class SQLCompiler( compiler.SQLCompiler ):
     __rownum = 'Z.__ROWNUM'
 
     # To get ride of LIMIT/OFFSET problem in DB2, this method has been implemented.
-    def as_sql( self, with_limits = True, with_col_aliases = False ):
+    def as_sql( self, with_limits=True, with_col_aliases=False, subquery=False ):
+        self.subquery = subquery
         self.__do_filter( self.query.where.children )
         self.pre_sql_setup()
         if self.query.distinct:
