@@ -16,7 +16,11 @@
 # | Authors: Ambrish Bhargava, Tarun Pasrija, Rahul Priyadarshi              |
 # +--------------------------------------------------------------------------+
 
-from django.db.backends import BaseDatabaseOperations
+try:
+    from django.db.backends import BaseDatabaseOperations
+except ImportError:
+    from django.db.backends.base.operations import BaseDatabaseOperations
+
 from ibm_db_django import query
 from django import VERSION as djangoVersion
 import sys, datetime
@@ -229,7 +233,7 @@ class DatabaseOperations ( BaseDatabaseOperations ):
     
     # In case of WHERE clause, if the search is required to be case insensitive then converting 
     # left hand side field to upper.
-    def lookup_cast( self, lookup_type ):
+    def lookup_cast( self, lookup_type, internal_type=None ):
         if lookup_type in ( 'iexact', 'icontains', 'istartswith', 'iendswith' ):
             return "UPPER(%s)"
         return "%s"

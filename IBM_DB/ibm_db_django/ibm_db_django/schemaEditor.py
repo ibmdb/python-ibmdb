@@ -21,7 +21,12 @@ _IS_JYTHON = sys.platform.startswith( 'java' )
 
 import datetime
 import copy
-from django.db.backends.schema import BaseDatabaseSchemaEditor
+
+try:
+    from django.db.backends.schema import BaseDatabaseSchemaEditor
+except ImportError:
+    from django.db.backends.base.schema import BaseDatabaseSchemaEditor
+
 from django.utils import six
 from django.db import models
 from django.db.backends.util import truncate_name

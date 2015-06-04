@@ -26,7 +26,11 @@ if not _IS_JYTHON:
     except ImportError, e:
         raise ImportError( "ibm_db module not found. Install ibm_db module from http://code.google.com/p/ibm-db/. Error: %s" % e )
 
-from django.db.backends.creation import BaseDatabaseCreation
+try:
+    from django.db.backends.creation import BaseDatabaseCreation
+except ImportError:
+    from django.db.backends.base.creation import BaseDatabaseCreation
+
 from django.conf import settings
 from django.core.management import call_command
 from django import VERSION as djangoVersion
