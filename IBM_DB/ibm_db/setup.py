@@ -107,7 +107,7 @@ if (('IBM_DB_HOME' not in os.environ) and ('IBM_DB_DIR' not in os.environ) and (
             cliFileName = 'aix32_odbc_cli.tar.gz'
     elif ('linux' in sys.platform):
         os_ = 'linux'
-        if (_checkOSList(os.uname(),'ppc')):	
+        if (_checkOSList(os.uname(),'ppc')):    
             os_ = 'ppc'
             if is64Bit:
                 cliFileName = 'ppc64_odbc_cli.tar.gz'
@@ -219,9 +219,11 @@ else:
 package_data = { 'tests': [ '*.png', '*.jpg']}
 data_files = [ ('', ['./README']),
                ('', ['./CHANGES']),
-               ('', ['./LICENSE']) ]
+               ('', ['./LICENSE']),
+               ('', ['./config.py.sample']),
+             ]
 
-modules = ['config', 'ibm_db_dbi', 'testfunctions', 'tests']
+modules = ['ibm_db_dbi', 'testfunctions', 'tests']
 ext_modules = _ext_modules(ibm_db_include, library, ibm_db_lib, ibm_db_lib_runtime)
 
 if (sys.platform[0:3] == 'win'):
