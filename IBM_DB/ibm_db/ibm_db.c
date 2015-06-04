@@ -45,7 +45,7 @@ static PyObject* getSQLTCharAsPyUnicodeObject(SQLTCHAR* str, Py_ssize_t byte_len
 
 const int _check_i = 1;
 #define is_bigendian() ( (*(char*)&_check_i) == 0 )
-static int is_systemi, is_informix;	  /* 1 == TRUE; 0 == FALSE; */
+
 #ifdef _WIN32
 #define DLOPEN LoadLibrary
 #define DLSYM GetProcAddress
@@ -1462,12 +1462,8 @@ static PyObject *_python_ibm_db_connect_helper( PyObject *self, PyObject *args, 
 			memset(server, 0, sizeof(server));
 
 			Py_BEGIN_ALLOW_THREADS;
-			rc = SQLGetInfo(conn_res->hdbc, SQL_DBMS_NAME, (SQLPOINTER)server, 
-				2048, NULL);
+			rc = SQLGetInfo(conn_res->hdbc, SQL_DBMS_NAME, server, sizeof(server), NULL);
 			Py_END_ALLOW_THREADS;
-
-			if (!strcmp(server, "AS")) is_systemi = 1;
-			if (!strncmp(server, "IDS", 3)) is_informix = 1;
 
 			/* Set SQL_ATTR_REPLACE_QUOTED_LITERALS connection attribute to
 			* enable CLI numeric literal feature. This is equivalent to
@@ -1479,7 +1475,7 @@ static PyObject *_python_ibm_db_connect_helper( PyObject *self, PyObject *args, 
 			/* Only enable this feature if we are not connected to an Informix data 
 			* server 
 			*/
-			if (!is_informix && (literal_replacement == SET_QUOTED_LITERAL_REPLACEMENT_ON)) {
+			if (strncmp(server, "IDS", 3) == 0 && (literal_replacement == SET_QUOTED_LITERAL_REPLACEMENT_ON)) {
 				rc = SQLSetConnectAttr((SQLHDBC)conn_res->hdbc, 
 					SQL_ATTR_REPLACE_QUOTED_LITERALS, 
 					(SQLPOINTER) (ENABLE_NUMERIC_LITERALS), 
@@ -8165,40 +8161,9 @@ static PyObject *_python_ibm_db_bind_fetch_helper(PyObject *args, int op)
 	}
 	/* check if row_number is present */
 	if (PyTuple_Size(args) == 2 && row_number > 0) {
-      // TODO: Fix this
-#ifndef PASE /* i5/OS problem with SQL_FETCH_ABSOLUTE (temporary until fixed) */
-		if (is_systemi) {
-
-			Py_BEGIN_ALLOW_THREADS;
-			rc = SQLFetchScroll((SQLHSTMT)stmt_res->hstmt, SQL_FETCH_FIRST, 
-				row_number);
-			Py_END_ALLOW_THREADS;
-			
-			if (row_number>1 && (rc == SQL_SUCCESS || rc == SQL_SUCCESS_WITH_INFO))
-				Py_BEGIN_ALLOW_THREADS;
-				rc = SQLFetchScroll((SQLHSTMT)stmt_res->hstmt, SQL_FETCH_RELATIVE, 
-				row_number-1);
-				Py_END_ALLOW_THREADS;
-		} else {
-			Py_BEGIN_ALLOW_THREADS;
-			rc = SQLFetchScroll((SQLHSTMT)stmt_res->hstmt, SQL_FETCH_ABSOLUTE, 
-				row_number);
-			Py_END_ALLOW_THREADS;
-		}
-#else
 		Py_BEGIN_ALLOW_THREADS;
-		rc = SQLFetchScroll((SQLHSTMT)stmt_res->hstmt, SQL_FETCH_FIRST, 
-			row_number);
+		rc = SQLFetchScroll((SQLHSTMT)stmt_res->hstmt, SQL_FETCH_ABSOLUTE, row_number);
 		Py_END_ALLOW_THREADS;
-
-		if (row_number>1 && (rc == SQL_SUCCESS || rc == SQL_SUCCESS_WITH_INFO))
-			Py_BEGIN_ALLOW_THREADS;
-
-			rc = SQLFetchScroll((SQLHSTMT)stmt_res->hstmt, SQL_FETCH_RELATIVE, 
-			row_number-1);
-
-			Py_END_ALLOW_THREADS;
-#endif
 	} else if (PyTuple_Size(args) == 2 && row_number < 0) {
 		PyErr_SetString(PyExc_Exception, 
 			"Requested row number must be a positive value");
