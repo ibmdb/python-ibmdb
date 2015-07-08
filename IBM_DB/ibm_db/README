@@ -1,16 +1,16 @@
-= Installing ibm_db and ibm_db_dbi module =
+# Installing ibm_db and ibm_db_dbi module 
 
 We are assuming that you have Python already installed. In Linux you may need the python-dev package (you can install python-dev package through "$yum install python-devel" if yum doesn't work then you can also install it through "$apt-get install python-dev")
 
  
-== Installation ==
+## Installation 
 {{{
   pip install ibm_db
 }}}
  
 This will install *ibm_db* and *ibm_db_dbi* module.
 
- == IBM_DB and DB-API wrapper (ibm_db_dbi) sanity test ==
+ ## IBM_DB and DB-API wrapper (ibm_db_dbi) sanity test 
 
 {{{
 $ python
@@ -24,13 +24,13 @@ Type "help", "copyright", "credits" or "license" for more information.
 >>> conn.tables('SYSCAT', '%')
 }}}
 
-==Supported databases==
+##Supported databases
  * *Minimum Supported version of IBM DB2 is V9fp2 for Linux, UNIX, and Windows
  * *Informix 11.10* (Cheetah)
  * *Remote connections to i5/OS (iSeries)*
  * *Remote connections to z/OS (DB2 for z/OS)*
 
-==Feedback==
+##Feedback
 
 Your feedback is very much appreciated and expected through project ibm-db:
   * *ibm-db issues reports*:  https://github.com/ibmdb/python-ibmdb/issues
