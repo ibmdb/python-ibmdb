@@ -1,98 +1,42 @@
-Python Driver and DBI Wrapper for IBM Databases
------------------------------------------------
-The ibm_db driver and ibm_db_dbi wrapper provide a Python interface for IBM 
-databases.  The wrapper conforms to the DBI specification located here:
-  http://www.python.org/dev/peps/pep-0249/
+= Installing ibm_db and ibm_db_dbi module =
 
-The driver and wrapper have been developed and will be supported by IBM. 
+We are assuming that you have Python already installed. In Linux you may need the python-dev package (you can install python-dev package through "$yum install python-devel" if yum doesn't work then you can also install it through "$apt-get install python-dev")
 
+ 
+== Installation ==
+{{{
+  pip install ibm_db
+}}}
+ 
+This will install *ibm_db* and *ibm_db_dbi* module.
 
-Python ibm_db Driver Build and Installation
--------------------------------------------
-1. Linux 
-    
-  Preparations (specific commands dependent on shell):
-    If you are compiling against a DB2 instance, do the following
-    (paths depend on system):
-      . <path_to_sqllib>/db2profile
-      export IBM_DB_HOME=<path_to_sqllib>
-  
-  Installation Commands for Linux:
-    python setup.py build
-    python setup.py install 
-  
-2. Windows 
+ == IBM_DB and DB-API wrapper (ibm_db_dbi) sanity test ==
 
-  Preparations:
-    Install Python from:
-      http://python.org
-    Install Visual C++ 2003, Platform SDK (latest), .NET SDK Version
-    1.1 from:
-      http://wiki.tcl.tk/11431
-    Set envrionment:
-      CALL "C:\Program Files\Microsoft Platform SDK for Windows
-        Server 2003 R2\SetEnv.Cmd"
-      CALL "C:\Program Files\Microsoft Visual C++ Toolkit
-        2003\vcvars32.bat"
-      SET LIB=%LIB%;C:\Program Files\Microsoft Visual Studio .NET
-        2003\Vc7\lib 
-      (Use notepad to edit config.py to your DB2 settings)
-      set IBM_DB_HOME=<path_to_sqllib>
+{{{
+$ python
+Python 2.5.1 (r251:54863, Oct  5 2007, 13:36:32)
+[GCC 4.1.3 20070929 (prerelease) (Ubuntu 4.1.2-16ubuntu2)] on linux2
+Type "help", "copyright", "credits" or "license" for more information.
+>>> import ibm_db
+>>> ibm_db_conn = ibm_db.connect('pydev', 'db2inst1', 'secret')
+>>> import ibm_db_dbi
+>>> conn = ibm_db_dbi.Connection(ibm_db_conn)
+>>> conn.tables('SYSCAT', '%')
+}}}
 
-  Installation Commands for Windows:
-    setup.py build
-    setup.yp install
+==Supported databases==
+ * *Minimum Supported version of IBM DB2 is V9fp2 for Linux, UNIX, and Windows
+ * *Informix 11.10* (Cheetah)
+ * *Remote connections to i5/OS (iSeries)*
+ * *Remote connections to z/OS (DB2 for z/OS)*
 
+==Feedback==
 
-Python ibm_db_dbi Wrapper Build and Installation
-------------------------------------------------
-There is no special build required to use the ibm_db_wrapper. However, the 
-wrapper internally uses the driver. So the driver needs to be built and 
-installed before you use the wrapper.
+Your feedback is very much appreciated and expected through project ibm-db:
+  * *ibm-db issues reports*:  https://github.com/ibmdb/python-ibmdb/issues
+  * *ibm_db discuss*: http://groups.google.com/group/ibm_db
+  * *ibm-db developers*:      opendev@us.ibm.com
 
-
-Setup to use ibm_db or ibm_db_dbi
----------------------------------
-For Unix based systems:
-Depending on your shell, source the db2profile or db2chsrc. Be sure to source 
-the profile for the DB2 instance and not the profile under the DB2 product 
-installation. For example:
-  . <path_to_sqllib>/db2profile
-                 or
-  source <path_to_sqllib>/db2chsrc
-
-Import ibm_db or ibm_db_dbi inside your Python application to use the driver or 
-wrapper functionality
-  import ibm_db
-       or
-  import ibm_db_dbi
-
-Note: Please make sure that the directory containing the ibm_db_dbi.py file is 
-added to the PYTHONPATH variable. This will ensure that the DBI wrapper can be 
-accessed in your python applications.
-
-
-List of Operating Systems tested
---------------------------------
-SuSE Linux Server 9 32 bit
-Ubuntu Linux 7.04 32 bit
-Windows 32 bit
-
-
-Supported Databases
--------------------
-IBM DB2 Database on Linux, Unix and Windows 8.2 and onwards
-Informix(IDS) Cheetah version 11.10 onwards
-Remote connections to i5/OS (iSeries)
-Remote connections to z/OS (DB2 UDB for zOS)
-DB2 on Mac
-
-Future Supported Databases
---------------------------
-IBM Cloudscape
-Apache Derby
-Native DB2 for i5/OS (iSeries)
-Native DB2 UDB for zOS
 
 
 Testing
