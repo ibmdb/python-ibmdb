@@ -1,6 +1,6 @@
-=Quick Getting Started Steps (README)=
+#Quick Getting Started Steps (README)
 
-==Install *IBM_DB* support for *SQLAlchemy*==
+##Install *IBM_DB* support for *SQLAlchemy*
 
 
 The *IBM_DB_SA adapter* provides the [http://www.python.org/ Python]/[http://www.sqlalchemy.org SQLAlchemy] interface to IBM DB2.
@@ -9,13 +9,13 @@ The *IBM_DB_SA adapter* is packaged as a [http://peak.telecommunity.com/DevCente
  * *SQLAlchemy* 0.7.3 and above
  
 
-==Installation and configuration==
+##Installation and configuration
 
 ```  
 $ pip install ibm_db_sa  
 ```  
 
-==Quick Sanity Test Example==
+##Quick Sanity Test Example
 
 {{{
 $ python
@@ -39,7 +39,7 @@ Type "help", "copyright", "credits" or "license" for more information.
 }}}
 
 
-===Example: Using the Data Source Name (DSN) through CLI configuration===
+###Example: Using the Data Source Name (DSN) through CLI configuration
 {{{
 $ cat ./clidriver/db2cli.ini
 ...
@@ -65,20 +65,20 @@ Type "help", "copyright", "credits" or "license" for more information.
 }}}
 
 
-==Tested operating systems==
+##Tested operating systems
  * *SuSE Linux Server* 9 32/64 bit
  * *Ubuntu Linux 7.04* 32/64 bit
  * *MS Windows* 32/64 bit
 
 
-==Supported databases==
+##Supported databases
  * *Minimum Supported version of IBM DB2 is V9fp2* for Linux, UNIX, and Windows
  * *IBM DB2 Version 9.5* for Linux, UNIX, and Windows
  * *IBM DB2 Version 9.1* for Linux, UNIX, and Windows
 
 
 
-==Feedback==
+##Feedback
 
 Your feedback is very much appreciated and expected through project ibm-db:
   * *ibm-db discuss*:         http://groups.google.com/group/ibm_db
