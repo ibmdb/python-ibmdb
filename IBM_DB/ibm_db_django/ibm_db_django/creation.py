@@ -151,7 +151,7 @@ class DatabaseCreation ( BaseDatabaseCreation ):
     # If test database already exists then it takes confirmation from user to recreate that database .
     # If create test database not supported in current scenario then it takes confirmation from user to use settings file's database name as test database
     # For Jython this method prepare the settings file's database. First it drops the tables from the database,then create tables on the basis of installed models.
-    def create_test_db( self, verbosity = 0, autoclobber = False ):
+    def create_test_db( self, verbosity = 0, autoclobber = False , keepdb=False,serialize=False):
         kwargs = self.__create_test_kwargs()
         if not _IS_JYTHON:
             old_database = kwargs['database']
