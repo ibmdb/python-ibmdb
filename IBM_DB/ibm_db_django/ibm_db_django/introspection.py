@@ -15,7 +15,7 @@
 # +--------------------------------------------------------------------------+
 # | Authors: Ambrish Bhargava, Tarun Pasrija, Rahul Priyadarshi              |
 # +--------------------------------------------------------------------------+
-
+from collections import namedtuple
 import sys
 _IS_JYTHON = sys.platform.startswith( 'java' )
 
@@ -95,10 +95,13 @@ class DatabaseIntrospection( BaseDatabaseIntrospection ):
     
     # Getting the list of all tables, which are present under current schema.
     def get_table_list ( self, cursor ):
+        TableInfo = namedtuple('TableInfo', ['name', 'type'])
         table_list = []
         if not _IS_JYTHON:
             for table in cursor.connection.tables( cursor.connection.get_current_schema() ):
-                table_list.append( table['TABLE_NAME'].lower() )
+                if( djangoVersion[0:2] < ( 1, 8 ) ):
+                    table_list.append( table['TABLE_NAME'].lower() )
+            table_list.append(TableInfo( table['TABLE_NAME'].lower(),'t'))
         else:
             cursor.execute( "select current_schema from sysibm.sysdummy1" )
             schema = cursor.fetchone()[0]
@@ -106,7 +109,9 @@ class DatabaseIntrospection( BaseDatabaseIntrospection ):
             cursor.tables( None, schema, None, ( "TABLE", ) )
             for table in cursor.fetchall():
                 # table[2] is table name
-                table_list.append( table[2].lower() )
+                if( djangoVersion[0:2] < ( 1, 8 ) ):
+                    table_list.append( table[2].lower() )
+            table_list.append(TableInfo(table[2].lower(),"t"))
                 
         return table_list
     
