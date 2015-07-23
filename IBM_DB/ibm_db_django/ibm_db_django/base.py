@@ -132,6 +132,7 @@ class DatabaseWrapper( BaseDatabaseWrapper ):
     wrapper is IBM_DB_DBI (latest version can be downloaded from http://code.google.com/p/ibm-db/ or
     http://pypi.python.org/pypi/ibm_db). 
     """
+    data_types={}
     vendor = 'DB2'
     operators = {
         "exact":        "= %s",
@@ -162,6 +163,10 @@ class DatabaseWrapper( BaseDatabaseWrapper ):
         else:
             self.features = DatabaseFeatures( self )
         self.creation = DatabaseCreation( self )
+        
+        if( djangoVersion[0:2] >= ( 1, 8 ) ): 
+            self.data_types=self.creation.data_types
+        #jose
         self.introspection = DatabaseIntrospection( self )
         if( djangoVersion[0:2] <= ( 1, 1 ) ):
             self.validation = DatabaseValidation()
