@@ -71,7 +71,6 @@ class DatabaseCreation ( BaseDatabaseCreation ):
         'URLField':                     'VARCHAR2(%(max_length)s)',
         'XMLField':                     'XML',
         'BinaryField':                  'BLOB',
-        'UUIDField':                    'VARCHAR(255)',
     }
     
     if( djangoVersion[0:2] <= ( 1, 6 ) ):
