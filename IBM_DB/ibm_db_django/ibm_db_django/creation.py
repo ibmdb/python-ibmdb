@@ -73,6 +73,10 @@ class DatabaseCreation ( BaseDatabaseCreation ):
         'BinaryField':                  'BLOB',
     }
     
+    if( djangoVersion[0:2] >= ( 1, 8 ) ):
+        data_types.update({
+            'UUIDField':                 'VARCHAR(255)',
+        })
     if( djangoVersion[0:2] <= ( 1, 6 ) ):
         data_types.update({
             'BooleanField':                 'SMALLINT CHECK (%(attname)s IN (0,1))',
