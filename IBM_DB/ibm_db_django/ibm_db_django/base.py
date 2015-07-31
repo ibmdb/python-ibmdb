@@ -166,7 +166,8 @@ class DatabaseWrapper( BaseDatabaseWrapper ):
         
         if( djangoVersion[0:2] >= ( 1, 8 ) ): 
             self.data_types=self.creation.data_types
-        #jose
+            self.data_type_check_constraints=self.creation.data_type_check_constraints
+        
         self.introspection = DatabaseIntrospection( self )
         if( djangoVersion[0:2] <= ( 1, 1 ) ):
             self.validation = DatabaseValidation()
