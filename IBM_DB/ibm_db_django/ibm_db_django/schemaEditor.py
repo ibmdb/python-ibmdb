@@ -32,6 +32,7 @@ from django.db import models
 from django.db.backends.util import truncate_name
 from django.db.models.fields.related import ManyToManyField
 from django.db.utils import ProgrammingError
+from django import VERSION as djangoVersion
 if not _IS_JYTHON:
     import ibm_db_dbi as Database
 else:
@@ -66,6 +67,9 @@ class DB2SchemaEditor(BaseDatabaseSchemaEditor):
             if (field.default is not None) and field.has_default():
                 value = field.get_default()
                 value = self.prepare_default(value)
+                if( djangoVersion[0:2] >= ( 1, 8 ) ):
+                    if isinstance(field,models.BinaryField ) and  (value=="''"):
+                        value  = 'EMPTY_BLOB()'
                 sql += " DEFAULT %s" % value
             else:
                 field.default = None
