@@ -76,6 +76,33 @@ class DatabaseOperations ( BaseDatabaseOperations ):
         #DB2 doesn't have sample variance function
         elif aggregate.sql_function == 'VAR_SAMP':
             raise NotImplementedError("sample variance function not supported")
+        
+    def get_db_converters(self, expression):
+        converters =super(DatabaseOperations, self).get_db_converters(expression)
+        
+        field_type = expression.output_field.get_internal_type()
+        if field_type in ( 'BinaryField',  ):
+            converters.append(self.convert_binaryfield_value)   
+        #  else:
+        #   converters.append(self.convert_empty_values)
+        """Get a list of functions needed to convert field data.
+
+        Some field types on some backends do not provide data in the correct
+        format, this is the hook for coverter functions.
+        """
+        return converters
+    
+    def convert_empty_values(self, value, expression, context):
+        # Oracle stores empty strings as null. We need to undo this in
+        # order to adhere to the Django convention of using the empty
+        # string instead of null, but only if the field accepts the
+        # empty string.
+        field = expression.output_field
+        if value is None and field.empty_strings_allowed:
+            value = ''
+            if field.get_internal_type() == 'BinaryField':
+                value = b''
+        return value
     
     def combine_expression( self, operator, sub_expressions ):
         if operator == '%%':
@@ -89,13 +116,13 @@ class DatabaseOperations ( BaseDatabaseOperations ):
         else:
             return super( DatabaseOperations, self ).combine_expression( operator, sub_expressions )
     
-    def convert_values( self, value, field ):
-        field_type = field.get_internal_type()
-        if field_type in ( 'BooleanField', 'NullBooleanField' ):
-            if value in ( 0, 1 ):
-                return bool( value )
-        else:
-            return value
+    def convert_binaryfield_value( self,value, expression, context ):
+        # field_type = field.get_internal_type()
+        # if field_type in ( 'BooleanField', 'NullBooleanField' ):
+        #    if value in ( 0, 1 ):
+        #       return bool( value )
+        #else:
+     return value
     
     # Function to extract day, month or year from the date.
     # Reference: http://publib.boulder.ibm.com/infocenter/db2luw/v9r5/topic/com.ibm.db2.luw.sql.ref.doc/doc/r0023457.html
