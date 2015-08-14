@@ -68,8 +68,12 @@ class DB2SchemaEditor(BaseDatabaseSchemaEditor):
                 value = field.get_default()
                 value = self.prepare_default(value)
                 if( djangoVersion[0:2] >= ( 1, 8 ) ):
-                    if isinstance(field,models.BinaryField ) and  (value=="''"):
-                        value  = 'EMPTY_BLOB()'
+                    if isinstance(field,models.BinaryField ):
+                        if (value=="''"):
+                            value  = 'EMPTY_BLOB()'
+                        else:                       
+                            value='blob( %s'  %value + ')'
+                            
                 sql += " DEFAULT %s" % value
             else:
                 field.default = None
