@@ -29,7 +29,7 @@ except ImportError:
 
 from django.utils import six
 from django.db import models
-from django.db.backends.util import truncate_name
+from django.db.backends.utils import truncate_name
 from django.db.models.fields.related import ManyToManyField
 from django.db.utils import ProgrammingError
 from django import VERSION as djangoVersion
@@ -73,7 +73,7 @@ class DB2SchemaEditor(BaseDatabaseSchemaEditor):
                             value  = 'EMPTY_BLOB()'
                         else:                       
                             value='blob( %s'  %value + ')'
-                            
+                                            
                 sql += " DEFAULT %s" % value
             else:
                 field.default = None
