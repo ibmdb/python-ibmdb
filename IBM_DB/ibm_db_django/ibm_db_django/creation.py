@@ -34,7 +34,7 @@ except ImportError:
 from django.conf import settings
 from django.core.management import call_command
 from django import VERSION as djangoVersion
-from django.db.backends.util import truncate_name
+from django.db.backends.utils import truncate_name
 
 if _IS_JYTHON:
     dbms_name = 'dbname'
