@@ -4,7 +4,20 @@
 
 Provides Python, Django and SQLAlchemy support for IBM DB2 and Informix 
 
-###Components :
+### Table of contents
+
+[Components](#components)
+
+[Downloads](#downloads)
+
+[Latest Updates](#latest updates)
+
+[Support](#support)
+
+[Contributing to the ibm_db python project](#contributing to the ibm_db python project)
+
+<a name='components'></a>
+## Components (Python Eggs)
 
 1. The *ibm_db* contains:
    * *ibm_db* driver: Python driver for IBM DB2 and IBM Informix databases. Uses the IBM Data Server Driver for ODBC and CLI APIs to connect to IBM DB2 and Informix. 
@@ -21,35 +34,42 @@ Provides Python, Django and SQLAlchemy support for IBM DB2 and Informix
 
 Additional information is available in the README files provided in the Python Eggs and also the source repository. .
 
-===Downloads===
-Use following pypi web location for downloading source code and binaries
- # *ibm_db*: https://pypi.python.org/pypi/ibm_db .
- # *ibm_db_django*: https://pypi.python.org/pypi/ibm_db_django .
- # *ibm_db_sa*: https://pypi.python.org/pypi/ibm_db_sa .
- # *ibm_db_alembic*: https://pypi.python.org/pypi/ibm_db_alembic .
+<a name='downloads'></a>
+## Downloads
 
-===Latest Updates===
-*Support for Alembic*
+Use following pypi web location for downloading source code and binaries
+ 1. *ibm_db*: https://pypi.python.org/pypi/ibm_db .
+ 2. *ibm_db_django*: https://pypi.python.org/pypi/ibm_db_django .
+ 3. *ibm_db_sa*: https://pypi.python.org/pypi/ibm_db_sa .
+ 4. *ibm_db_alembic*: https://pypi.python.org/pypi/ibm_db_alembic .
+
+<a name='latest updates'></a>
+## Latest Updates
+
+### *Support for Alembic*
   Oct 29th 2014: IBM DB2 backend support in Alembic application is now available to the community. Right now it is in beta stage.
 
-*Support for Django*
+### *Support for Django*
   Nov 21th 2014: New Release of IBM_DB_DJANGO (1.0.7) with Django 1.7.x support made.
 
-*Support for SQLAlchemy*
+### *Support for SQLAlchemy*
   Oct 20th 2014: New Release of IBM_DB_SA (0.3.2) made.
 
-*Updated ibm_db*
+### *Updated ibm_db*
   Jan 1st 2015: A new release 2.0.5.1 of ibm_db and ibm_db_dbi
 
-*Support for Django on Jython*
+### *Support for Django on Jython*
   ibm_db_django supports Django on Jython (on Jython-Django v1.0.x and v1.1.x are supported).
 
 
-===Support===
+<a name='support'></a>
+## Support
+
  * Google Group: http://groups.google.com/group/ibm_db
    
  * Development: opendev at us dot ibm dot com.
 
-===Contributing to the ibm_db python project===
-[Contributions Guidelines for Contributions]()
+<a name='contributing to the ibm_db python project'></a>
+## Contributing to the ibm_db python project
+[Contributions Guidelines for Contributions](https://code.google.com/p/ibm-db/wiki/Contributions)
 
