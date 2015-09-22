@@ -19,18 +19,18 @@ Provides Python, Django and SQLAlchemy support for IBM DB2 and Informix
 <a name='components'></a>
 ## Components (Python Eggs)
 
-1. The *ibm_db* contains:
-   * *ibm_db* driver: Python driver for IBM DB2 and IBM Informix databases. Uses the IBM Data Server Driver for ODBC and CLI APIs to connect to IBM DB2 and Informix. 
-   * *ibm_db_dbi*: Python driver for IBM DB2 and IBM Informix databases that complies to the DB-API 2.0 specification.
+1. The **ibm_db** Python Egg contains:
+   * **ibm_db** driver: Python driver for IBM DB2 and IBM Informix databases. Uses the IBM Data Server Driver for ODBC and CLI APIs to connect to IBM DB2 and Informix. 
+   * **ibm_db_dbi**: Python driver for IBM DB2 and IBM Informix databases that complies to the DB-API 2.0 specification.
    Checkout the [README](https://github.com/ibmdb/python-ibmdb/tree/master/IBM_DB/ibm_db) for getting started with ibm_db and ibm_db_dbi
  
-2. The *ibm_db_django*: Django adapter for IBM DB2 databases. Supports latest Django versions and Django on Jython as well.
+2. The **ibm_db_django**: Django adapter for IBM DB2 databases. Supports latest Django versions and Django on Jython as well.
    Checkout the [README](https://github.com/ibmdb/python-ibmdb/tree/master/IBM_DB/ibm_db_django) for using DB2 with Django
 
-3. The *ibm_db_sa*: SQLAlchemy adapter for IBM DB2 and IBM Informix databases. Supports SQLAlchemy 0.7.3 and above. 
+3. The **ibm_db_sa**: SQLAlchemy adapter for IBM DB2 and IBM Informix databases. Supports SQLAlchemy 0.7.3 and above. 
    Checkout the [README](https://github.com/ibmdb/python-ibmdb/tree/master/IBM_DB/ibm_db_sa) to get you started
 
-4. The *ibm_db_alembic*: Alembic adaptor for IBM DB2 databases. Supports Alembic-0.6.5 and above
+4. The **ibm_db_alembic**: Alembic adaptor for IBM DB2 databases. Supports Alembic-0.6.5 and above
 
 Additional information is available in the README files provided in the Python Eggs and also the source repository. .
 
