@@ -28,7 +28,7 @@ Provides Python, Django and SQLAlchemy support for IBM DB2 and Informix
    Checkout the [README](https://github.com/ibmdb/python-ibmdb/tree/master/IBM_DB/ibm_db_django) for using DB2 with Django
 
 3. The **ibm_db_sa**: SQLAlchemy adapter for IBM DB2 and IBM Informix databases. Supports SQLAlchemy 0.7.3 and above. 
-   Checkout the [README](https://github.com/ibmdb/python-ibmdb/tree/master/IBM_DB/ibm_db_sa) to get you started
+   Checkout the [README](https://github.com/ibmdb/python-ibmdbsa/tree/master/ibm_db_sa) to get you started
 
 4. The **ibm_db_alembic**: Alembic adaptor for IBM DB2 databases. Supports Alembic-0.6.5 and above
 
