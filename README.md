@@ -38,10 +38,10 @@ Additional information is available in the README files provided in the Python E
 ## Downloads
 
 Use following pypi web location for downloading source code and binaries
- 1. *ibm_db*: https://pypi.python.org/pypi/ibm_db .
- 2. *ibm_db_django*: https://pypi.python.org/pypi/ibm_db_django .
- 3. *ibm_db_sa*: https://pypi.python.org/pypi/ibm_db_sa .
- 4. *ibm_db_alembic*: https://pypi.python.org/pypi/ibm_db_alembic .
+ 1. **ibm_db**: https://pypi.python.org/pypi/ibm_db .
+ 2. **ibm_db_django**: https://pypi.python.org/pypi/ibm_db_django .
+ 3. **ibm_db_sa**: https://pypi.python.org/pypi/ibm_db_sa .
+ 4. **ibm_db_alembic**: https://pypi.python.org/pypi/ibm_db_alembic .
 
 <a name='latest updates'></a>
 ## Latest Updates
