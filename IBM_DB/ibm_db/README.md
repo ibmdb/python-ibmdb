@@ -10,7 +10,7 @@ We are assuming that you have Python already installed. In Linux you may need th
  
 This will install *ibm_db* and *ibm_db_dbi* module.
 
-##IBM_DB and DB-API wrapper (ibm_db_dbi) sanity test 
+###IBM_DB and DB-API wrapper (ibm_db_dbi) sanity test 
 
 ```
 $ python
