@@ -1,4 +1,4 @@
-# Getting started with IBM DB Django adapter 
+#Getting started with IBM DB Django adapter 
 
 IBM DB2 support for the Django application Framework
 
