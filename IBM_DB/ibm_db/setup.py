@@ -135,6 +135,10 @@ if (('IBM_DB_HOME' not in os.environ) and ('IBM_DB_DIR' not in os.environ) and (
         else:
             cliFileName = 'nt32_odbc_cli.zip'
             arch_ = '32'
+    elif('darwin' in sys.platform and is64Bit):
+        os_ = 'mac'
+        cliFileName = 'macos64_odbc_cli.tar.gz'
+        arch_ = 'x86_64'
     else:
         sys.stdout.write("Not a known platform for python ibm_db . Contact opendev@us.ibm.com")
         sys.stdout.flush()
@@ -204,7 +208,7 @@ if not prebuildIbmdbPYD and not os.path.isdir(ibm_db_include):
     
 library = ['db2']
 package_data = { 'tests': [ '*.png', '*.jpg']}
-data_files = [ ('', ['./README']),
+data_files = [ ('', ['./README.md']),
                ('', ['./CHANGES']),
                ('', ['./LICENSE']) ]
 
