@@ -93,6 +93,14 @@ const int _check_i = 1;
 #define SQL_ATTR_CHAINING_END   -2
 #endif
 
+#ifndef SQL_ATTR_NON_HEXCCSID
+#define SQL_ATTR_NON_HEXCCSID 10203
+#endif
+
+#ifndef SQL_ATTR_BINARY_AS_HEX
+#define SQL_ATTR_BINARY_AS_HEX 10205
+#endif
+
 #ifndef SQL_DIAG_CURSOR_ROW_COUNT
 #define SQL_DIAG_CURSOR_ROW_COUNT 16
 #endif
@@ -1345,6 +1353,9 @@ static PyObject *_python_ibm_db_connect_helper( PyObject *self, PyObject *args, 
 				
 				val = SQL_FALSE;
 				SQLSetEnvAttr((SQLHENV)conn_res->henv, SQL_ATTR_INCLUDE_NULL_IN_LEN, &val, 0);
+                
+                val = SQL_TRUE;
+                SQLSetEnvAttr((SQLHENV)conn_res->henv, SQL_ATTR_NON_HEXCCSID, &val, 0);
 			}
 #endif
 		}
@@ -1420,19 +1431,21 @@ static PyObject *_python_ibm_db_connect_helper( PyObject *self, PyObject *args, 
 					database, SQL_NTS, NULL, 0, NULL, 
 					SQL_DRIVER_NOPROMPT );
 			} else {
+#ifndef PASE
 				if (NIL_P(uidObj) || NIL_P(passwordObj)) { 
 					PyErr_SetString(PyExc_Exception, "Supplied Parameter is invalid");
 					return NULL;
 				}
+#endif
 				uid = getUnicodeDataAsSQLTCHAR(uidObj, &isNewBuffer);
 				password = getUnicodeDataAsSQLTCHAR(passwordObj, &isNewBuffer);
                 rc = SQLConnectT((SQLHDBC)conn_res->hdbc,
-					database,
-					PyUnicode_GetSize(databaseObj),
-					uid, 
-					PyUnicode_GetSize(uidObj),
-					password,
-					PyUnicode_GetSize(passwordObj));
+                    database,
+                    SQL_NTS,
+                    uid,
+                    SQL_NTS,
+                    password,
+                    SQL_NTS);
 			} 
 			if ( rc == SQL_ERROR ) {
 				_python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, rc, 
@@ -1442,6 +1455,24 @@ static PyObject *_python_ibm_db_connect_helper( PyObject *self, PyObject *args, 
 				SQLFreeHandle(SQL_HANDLE_ENV, conn_res->henv);
 				Py_RETURN_NONE;
 			}
+			
+#ifdef PASE
+			{
+				int attr = SQL_TRUE;
+                
+                rc = SQLSetConnectAttr(conn_res->hdbc, SQL_ATTR_BINARY_AS_HEX, &attr, 0);
+                if (rc != SQL_SUCCESS){
+                    _python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, rc,
+                                                    1, NULL, -1, 1);
+                }
+				
+				rc = SQLSetConnectAttr(conn_res->hdbc, SQL_ATTR_2ND_LEVEL_TEXT, &attr, 0);
+				if (rc != SQL_SUCCESS){
+					_python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, rc,
+													1, NULL, -1, 1);
+				}
+			}
+#endif
 			
 #ifdef CLI_DBC_SERVER_TYPE_DB2LUW
 #ifdef SQL_ATTR_DECFLOAT_ROUNDING_MODE
