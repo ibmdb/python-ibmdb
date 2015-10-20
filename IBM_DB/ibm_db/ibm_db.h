@@ -236,7 +236,7 @@ static PyTypeObject client_infoType = {
 		0,                                     /*tp_getattro    */
 		0,                                     /*tp_setattro    */
 		0,                                     /*tp_as_buffer   */
-		Py_TPFLAGS_DEFAULT,            /*tp_flags                   */
+		0,                                     /*tp_flags           */
 		"IBM DataServer Client Information object", /* tp_doc       */
 		0,                                     /* tp_traverse       */
 		0,                                     /* tp_clear          */
@@ -329,7 +329,7 @@ static PyTypeObject server_infoType = {
 		0,                                     /*tp_getattro    */
 		0,                                     /*tp_setattro    */
 		0,                                     /*tp_as_buffer   */
-		Py_TPFLAGS_DEFAULT,            /*tp_flags                   */
+		0,                                     /*tp_flags           */
 		"IBM DataServer Information object", /* tp_doc       */
 		0,                                     /* tp_traverse       */
 		0,                                     /* tp_clear          */

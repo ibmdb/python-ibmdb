@@ -179,7 +179,7 @@ static PyTypeObject conn_handleType = {
 	  0,									 /*tp_getattro*/
 	  0,									 /*tp_setattro*/
 	  0,									 /*tp_as_buffer*/
-	  Py_TPFLAGS_DEFAULT,					/*tp_flags*/
+	  0,                                     /*tp_flags*/
 	  "IBM DataServer connection object",	/* tp_doc */
 	  0,									 /* tp_traverse */
 	  0,									 /* tp_clear */
@@ -276,7 +276,7 @@ static PyTypeObject stmt_handleType = {
 	0,						 /*tp_getattro		*/
 	0,						 /*tp_setattro		*/
 	0,						 /*tp_as_buffer		*/
-	Py_TPFLAGS_DEFAULT,		/*tp_flags			*/
+	0,	                     /*tp_flags			*/
 	"IBM DataServer cursor object", /* tp_doc		*/
 	0,						 /* tp_traverse		*/
 	0,						 /* tp_clear		  */
@@ -1283,14 +1283,21 @@ static PyObject *_python_ibm_db_connect_helper( PyObject *self, PyObject *args, 
 		databaseObj = PyUnicode_FromObject(databaseObj);
 		uidObj = PyUnicode_FromObject(uidObj);
 		passwordObj = PyUnicode_FromObject(passwordObj);
+		PyErr_Clear();
 
 		/* Check if we already have a connection for this userID & database 
 		* combination
 		*/ 
 		if (isPersistent) {
-			hKey = PyUnicode_Concat(StringOBJ_FromASCII("__ibm_db_"), uidObj);
-			hKey = PyUnicode_Concat(hKey, databaseObj);
-			hKey = PyUnicode_Concat(hKey, passwordObj);
+			hKey = PyUnicode_Concat(StringOBJ_FromASCII("__ibm_db_"), databaseObj);
+			if(!NIL_P(uidObj))
+			{
+			  hKey = PyUnicode_Concat(hKey, uidObj);
+			}
+			if(!NIL_P(passwordObj))
+			{
+			  hKey = PyUnicode_Concat(hKey, passwordObj);
+			}
 
 			entry = PyDict_GetItem(persistent_list, hKey);
 
@@ -11061,7 +11068,11 @@ static SQLTCHAR* getUnicodeDataAsSQLTCHAR(PyObject* obj, int* isNewBuffer)
   *isNewBuffer = 0;
   
   utf8 = PyUnicode_AsUTF8AndSize(obj, &utf8_len);
-  if(utf8 == NULL) return NULL;
+  if(utf8 == NULL)
+  {
+	PyErr_Clear();
+	return NULL;
+  }
   
   *isNewBuffer = 1;
   
