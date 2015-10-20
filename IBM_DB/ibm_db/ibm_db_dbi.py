@@ -1,7 +1,7 @@
 # +--------------------------------------------------------------------------+
 # |  Licensed Materials - Property of IBM                                    |
 # |                                                                          |
-# | (C) Copyright IBM Corporation 2007-2013                                  |
+# | (C) Copyright IBM Corporation 2007-2015                                  |
 # +--------------------------------------------------------------------------+
 # | This module complies with SQLAlchemy and is                              |
 # | Licensed under the Apache License, Version 2.0 (the "License");          |
@@ -13,7 +13,8 @@
 # | KIND, either express or implied. See the License for the specific        |
 # | language governing permissions and limitations under the License.        |
 # +--------------------------------------------------------------------------+
-# | Authors: Swetha Patel, Abhigyan Agrawal, Tarun Pasrija, Rahul Priyadarshi|
+# | Authors: Swetha Patel, Abhigyan Agrawal, Tarun Pasrija, Rahul Priyadarshi,
+# |          Akshay Anand
 # +--------------------------------------------------------------------------+
 
 """
@@ -1295,9 +1296,9 @@ class Cursor(object):
         try:
             stmt_handler = ibm_db.prepare(self.conn_handler, operation)
             if ibm_db.execute(stmt_handler):
-                row = ibm_db.fetch_assoc(stmt_handler)
-                if row['1'] is not None:
-                  identity_val = int(row['1'])
+                row = ibm_db.fetch_tuple(stmt_handler)
+                if row[0] is not None:
+                  identity_val = int(row[0])
                 else:
                   identity_val = None
             else:

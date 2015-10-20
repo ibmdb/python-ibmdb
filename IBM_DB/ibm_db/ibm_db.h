@@ -125,6 +125,7 @@
 /* Used in _python_parse_options */
 #define DB2_ERRMSG 1
 #define DB2_ERR 2
+#define DB2_WARNMSG 3
 
 /*Used to decide if LITERAL REPLACEMENT should be turned on or not*/
 #define SET_QUOTED_LITERAL_REPLACEMENT_ON  1
@@ -181,10 +182,14 @@ enum
 */
 struct _ibm_db_globals {
 	int  bin_mode;
-	char __python_conn_err_msg[DB2_MAX_ERR_MSG_LEN];
+	char __python_conn_err_msg[DB2_MAX_ERR_MSG_LEN + 1];
 	char __python_conn_err_state[SQL_SQLSTATE_SIZE + 1];
-	char __python_stmt_err_msg[DB2_MAX_ERR_MSG_LEN];
+	char __python_stmt_err_msg[DB2_MAX_ERR_MSG_LEN + 1];
 	char __python_stmt_err_state[SQL_SQLSTATE_SIZE + 1];
+    char __python_conn_warn_msg[DB2_MAX_ERR_MSG_LEN + 1];
+    char __python_conn_warn_state[SQL_SQLSTATE_SIZE + 1];
+    char __python_stmt_warn_msg[DB2_MAX_ERR_MSG_LEN + 1];
+    char __python_stmt_warn_state[SQL_SQLSTATE_SIZE + 1];
 #ifdef PASE /* i5/OS ease of use turn off commit */
 	long i5_allow_commit;
 #endif /* PASE */
