@@ -191,7 +191,7 @@ if ibm_db_dir == '':
             sys.exit()
 
 if not os.path.isdir(ibm_db_lib):
-    ibm_db_lib = os.path.join(ibm_db_dir, 'lib\Win32')
+    ibm_db_lib = os.path.join(ibm_db_dir, 'lib')
     if not os.path.isdir(ibm_db_lib):
         sys.stdout.write("Cannot find %s directory. Check if you have set the IBM_DB_HOME environment variable's value correctly\n " %(ibm_db_lib))
         sys.exit()
