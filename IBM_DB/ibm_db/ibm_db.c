@@ -17,11 +17,12 @@
 | Authors: Manas Dadarkar, Salvador Ledezma, Sushant Koduru,               |
 |   Lynh Nguyen, Kanchana Padmanabhan, Dan Scott, Helmut Tessarek,         |
 |   Sam Ruby, Kellen Bombardier, Tony Cairns, Abhigyan Agrawal,            |
-|   Tarun Pasrija, Rahul Priyadarshi, Akshay Anand                         |
+|   Tarun Pasrija, Rahul Priyadarshi, Akshay Anand, Saba Kauser ,          |
+|   Hemlata Bhatt                                                          |
 +--------------------------------------------------------------------------+
 */
 
-#define MODULE_RELEASE "2.0.5"
+#define MODULE_RELEASE "2.0.6"
 
 #include <Python.h>
 #include <datetime.h>
