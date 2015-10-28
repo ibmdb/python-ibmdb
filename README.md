@@ -56,7 +56,7 @@ Use following pypi web location for downloading source code and binaries
   Oct 20th 2014: New Release of IBM_DB_SA (0.3.2) made.
 
 ### *Updated ibm_db*
-  Jan 1st 2015: A new release 2.0.5.1 of ibm_db and ibm_db_dbi
+  Oct 28th 2015: A new release 2.0.6 of ibm_db and ibm_db_dbi
   Note : 2.0.6 release is currently not available in https://pypi.python.org/pypi/ibm_db/ and ibm_db 2.0.5.1 will be replaced 
   shortly with the new release ibm_db 2.0.6.  
 
