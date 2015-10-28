@@ -165,3 +165,11 @@ only optimize for N rows issue #2 (defect #154260)
  
 2015/01/01 (setup.py 2.0.5.1, ibm_db-2.0.5.1, ibm_db_dbi-2.0.5.1)
  - Enhanced installation to pull IBM Data Server Driver automatically if not present
+
+2015/10/28 (setup.py 2.0.6, ibm_db-2.0.6, ibm_db_dbi-2.0.6)
+ - Added: Retrieving SQLW messages with Python API, ibm_db.stmt_warn()(defect #1303874)
+ - Fixed: Segmentation fault with call statement for a SP when NULL values are passed(issue #151)
+ - Fixed: Returning identity value for Iseries (defect #1303874)
+ - Fixed: Return relevant error message in case of closed connection (Issue #167)
+ - Fixed: Mac support enhancements to setup.py (Issue #184)
+ - Fixed: renamed README to README.md and updated setup.py
