@@ -200,6 +200,11 @@ class DatabaseWrapper( BaseDatabaseWrapper ):
             database_port = settings_dict['PORT']
             database_options = settings_dict['OPTIONS']
         
+        if 'SCHEMA' in settings_dict:
+            database_schema = settings_dict['SCHEMA']
+        else:
+            database_schema = settings_dict['USER']
+        
         if database_name != '' and isinstance( database_name, basestring ):
             kwargs['database'] = database_name
         else:
@@ -222,6 +227,9 @@ class DatabaseWrapper( BaseDatabaseWrapper ):
         
         if isinstance( database_options, dict ):
             kwargs['options'] = database_options
+        
+        if isinstance( database_options, dict ):
+            kwargs['schema'] = database_schema
         
         if ( djangoVersion[0:2] <= ( 1, 0 ) ):
            if( hasattr( settings, 'PCONNECT' ) ):
