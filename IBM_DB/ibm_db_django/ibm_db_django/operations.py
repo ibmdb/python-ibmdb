@@ -113,6 +113,12 @@ class DatabaseOperations ( BaseDatabaseOperations ):
             return 'BITOR(%s, %s)' % ( sub_expressions[0], sub_expressions[1] )
         elif operator == '^':
             return 'POWER(%s, %s)' % ( sub_expressions[0], sub_expressions[1] )
+        elif operator == '-':
+            if( djangoVersion[0:2] >= ( 1, 8 ) ):
+                str= sub_expressions[1]
+                sub_expressions[1]=str.replace('+', '-')
+                
+            return super( DatabaseOperations, self ).combine_expression( operator, sub_expressions )
         else:
             return super( DatabaseOperations, self ).combine_expression( operator, sub_expressions )
     
@@ -204,17 +210,22 @@ class DatabaseOperations ( BaseDatabaseOperations ):
             sql = sql % ( field_name, 4, '-01-01-00.00.00.000000' )
         return sql, []
         
-    # Function to Implements the date interval functionality for expressions
-    def date_interval_sql( self, sql, connector, timedelta ):
-        date_interval_token = []
-        date_interval_token.append( sql )
-        date_interval_token.append( str( timedelta.days ) + " DAYS" )
-        if timedelta.seconds > 0:
-            date_interval_token.append( str( timedelta.seconds ) + " SECONDS" )
-        if timedelta.microseconds > 0:
-            date_interval_token.append( str( timedelta.microseconds ) + " MICROSECONDS" )
-        sql = "( %s )" % connector.join( date_interval_token )
-        return sql
+    if( djangoVersion[0:2] >= ( 1, 8 ) ): 
+        def date_interval_sql( self, timedelta ):    
+            return " %d days + %d seconds + %d microseconds" % (
+                timedelta.days, timedelta.seconds, timedelta.microseconds), []
+          
+    else:
+        def date_interval_sql( self, sql, connector, timedelta ):
+            date_interval_token = []
+            date_interval_token.append( sql )
+            date_interval_token.append( str( timedelta.days ) + " DAYS" )
+            if timedelta.seconds > 0:
+                date_interval_token.append( str( timedelta.seconds ) + " SECONDS" )
+            if timedelta.microseconds > 0:
+                date_interval_token.append( str( timedelta.microseconds ) + " MICROSECONDS" )
+            sql = "( %s )" % connector.join( date_interval_token )
+            return sql
     
     #As casting is not required, so nothing is required to do in this function.
     def datetime_cast_sql( self ):
