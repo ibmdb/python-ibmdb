@@ -117,7 +117,6 @@ class DatabaseOperations ( BaseDatabaseOperations ):
             if( djangoVersion[0:2] >= ( 1, 8 ) ):
                 str= sub_expressions[1]
                 sub_expressions[1]=str.replace('+', '-')
-                
             return super( DatabaseOperations, self ).combine_expression( operator, sub_expressions )
         else:
             return super( DatabaseOperations, self ).combine_expression( operator, sub_expressions )
@@ -129,6 +128,9 @@ class DatabaseOperations ( BaseDatabaseOperations ):
         #       return bool( value )
         #else:
      return value
+    
+    def format_for_duration_arithmetic(self, sql):
+        return ' %s MICROSECONDS' % sql
     
     # Function to extract day, month or year from the date.
     # Reference: http://publib.boulder.ibm.com/infocenter/db2luw/v9r5/topic/com.ibm.db2.luw.sql.ref.doc/doc/r0023457.html
