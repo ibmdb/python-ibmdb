@@ -89,9 +89,41 @@ const int _check_i = 1;
 #if SQL_NO_TOTAL == 0
 #undef SQL_NO_TOTAL
 #define SQL_NO_TOTAL (-4)
+#endif
+
+// IBM i CLI doesn't support "LONG" varying types and instead
+// defines these as the same as the "short" varying types. This
+// causes problems in switch statements, since you have duplicate
+// case statements. Here we just define them to be what LUW
+// defines them as for consistency. It doesn't really matter, since
+// CLI won't actually return them.
+#if SQL_LONGVARCHAR == SQL_VARCHAR
+#define SQL_LONGVARCHAR_ORIG SQL_VARCHAR
+#undef SQL_LONGVARCHAR
+#define SQL_LONGVARCHAR -1
+#endif
+
+#if SQL_LONGVARBINARY == SQL_VARBINARY
+#define SQL_LONGVARBINARY_ORIG SQL_VARBINARY
+#undef SQL_LONGVARBINARY
+#define SQL_LONGVARBINARY -4
+#endif
+
+#if SQL_WLONGVARCHAR == SQL_WVARCHAR
+#define SQL_WLONGVARCHAR_ORIG SQL_WVARCHAR
+#undef SQL_WLONGVARCHAR
+#define SQL_WLONGVARCHAR -10
+#endif
+
+#if SQL_LONGVARGRAPHIC == SQL_VARGRAPHIC
+#define SQL_LONGVARGRAPHIC_ORIG SQL_VARGRAPHIC
+#undef SQL_LONGVARGRAPHIC
+#define SQL_LONGVARGRAPHIC -97
+#endif
+
+
 #define SQL_ATTR_CHAINING_BEGIN -1
 #define SQL_ATTR_CHAINING_END   -2
-#endif
 
 #ifndef SQL_ATTR_NON_HEXCCSID
 #define SQL_ATTR_NON_HEXCCSID 10203
@@ -496,16 +528,12 @@ static void _python_ibm_db_free_result_struct(stmt_handle* handle) {
 				switch (handle->column_info[i].type) {
 					case SQL_CHAR:
 					case SQL_VARCHAR:
-#ifndef PASE
 					case SQL_LONGVARCHAR:
-#endif
 					case SQL_WCHAR:
 					case SQL_WVARCHAR:
 					case SQL_GRAPHIC:
 					case SQL_VARGRAPHIC:
-#ifndef PASE
 					case SQL_LONGVARGRAPHIC:
-#endif
 					case SQL_BIGINT:
 					case SQL_DECIMAL:
 					case SQL_NUMERIC:
@@ -963,16 +991,12 @@ static int _python_ibm_db_bind_column_helper(stmt_handle *stmt_res)
 		switch(column_type) {
 			case SQL_CHAR:
 			case SQL_VARCHAR:
-#ifndef PASE
 			case SQL_LONGVARCHAR:
-#endif
 			case SQL_WCHAR:
 			case SQL_WVARCHAR:
 			case SQL_GRAPHIC:
 			case SQL_VARGRAPHIC:
-#ifndef PASE
 			case SQL_LONGVARGRAPHIC:
-#endif
 				in_length = stmt_res->column_info[i].size+1;
 				row_data->w_val = (SQLTCHAR *) ALLOC_N(SQLTCHAR, in_length);
 				rc = SQLBindCol((SQLHSTMT)stmt_res->hstmt, (SQLUSMALLINT)(i+1),
@@ -986,9 +1010,7 @@ static int _python_ibm_db_bind_column_helper(stmt_handle *stmt_res)
 				break;
 
 			case SQL_BINARY:
-#ifndef PASE
 			case SQL_LONGVARBINARY:
-#endif
 			case SQL_VARBINARY:
 				if ( stmt_res->s_bin_mode == CONVERT ) {
 					in_length = 2*(stmt_res->column_info[i].size)+1;
@@ -5556,9 +5578,7 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
 				if (curr->param_type == SQL_PARAM_OUTPUT || curr->param_type == SQL_PARAM_INPUT_OUTPUT) {
 					if (curr->size == 0) {
 						if ((curr->data_type == SQL_BLOB) || (curr->data_type == SQL_CLOB) || (curr->data_type == SQL_BINARY)
-#ifndef PASE
 								|| (curr->data_type == SQL_LONGVARBINARY)
-#endif
 								|| (curr->data_type == SQL_VARBINARY) || (curr->data_type == SQL_XML)) {
 							if (curr->ivalue <= curr->param_size) {
 								curr->ivalue = curr->param_size + sizeof(SQLTCHAR);
@@ -5608,9 +5628,7 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
 						break;
 					
 					case SQL_BINARY:
-#ifndef PASE
 					case SQL_LONGVARBINARY:
-#endif
 					case SQL_VARBINARY:
 						/* account for bin_mode settings as well */
 						curr->bind_indicator = param_length;
@@ -5722,9 +5740,7 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
 						break;
 	
 					case SQL_BINARY:
-#ifndef PASE
 					case SQL_LONGVARBINARY:
-#endif
 					case SQL_VARBINARY:
 					case SQL_XML:
 						/* account for bin_mode settings as well */
@@ -7839,10 +7855,8 @@ static PyObject *ibm_db_result(PyObject *self, PyObject *args)
 		case SQL_WVARCHAR:
 		case SQL_GRAPHIC:
 		case SQL_VARGRAPHIC:
-#ifndef PASE
 		case SQL_LONGVARCHAR:
 		case SQL_LONGVARGRAPHIC:
-#endif
 		case SQL_BIGINT:
 		case SQL_DECIMAL:
 		case SQL_NUMERIC:
@@ -8053,9 +8067,7 @@ static PyObject *ibm_db_result(PyObject *self, PyObject *args)
 
 		case SQL_BLOB:
 		case SQL_BINARY:
-#ifndef PASE
 		case SQL_LONGVARBINARY:
-#endif
 		case SQL_VARBINARY:
 			switch (stmt_res->s_bin_mode) {
 				case PASSTHRU:
@@ -8267,17 +8279,13 @@ static PyObject *_python_ibm_db_bind_fetch_helper(PyObject *args, int op)
 				case SQL_WVARCHAR:
 				case SQL_GRAPHIC:
 				case SQL_VARGRAPHIC:
-#ifndef PASE
 				case SQL_LONGVARGRAPHIC:
-#endif
 					tmp_length = stmt_res->column_info[column_number].size;
 					value = getSQLTCharAsPyUnicodeObject(row_data->w_val, out_length);
 					break;
 
-#ifndef PASE
 				case SQL_LONGVARCHAR:
 				case SQL_WLONGVARCHAR:
-#endif
 					/* IBM i will xlate from EBCIDIC to ASCII (via SQLGetData) */
 					tmp_length = stmt_res->column_info[column_number].size;
 
@@ -8374,9 +8382,7 @@ static PyObject *_python_ibm_db_bind_fetch_helper(PyObject *args, int op)
 					break;
 
 				case SQL_BINARY:
-#ifndef PASE
 				case SQL_LONGVARBINARY:
-#endif
 				case SQL_VARBINARY:
 					if ( stmt_res->s_bin_mode == PASSTHRU ) {
 						value = PyBytes_FromStringAndSize("", 0);
@@ -10259,9 +10265,7 @@ static PyObject* ibm_db_execute_many (PyObject *self, PyObject *args) {
 								switch( curr->data_type ) {
 									case SQL_BLOB:
 									case SQL_BINARY:
-#ifndef PASE /* i5/OS SQL_LONGVARBINARY is SQL_VARBINARY */
 									case SQL_LONGVARBINARY:
-#endif /* PASE */
 									case SQL_VARBINARY:
 										valueType = SQL_C_BINARY;
 										break;
@@ -10273,9 +10277,7 @@ static PyObject* ibm_db_execute_many (PyObject *self, PyObject *args) {
 								switch( curr->data_type ) {
 									case SQL_BLOB:
 									case SQL_BINARY:
-#ifndef PASE /* i5/OS SQL_LONGVARBINARY is SQL_VARBINARY */
 									case SQL_LONGVARBINARY:
-#endif /* PASE */
 									case SQL_VARBINARY:
 										valueType = SQL_C_BINARY;
 										break;
@@ -10827,6 +10829,26 @@ static struct PyModuleDef moduledef = {
 		-1,
 		ibm_db_Methods,
 	};
+#endif
+
+#ifdef SQL_LONGVARCHAR_ORIG
+#undef SQL_LONGVARCHAR
+#define SQL_LONGVARCHAR SQL_LONGVARCHAR_ORIG
+#endif
+
+#ifdef SQL_LONGVARBINARY_ORIG
+#undef SQL_LONGVARBINARY
+#define SQL_LONGVARBINARY SQL_LONGVARBINARY_ORIG
+#endif
+
+#ifdef SQL_WLONGVARCHAR_ORIG
+#undef SQL_WLONGVARCHAR
+#define SQL_WLONGVARCHAR SQL_WLONGVARCHAR_ORIG
+#endif
+
+#ifdef SQL_LONGVARGRAPHIC_ORIG
+#undef SQL_LONGVARGRAPHIC
+#define SQL_LONGVARGRAPHIC SQL_LONGVARGRAPHIC_ORIG
 #endif
 
 /* Module initialization function */
