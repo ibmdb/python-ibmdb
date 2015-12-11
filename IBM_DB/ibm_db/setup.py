@@ -235,8 +235,6 @@ if (sys.platform[0:3] == 'win'):
         ext_modules = _ext_modules(ibm_db_include, library, ibm_db_lib)
 
 extra = {}
-if sys.version_info >= (3, ):
-    extra['use_2to3'] = True
 
 setup( name    = PACKAGE, 
        version = VERSION,
@@ -264,6 +262,9 @@ setup( name    = PACKAGE,
        package_data = package_data,
        data_files   = data_files,
        include_package_data = True,
+       install_requires = [
+           'six'
+       ],
        **extra
      )
 

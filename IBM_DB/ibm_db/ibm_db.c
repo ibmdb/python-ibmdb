@@ -7406,8 +7406,10 @@ static PyObject *ibm_db_field_type(PyObject *self, PyObject *args)
 		case SQL_REAL:
 		case SQL_FLOAT:
 		case SQL_DOUBLE:
-		case SQL_DECFLOAT:
 			str_val = "real";
+			break;
+		case SQL_DECFLOAT:
+			str_val = "decfloat";
 			break;
 		case SQL_DECIMAL:
 		case SQL_NUMERIC:
@@ -7736,7 +7738,8 @@ static RETCODE _python_ibm_db_get_data(stmt_handle *stmt_res, int col_num, short
  *
  * Returns a single column from a row in the result set
  *
- * Use ibm_db.result() to return the value of a specified column in the current  * row of a result set. You must call ibm_db.fetch_row() before calling
+ * Use ibm_db.result() to return the value of a specified column in the current
+ * row of a result set. You must call ibm_db.fetch_row() before calling
  * ibm_db.result() to set the location of the result set pointer.
  *
  * ===Parameters
@@ -7745,7 +7748,8 @@ static RETCODE _python_ibm_db_get_data(stmt_handle *stmt_res, int col_num, short
  *		A valid stmt resource.
  *
  * ====column
- *		Either an integer mapping to the 0-indexed field in the result set, or  * a string matching the name of the column.
+ *		Either an integer mapping to the 0-indexed field in the result set, or
+ * a string matching the name of the column.
  *
  * ===Return Values
  *
