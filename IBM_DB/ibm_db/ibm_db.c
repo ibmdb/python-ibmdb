@@ -933,33 +933,50 @@ static int _python_ibm_db_get_result_set_info(stmt_handle *stmt_res)
 	  }
 #ifdef PASE
 	  // TODO: Move this in to CLI
-	  switch(stmt_res->column_info[i].type)
-	  {
-		  case SQL_TINYINT:
-			  stmt_res->column_info[i].size = 3;
-			  break;
-			  
-		  case SQL_SMALLINT:
-			  stmt_res->column_info[i].size = 5;
-			  break;
+	  SQLINTEGER ccsid = 0;
+	  SQLColAttributes((SQLHSTMT)stmt_res->hstmt, i+1, SQL_DESC_COLUMN_CCSID, NULL, 0, NULL, &ccsid);
+	  
+	switch(stmt_res->column_info[i].type)
+	{
+		case SQL_TINYINT:
+			stmt_res->column_info[i].size = 3;
+			break;
+			
+		case SQL_SMALLINT:
+			stmt_res->column_info[i].size = 5;
+			break;
 
-		  case SQL_INTEGER:
-			  stmt_res->column_info[i].size = 10;
-			  break;
-			  
-		  case SQL_BIGINT:
-			  stmt_res->column_info[i].size = 19;
-			  break;
-			  
-		  case SQL_REAL:
-			  stmt_res->column_info[i].size = 7;
-			  break;
-			  
-		  case SQL_FLOAT:
-		  case SQL_DOUBLE:
-			  stmt_res->column_info[i].size = 15;
-			  break;
-			  
+		case SQL_INTEGER:
+			stmt_res->column_info[i].size = 10;
+			break;
+			
+		case SQL_BIGINT:
+			stmt_res->column_info[i].size = 19;
+			break;
+			
+		case SQL_REAL:
+			stmt_res->column_info[i].size = 7;
+			break;
+			
+		case SQL_FLOAT:
+		case SQL_DOUBLE:
+			stmt_res->column_info[i].size = 15;
+			break;
+			
+		case SQL_CHAR:
+			if(ccsid == 65535)
+			{
+				stmt_res->column_info[i].type = SQL_BINARY;
+			}
+			break;
+			
+		case SQL_VARCHAR:
+			if(ccsid == 65535)
+			{
+				stmt_res->column_info[i].type = SQL_VARBINARY;
+			}
+			break;
+			
 		  default:
 			  break;
 	  }
@@ -1040,8 +1057,14 @@ static int _python_ibm_db_bind_column_helper(stmt_handle *stmt_res)
 					}
 
 					Py_BEGIN_ALLOW_THREADS;
+                    
 					rc = SQLBindCol((SQLHSTMT)stmt_res->hstmt, (SQLUSMALLINT)(i+1),
-						SQL_C_DEFAULT, row_data->str_val, in_length,
+#ifdef PASE
+						SQL_C_BINARY,
+#else
+                        SQL_C_DEFAULT,
+#endif
+                        row_data->str_val, in_length,
 						(SQLINTEGER *)(&stmt_res->row_data[i].out_length));
 					Py_END_ALLOW_THREADS;
 
