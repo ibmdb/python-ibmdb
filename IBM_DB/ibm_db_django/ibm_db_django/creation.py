@@ -109,7 +109,7 @@ class DatabaseCreation ( BaseDatabaseCreation ):
         # ignore tablespace information
         tablespace_sql = ''
         i = 0
-        if 'DB2' not in getattr(self.connection.connection, dbms_name):
+        if( djangoVersion[0:2] >= ( 1, 8 ) and  'DB2' not in getattr(self.connection.connection, dbms_name)) or getattr(self.connection.connection, dbms_name) != 'DB2':
             if len( model._meta.unique_together_index ) != 0:
                 for unique_together_index in model._meta.unique_together_index:
                     i = i + 1
