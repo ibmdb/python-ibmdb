@@ -71,11 +71,13 @@ class DatabaseCreation ( BaseDatabaseCreation ):
         'URLField':                     'VARCHAR2(%(max_length)s)',
         'XMLField':                     'XML',
         'BinaryField':                  'BLOB',
+        
     }
     
     if( djangoVersion[0:2] >= ( 1, 8 ) ):
         data_types.update({
             'UUIDField':                 'VARCHAR(255)',
+            "DurationField":                'DOUBLE',
         })
     if( djangoVersion[0:2] <= ( 1, 6 ) ):
         data_types.update({
@@ -107,7 +109,7 @@ class DatabaseCreation ( BaseDatabaseCreation ):
         # ignore tablespace information
         tablespace_sql = ''
         i = 0
-        if getattr(self.connection.connection, dbms_name) != 'DB2':
+        if 'DB2' not in getattr(self.connection.connection, dbms_name):
             if len( model._meta.unique_together_index ) != 0:
                 for unique_together_index in model._meta.unique_together_index:
                     i = i + 1
