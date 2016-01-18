@@ -121,13 +121,17 @@ class DatabaseOperations ( BaseDatabaseOperations ):
         else:
             return super( DatabaseOperations, self ).combine_expression( operator, sub_expressions )
     
-    def convert_binaryfield_value( self,value, expression, context ):
+    if( djangoVersion[0:2] >= ( 1, 8 ) ):
+        def convert_binaryfield_value( self,value, expression,connections, context ):
+            return value    
+    else:
+        def convert_binaryfield_value( self,value, expression, context ):
         # field_type = field.get_internal_type()
         # if field_type in ( 'BooleanField', 'NullBooleanField' ):
         #    if value in ( 0, 1 ):
         #       return bool( value )
         #else:
-     return value
+            return value
  
     if( djangoVersion[0:2] >= ( 1, 8 ) ):
         def format_for_duration_arithmetic(self, sql):
