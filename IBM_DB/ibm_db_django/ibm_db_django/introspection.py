@@ -101,7 +101,8 @@ class DatabaseIntrospection( BaseDatabaseIntrospection ):
             for table in cursor.connection.tables( cursor.connection.get_current_schema() ):
                 if( djangoVersion[0:2] < ( 1, 8 ) ):
                     table_list.append( table['TABLE_NAME'].lower() )
-            table_list.append(TableInfo( table['TABLE_NAME'].lower(),'t'))
+                else:
+                    table_list.append(TableInfo( table['TABLE_NAME'].lower(),'t'))
         else:
             cursor.execute( "select current_schema from sysibm.sysdummy1" )
             schema = cursor.fetchone()[0]
