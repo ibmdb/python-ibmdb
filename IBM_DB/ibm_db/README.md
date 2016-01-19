@@ -5,7 +5,7 @@ We are assuming that you have Python already installed. In Linux you may need th
  
 ## Installation 
 ```
-  pip install ibm_db
+  easy_install ibm_db
 ```
  
 This will install *ibm_db* and *ibm_db_dbi* module.
@@ -22,6 +22,42 @@ Type "help", "copyright", "credits" or "license" for more information.
 >>> import ibm_db_dbi
 >>> conn = ibm_db_dbi.Connection(ibm_db_conn)
 >>> conn.tables('SYSCAT', '%')
+```
+### Issues with MAC OS X
+1. If you run into errors for libdb2.dylib as below:
+
+```
+>>> import ibm_db
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+ImportError: dlopen(/usr/local/lib/python3.5/site-packages/ibm_db.cpython-35m-darwin.so, 2): Library not loaded: libdb2.dylib
+  Referenced from: /usr/local/lib/python3.5/site-packages/ibm_db.cpython-35m-darwin.so
+  Reason: image not found
+  
+```
+
+You would need to set LD_LIBRARY_PATH to point to lib folder as per the installation location of clidriver in your environment. Assuming the driver is installed at /usr/local/lib/python3.5/site-packages/clidriver, you can set the path as:
+
+```
+export DYLD_LIBRARY_PATH=/usr/local/lib/python3.5/site-packages/clidriver/lib:$DYLD_LIBRARY_PATH
+
+```
+
+2. Resolving SQL1042C error
+
+If you hit following error while attempting to connect to a database:
+
+```
+>>> import ibm_db
+>>> ibm_db.connect("my_connection_string", "", "")
+ Traceback (most recent call last):
+   File "<stdin>", line 1, in <module>
+ Exception: [IBM][CLI Driver] SQL1042C An unexpected system error occurred. SQLSTATE=58004 SQLCODE=-1042   
+```
+Set LD_LIBRARY_PATH to point to icc folder as per the installation location of clidriver in your environment.
+
+```
+export DYLD_LIBRARY_PATH=/usr/local/lib/python3.5/site-packages/clidriver/lib/icc:$DYLD_LIBRARY_PATH
 ```
 
 ##Supported databases
