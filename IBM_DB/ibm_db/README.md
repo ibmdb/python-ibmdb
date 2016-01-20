@@ -7,7 +7,11 @@ We are assuming that you have Python already installed. In Linux you may need th
 ```
   easy_install ibm_db
 ```
- 
+You can also install the driver from an egg file included with the IBM data server products. The IBM data server client and IBM Data Server Driver Package software include the ibm_db driver egg file under (dsdriver install  path)/pythonXX and you can install it as:
+
+```
+$ easy_install ibm_db-X.X.X-pyX.X-XXXXXXXX.egg
+```
 This will install *ibm_db* and *ibm_db_dbi* module.
 
 ###IBM_DB and DB-API wrapper (ibm_db_dbi) sanity test 
@@ -24,7 +28,7 @@ Type "help", "copyright", "credits" or "license" for more information.
 >>> conn.tables('SYSCAT', '%')
 ```
 ### Issues with MAC OS X
-1. If you run into errors for libdb2.dylib as below:
+* If you run into errors for libdb2.dylib as below:
 
 ```
 >>> import ibm_db
@@ -43,7 +47,7 @@ export DYLD_LIBRARY_PATH=/usr/local/lib/python3.5/site-packages/clidriver/lib:$D
 
 ```
 
-2. Resolving SQL1042C error
+* Resolving SQL1042C error
 
 If you hit following error while attempting to connect to a database:
 
@@ -134,3 +138,9 @@ If trusted context is not set up, there will be two failures related to trusted 
 1. The rowcount for select statements can not be generated.
 2. Some warnings from the drivers are not caught by the wrapper.
    As such these might go unnoticed.
+
+# APIs
+
+For more information on the APIs supported by ibm_db, please refer to below link:
+
+https://github.com/ibmdb/python-ibmdb/wiki/APIs
