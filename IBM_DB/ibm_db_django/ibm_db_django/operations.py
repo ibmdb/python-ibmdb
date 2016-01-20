@@ -76,6 +76,33 @@ class DatabaseOperations ( BaseDatabaseOperations ):
         #DB2 doesn't have sample variance function
         elif aggregate.sql_function == 'VAR_SAMP':
             raise NotImplementedError("sample variance function not supported")
+        
+    def get_db_converters(self, expression):
+        converters =super(DatabaseOperations, self).get_db_converters(expression)
+        
+        field_type = expression.output_field.get_internal_type()
+        if field_type in ( 'BinaryField',  ):
+            converters.append(self.convert_binaryfield_value)   
+        #  else:
+        #   converters.append(self.convert_empty_values)
+        """Get a list of functions needed to convert field data.
+
+        Some field types on some backends do not provide data in the correct
+        format, this is the hook for coverter functions.
+        """
+        return converters
+    
+    def convert_empty_values(self, value, expression, context):
+        # Oracle stores empty strings as null. We need to undo this in
+        # order to adhere to the Django convention of using the empty
+        # string instead of null, but only if the field accepts the
+        # empty string.
+        field = expression.output_field
+        if value is None and field.empty_strings_allowed:
+            value = ''
+            if field.get_internal_type() == 'BinaryField':
+                value = b''
+        return value
     
     def combine_expression( self, operator, sub_expressions ):
         if operator == '%%':
@@ -86,16 +113,29 @@ class DatabaseOperations ( BaseDatabaseOperations ):
             return 'BITOR(%s, %s)' % ( sub_expressions[0], sub_expressions[1] )
         elif operator == '^':
             return 'POWER(%s, %s)' % ( sub_expressions[0], sub_expressions[1] )
+        elif operator == '-':
+            if( djangoVersion[0:2] >= ( 1, 8 ) ):
+                str= sub_expressions[1]
+                sub_expressions[1]=str.replace('+', '-')
+            return super( DatabaseOperations, self ).combine_expression( operator, sub_expressions )
         else:
             return super( DatabaseOperations, self ).combine_expression( operator, sub_expressions )
     
-    def convert_values( self, value, field ):
-        field_type = field.get_internal_type()
-        if field_type in ( 'BooleanField', 'NullBooleanField' ):
-            if value in ( 0, 1 ):
-                return bool( value )
-        else:
+    if( djangoVersion[0:2] >= ( 1, 8 ) ):
+        def convert_binaryfield_value( self,value, expression,connections, context ):
+            return value    
+    else:
+        def convert_binaryfield_value( self,value, expression, context ):
+        # field_type = field.get_internal_type()
+        # if field_type in ( 'BooleanField', 'NullBooleanField' ):
+        #    if value in ( 0, 1 ):
+        #       return bool( value )
+        #else:
             return value
+ 
+    if( djangoVersion[0:2] >= ( 1, 8 ) ):
+        def format_for_duration_arithmetic(self, sql):
+            return ' %s MICROSECONDS' % sql
     
     # Function to extract day, month or year from the date.
     # Reference: http://publib.boulder.ibm.com/infocenter/db2luw/v9r5/topic/com.ibm.db2.luw.sql.ref.doc/doc/r0023457.html
@@ -177,17 +217,22 @@ class DatabaseOperations ( BaseDatabaseOperations ):
             sql = sql % ( field_name, 4, '-01-01-00.00.00.000000' )
         return sql, []
         
-    # Function to Implements the date interval functionality for expressions
-    def date_interval_sql( self, sql, connector, timedelta ):
-        date_interval_token = []
-        date_interval_token.append( sql )
-        date_interval_token.append( str( timedelta.days ) + " DAYS" )
-        if timedelta.seconds > 0:
-            date_interval_token.append( str( timedelta.seconds ) + " SECONDS" )
-        if timedelta.microseconds > 0:
-            date_interval_token.append( str( timedelta.microseconds ) + " MICROSECONDS" )
-        sql = "( %s )" % connector.join( date_interval_token )
-        return sql
+    if( djangoVersion[0:2] >= ( 1, 8 ) ): 
+        def date_interval_sql( self, timedelta ):    
+            return " %d days + %d seconds + %d microseconds" % (
+                timedelta.days, timedelta.seconds, timedelta.microseconds), []
+          
+    else:
+        def date_interval_sql( self, sql, connector, timedelta ):
+            date_interval_token = []
+            date_interval_token.append( sql )
+            date_interval_token.append( str( timedelta.days ) + " DAYS" )
+            if timedelta.seconds > 0:
+                date_interval_token.append( str( timedelta.seconds ) + " SECONDS" )
+            if timedelta.microseconds > 0:
+                date_interval_token.append( str( timedelta.microseconds ) + " MICROSECONDS" )
+            sql = "( %s )" % connector.join( date_interval_token )
+            return sql
     
     #As casting is not required, so nothing is required to do in this function.
     def datetime_cast_sql( self ):

@@ -34,7 +34,7 @@ except ImportError:
 from django.conf import settings
 from django.core.management import call_command
 from django import VERSION as djangoVersion
-from django.db.backends.util import truncate_name
+from django.db.backends.utils import truncate_name
 
 if _IS_JYTHON:
     dbms_name = 'dbname'
@@ -71,8 +71,14 @@ class DatabaseCreation ( BaseDatabaseCreation ):
         'URLField':                     'VARCHAR2(%(max_length)s)',
         'XMLField':                     'XML',
         'BinaryField':                  'BLOB',
+        
     }
     
+    if( djangoVersion[0:2] >= ( 1, 8 ) ):
+        data_types.update({
+            'UUIDField':                 'VARCHAR(255)',
+            "DurationField":                'DOUBLE',
+        })
     if( djangoVersion[0:2] <= ( 1, 6 ) ):
         data_types.update({
             'BooleanField':                 'SMALLINT CHECK (%(attname)s IN (0,1))',
@@ -103,7 +109,7 @@ class DatabaseCreation ( BaseDatabaseCreation ):
         # ignore tablespace information
         tablespace_sql = ''
         i = 0
-        if getattr(self.connection.connection, dbms_name) != 'DB2':
+        if( djangoVersion[0:2] >= ( 1, 8 ) and  'DB2' not in getattr(self.connection.connection, dbms_name)) or getattr(self.connection.connection, dbms_name) != 'DB2':
             if len( model._meta.unique_together_index ) != 0:
                 for unique_together_index in model._meta.unique_together_index:
                     i = i + 1
@@ -151,7 +157,7 @@ class DatabaseCreation ( BaseDatabaseCreation ):
     # If test database already exists then it takes confirmation from user to recreate that database .
     # If create test database not supported in current scenario then it takes confirmation from user to use settings file's database name as test database
     # For Jython this method prepare the settings file's database. First it drops the tables from the database,then create tables on the basis of installed models.
-    def create_test_db( self, verbosity = 0, autoclobber = False ):
+    def create_test_db( self, verbosity = 0, autoclobber = False , keepdb=False,serialize=False):
         kwargs = self.__create_test_kwargs()
         if not _IS_JYTHON:
             old_database = kwargs['database']

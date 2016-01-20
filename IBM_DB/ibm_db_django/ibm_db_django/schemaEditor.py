@@ -29,9 +29,10 @@ except ImportError:
 
 from django.utils import six
 from django.db import models
-from django.db.backends.util import truncate_name
+from django.db.backends.utils import truncate_name
 from django.db.models.fields.related import ManyToManyField
 from django.db.utils import ProgrammingError
+from django import VERSION as djangoVersion
 if not _IS_JYTHON:
     import ibm_db_dbi as Database
 else:
@@ -66,6 +67,13 @@ class DB2SchemaEditor(BaseDatabaseSchemaEditor):
             if (field.default is not None) and field.has_default():
                 value = field.get_default()
                 value = self.prepare_default(value)
+                if( djangoVersion[0:2] >= ( 1, 8 ) ):
+                    if isinstance(field,models.BinaryField ):
+                        if (value=="''"):
+                            value  = 'EMPTY_BLOB()'
+                        else:                       
+                            value='blob( %s'  %value + ')'
+                                            
                 sql += " DEFAULT %s" % value
             else:
                 field.default = None
@@ -237,7 +245,7 @@ class DB2SchemaEditor(BaseDatabaseSchemaEditor):
             #Drop all incoming FK constraint, if require we will make it again
             if old_field.primary_key and new_field.primary_key:
                 rebuild_incomming_fk = True
-                for incoming_fks in old_field.model._meta.get_all_related_objects():
+                for incoming_fks in old_field.model._meta.get_fields():
                     fk_names = self._constraint_names(incoming_fks.model, [incoming_fks.field.column], foreign_key=True)
                     for fk_name in fk_names:
                         self.execute(
@@ -547,8 +555,8 @@ class DB2SchemaEditor(BaseDatabaseSchemaEditor):
                           'unique': {},
                           'index': {},
                           'check': {}}
-        rel_old_field = old_field.rel.through._meta.get_field_by_name(old_field.m2m_reverse_field_name())[0]
-        rel_new_field = new_field.rel.through._meta.get_field_by_name(new_field.m2m_reverse_field_name())[0]
+        rel_old_field = old_field.rel.through._meta.get_field(old_field.m2m_reverse_field_name())[0]
+        rel_new_field = new_field.rel.through._meta.get_field(new_field.m2m_reverse_field_name())[0]
 
         with self.connection.cursor() as cur:
             constraints = self.connection.introspection.get_constraints(cur, old_field.rel.through._meta.db_table)
