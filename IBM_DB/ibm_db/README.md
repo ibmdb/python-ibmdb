@@ -14,6 +14,11 @@ $ easy_install ibm_db-X.X.X-pyX.X-XXXXXXXX.egg
 ```
 This will install *ibm_db* and *ibm_db_dbi* module.
 
+You can also install the driver from source using ibm_db driver's setup.py as:
+
+```
+python setup.py install
+```
 ###IBM_DB and DB-API wrapper (ibm_db_dbi) sanity test 
 
 ```
