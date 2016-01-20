@@ -7,18 +7,9 @@ We are assuming that you have Python already installed. In Linux you may need th
 ```
   easy_install ibm_db
 ```
-You can also install the driver from an egg file included with the IBM data server products. The IBM data server client and IBM Data Server Driver Package software include the ibm_db driver egg file under (dsdriver install  path)/pythonXX and you can install it as:
-
-```
-$ easy_install ibm_db-X.X.X-pyX.X-XXXXXXXX.egg
-```
 This will install *ibm_db* and *ibm_db_dbi* module.
 
-You can also install the driver from source using ibm_db driver's setup.py as:
 
-```
-python setup.py install
-```
 ###IBM_DB and DB-API wrapper (ibm_db_dbi) sanity test 
 
 ```
@@ -45,7 +36,7 @@ ImportError: dlopen(/usr/local/lib/python3.5/site-packages/ibm_db.cpython-35m-da
   
 ```
 
-You would need to set LD_LIBRARY_PATH to point to lib folder as per the installation location of clidriver in your environment. Assuming the driver is installed at /usr/local/lib/python3.5/site-packages/clidriver, you can set the path as:
+You would need to set DYLD_LIBRARY_PATH to point to lib folder as per the installation location of clidriver in your environment. Assuming the driver is installed at /usr/local/lib/python3.5/site-packages/clidriver, you can set the path as:
 
 ```
 export DYLD_LIBRARY_PATH=/usr/local/lib/python3.5/site-packages/clidriver/lib:$DYLD_LIBRARY_PATH
@@ -63,7 +54,7 @@ If you hit following error while attempting to connect to a database:
    File "<stdin>", line 1, in <module>
  Exception: [IBM][CLI Driver] SQL1042C An unexpected system error occurred. SQLSTATE=58004 SQLCODE=-1042   
 ```
-Set LD_LIBRARY_PATH to point to icc folder as per the installation location of clidriver in your environment.
+Set DYLD_LIBRARY_PATH to point to icc folder as per the installation location of clidriver in your environment.
 
 ```
 export DYLD_LIBRARY_PATH=/usr/local/lib/python3.5/site-packages/clidriver/lib/icc:$DYLD_LIBRARY_PATH
