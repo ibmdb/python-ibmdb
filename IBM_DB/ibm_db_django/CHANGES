@@ -1,5 +1,8 @@
 Change Log
 =============
+28/01/2016
+- Added support for Django-1.8.3, with backward compatibility
+
 2014/11/21 (setup.py 1.0.7)
  - Added support for Django-1.7, with backward compatibility
  - Added Schema migration support for Django's schema migration implementation
