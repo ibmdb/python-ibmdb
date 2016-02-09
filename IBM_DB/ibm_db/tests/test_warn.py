@@ -3,6 +3,12 @@
 #
 #  (c) Copyright IBM Corp. 2007-2016
 #
+
+import unittest, sys
+import ibm_db
+import config
+from testfunctions import IbmDbTestFunctions
+
 class IbmDbTestCase(unittest.TestCase):
     def test_warn(self):
         obj = IbmDbTestFunctions()
@@ -13,8 +19,9 @@ class IbmDbTestCase(unittest.TestCase):
         
         # Get the server type
         serverinfo = ibm_db.server_info( conn )
-        
+    
         if conn:
+
             drop = "DROP TABLE WITH_CLOB"
             try:
                 result = ibm_db.exec_immediate(conn,drop)
@@ -22,11 +29,16 @@ class IbmDbTestCase(unittest.TestCase):
                 pass
 
             # Create the table with_clob
-            create = "CREATE TABLE WITH_CLOB (id SMALLINT NOT NULL, clob_col CLOB(1k))"
+
+            if (serverinfo.DBMS_NAME[0:3] != 'IDS'): 
+                create = "CREATE TABLE WITH_CLOB (id SMALLINT NOT NULL, clob_col CLOB(1k))"
+            else:
+                create = "CREATE TABLE WITH_CLOB (id SMALLINT NOT NULL, clob_col CLOB(smart))"
             result = ibm_db.exec_immediate(conn, create)
 
             # Select the result from the table. This is just to verify we get appropriate warning using
             # ibm_db.stmt_warn() API
+
             query = 'SELECT * FROM WITH_CLOB'
             if (serverinfo.DBMS_NAME[0:3] != 'IDS'):
                 stmt = ibm_db.prepare(conn, query, {ibm_db.SQL_ATTR_CURSOR_TYPE: ibm_db.SQL_CURSOR_KEYSET_DRIVEN})
@@ -35,7 +47,6 @@ class IbmDbTestCase(unittest.TestCase):
 
             ibm_db.execute(stmt)
             print(ibm_db.stmt_warn(stmt))
-
             data = ibm_db.fetch_both( stmt )
             if data:
                 print("Success")
