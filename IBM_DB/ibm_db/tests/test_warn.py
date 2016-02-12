@@ -46,7 +46,6 @@ class IbmDbTestCase(unittest.TestCase):
                stmt = ibm_db.prepare(conn, query)
 
             ibm_db.execute(stmt)
-            print(ibm_db.stmt_warn(stmt))
             data = ibm_db.fetch_both( stmt )
             if data:
                 print("Success")
@@ -62,8 +61,8 @@ class IbmDbTestCase(unittest.TestCase):
 #[IBM][CLI Driver] CLI0005W  Option value changed. SQLSTATE=01S02 SQLCODE=-99999
 #No Data
 #__ZOS_EXPECTED__
-#[IBM][CLI Driver] CLI0005W  Option value changed. SQLSTATE=01S02 SQLCODE=-99999No Data[IBM][CLI Driver][DB2] SQL0100W  
-#No row was found for FETCH, UPDATE or DELETE; or the result of a query is an empty table.  SQLSTATE=02000 SQLCODE=100
+#No Data[IBM][CLI Driver][DB2]
+# SQL0100W  No row was found for FETCH, UPDATE or DELETE; or the result of a query is an empty table.  SQLSTATE=02000 SQLCODE=100
 #__SYSTEMI_EXPECTED__
 #No Data
 #__IDS_EXPECTED__
