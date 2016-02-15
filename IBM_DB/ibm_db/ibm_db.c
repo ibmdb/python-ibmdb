@@ -9248,6 +9248,7 @@ static PyObject *ibm_db_server_info(PyObject *self, PyObject *args)
 #ifndef PASE	  /* i5/OS ISOLATION_OPTION handled natively */
 		/* ISOLATION_OPTION */
 		bitmask = 0;
+		count = 0;
 		memset(buffer11, 0, sizeof(buffer11));
 
 		Py_BEGIN_ALLOW_THREADS;
