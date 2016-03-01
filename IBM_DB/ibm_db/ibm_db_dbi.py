@@ -780,7 +780,14 @@ class Connection(object):
         """
         self.current_schema = schema_name
         try:
-          is_set = ibm_db.set_option(self.conn_handler, {SQL_ATTR_CURRENT_SCHEMA : schema_name}, 1)
+          if not _is_ibmi():
+              is_set = ibm_db.set_option(self.conn_handler, {SQL_ATTR_CURRENT_SCHEMA : schema_name}, 1)
+          else:
+              stmt = ibm_db.prepare(self.conn_handler, "set current schema = ?")
+              if(stmt):
+                  is_set = ibm_db.execute(stmt, (schema_name, ))
+              else:
+                  is_set = False     
         except Exception as inst:
           raise _get_exception(inst)
         return is_set
@@ -790,9 +797,14 @@ class Connection(object):
         """Return: current setting of the schema attribute
         """
         try:
-          conn_schema = ibm_db.get_option(self.conn_handler, SQL_ATTR_CURRENT_SCHEMA, 1)
-          if conn_schema is not None and conn_schema != '':
-            self.current_schema = conn_schema
+          if not _is_ibmi():
+              conn_schema = ibm_db.get_option(self.conn_handler, SQL_ATTR_CURRENT_SCHEMA, 1)
+              if conn_schema is not None and conn_schema != '':
+                self.current_schema = conn_schema
+          else:
+              stmt = ibm_db.exec_immediate(self.conn_handler, "select current_schema from sysibm.sysdummy1")
+              result = ibm_db.fetch_both(stmt)
+              self.current_schema = result[0]
         except Exception as inst:
           raise _get_exception(inst)
         return self.current_schema
@@ -1218,6 +1230,8 @@ class Cursor(object):
             pass
 
         try:
+            # Uncomment the below print line for debug purposes
+            #print("operation=", operation)
             self.stmt_handler = ibm_db.prepare(self.conn_handler, operation)
         except Exception as inst:
             self.messages.append(_get_exception(inst))
@@ -1252,8 +1266,17 @@ class Cursor(object):
                     param = str(param)
                 buff.append(param)
             parameters = tuple(buff)
-            try:                
-                return_value = ibm_db.execute(self.stmt_handler, parameters)
+            try:   
+                if not _is_ibmi():
+                    return_value = ibm_db.execute(self.stmt_handler, parameters)	
+                else:
+                    # On IBM i we need to temporarily switch to using the System Reply List (*SYSRPYL) 
+                    # in case someone has added a reply list entry for the following message ID:
+                    # CPA32B2 -  Change of file &1 may cause data to be lost. (C I)
+                    # Once the SQL statement has been processed we immediately switch back to *RQD.                                                                         					
+                    ibm_db.exec_immediate(self.conn_handler, "CALL QSYS2.QCMDEXC('CHGJOB INQMSGRPY(*SYSRPYL)')")            
+                    return_value = ibm_db.execute(self.stmt_handler, parameters)
+                    ibm_db.exec_immediate(self.conn_handler, "CALL QSYS2.QCMDEXC('CHGJOB INQMSGRPY(*RQD)')")
                 if not return_value:
                     if ibm_db.conn_errormsg() is not None:
                         self.messages.append(Error(str(ibm_db.conn_errormsg())))
