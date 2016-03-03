@@ -26,9 +26,22 @@ _IS_JYTHON = sys.platform.startswith( 'java' )
 from django.core.exceptions import ImproperlyConfigured
 
 # Importing class from base module of django.db.backends
-from django.db.backends import BaseDatabaseFeatures
-from django.db.backends import BaseDatabaseWrapper
-from django.db.backends import BaseDatabaseValidation
+
+try:
+    from django.db.backends import BaseDatabaseFeatures
+except ImportError:
+    from django.db.backends.base.features import BaseDatabaseFeatures
+
+try:
+    from django.db.backends import BaseDatabaseWrapper
+except ImportError:
+    from django.db.backends.base.base import BaseDatabaseWrapper
+
+try:
+    from django.db.backends import BaseDatabaseValidation
+except ImportError:
+    from django.db.backends.base.validation import BaseDatabaseValidation
+
 from django.db.backends.signals import connection_created
 
 # Importing internal classes from ibm_db_django package.
@@ -119,6 +132,7 @@ class DatabaseWrapper( BaseDatabaseWrapper ):
     wrapper is IBM_DB_DBI (latest version can be downloaded from http://code.google.com/p/ibm-db/ or
     http://pypi.python.org/pypi/ibm_db). 
     """
+    data_types={}
     vendor = 'DB2'
     operators = {
         "exact":        "= %s",
@@ -149,6 +163,11 @@ class DatabaseWrapper( BaseDatabaseWrapper ):
         else:
             self.features = DatabaseFeatures( self )
         self.creation = DatabaseCreation( self )
+        
+        if( djangoVersion[0:2] >= ( 1, 8 ) ): 
+            self.data_types=self.creation.data_types
+            self.data_type_check_constraints=self.creation.data_type_check_constraints
+        
         self.introspection = DatabaseIntrospection( self )
         if( djangoVersion[0:2] <= ( 1, 1 ) ):
             self.validation = DatabaseValidation()

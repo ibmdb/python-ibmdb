@@ -20,7 +20,11 @@
 This module implements command line interface for DB2 through Django.
 """
 
-from django.db.backends import BaseDatabaseClient
+try:
+    from django.db.backends import BaseDatabaseClient
+except ImportError:
+    from django.db.backends.base.client import BaseDatabaseClient
+
 from django import VERSION as djangoVersion
 import types
 
