@@ -1,7 +1,7 @@
 # +--------------------------------------------------------------------------+
 # |  Licensed Materials - Property of IBM                                    |
 # |                                                                          |
-# | (C) Copyright IBM Corporation 2009-2014.                                      |
+# | (C) Copyright IBM Corporation 2009-2014.                                 |
 # +--------------------------------------------------------------------------+
 # | This module complies with Django 1.0 and is                              |
 # | Licensed under the Apache License, Version 2.0 (the "License");          |
@@ -16,15 +16,18 @@
 # | Authors: Ambrish Bhargava, Tarun Pasrija, Rahul Priyadarshi              |
 # +--------------------------------------------------------------------------+
 from collections import namedtuple
-import sys
+import sys, platform
 _IS_JYTHON = sys.platform.startswith( 'java' )
+
+# Returns whether we're running on IBM i platform or not.
+_IS_IBMI = platform.system() == 'OS400'
 
 if not _IS_JYTHON:
     try:    
         # Import IBM_DB wrapper ibm_db_dbi
         import ibm_db_dbi as Database
         #from Database import DatabaseError
-    except ImportError, e:
+    except ImportError as e:
         raise ImportError( "ibm_db module not found. Install ibm_db module from http://code.google.com/p/ibm-db/. Error: %s" % e )
 else:
     from com.ziclix.python.sql import zxJDBC
@@ -246,33 +249,62 @@ class DatabaseIntrospection( BaseDatabaseIntrospection ):
         constraints = {} 
         if not _IS_JYTHON:
             schema = cursor.connection.get_current_schema()
-            sql = "SELECT CONSTNAME, COLNAME FROM SYSCAT.COLCHECKS WHERE TABSCHEMA='%(schema)s' AND TABNAME='%(table)s'" % {'schema': schema.upper(), 'table': table_name.upper()}
-            cursor.execute(sql)
-            for constname, colname in cursor.fetchall():
-                if constname not in constraints:
-                    constraints[constname] = {
-                        'columns': [],
-                        'primary_key': False,
-                        'unique': False,
-                        'foreign_key': None,
-                        'check': True,
-                        'index': False
-                    }
-                constraints[constname]['columns'].append(colname.lower())
-                
-            sql = "SELECT KEYCOL.CONSTNAME, KEYCOL.COLNAME FROM SYSCAT.KEYCOLUSE KEYCOL INNER JOIN SYSCAT.TABCONST TABCONST ON KEYCOL.CONSTNAME=TABCONST.CONSTNAME WHERE TABCONST.TABSCHEMA='%(schema)s' and TABCONST.TABNAME='%(table)s' and TABCONST.TYPE='U'" % {'schema': schema.upper(), 'table': table_name.upper()}
-            cursor.execute(sql)
-            for constname, colname in cursor.fetchall():
-                if constname not in constraints:
-                    constraints[constname] = {
-                        'columns': [],
-                        'primary_key': False,
-                        'unique': True,
-                        'foreign_key': None,
-                        'check': False,
-                        'index': True
-                    }
-                constraints[constname]['columns'].append(colname.lower())
+            if not _IS_IBMI:
+                sql = "SELECT CONSTNAME, COLNAME FROM SYSCAT.COLCHECKS WHERE TABSCHEMA='%(schema)s' AND TABNAME='%(table)s'" % {'schema': schema.upper(), 'table': table_name.upper()}
+                cursor.execute(sql)
+                for constname, colname in cursor.fetchall():
+                    if constname not in constraints:
+                        constraints[constname] = {
+                            'columns': [],
+                            'primary_key': False,
+                            'unique': False,
+                            'foreign_key': None,
+                            'check': True,
+                            'index': False
+                        }
+                    constraints[constname]['columns'].append(colname.lower())
+                    
+                sql = "SELECT KEYCOL.CONSTNAME, KEYCOL.COLNAME FROM SYSCAT.KEYCOLUSE KEYCOL INNER JOIN SYSCAT.TABCONST TABCONST ON KEYCOL.CONSTNAME=TABCONST.CONSTNAME WHERE TABCONST.TABSCHEMA='%(schema)s' and TABCONST.TABNAME='%(table)s' and TABCONST.TYPE='U'" % {'schema': schema.upper(), 'table': table_name.upper()}
+                cursor.execute(sql)
+                for constname, colname in cursor.fetchall():
+                    if constname not in constraints:
+                        constraints[constname] = {
+                            'columns': [],
+                            'primary_key': False,
+                            'unique': True,
+                            'foreign_key': None,
+                            'check': False,
+                            'index': True
+                        }
+                    constraints[constname]['columns'].append(colname.lower())
+            else:
+                sql = "SELECT CONSTRAINT_NAME, COLUMN_NAME FROM QSYS2.SYSCSTCOL WHERE TABLE_SCHEMA='%(schema)s' AND TABLE_NAME='%(table)s'" % {'schema': schema.upper(), 'table': table_name.upper()}
+                cursor.execute(sql)
+                for constraint_name, column_name in cursor.fetchall():
+                    if constraint_name not in constraints:
+                        constraints[constraint_name] = {
+                            'columns': [],
+                            'primary_key': False,
+                            'unique': False,
+                            'foreign_key': None,
+                            'check': True,
+                            'index': False
+                        }
+                    constraints[constraint_name]['columns'].append(column_name.lower())				   
+  
+                sql = "SELECT KEYCOL.CONSTRAINT_NAME, KEYCOL.COLUMN_NAME FROM QSYS2.SYSKEYCST KEYCOL INNER JOIN QSYS2.SYSCST TABCONST ON KEYCOL.CONSTRAINT_NAME=TABCONST.CONSTRAINT_NAME AND KEYCOL.CONSTRAINT_SCHEMA=TABCONST.CONSTRAINT_SCHEMA WHERE TABCONST.TABLE_SCHEMA='%(schema)s' and TABCONST.TABLE_NAME='%(table)s' and TABCONST.CONSTRAINT_TYPE='UNIQUE'" % {'schema': schema.upper(), 'table': table_name.upper()}
+                cursor.execute(sql)
+                for constraint_name, column_name in cursor.fetchall():
+                    if constraint_name not in constraints:
+                        constraints[constraint_name] = {
+                            'columns': [],
+                            'primary_key': False,
+                            'unique': True,
+                            'foreign_key': None,
+                            'check': False,
+                            'index': True
+                        }
+                    constraints[constraint_name]['columns'].append(column_name.lower())
             
             for pkey in cursor.connection.primary_keys(None, schema, table_name):
                 if pkey['PK_NAME'] not in constraints:
@@ -297,10 +329,14 @@ class DatabaseIntrospection( BaseDatabaseIntrospection ):
                         'index': False
                     }
                 constraints[fk['FK_NAME']]['columns'].append(fk['FKCOLUMN_NAME'].lower())
-                if fk['PKCOLUMN_NAME'].lower() not in constraints[fk['FK_NAME']]['foreign_key']:
-                    fkeylist = list(constraints[fk['FK_NAME']]['foreign_key'])
-                    fkeylist.append(fk['PKCOLUMN_NAME'].lower())
-                    constraints[fk['FK_NAME']]['foreign_key'] = tuple(fkeylist)
+                
+                if constraints[fk['FK_NAME']]['foreign_key'] is None:
+                    constraints[fk['FK_NAME']]['foreign_key'] = fk['PKCOLUMN_NAME'].lower()
+                else:
+                    if fk['PKCOLUMN_NAME'].lower() not in constraints[fk['FK_NAME']]['foreign_key']:
+                        fkeylist = list(constraints[fk['FK_NAME']]['foreign_key'])
+                        fkeylist.append(fk['PKCOLUMN_NAME'].lower())
+                        constraints[fk['FK_NAME']]['foreign_key'] = tuple(fkeylist)  
                 
             for index in cursor.connection.indexes( True, schema, table_name ):
                 if index['INDEX_NAME'] not in constraints:

@@ -16,8 +16,11 @@
 # | Authors: Rahul Priyadarshi                                               |
 # +--------------------------------------------------------------------------+
 
-import sys
+import sys, platform
 _IS_JYTHON = sys.platform.startswith( 'java' )
+
+# Returns whether we're running on IBM i platform or not.
+_IS_IBMI = platform.system() == 'OS400'
 
 import datetime
 import copy
@@ -278,12 +281,22 @@ class DB2SchemaEditor(BaseDatabaseSchemaEditor):
                     else:
                         alter_incomming_fk_data_type = True
                 #Will make default later
-                if old_default is not None:
-                    self.execute(self.sql_drop_default % {
-                            'table': self.quote_name(model._meta.db_table),
-                            'column': self.quote_name(new_field.column)
-                        }
-                    )
+                if not _IS_IBMI:
+                    if old_default is not None:
+                        self.execute(self.sql_drop_default % {
+                                'table': self.quote_name(model._meta.db_table),
+                                'column': self.quote_name(new_field.column)
+                            }
+                        )
+                else:
+                    # IBM i defaults can be empty strings (i.e. no default)					
+                    if old_default is not None and old_default:
+                        self.execute(self.sql_drop_default % {
+                                'table': self.quote_name(model._meta.db_table),
+                                'column': self.quote_name(new_field.column)
+                            }
+                        )
+
                 if isinstance(new_field, models.AutoField):
                     with self.connection.cursor() as cur:
                         cur.execute(
@@ -514,7 +527,7 @@ class DB2SchemaEditor(BaseDatabaseSchemaEditor):
                 try:
                     self.execute(sql)
                     self._reorg_tables()
-                except Error, e:
+                except Error as e:
                     self.execute(del_column)
                     raise e
             if p_key:
@@ -532,7 +545,7 @@ class DB2SchemaEditor(BaseDatabaseSchemaEditor):
                 try:
                     self.execute(sql)
                     self._reorg_tables()
-                except Error, e:
+                except Error as e:
                     self.execute(del_column)
                     raise e
             elif unique:
@@ -542,7 +555,7 @@ class DB2SchemaEditor(BaseDatabaseSchemaEditor):
                 try:
                     self.execute(sql)
                     self._reorg_tables()
-                except Error, e:
+                except Error as e:
                     self.execute(del_column)
                     raise e
             
@@ -573,18 +586,19 @@ class DB2SchemaEditor(BaseDatabaseSchemaEditor):
         self._restore_constraints_check(deferred_constraints, rel_old_field, rel_new_field, new_field.rel.through)
         
     def _reorg_tables(self):
-        checkReorgSQL = "select TABSCHEMA, TABNAME from SYSIBMADM.ADMINTABINFO where REORG_PENDING = 'Y'"
-        res = []
-        reorgSQLs = []
-        with self.connection.cursor() as cursor:
-            cursor.execute(checkReorgSQL)
-            res = cursor.fetchall()
-        if res:
-            for sName, tName in res:
-                reorgSQL = '''CALL SYSPROC.ADMIN_CMD('REORG TABLE "%(sName)s"."%(tName)s"')''' % {'sName': sName, 'tName': tName}
-                reorgSQLs.append(reorgSQL)      
-        for sql in reorgSQLs:
-            self.execute(sql)
+        if not _IS_IBMI:
+            checkReorgSQL = "select TABSCHEMA, TABNAME from SYSIBMADM.ADMINTABINFO where REORG_PENDING = 'Y'"
+            res = []
+            reorgSQLs = []
+            with self.connection.cursor() as cursor:
+                cursor.execute(checkReorgSQL)
+                res = cursor.fetchall()
+            if res:
+                for sName, tName in res:
+                    reorgSQL = '''CALL SYSPROC.ADMIN_CMD('REORG TABLE "%(sName)s"."%(tName)s"')''' % {'sName': sName, 'tName': tName}
+                    reorgSQLs.append(reorgSQL)      
+            for sql in reorgSQLs:
+                self.execute(sql)
         
     def _defer_constraints_check(self, constraints, deferred_constraints, old_field, new_field, model, defer_pk=False, defer_unique=False, defer_index=False, defer_check=False):
         for constr_name, constr_dict in constraints.items():
