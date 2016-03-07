@@ -1,7 +1,7 @@
 # +--------------------------------------------------------------------------+
 # |  Licensed Materials - Property of IBM                                    |
 # |                                                                          |
-# | (C) Copyright IBM Corporation 2009-2013.                                      |
+# | (C) Copyright IBM Corporation 2009-2016.                                 |
 # +--------------------------------------------------------------------------+
 # | This module complies with Django 1.0 and is                              |
 # | Licensed under the Apache License, Version 2.0 (the "License");          |
@@ -19,10 +19,14 @@
 # Importing IBM_DB wrapper ibm_db_dbi
 try:
     import ibm_db_dbi as Database
-except ImportError, e:
+except ImportError as e:
     raise ImportError( "ibm_db module not found. Install ibm_db module from http://code.google.com/p/ibm-db/. Error: %s" % e )
 
-import datetime
+import datetime, platform
+
+# Returns whether we're running on IBM i platform or not.
+_IS_IBMI = platform.system() == 'OS400'
+
 # For checking django's version
 from django import VERSION as djangoVersion
 
@@ -53,16 +57,26 @@ class DatabaseWrapper( object ):
     # Get new database connection for non persistance connection 
     def get_new_connection(self, kwargs):
         kwargsKeys = kwargs.keys()
-        if ( kwargsKeys.__contains__( 'port' ) and 
-            kwargsKeys.__contains__( 'host' ) ):
-            kwargs['dsn'] = "DATABASE=%s;HOSTNAME=%s;PORT=%s;PROTOCOL=TCPIP;" % ( 
-                     kwargs.get( 'database' ),
-                     kwargs.get( 'host' ),
-                     kwargs.get( 'port' )
-            )
+        if not _IS_IBMI:
+            if ( kwargsKeys.__contains__( 'port' ) and 
+                kwargsKeys.__contains__( 'host' ) ):
+                kwargs['dsn'] = "DATABASE=%s;HOSTNAME=%s;PORT=%s;PROTOCOL=TCPIP;" % ( 
+                         kwargs.get( 'database' ),
+                         kwargs.get( 'host' ),
+                         kwargs.get( 'port' )
+               )
+            else:
+                kwargs['dsn'] = kwargs.get( 'database' )
         else:
-            kwargs['dsn'] = kwargs.get( 'database' )
-        
+            if ( kwargsKeys.__contains__( 'user' ) and 
+                kwargsKeys.__contains__( 'password' ) ):
+                kwargs['dsn'] = "DATABASE=%s;UID=%s;PWD=%s;" % ( 
+                         kwargs.get( 'database' ),
+                         kwargs.get( 'user' ),
+                         kwargs.get( 'password' )
+               )
+            else:
+                kwargs['dsn'] = kwargs.get( 'database' )
         # Before Django 1.6, autocommit was turned OFF
         if ( djangoVersion[0:2] >= ( 1, 6 )):
             conn_options = {Database.SQL_ATTR_AUTOCOMMIT : Database.SQL_AUTOCOMMIT_ON}
@@ -158,26 +172,26 @@ class DB2CursorWrapper( Database.Cursor ):
             else:
                 try:
                     return super( DB2CursorWrapper, self ).execute( operation, parameters )
-                except IntegrityError, e:
+                except IntegrityError as e:
                     if (djangoVersion[0:2] >= (1, 5)):
                         six.reraise(utils.IntegrityError, utils.IntegrityError( *tuple( six.PY3 and e.args or ( e._message, ) ) ), sys.exc_info()[2])
                         raise
                     else:
-                        raise utils.IntegrityError, utils.IntegrityError( *tuple( e ) ), sys.exc_info()[2]
+                        raise utils.IntegrityError.with_traceback(sys.exc_info()[2])
                         
-                except ProgrammingError, e:
+                except ProgrammingError as e:
                     if (djangoVersion[0:2] >= (1, 5)):
                         six.reraise(utils.ProgrammingError, utils.ProgrammingError( *tuple( six.PY3 and e.args or ( e._message, ) ) ), sys.exc_info()[2])
                         raise
                     else:
-                        raise utils.ProgrammingError, utils.ProgrammingError( *tuple( e ) ), sys.exc_info()[2]
+                        raise utils.ProgrammingError.with_traceback(sys.exc_info()[2])
                         
-                except DatabaseError, e:
+                except DatabaseError as e:
                     if (djangoVersion[0:2] >= (1, 5)):
                         six.reraise(utils.DatabaseError, utils.DatabaseError( *tuple( six.PY3 and e.args or ( e._message, ) ) ), sys.exc_info()[2])
                         raise
                     else:
-                        raise utils.DatabaseError, utils.DatabaseError( *tuple( e ) ), sys.exc_info()[2]  
+                        raise utils.DatabaseError.with_traceback(sys.exc_info()[2])
         except ( TypeError ):
             return None
         
@@ -196,18 +210,18 @@ class DB2CursorWrapper( Database.Cursor ):
             else:
                 try:
                     return super( DB2CursorWrapper, self ).executemany( operation, seq_parameters )
-                except IntegrityError, e:
+                except IntegrityError as e:
                     if (djangoVersion[0:2] >= (1, 5)):
                         six.reraise(utils.IntegrityError, utils.IntegrityError( *tuple( six.PY3 and e.args or ( e._message, ) ) ), sys.exc_info()[2])
                         raise
                     else:
-                        raise utils.IntegrityError, utils.IntegrityError( *tuple( e ) ), sys.exc_info()[2]
-                except DatabaseError, e:
+                        raise utils.IntegrityError.with_traceback(sys.exc_info()[2])
+                except DatabaseError as e:
                     if (djangoVersion[0:2] >= (1, 5)):
                         six.reraise(utils.DatabaseError, utils.DatabaseError( *tuple( six.PY3 and e.args or ( e._message, ) ) ), sys.exc_info()[2])
                         raise
                     else:
-                        raise utils.DatabaseError, utils.DatabaseError( *tuple( e ) ), sys.exc_info()[2] 
+                        raise utils.DatabaseError.with_traceback(sys.exc_info()[2])
         except ( IndexError, TypeError ):
             return None
     

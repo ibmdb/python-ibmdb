@@ -1,7 +1,7 @@
 # +--------------------------------------------------------------------------+
 # |  Licensed Materials - Property of IBM                                    |
 # |                                                                          |
-# | (C) Copyright IBM Corporation 2009-2014.                                      |
+# | (C) Copyright IBM Corporation 2009-2016.                                 |
 # +--------------------------------------------------------------------------+
 # | This module complies with Django 1.0 and is                              |
 # | Licensed under the Apache License, Version 2.0 (the "License");          |
@@ -20,9 +20,12 @@
 DB2 database backend for Django.
 Requires: ibm_db_dbi (http://pypi.python.org/pypi/ibm_db) for python
 """
-import sys
+import sys, platform
 _IS_JYTHON = sys.platform.startswith( 'java' )
 
+# Returns whether we're running on IBM i platform or not.
+_IS_IBMI = platform.system() == 'OS400'
+    
 from django.core.exceptions import ImproperlyConfigured
 
 # Importing class from base module of django.db.backends
@@ -58,6 +61,9 @@ else:
     
 # For checking django's version
 from django import VERSION as djangoVersion
+
+if ( djangoVersion[0:2] >= ( 1, 5 )):
+    from django.utils import six
 
 if ( djangoVersion[0:2] >= ( 1, 7 )):
     from ibm_db_django.schemaEditor import DB2SchemaEditor
@@ -198,33 +204,38 @@ class DatabaseWrapper( BaseDatabaseWrapper ):
             database_port = settings_dict['DATABASE_PORT']
             database_options = settings_dict['DATABASE_OPTIONS']
         else:
-            settings_dict = self.settings_dict
-            database_name = settings_dict['NAME']
-            database_user = settings_dict['USER']
-            database_pass = settings_dict['PASSWORD']
-            database_host = settings_dict['HOST']
-            database_port = settings_dict['PORT']
-            database_options = settings_dict['OPTIONS']
+            if not _IS_IBMI:
+                settings_dict = self.settings_dict
+                database_name = settings_dict['NAME']
+                database_user = settings_dict['USER']
+                database_pass = settings_dict['PASSWORD']
+                database_host = settings_dict['HOST']
+                database_port = settings_dict['PORT']
+                database_options = settings_dict['OPTIONS']
+            else:
+                settings_dict = self.settings_dict
+                database_name = "*LOCAL"
+                database_user = settings_dict['USER']
+                database_pass = settings_dict['PASSWORD']
+                database_options = settings_dict['OPTIONS']
         
-        if database_name != '' and isinstance( database_name, basestring ):
+        if database_name != '' and isinstance( database_name, six.string_types ):
             kwargs['database'] = database_name
         else:
             raise ImproperlyConfigured( "Please specify the valid database Name to connect to" )
             
-        if isinstance( database_user, basestring ):
+        if isinstance( database_user, six.string_types ):
             kwargs['user'] = database_user
         
-        if isinstance( database_pass, basestring ):
+        if isinstance( database_pass, six.string_types ):
             kwargs['password'] = database_pass
         
-        if isinstance( database_host, basestring ):
-            kwargs['host'] = database_host
+        if not _IS_IBMI:
+            if isinstance( database_host, six.string_types ):
+                kwargs['host'] = database_host
         
-        if isinstance( database_port, basestring ):
-            kwargs['port'] = database_port
-            
-        if isinstance( database_host, basestring ):
-            kwargs['host'] = database_host
+            if isinstance( database_port, six.string_types ):
+                kwargs['port'] = database_port
         
         if isinstance( database_options, dict ):
             kwargs['options'] = database_options

@@ -1,7 +1,7 @@
 # +--------------------------------------------------------------------------+
 # |  Licensed Materials - Property of IBM                                    |
 # |                                                                          |
-# | (C) Copyright IBM Corporation 2009-2014.                                      |
+# | (C) Copyright IBM Corporation 2009-2016.                                 |
 # +--------------------------------------------------------------------------+
 # | This module complies with Django 1.0 and is                              |
 # | Licensed under the Apache License, Version 2.0 (the "License");          |
@@ -23,7 +23,11 @@ except ImportError:
 
 from ibm_db_django import query
 from django import VERSION as djangoVersion
-import sys, datetime
+import sys, datetime, platform
+
+# Returns whether we're running on IBM i platform or not.
+_IS_IBMI = platform.system() == 'OS400'
+
 try:
     import pytz
 except ImportError:
@@ -239,7 +243,7 @@ class DatabaseOperations ( BaseDatabaseOperations ):
         return "%s"
         
     def deferrable_sql( self ):
-        if getattr(self.connection.connection, dbms_name) == 'DB2':
+        if getattr(self.connection.connection, dbms_name) == 'DB2' and not _IS_IBMI:
             return "ON DELETE NO ACTION NOT ENFORCED"
         else:
             return ""
@@ -346,8 +350,8 @@ class DatabaseOperations ( BaseDatabaseOperations ):
         curr_schema = self.connection.connection.get_current_schema().upper()
         sqls = []
         if tables:
-            #check for zOS DB2 server
-            if getattr(self.connection.connection, dbms_name) != 'DB2':
+            #check for zOS DB2 server and DB2 for IBM i
+            if getattr(self.connection.connection, dbms_name) != 'DB2' and not _IS_IBMI:
                 fk_tab = 'TABNAME'
                 fk_tabschema = 'TABSCHEMA'
                 fk_const = 'CONSTNAME'
@@ -409,7 +413,7 @@ class DatabaseOperations ( BaseDatabaseOperations ):
                         END IF;
                     END P1''' % {'fk_tab':fk_tab, 'fk_tabschema':fk_tabschema, 'fk_const':fk_const, 'fk_systab':fk_systab, 'type_check_string':type_check_string} )  
             
-            if getattr(self.connection.connection, dbms_name) != 'DB2':
+            if getattr(self.connection.connection, dbms_name) != 'DB2' and not _IS_IBMI:
                 for table in tables:
                     sqls.append( "CALL FKEY_ALT_CONST( '%s', '%s' );" % ( table.upper(), curr_schema ) )
             else:
@@ -419,8 +423,11 @@ class DatabaseOperations ( BaseDatabaseOperations ):
                 sqls.append( style.SQL_KEYWORD( "DELETE" ) + " " + 
                            style.SQL_KEYWORD( "FROM" ) + " " + 
                            style.SQL_TABLE( "%s" % self.quote_name( table ) ) )
-                
-            if getattr(self.connection.connection, dbms_name) != 'DB2':    
+                # For IBM i we need to add a COMMIT before the ALTER TABLE commands get run
+                if _IS_IBMI:
+                    sqls.append( style.SQL_KEYWORD( "COMMIT;" ) )
+
+            if getattr(self.connection.connection, dbms_name) != 'DB2' and not _IS_IBMI:    
                 sqls.append( "CALL FKEY_ALT_CONST( '' , '%s' );" % ( curr_schema, ) )
                 sqls.append( "DROP PROCEDURE FKEY_ALT_CONST;" )  
                 
@@ -512,7 +519,7 @@ class DatabaseOperations ( BaseDatabaseOperations ):
                     value = value.astimezone( utc ).replace( tzinfo=None )
                 else:
                     raise ValueError( "Timezone aware datetime not supported" )
-            return unicode( value )
+            return str( value )     
         
     def value_to_db_time( self, value ):
         if value is None:
