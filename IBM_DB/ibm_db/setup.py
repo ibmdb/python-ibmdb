@@ -176,7 +176,11 @@ if (('IBM_DB_HOME' not in os.environ) and ('IBM_DB_DIR' not in os.environ) and (
         _setWinEnv("PATH", "clidriver")
         
     license_agreement = '''\n****************************************\nYou are downloading a package which includes the Python module for IBM DB2/Informix.  The module is licensed under the Apache License 2.0. The package also includes IBM ODBC and CLI Driver from IBM, which is automatically downloaded as the python module is installed on your system/device. The license agreement to the IBM ODBC and CLI Driver is available in %s or %s.   Check for additional dependencies, which may come with their own license agreement(s). Your use of the components of the package and dependencies constitutes your acceptance of their respective license agreements. If you do not accept the terms of any license agreement(s), then delete the relevant component(s) from your device.\n****************************************\n''' % (pip_cli_path, easy_cli_path)
-        
+
+if ('win32' not in sys.platform):
+    if os.path.isfile('ibm_db.py'):
+        os.rename("ibm_db.py","ibm_db_win.py")
+
 if ibm_db_dir == '':
     try:
         ibm_db_home = os.environ['IBM_DB_HOME']
