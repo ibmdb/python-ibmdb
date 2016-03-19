@@ -67,6 +67,7 @@ class Error(exception):
     def __init__(self, message):
         """This is the constructor which take one string argument."""
         self._message = message
+        super(Error, self).__init__(message)
     def __str__(self):
         """Converts the message to a string."""
         return 'ibm_db_dbi::'+str(self.__class__.__name__)+': '+str(self._message)
@@ -80,6 +81,7 @@ class Warning(exception):
     def __init__(self, message):
         """This is the constructor which take one string argument."""
         self._message = message
+        super(Warning, self).__init__(message)
     def __str__(self):
         """Converts the message to a string."""
         return 'ibm_db_dbi::'+str(self.__class__.__name__)+': '+str(self._message)
