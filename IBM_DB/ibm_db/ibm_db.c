@@ -22,7 +22,7 @@
 +--------------------------------------------------------------------------+
 */
 
-#define MODULE_RELEASE "2.0.6"
+#define MODULE_RELEASE "2.0.7"
 
 #include <Python.h>
 #include <datetime.h>
@@ -10837,39 +10837,58 @@ static PyObject* ibm_db_check_function_support(PyObject *self, PyObject *args)
  * Returns a string representation of last inserted serial value on a successful call. 
  * Returns FALSE on failure.
  */
-/*
-PyObject *ibm_db_get_last_serial_value(int argc, PyObject **argv, PyObject *self)
+PyObject *ibm_db_get_last_serial_value(int argc, PyObject *args, PyObject *self)
 {
 	PyObject *stmt = NULL;
 	SQLCHAR *value = NULL;
+        PyObject *return_value = NULL;
+        SQLINTEGER pcbValue = 0;
 	stmt_handle *stmt_res;
 	int rc = 0;
 	
-	rb_scan_args(argc, argv, "1", &stmt);
 
-	if (!NIL_P(stmt)) {
-	  Data_Get_Struct(stmt, stmt_handle, stmt_res);
+        PyObject *py_qualifier = NULL;
+        PyObject *retVal = NULL;
 
-	  / * We allocate a buffer of size 31 as per recommendations from the CLI IDS team * /
-	  value = ALLOC_N(char, 31);
-	  if ( value == NULL ) {
-		 PyErr_SetString(PyExc_Exception, "Failed to Allocate Memory");
-		 return Py_False;
-	  }
+        if(!PyArg_ParseTuple(args, "O",&py_qualifier))
+            return NULL;
 
-	  rc = SQLGetStmtAttr((SQLHSTMT)stmt_res->hstmt, SQL_ATTR_GET_GENERATED_VALUE, (SQLPOINTER)value, 31, NULL);
-	  if ( rc == SQL_ERROR ) {
-		 _python_ibm_db_check_sql_errors( (SQLHSTMT)stmt_res->hstmt, SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
-		 return Py_False;
-	  }
-	  return INT2NUM(atoi(value));
-	}
+        if (!NIL_P(py_qualifier)) {
+            if (!PyObject_TypeCheck(py_qualifier, &stmt_handleType)) {
+                PyErr_SetString( PyExc_Exception, "Supplied statement object parameter is invalid" );
+                return NULL;
+            } else {
+                stmt_res = (stmt_handle *)py_qualifier;
+            }  
+
+            /* We allocate a buffer of size 31 as per recommendations from the CLI IDS team */
+            value = ALLOC_N(char,31);
+            if ( value == NULL ) {
+                PyErr_SetString(PyExc_Exception, "Failed to Allocate Memory");
+                return Py_False;
+            }
+            rc = SQLGetStmtAttr((SQLHSTMT)stmt_res->hstmt, SQL_ATTR_GET_GENERATED_VALUE,(SQLPOINTER)value, 31,&pcbValue);
+            if ( rc == SQL_ERROR ) {
+               _python_ibm_db_check_sql_errors( (SQLHSTMT)stmt_res->hstmt, SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
+               if(value != NULL) {
+                   PyMem_Del(value);
+                   value = NULL;
+               }
+               PyErr_Clear();
+               return Py_False;
+            }
+            retVal = StringOBJ_FromASCII((char *)value);
+            if(value != NULL) {
+                PyMem_Del(value);
+                value = NULL;
+            }
+            return retVal;
+        }
 	else {
 	  PyErr_SetString(PyExc_Exception, "Supplied statement handle is invalid");
 	  return Py_False;
 	}
 }
-*/
 
 static int _python_get_variable_type(PyObject *variable_value)
 {
@@ -10974,6 +10993,7 @@ static PyMethodDef ibm_db_Methods[] = {
 	{"stmt_errormsg", (PyCFunction)ibm_db_stmt_errormsg, METH_VARARGS, "Returns a string containing the last SQL statement error message"},
 	{"table_privileges", (PyCFunction)ibm_db_table_privileges, METH_VARARGS, "Returns a result set listing the tables and associated privileges in a database"},
 	{"tables", (PyCFunction)ibm_db_tables, METH_VARARGS, "Returns a result set listing the tables and associated metadata in a database"},
+	{"get_last_serial_value", (PyCFunction)ibm_db_get_last_serial_value, METH_VARARGS, "Returns last serial value inserted for identity column"},
 	/* An end-of-listing sentinel: */ 
 	{NULL, NULL, 0, NULL}
 };
@@ -11113,5 +11133,6 @@ INIT_ibm_db(void) {
 
 	Py_INCREF(&server_infoType);
 	PyModule_AddObject(m, "IBM_DBServerInfo", (PyObject *)&server_infoType);
+	PyModule_AddIntConstant(m, "SQL_ATTR_QUERY_TIMEOUT", SQL_ATTR_QUERY_TIMEOUT);
 	return MOD_RETURN_VAL(m);
 }
