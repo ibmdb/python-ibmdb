@@ -432,8 +432,9 @@ def _server_connect(dsn, user='', password='', host=''):
     else:
         dsn = "DSN=" + dsn + ";"
 
-    if dsn.find('attach=') == -1:
-        dsn = dsn + "attach=true;"
+    # attach = true is not valid against IDS. And attach is not needed for connect currently.
+    #if dsn.find('attach=') == -1:
+        #dsn = dsn + "attach=true;"
     if user != '' and dsn.find('UID=') == -1:
         dsn = dsn + "UID=" + user + ";"
     if password != '' and dsn.find('PWD=') == -1:
