@@ -59,6 +59,7 @@ const int _check_i = 1;
 #define LIBDB2 "libdb2.a"
 #else
 #define LIBDB2 "libdb400.a"
+#include <as400_protos.h>
 #endif
 #else
 #define DLOPEN dlopen
