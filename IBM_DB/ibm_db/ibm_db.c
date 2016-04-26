@@ -11125,20 +11125,37 @@ static SQLTCHAR* getUnicodeDataAsSQLTCHAR(PyObject* obj, int* isNewBuffer)
   
   *isNewBuffer = 0;
   
+#if PY_MAJOR_VERSION >= 3
   utf8 = PyUnicode_AsUTF8AndSize(obj, &utf8_len);
   if(utf8 == NULL)
   {
 	PyErr_Clear();
 	return NULL;
   }
+#else
+  PyObject* py_utf8 = PyUnicode_AsUTF8String(obj);
+  utf8_len = PyString_Size(py_utf8);
+  utf8 = PyString_AsString(py_utf8);
+  
+  if(utf8 == NULL)
+  {
+    Py_XDECREF(py_utf8);
+    PyErr_Clear();
+    return NULL;
+  }
+#endif
+  
+  buf = (SQLTCHAR *) PyMem_New(SQLTCHAR, utf8_len+1);
   
   *isNewBuffer = 1;
   
-  buf = (SQLTCHAR *) ALLOC_N(SQLTCHAR, utf8_len+1);
-  
   memcpy(buf, utf8, utf8_len);
-  utf8[utf8_len] = '\0';
+  buf[utf8_len] = '\0';
   
-  return utf8;
+#if PY_MAJOR_VERSION < 3
+  Py_XDECREF(py_utf8);
+#endif
+  
+  return buf;
 }
 #endif
