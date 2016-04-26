@@ -211,7 +211,11 @@ static PyTypeObject conn_handleType = {
 	  0,									 /*tp_getattro*/
 	  0,									 /*tp_setattro*/
 	  0,									 /*tp_as_buffer*/
-	  0,                                     /*tp_flags*/
+#if PY_MAJOR_VERSION < 3
+	  Py_TPFLAGS_HAVE_CLASS,						 /*tp_flags*/
+#else
+	  0,									 /*tp_flags*/
+#endif
 	  "IBM DataServer connection object",	/* tp_doc */
 	  0,									 /* tp_traverse */
 	  0,									 /* tp_clear */
@@ -308,7 +312,11 @@ static PyTypeObject stmt_handleType = {
 	0,						 /*tp_getattro		*/
 	0,						 /*tp_setattro		*/
 	0,						 /*tp_as_buffer		*/
-	0,	                     /*tp_flags			*/
+#if PY_MAJOR_VERSION < 3
+	Py_TPFLAGS_HAVE_CLASS,				 /*tp_flags*/
+#else
+	0,						 /*tp_flags*/
+#endif
 	"IBM DataServer cursor object", /* tp_doc		*/
 	0,						 /* tp_traverse		*/
 	0,						 /* tp_clear		  */
