@@ -10592,7 +10592,8 @@ static PyObject* ibm_db_callproc(PyObject *self, PyObject *args){
 								break;
 							default:
 								if (!NIL_P(tmp_curr->svalue)) {
-									PyTuple_SetItem(outTuple, paramCount, StringOBJ_FromASCII(tmp_curr->svalue));
+									SQLLEN len = tmp_curr->bind_indicator == SQL_NTS ? strlen(tmp_curr->svalue) : tmp_curr->bind_indicator;
+									PyTuple_SetItem(outTuple, paramCount, StringOBJ_FromASCIIandSize(tmp_curr->svalue, len));
 									paramCount++;
 								} else if (!NIL_P(tmp_curr->uvalue)) {
 									PyTuple_SetItem(outTuple, paramCount, getSQLTCharAsPyUnicodeObject(tmp_curr->uvalue, tmp_curr->bind_indicator));
