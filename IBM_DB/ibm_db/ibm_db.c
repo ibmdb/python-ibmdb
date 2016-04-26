@@ -1414,9 +1414,9 @@ static PyObject *_python_ibm_db_connect_helper( PyObject *self, PyObject *args, 
 				
 				val = SQL_FALSE;
 				SQLSetEnvAttr((SQLHENV)conn_res->henv, SQL_ATTR_INCLUDE_NULL_IN_LEN, &val, 0);
-                
-                val = SQL_TRUE;
-                SQLSetEnvAttr((SQLHENV)conn_res->henv, SQL_ATTR_NON_HEXCCSID, &val, 0);
+				
+				val = SQL_TRUE;
+				SQLSetEnvAttr((SQLHENV)conn_res->henv, SQL_ATTR_NON_HEXCCSID, &val, 0);
 			}
 #endif
 		}
