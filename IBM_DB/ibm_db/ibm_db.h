@@ -28,7 +28,9 @@
 #define PyBytes_FromStringAndSize	PyString_FromStringAndSize
 #define StringObj_Format		PyString_Format
 #define StringObj_Size			PyString_Size
+#ifndef PyObject_CheckBuffer
 #define PyObject_CheckBuffer		PyObject_CheckReadBuffer
+#endif
 #define PyVarObject_HEAD_INIT(type, size) \
 					PyObject_HEAD_INIT(type) size,
 #define Py_TYPE(ob)			(((PyObject*)(ob))->ob_type)
