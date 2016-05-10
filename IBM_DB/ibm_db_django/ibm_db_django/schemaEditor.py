@@ -165,8 +165,9 @@ class DB2SchemaEditor(BaseDatabaseSchemaEditor):
         
         old_default = self.effective_default(old_field)
         new_default = self.effective_default(new_field)
-        if old_default != new_default:
-            alter_field_default = True
+        if (old_field.default is not None) and old_field.has_default():
+            if old_default != new_default:
+                alter_field_default = True
             
         #Need to remove Primary Key
         if alter_field_primary_key and old_field.primary_key:
@@ -278,7 +279,7 @@ class DB2SchemaEditor(BaseDatabaseSchemaEditor):
                     else:
                         alter_incomming_fk_data_type = True
                 #Will make default later
-                if old_default is not None:
+                if (old_field.default is not None) and (old_field.has_default()) and (old_default is not None):
                     self.execute(self.sql_drop_default % {
                             'table': self.quote_name(model._meta.db_table),
                             'column': self.quote_name(new_field.column)
