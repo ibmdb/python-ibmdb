@@ -33,7 +33,7 @@ setup (
     version           = VERSION,
     license           = LICENSE,
     platforms         = 'All',
-    install_requires  = _IS_JYTHON and ['django>=1.0.3'] or ['ibm_db>=1.0.3',
+    install_requires  = _IS_JYTHON and ['django>=1.0.3'] or ['ibm_db>=2.0.5.3',
                           'django>=1.0.3'],
     dependency_links  = _IS_JYTHON and ['http://pypi.python.org/pypi/Django/'] or ['http://pypi.python.org/pypi/ibm_db/',
                           'http://pypi.python.org/pypi/Django/'],
