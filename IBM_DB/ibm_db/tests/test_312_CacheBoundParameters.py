@@ -36,7 +36,7 @@ class IbmDbTestCase(unittest.TestCase):
         ibm_db.bind_param(stmt, i, Wrapper(p))
       
       if ibm_db.execute(stmt):
-        print("Executing parameters")
+        print("Executing statement")
         ibm_db.execute(stmt)
 
         # force the cache to be unbound
@@ -50,7 +50,7 @@ class IbmDbTestCase(unittest.TestCase):
 #__END__
 #__LUW_EXPECTED__
 #Binding parameters
-#Executing parameters
+#Executing statement
 #Wrapper(STG) being deleted
 #Wrapper(Systems & Technology) being deleted
 #Wrapper(123456) being deleted
@@ -58,7 +58,7 @@ class IbmDbTestCase(unittest.TestCase):
 #Wrapper(Fiji) being deleted
 #__ZOS_EXPECTED__
 #Binding parameters
-#Executing parameters
+#Executing statement
 #Wrapper(STG) being deleted
 #Wrapper(Systems & Technology) being deleted
 #Wrapper(123456) being deleted
@@ -66,7 +66,7 @@ class IbmDbTestCase(unittest.TestCase):
 #Wrapper(Fiji) being deleted
 #__SYSTEMI_EXPECTED__
 #Binding parameters
-#Executing parameters
+#Executing statement
 #Wrapper(STG) being deleted
 #Wrapper(Systems & Technology) being deleted
 #Wrapper(123456) being deleted
@@ -74,7 +74,7 @@ class IbmDbTestCase(unittest.TestCase):
 #Wrapper(Fiji) being deleted
 #__IDS_EXPECTED__
 #Binding parameters
-#Executing parameters
+#Executing statement
 #Wrapper(STG) being deleted
 #Wrapper(Systems & Technology) being deleted
 #Wrapper(123456) being deleted
