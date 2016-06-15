@@ -396,9 +396,9 @@ char *strtoupper(char *data, int max) {
 }
 
 #ifdef PASE
-int ctoi(const char* int_string, size_t size) {
+unsigned long long ctoull(const char* int_string, size_t size) {
 	const unsigned char* is = (const unsigned char*) int_string;
-	int i = 0;
+	unsigned long long i = 0;
 	
 	for(size_t j = 0; j < size; ++j) {
 		i *= 10;
@@ -445,9 +445,9 @@ DATE_STRUCT parse_ibmi_date(const void* date) {
 	DATE_STRUCT d;
 	iso_date_t* iso_date = (iso_date_t*) date;
 	
-	d.year = ctoi(iso_date->year, sizeof(iso_date->year));
-	d.month = ctoi(iso_date->month, sizeof(iso_date->month));
-	d.day = ctoi(iso_date->day, sizeof(iso_date->day));
+	d.year = ctoull(iso_date->year, sizeof(iso_date->year));
+	d.month = ctoull(iso_date->month, sizeof(iso_date->month));
+	d.day = ctoull(iso_date->day, sizeof(iso_date->day));
 	
 	return d;
 }
@@ -456,9 +456,9 @@ TIME_STRUCT parse_ibmi_time(const void* time) {
 	TIME_STRUCT t;
 	iso_time_t* iso_time = (iso_time_t*) time;
 	
-	t.hour = ctoi(iso_time->hour, sizeof(iso_time->hour));
-	t.minute = ctoi(iso_time->minute, sizeof(iso_time->minute));
-	t.second = ctoi(iso_time->second, sizeof(iso_time->second));
+	t.hour = ctoull(iso_time->hour, sizeof(iso_time->hour));
+	t.minute = ctoull(iso_time->minute, sizeof(iso_time->minute));
+	t.second = ctoull(iso_time->second, sizeof(iso_time->second));
 	
 	return t;
 }
@@ -467,15 +467,22 @@ TIMESTAMP_STRUCT parse_ibmi_timestamp(const void* timestamp, int precision) {
 	TIMESTAMP_STRUCT ts;
 	iso_timestamp_t* iso_timestamp = (iso_timestamp_t*) timestamp;
 	
-	ts.year = ctoi(iso_timestamp->year, sizeof(iso_timestamp->year));
-	ts.month = ctoi(iso_timestamp->month, sizeof(iso_timestamp->month));
-	ts.day = ctoi(iso_timestamp->day, sizeof(iso_timestamp->day));
+	// TIMESTAMP_STRUCT only supports 9 digits of precision
+	if(precision > 9) precision = 9;
 	
-	ts.hour = ctoi(iso_timestamp->hour, sizeof(iso_timestamp->hour));
-	ts.minute = ctoi(iso_timestamp->minute, sizeof(iso_timestamp->minute));
-	ts.second = ctoi(iso_timestamp->second, sizeof(iso_timestamp->second));
+	ts.year = ctoull(iso_timestamp->year, sizeof(iso_timestamp->year));
+	ts.month = ctoull(iso_timestamp->month, sizeof(iso_timestamp->month));
+	ts.day = ctoull(iso_timestamp->day, sizeof(iso_timestamp->day));
 	
-	ts.fraction = ctoi(iso_timestamp->fraction, precision) * 1000;
+	ts.hour = ctoull(iso_timestamp->hour, sizeof(iso_timestamp->hour));
+	ts.minute = ctoull(iso_timestamp->minute, sizeof(iso_timestamp->minute));
+	ts.second = ctoull(iso_timestamp->second, sizeof(iso_timestamp->second));
+	
+	ts.fraction = ctoull(iso_timestamp->fraction, precision);
+	if(precision < 9)
+	{
+		ts.fraction *= pow(10, 9-precision);
+	}
 	return ts;
 }
 #endif
@@ -1161,7 +1168,7 @@ static int _python_ibm_db_bind_column_helper(stmt_handle *stmt_res)
 				in_length = sizeof(TIMESTAMP_STRUCT);
 				row_data->ts_val = ALLOC(TIME_STRUCT);
 #else
-				in_length = sizeof(iso_timestamp_t)+1;
+				in_length =  stmt_res->column_info[i].size;
 				row_data->ts_val = (TIMESTAMP_STRUCT*) ALLOC_N(char, in_length);
 #endif
 				if ( row_data->ts_val == NULL ) {
@@ -1171,7 +1178,7 @@ static int _python_ibm_db_bind_column_helper(stmt_handle *stmt_res)
 
 				Py_BEGIN_ALLOW_THREADS;
 				rc = SQLBindCol((SQLHSTMT)stmt_res->hstmt, (SQLUSMALLINT)(i+1),
-					SQL_C_TYPE_TIMESTAMP, row_data->time_val, in_length,
+					SQL_C_TYPE_TIMESTAMP, row_data->ts_val, in_length,
 					(SQLINTEGER *)(&stmt_res->row_data[i].out_length));
 				Py_END_ALLOW_THREADS;
 
@@ -8024,7 +8031,7 @@ static PyObject *ibm_db_result(PyObject *self, PyObject *args)
 			in_length = sizeof(TIMESTAMP_STRUCT);
 			ts_ptr = ALLOC(TIMESTAMP_STRUCT);
 #else
-			in_length = sizeof(iso_timestamp_t)+1;
+			in_length = stmt_res->column_info[col_num].size;
 			ts_ptr = (TIMESTAMP_STRUCT *) ALLOC_N(char, in_length);
 #endif
 			if (ts_ptr == NULL) {
@@ -8053,7 +8060,7 @@ static PyObject *ibm_db_result(PyObject *self, PyObject *args)
 				return_value = PyDateTime_FromDateAndTime(ts_ptr->year, ts_ptr->month, ts_ptr->day, ts_ptr->hour, ts_ptr->minute, ts_ptr->second, ts_ptr->fraction / 1000);
 #else
 				{
-					TIMESTAMP_STRUCT ts = parse_ibmi_timestamp(ts_ptr, 6);
+					TIMESTAMP_STRUCT ts = parse_ibmi_timestamp(ts_ptr, stmt_res->column_info[col_num].scale);
 					
 					return_value = PyDateTime_FromDateAndTime(ts.year, ts.month, ts.day, ts.hour, ts.minute, ts.second, ts.fraction / 1000);
 				}
@@ -8382,7 +8389,7 @@ static PyObject *_python_ibm_db_bind_fetch_helper(PyObject *args, int op)
 									row_data->ts_val->fraction / 1000);
 #else
 					{
-						TIMESTAMP_STRUCT ts = parse_ibmi_timestamp(row_data->ts_val, 6);
+						TIMESTAMP_STRUCT ts = parse_ibmi_timestamp(row_data->ts_val, stmt_res->column_info[column_number].scale);
 						
 						value = PyDateTime_FromDateAndTime(ts.year, ts.month, ts.day, ts.hour, ts.minute, ts.second, ts.fraction / 1000);
 					}
