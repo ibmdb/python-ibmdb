@@ -323,35 +323,45 @@ static void _python_ibm_db_free_conn_struct(conn_handle *handle) {
  * }
  */
 
+static void _python_ibm_db_clear_param_cache( stmt_handle *stmt_res )
+{
+	param_node *temp_ptr, *curr_ptr;
+	
+	/* Free param cache list */
+	curr_ptr = stmt_res->head_cache_list;
+		
+	while (curr_ptr != NULL) {
+		/* Decrement refcount on Python handle */
+		/* NOTE: Py_XDECREF checks NULL value */
+		Py_XDECREF(curr_ptr->var_pyvalue);
+		
+		/* Free Values */
+		/* NOTE: PyMem_Free checks NULL value */
+		PyMem_Free(curr_ptr->varname);
+		PyMem_Free(curr_ptr->svalue);
+		PyMem_Free(curr_ptr->uvalue);
+		PyMem_Free(curr_ptr->date_value);
+		PyMem_Free(curr_ptr->time_value);
+		PyMem_Free(curr_ptr->ts_value);
+		
+		temp_ptr = curr_ptr;
+		curr_ptr = curr_ptr->next;
+		
+		PyMem_Free(temp_ptr);
+	}
+	
+	stmt_res->head_cache_list = NULL;
+	stmt_res->num_params = 0;
+}
+
 /*	static void _python_ibm_db_free_result_struct(stmt_handle* handle) */
 static void _python_ibm_db_free_result_struct(stmt_handle* handle) {
 	int i;
 	param_node *curr_ptr = NULL, *prev_ptr = NULL;
 
 	if ( handle != NULL ) {
-		/* Free param cache list */
-		curr_ptr = handle->head_cache_list;
-		prev_ptr = handle->head_cache_list;
-
-		while (curr_ptr != NULL) {
-			curr_ptr = curr_ptr->next;
-			if (prev_ptr->varname) {
-				PyMem_Del(prev_ptr->varname);
-				prev_ptr->varname = NULL;
-			}
-			if (prev_ptr->svalue){ 
-				PyMem_Del(prev_ptr->svalue);
-				prev_ptr->svalue = NULL;
-			}
-			if (prev_ptr->uvalue){ 
-				PyMem_Del(prev_ptr->uvalue);
-				prev_ptr->uvalue = NULL;
-			}
-			PyMem_Del(prev_ptr);
-
-			prev_ptr = curr_ptr;
-		}
-		handle->head_cache_list = NULL;
+		_python_ibm_db_clear_param_cache(handle);
+		
 		/* free row data cache */
 		if (handle->row_data) {
 			for (i = 0; i<handle->num_columns; i++) {
@@ -2273,6 +2283,7 @@ static void _python_ibm_db_add_param_cache( stmt_handle *stmt_res, int param_no,
 		}
 
 		if ( var_pyvalue != NULL) {
+			Py_INCREF(var_pyvalue);
 			tmp_curr->var_pyvalue = var_pyvalue;
 		}
 
@@ -2304,6 +2315,8 @@ static void _python_ibm_db_add_param_cache( stmt_handle *stmt_res, int param_no,
 		}
 
 		if ( var_pyvalue != NULL) {
+			Py_DECREF(curr->var_pyvalue);
+			Py_INCREF(var_pyvalue);
 			curr->var_pyvalue = var_pyvalue;
 		}
 
@@ -6041,23 +6054,7 @@ static PyObject *_python_ibm_db_execute_helper1(stmt_handle *stmt_res, PyObject 
 		
 	/* cleanup dynamic bindings if present */
 	if ( bind_params == 1 ) {
-		/* Free param cache list */
-		curr_ptr = stmt_res->head_cache_list;
-		prev_ptr = stmt_res->head_cache_list;
-			
-		while (curr_ptr != NULL) {
-			curr_ptr = curr_ptr->next;
-			
-			/* Free Values */
-			if ( prev_ptr->svalue) {
-				PyMem_Del(prev_ptr->svalue);
-			}
-			PyMem_Del(prev_ptr);
-			prev_ptr = curr_ptr;
-       		}
-		
-		stmt_res->head_cache_list = NULL;
-		stmt_res->num_params = 0;
+		_python_ibm_db_clear_param_cache(stmt_res);
 	}
 	
 	if ( rc != SQL_ERROR ) {
