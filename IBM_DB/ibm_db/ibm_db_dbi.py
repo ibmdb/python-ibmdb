@@ -14,7 +14,7 @@
 # | language governing permissions and limitations under the License.        |
 # +--------------------------------------------------------------------------+
 # | Authors: Swetha Patel, Abhigyan Agrawal, Tarun Pasrija, Rahul Priyadarshi,
-# |          Akshay Anand
+# |          Akshay Anand, Saba Kauser
 # +--------------------------------------------------------------------------+
 
 """
@@ -67,6 +67,7 @@ class Error(exception):
     def __init__(self, message):
         """This is the constructor which take one string argument."""
         self._message = message
+        super(Error, self).__init__(message)
     def __str__(self):
         """Converts the message to a string."""
         return 'ibm_db_dbi::'+str(self.__class__.__name__)+': '+str(self._message)
@@ -80,6 +81,7 @@ class Warning(exception):
     def __init__(self, message):
         """This is the constructor which take one string argument."""
         self._message = message
+        super(Warning,self).__init__(message)
     def __str__(self):
         """Converts the message to a string."""
         return 'ibm_db_dbi::'+str(self.__class__.__name__)+': '+str(self._message)
@@ -1414,7 +1416,10 @@ class Cursor(object):
             try:
                 row = ibm_db.fetch_tuple(self.stmt_handler)
             except Exception, inst:
-                self.messages.append(_get_exception(inst))
+                if ibm_db.stmt_errormsg() is not None:
+                   self.messages.append(Error(str(ibm_db.stmt_errormsg())))
+                else:    
+                   self.messages.append(_get_exception(inst))
                 if len(row_list) == 0:
                     raise self.messages[len(self.messages) - 1]
                 else:
