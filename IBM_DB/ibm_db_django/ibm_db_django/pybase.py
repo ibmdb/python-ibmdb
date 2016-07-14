@@ -124,6 +124,9 @@ class DB2CursorWrapper( Database.Cursor ):
             raise StopIteration
         return row
     
+    def _create_instance(self, connection):
+        return DB2CursorWrapper(connection)
+        
     def _format_parameters( self, parameters ):
         parameters = list( parameters )
         for index in range( len( parameters ) ):
@@ -144,6 +147,10 @@ class DB2CursorWrapper( Database.Cursor ):
     # Over-riding this method to modify SQLs which contains format parameter to qmark. 
     def execute( self, operation, parameters = () ):
         try:
+            if operation.find('ALTER TABLE') == 0:
+                doReorg = 1
+            else:
+                doReorg = 0
             if operation.count("db2regexExtraField(%s)") > 0:
                 operation = operation.replace("db2regexExtraField(%s)", "")
                 operation = operation % parameters
@@ -154,10 +161,18 @@ class DB2CursorWrapper( Database.Cursor ):
                 parameters = self._format_parameters( parameters )
                 
             if ( djangoVersion[0:2] <= ( 1, 1 ) ):
-                return super( DB2CursorWrapper, self ).execute( operation, parameters )
+                if ( doReorg == 1 ):
+                    super( DB2CursorWrapper, self ).execute( operation, parameters )
+                    return self._reorg_tables()
+                else:    
+                    return super( DB2CursorWrapper, self ).execute( operation, parameters )
             else:
                 try:
-                    return super( DB2CursorWrapper, self ).execute( operation, parameters )
+                    if ( doReorg == 1 ):
+                        super( DB2CursorWrapper, self ).execute( operation, parameters )
+                        return self._reorg_tables()
+                    else:    
+                        return super( DB2CursorWrapper, self ).execute( operation, parameters )
                 except IntegrityError, e:
                     if (djangoVersion[0:2] >= (1, 5)):
                         six.reraise(utils.IntegrityError, utils.IntegrityError( *tuple( six.PY3 and e.args or ( e._message, ) ) ), sys.exc_info()[2])
@@ -210,6 +225,21 @@ class DB2CursorWrapper( Database.Cursor ):
                         raise utils.DatabaseError, utils.DatabaseError( *tuple( e ) ), sys.exc_info()[2] 
         except ( IndexError, TypeError ):
             return None
+    
+    # table reorganization method
+    def _reorg_tables( self ):
+        checkReorgSQL = "select TABSCHEMA, TABNAME from SYSIBMADM.ADMINTABINFO where REORG_PENDING = 'Y'"
+        res = []
+        reorgSQLs = []
+        parameters = ()
+        super( DB2CursorWrapper, self ).execute(checkReorgSQL, parameters)
+        res = super( DB2CursorWrapper, self ).fetchall()
+        if res:
+            for sName, tName in res:
+                reorgSQL = '''CALL SYSPROC.ADMIN_CMD('REORG TABLE "%(sName)s"."%(tName)s"')''' % {'sName': sName, 'tName': tName}
+                reorgSQLs.append(reorgSQL)
+            for sql in reorgSQLs:
+                super( DB2CursorWrapper, self ).execute(sql)
     
     # Over-riding this method to modify result set containing datetime and time zone support is active
     def fetchone( self ):
