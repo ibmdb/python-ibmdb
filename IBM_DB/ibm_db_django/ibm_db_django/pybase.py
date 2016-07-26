@@ -74,6 +74,9 @@ class DatabaseWrapper( object ):
             del kwargs['options']
         if kwargsKeys.__contains__( 'port' ):
             del kwargs['port']
+        if kwargsKeys.__contains__( 'schema' ):
+            kwargs['conn_options']['schema'] = kwargs.get('schema')
+            del kwargs['schema']
         
         pconnect_flag = False
         if kwargsKeys.__contains__( 'PCONNECT' ):
