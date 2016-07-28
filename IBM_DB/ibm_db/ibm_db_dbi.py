@@ -586,7 +586,7 @@ def _connect_helper(conn_func, dsn, user, password, host, database, conn_options
             user = options.get('UID')
             password = options.get('PWD')
         else:
-            if not isinstance(database, six.string_types):
+            if database is not None and not isinstance(database, six.string_types):
                 raise InterfaceError("connect expects the database argument to be of type string or unicode")
             
             if user is not None and not isinstance(user, six.string_types):
@@ -599,6 +599,18 @@ def _connect_helper(conn_func, dsn, user, password, host, database, conn_options
             # Just ignore, but give a warning to the user
             if host != '':
                 warn("IBM i does not support host parameter, ignored", stacklevel=2)
+            
+        # IBM i CLI allows passing NULL as the username/password to connect as the current user,
+        # but no longer supports passing in empty string for those values. Instead, we treat empty
+        # string as None here. Same for database: treat empty string or None as *LOCAL.
+        if user == '':
+            user = None
+            
+        if password == '':
+            password = None;
+        
+        if database is None or database == '':
+            database = '*LOCAL'
         
     if (conn_options is not None) and (not isinstance(conn_options, dict)):
         raise InterfaceError("connect expects the sixth argument"
@@ -639,7 +651,6 @@ def _connect_helper(conn_func, dsn, user, password, host, database, conn_options
         raise _get_exception(inst)
 
     return Connection(conn)
-    
 
 def connect(dsn=None, user='', password='', host='', database='', conn_options=None):
     """This method creates a non persistent connection to the database. It returns
@@ -647,7 +658,7 @@ def connect(dsn=None, user='', password='', host='', database='', conn_options=N
     """
     return _connect_helper(ibm_db.connect, dsn, user, password, host, database, conn_options)
 
-def pconnect(dsn, user='', password='', host='', database='', conn_options=None):
+def pconnect(dsn=None, user='', password='', host='', database='', conn_options=None):
     """This method creates persistent connection to the database. It returns
         a ibm_db_dbi.Connection object.
     """
