@@ -188,6 +188,9 @@ typedef struct _conn_handle_struct {
 	SQLSMALLINT error_recno_tracker;
 	SQLSMALLINT errormsg_recno_tracker;
 	int flag_pconnect; /* Indicates that this connection is persistent */
+#ifdef PASE
+	int fix_timestamp_precision;
+#endif
 } conn_handle;
 
 static void _python_ibm_db_free_conn_struct(conn_handle *handle);
@@ -289,6 +292,9 @@ typedef struct _stmt_handle_struct {
 	SQLLEN num_rows;
 	ibm_db_result_set_info *column_info;
 	ibm_db_row_type *row_data;
+#ifdef PASE
+	int fix_timestamp_precision;
+#endif
 } stmt_handle;
 
 static void _python_ibm_db_free_stmt_struct(stmt_handle *handle);
@@ -641,6 +647,10 @@ static stmt_handle *_ibm_db_new_stmt_struct(conn_handle* conn_res) {
 	stmt_res->errormsg_recno_tracker = 1;
 
 	stmt_res->row_data = NULL;
+	
+#ifdef PASE
+	stmt_res->fix_timestamp_precision = conn_res->fix_timestamp_precision;
+#endif
 
 	return stmt_res;
 }
@@ -1002,6 +1012,12 @@ static int _python_ibm_db_get_result_set_info(stmt_handle *stmt_res)
 				stmt_res->column_info[i].type = SQL_VARBINARY;
 			}
 			break;
+		case SQL_TYPE_TIMESTAMP:
+			// SCALE is always 6 for timestamps on IBM i 7.1 and below
+			if(stmt_res->fix_timestamp_precision)
+			{
+			    stmt_res->column_info[i].scale = 6;
+			}
 			
 		  default:
 			  break;
@@ -1599,6 +1615,21 @@ static PyObject *_python_ibm_db_connect_helper( PyObject *self, PyObject *args, 
 				_python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, rc, 
 					1, NULL, -1, 1);
 			}
+			
+#ifdef PASE
+                        {
+                            char version[6];
+                            
+                            Py_BEGIN_ALLOW_THREADS;
+                            rc = SQLGetInfo(conn_res->hdbc, SQL_DBMS_VER, version, sizeof(version), NULL);
+                            Py_END_ALLOW_THREADS;
+                            
+                            // IBM i CLI doesn't return actual digits of precision for timestamp columns
+                            // until 7.2. Prior versions always return 0 for timestamp, since timestamps
+                            // always had a fixed precision of 6 digits
+                            conn_res->fix_timestamp_precision = (strcmp(version, "07010") == 0);
+                        }
+#endif
 		}
 		Py_XDECREF(databaseObj);
 		Py_XDECREF(uidObj);
