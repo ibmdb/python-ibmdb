@@ -1617,18 +1617,18 @@ static PyObject *_python_ibm_db_connect_helper( PyObject *self, PyObject *args, 
 			}
 			
 #ifdef PASE
-                        {
-                            char version[6];
-                            
-                            Py_BEGIN_ALLOW_THREADS;
-                            rc = SQLGetInfo(conn_res->hdbc, SQL_DBMS_VER, version, sizeof(version), NULL);
-                            Py_END_ALLOW_THREADS;
-                            
-                            // IBM i CLI doesn't return actual digits of precision for timestamp columns
-                            // until 7.2. Prior versions always return 0 for timestamp, since timestamps
-                            // always had a fixed precision of 6 digits
-                            conn_res->fix_timestamp_precision = (strcmp(version, "07010") == 0);
-                        }
+			{
+				char version[6];
+				
+				Py_BEGIN_ALLOW_THREADS;
+				rc = SQLGetInfo(conn_res->hdbc, SQL_DBMS_VER, version, sizeof(version), NULL);
+				Py_END_ALLOW_THREADS;
+				
+				// IBM i CLI doesn't return actual digits of precision for timestamp columns
+				// until 7.2. Prior versions always return 0 for timestamp, since timestamps
+				// always had a fixed precision of 6 digits
+				conn_res->fix_timestamp_precision = (strcmp(version, "07010") == 0);
+			}
 #endif
 		}
 		Py_XDECREF(databaseObj);
