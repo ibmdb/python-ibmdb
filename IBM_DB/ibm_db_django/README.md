@@ -29,6 +29,27 @@ Install Django as per instructions from the Django [http://docs.djangoproject.co
 ```  
 $ pip install ibm_db_django  
 ```
+
+### OSX Issues
+
+If after installing you are getting an error like the following
+
+```
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+ImportError: dlopen(/usr/local/lib/python3.5/site-packages/ibm_db.cpython-35m-darwin.so, 2): Library not loaded: libdb2.dylib
+  Referenced from: /usr/local/lib/python3.5/site-packages/ibm_db.cpython-35m-darwin.so
+  Reason: image not found
+```
+
+You will need to change the install name of the libdb2.dylib dynamic library using [install_name_tool](http://www.unix.com/man-page/osx/1/install_name_tool/).
+
+Run the following commands (here, the python install folder is in `/usr/local/lib`, but it could be your virtualenv):
+
+```
+cd /usr/local/lib/python3.5/site-packages
+install_name_tool -change libdb2.dylib `pwd`/libdb2.dylib ibm_db.cpython-35m-darwin.so
+```
  
 # Tested Operating Systems 
 
