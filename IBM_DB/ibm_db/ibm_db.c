@@ -7817,9 +7817,11 @@ static PyObject *ibm_db_result(PyObject *self, PyObject *args)
 			if (out_length == SQL_NULL_DATA) {
 				Py_INCREF(Py_None);
 				return_value = Py_None;
-			} else if (column_type == SQL_BIGINT){
-				return_value = PyLong_FromString(out_ptr, NULL, 0);
-			} else {
+			} //else if (column_type == SQL_BIGINT){
+			//	return_value = PyLong_FromString(out_ptr, NULL, 0); }
+			// Converting from Wchar string to long leads to data truncation
+			// as it treats 00 in 2 bytes for each char as NULL
+			else {
 				return_value = getSQLWCharAsPyUnicodeObject(out_ptr, out_length);
 			}
 			PyMem_Del(out_ptr);
