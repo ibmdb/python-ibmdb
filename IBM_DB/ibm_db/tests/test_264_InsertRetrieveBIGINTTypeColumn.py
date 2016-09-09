@@ -56,6 +56,16 @@ class IbmDbTestCase(unittest.TestCase):
          print type(data[2]) is long
          data = ibm_db.fetch_both(stmt)
 
+       # test ibm_db.result for fetch of bigint
+       stmt1 = ibm_db.prepare(conn, "SELECT col2 FROM tab_bigint")
+       ibm_db.execute(stmt1)
+       ibm_db.fetch_row(stmt1, 0)
+       if (server.DBMS_NAME[0:3] != 'IDS'):
+         row1 = ibm_db.result(stmt1, 'COL2')
+       else:
+         row1 = ibm_db.result(stmt1, 'col2')
+       print row1
+       
        ibm_db.close(conn)
 
 #__END__
@@ -68,6 +78,7 @@ class IbmDbTestCase(unittest.TestCase):
 #True
 #True
 #True
+#9223372036854775807
 #__ZOS_EXPECTED__
 #Number of inserted rows: 1
 #-9223372036854775807
@@ -77,6 +88,7 @@ class IbmDbTestCase(unittest.TestCase):
 #True
 #True
 #True
+#9223372036854775807
 #__SYSTEMI_EXPECTED__
 #Number of inserted rows: 1
 #-9223372036854775807
@@ -86,6 +98,7 @@ class IbmDbTestCase(unittest.TestCase):
 #True
 #True
 #True
+#9223372036854775807
 #__IDS_EXPECTED__
 #Number of inserted rows: 1
 #-9223372036854775807
@@ -95,3 +108,4 @@ class IbmDbTestCase(unittest.TestCase):
 #True
 #True
 #True
+#9223372036854775807
