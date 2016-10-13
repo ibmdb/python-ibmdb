@@ -51,6 +51,7 @@ SQL_INDEX_CLUSTERED = ibm_db.SQL_INDEX_CLUSTERED
 SQL_INDEX_OTHER = ibm_db.SQL_INDEX_OTHER
 SQL_DBMS_VER = ibm_db.SQL_DBMS_VER
 SQL_DBMS_NAME = ibm_db.SQL_DBMS_NAME
+FIX_RETURN_TYPE = 1
 
 # Module globals
 apilevel = '2.0'
@@ -748,6 +749,17 @@ class Connection(object):
         """
         return ibm_db.get_option(self.conn_handler, attr_key, 1)
 
+	# Sets FIX_RETURN_TYPE. Added for performance improvement
+    def set_fix_return_type(self, is_on):
+        try:
+          if is_on:
+            self.FIX_RETURN_TYPE = 1
+          else:
+            self.FIX_RETURN_TYPE = 0
+        except Exception, inst:
+          raise _get_exception(inst)
+        return self.FIX_RETURN_TYPE
+
     # Sets connection AUTOCOMMIT attribute
     def set_autocommit(self, is_on):
         """Input: connection attribute: true if AUTOCOMMIT ON, false otherwise (i.e. OFF)
@@ -1113,6 +1125,7 @@ class Cursor(object):
         self._is_scrollable_cursor = False
         self.__connection = conn_object
         self.messages = []
+		self.FIX_RETURN_TYPE = conn_object.FIX_RETURN_TYPE
     
     # This method closes the statemente associated with the cursor object.
     # It takes no argument.
@@ -1426,7 +1439,10 @@ class Cursor(object):
                     return row_list
             
             if row != False:
-                row_list.append(self._fix_return_data_type(row))
+			    if self.FIX_RETURN_TYPE == 1:
+				    row_list.append(self._fix_return_data_type(row))
+				else:
+                    row_list.append(row)
             else:
                 return row_list
             rows_fetched = rows_fetched + 1
