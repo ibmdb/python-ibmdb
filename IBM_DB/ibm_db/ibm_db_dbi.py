@@ -749,7 +749,7 @@ class Connection(object):
         """
         return ibm_db.get_option(self.conn_handler, attr_key, 1)
 
-	# Sets FIX_RETURN_TYPE. Added for performance improvement
+    # Sets FIX_RETURN_TYPE. Added for performance improvement
     def set_fix_return_type(self, is_on):
         try:
           if is_on:
@@ -1125,8 +1125,8 @@ class Cursor(object):
         self._is_scrollable_cursor = False
         self.__connection = conn_object
         self.messages = []
-		self.FIX_RETURN_TYPE = conn_object.FIX_RETURN_TYPE
-    
+        self.FIX_RETURN_TYPE = conn_object.FIX_RETURN_TYPE
+
     # This method closes the statemente associated with the cursor object.
     # It takes no argument.
     def close(self):
@@ -1430,18 +1430,18 @@ class Cursor(object):
                 row = ibm_db.fetch_tuple(self.stmt_handler)
             except Exception, inst:
                 if ibm_db.stmt_errormsg() is not None:
-                   self.messages.append(Error(str(ibm_db.stmt_errormsg())))
+                    self.messages.append(Error(str(ibm_db.stmt_errormsg())))
                 else:    
-                   self.messages.append(_get_exception(inst))
+                    self.messages.append(_get_exception(inst))
                 if len(row_list) == 0:
                     raise self.messages[len(self.messages) - 1]
                 else:
                     return row_list
             
             if row != False:
-			    if self.FIX_RETURN_TYPE == 1:
-				    row_list.append(self._fix_return_data_type(row))
-				else:
+                if self.FIX_RETURN_TYPE == 1:
+                    row_list.append(self._fix_return_data_type(row))
+                else:
                     row_list.append(row)
             else:
                 return row_list
