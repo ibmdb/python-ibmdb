@@ -113,6 +113,13 @@ if (('IBM_DB_HOME' not in os.environ) and ('IBM_DB_DIR' not in os.environ) and (
             else:
                 cliFileName = 'linuxia32_odbc_cli.tar.gz'
                 arch_ = 'i686'
+        elif (_checkOSList(os.uname(),'390')):
+            if is64Bit:
+                cliFileName = 's390x64_odbc_cli.tar.gz'
+                arch_ = 's390x'
+            else:
+                cliFileName = '390_odbc_cli.tar.gz'
+                arch_ = 's390'
     elif ('sunos' in sys.platform):
         os_ = 'solaris*'
         if ('i86pc' in os.uname()):
