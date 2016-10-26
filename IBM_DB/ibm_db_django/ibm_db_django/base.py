@@ -268,7 +268,9 @@ class DatabaseWrapper( BaseDatabaseWrapper ):
             return self.databaseWrapper._cursor( self.connection )
             
         def init_connection_state( self ):
-            pass
+            if ( self.settings_dict.keys() ).__contains__( 'SCHEMA' ):
+                with self.cursor() as cursor:
+                    cursor.execute('SET CURRENT_SCHEMA = %s', (self.settings_dict['SCHEMA'], ))
         
         def is_usable(self):
             if self.databaseWrapper.is_active( self.connection ):
