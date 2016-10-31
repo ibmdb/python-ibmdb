@@ -88,7 +88,7 @@ if('win32' in sys.platform):
         shutil.copy(prebuildPYDname, os.path.join(dllDir, 'ibm_db.dll'))
         prebuildIbmdbPYD = True
         
-if (('IBM_DB_HOME' not in os.environ) and ('IBM_DB_DIR' not in os.environ) and ('IBM_DB_LIB' not in os.environ) and ('DB2HOME' not in os.environ)):
+if (('IBM_DB_HOME' not in os.environ) and ('IBM_DB_DIR' not in os.environ) and ('IBM_DB_LIB' not in os.environ) and ('DB2PATH' not in os.environ)):
     if ('aix' in sys.platform):
         os_ = 'aix'
         arch_ = '*'
