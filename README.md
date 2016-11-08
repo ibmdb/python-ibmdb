@@ -71,5 +71,5 @@ Use following pypi web location for downloading source code and binaries
 
 <a name='contributing to the ibm_db python project'></a>
 ## Contributing to the ibm_db python project
-[Contributions Guidelines for Contributions](https://github.com/SabaKauser/python-ibmdb/blob/master/Contributions.md)
+[Contributions Guidelines for Contributions](https://github.com/ibmdb/python-ibmdb/blob/master/Contributions.md)
 
