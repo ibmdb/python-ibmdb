@@ -11124,8 +11124,8 @@ INIT_ibm_db(void) {
 	PyModule_AddIntConstant(m, "CASE_LOWER", CASE_LOWER);
 	PyModule_AddIntConstant(m, "CASE_UPPER", CASE_UPPER);
 	PyModule_AddIntConstant(m, "USE_WCHAR", USE_WCHAR);
-    PyModule_AddIntConstant(m, "WCHAR_YES", WCHAR_YES);
-    PyModule_AddIntConstant(m, "WCHAR_NO", WCHAR_NO);
+        PyModule_AddIntConstant(m, "WCHAR_YES", WCHAR_YES);
+        PyModule_AddIntConstant(m, "WCHAR_NO", WCHAR_NO);
 	PyModule_AddIntConstant(m, "SQL_ATTR_CURSOR_TYPE", SQL_ATTR_CURSOR_TYPE);
 	PyModule_AddIntConstant(m, "SQL_CURSOR_FORWARD_ONLY", SQL_CURSOR_FORWARD_ONLY);
 	PyModule_AddIntConstant(m, "SQL_CURSOR_KEYSET_DRIVEN", SQL_CURSOR_KEYSET_DRIVEN);
