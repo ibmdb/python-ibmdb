@@ -5553,7 +5553,14 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
 						break;
 					case SQL_TYPE_TIMESTAMP:
 						valueType = SQL_C_WCHAR;
-						curr->bind_indicator = SQL_NTS;
+						if( param_length == 0)
+						{
+							curr->bind_indicator = SQL_NULL_DATA;
+						}
+						else
+						{
+						    curr->bind_indicator = SQL_NTS;
+						}
 						if(curr->uvalue[10] == 'T'){
 							curr->uvalue[10] = ' ';
 						}
@@ -5681,7 +5688,14 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
 						valueType = SQL_C_CHAR;
 						curr->bind_indicator = curr->ivalue;
 						if (curr->param_type == SQL_PARAM_OUTPUT || curr->param_type == SQL_PARAM_INPUT_OUTPUT) {
-							curr->bind_indicator = SQL_NTS;
+							if( param_length == 0)
+							{
+								curr->bind_indicator = SQL_NULL_DATA;
+						    }
+							else
+							{
+							    curr->bind_indicator = SQL_NTS;
+							}
 						}
 						if(curr->svalue[10] == 'T'){
 							curr->svalue[10] = ' ';

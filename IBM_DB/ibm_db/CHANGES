@@ -185,3 +185,5 @@ only optimize for N rows issue #2 (defect #154260)
           Setting this attrbiute to WCHAR_NO would result in using char bind-in as against current default wchar.
  - Added: New API set_fix_return_type(1(default)|0) to allow/disallow additional formatting of decimal and blob data.
  
+ 2016/11/17
+ - Added: Correct OUTPUT TIMESTAMP Parameters behavior in ibm_db.callproc API for stored procedure calls. 
