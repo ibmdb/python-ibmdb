@@ -663,6 +663,7 @@ class Connection(object):
         self._cursor_list = []
         self.__dbms_name = ibm_db.get_db_info(conn_handler, SQL_DBMS_NAME)
         self.__dbms_ver = ibm_db.get_db_info(conn_handler, SQL_DBMS_VER)
+        self.FIX_RETURN_TYPE = 1 
 
     # This method is used to get the DBMS_NAME 
     def __get_dbms_name( self ):
