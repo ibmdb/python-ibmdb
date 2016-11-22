@@ -231,14 +231,26 @@ class DatabaseIntrospection( BaseDatabaseIntrospection ):
     # Getting the description of the table.
     def get_table_description( self, cursor, table_name ):
         qn = self.connection.ops.quote_name
-        cursor.execute( "SELECT * FROM %s FETCH FIRST 1 ROWS ONLY" % qn( table_name ) )   
         description = []
-        if djangoVersion < (1, 6):
-            for desc in cursor.description:
-                description.append( [ desc[0].lower(), ] + desc[1:] )
-        else:
-            for desc in cursor.description:
-                description.append(FieldInfo(*[desc[0].lower(), ] + desc[1:]))
+        table_type = 'T'
+        if not _IS_JYTHON:
+            dbms_name='dbms_name'
+            schema = cursor.connection.get_current_schema()
+            if getattr(cursor.connection, dbms_name) != 'DB2':
+                sql = "SELECT TYPE FROM SYSCAT.TABLES WHERE TABSCHEMA='%(schema)s' AND TABNAME='%(table)s'" % {'schema': schema.upper(), 'table': table_name.upper()}
+            else:
+                sql = "SELECT TYPE FROM SYSIBM.SYSTABLES WHERE CREATOR='%(schema)s' AND NAME='%(table)s'" % {'schema': schema.upper(), 'table': table_name.upper()}
+            cursor.execute(sql)
+            table_type = cursor.fetchone()[0]
+
+        if table_type != 'X':
+            cursor.execute( "SELECT * FROM %s FETCH FIRST 1 ROWS ONLY" % qn( table_name ) )
+            if djangoVersion < (1, 6):
+                for desc in cursor.description:
+                    description.append( [ desc[0].lower(), ] + desc[1:] )
+            else:
+                for desc in cursor.description:
+                    description.append(FieldInfo(*[desc[0].lower(), ] + desc[1:]))
         
         return description
 
@@ -246,7 +258,11 @@ class DatabaseIntrospection( BaseDatabaseIntrospection ):
         constraints = {} 
         if not _IS_JYTHON:
             schema = cursor.connection.get_current_schema()
-            sql = "SELECT CONSTNAME, COLNAME FROM SYSCAT.COLCHECKS WHERE TABSCHEMA='%(schema)s' AND TABNAME='%(table)s'" % {'schema': schema.upper(), 'table': table_name.upper()}
+            dbms_name='dbms_name'
+            if getattr(cursor.connection, dbms_name) != 'DB2':
+                sql = "SELECT CONSTNAME, COLNAME FROM SYSCAT.COLCHECKS WHERE TABSCHEMA='%(schema)s' AND TABNAME='%(table)s'" % {'schema': schema.upper(), 'table': table_name.upper()}
+            else:
+                sql = "SELECT CHECKNAME, COLNAME FROM SYSIBM.SYSCHECKDEP WHERE TBOWNER='%(schema)s' AND TBNAME='%(table)s'" % {'schema': schema.upper(), 'table': table_name.upper()}
             cursor.execute(sql)
             for constname, colname in cursor.fetchall():
                 if constname not in constraints:
@@ -260,7 +276,10 @@ class DatabaseIntrospection( BaseDatabaseIntrospection ):
                     }
                 constraints[constname]['columns'].append(colname.lower())
                 
-            sql = "SELECT KEYCOL.CONSTNAME, KEYCOL.COLNAME FROM SYSCAT.KEYCOLUSE KEYCOL INNER JOIN SYSCAT.TABCONST TABCONST ON KEYCOL.CONSTNAME=TABCONST.CONSTNAME WHERE TABCONST.TABSCHEMA='%(schema)s' and TABCONST.TABNAME='%(table)s' and TABCONST.TYPE='U'" % {'schema': schema.upper(), 'table': table_name.upper()}
+            if getattr(cursor.connection, dbms_name) != 'DB2':
+                sql = "SELECT KEYCOL.CONSTNAME, KEYCOL.COLNAME FROM SYSCAT.KEYCOLUSE KEYCOL INNER JOIN SYSCAT.TABCONST TABCONST ON KEYCOL.CONSTNAME=TABCONST.CONSTNAME WHERE TABCONST.TABSCHEMA='%(schema)s' and TABCONST.TABNAME='%(table)s' and TABCONST.TYPE='U'" % {'schema': schema.upper(), 'table': table_name.upper()}
+            else:
+                sql = "SELECT KEYCOL.CONSTNAME, KEYCOL.COLNAME FROM SYSIBM.SYSKEYCOLUSE KEYCOL INNER JOIN SYSIBM.SYSTABCONST TABCONST ON KEYCOL.CONSTNAME=TABCONST.CONSTNAME WHERE TABCONST.TBCREATOR='%(schema)s' AND TABCONST.TBNAME='%(table)s' AND TABCONST.TYPE='U'" % {'schema': schema.upper(), 'table': table_name.upper()}
             cursor.execute(sql)
             for constname, colname in cursor.fetchall():
                 if constname not in constraints:
