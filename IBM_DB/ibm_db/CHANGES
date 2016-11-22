@@ -173,3 +173,17 @@ only optimize for N rows issue #2 (defect #154260)
  - Fixed: Return relevant error message in case of closed connection (Issue #167)
  - Fixed: Mac support enhancements to setup.py (Issue #184)
  - Fixed: renamed README to README.md and updated setup.py
+ 
+ 2016/03/23 (setup.py 2.0.7, ibm_db-2.0.7, ibm_db_dbi-2.0.7)
+ - Retrieve last serial value for IDS using get_last_serial_value() API.
+ - SQL_ATTR_QUERY_TIMEOUT keyword support using  ibm_db.set_option: 
+ - test_warn.py for ibm_db.stmt_warn()
+ - ibm_db binaries for python 3.5 on windows
+
+ 2016/10/13
+ - Added: New attribute USE_WCHAR with values WCHAR_YES(default) and WCHAR_NO
+          Setting this attrbiute to WCHAR_NO would result in using char bind-in as against current default wchar.
+ - Added: New API set_fix_return_type(1(default)|0) to allow/disallow additional formatting of decimal and blob data.
+ 
+ 2016/11/17
+ - Added: Correct OUTPUT TIMESTAMP Parameters behavior in ibm_db.callproc API for stored procedure calls. 

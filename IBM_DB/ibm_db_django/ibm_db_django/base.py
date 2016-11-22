@@ -132,20 +132,21 @@ class DatabaseWrapper( BaseDatabaseWrapper ):
     wrapper is IBM_DB_DBI (latest version can be downloaded from http://code.google.com/p/ibm-db/ or
     http://pypi.python.org/pypi/ibm_db). 
     """
+    data_types={}
     vendor = 'DB2'
     operators = {
         "exact":        "= %s",
-        "iexact":       "LIKE %s ESCAPE '\\'",
+        "iexact":       "LIKE UPPER(%s) ESCAPE '\\'",
         "contains":     "LIKE %s ESCAPE '\\'",
-        "icontains":    "LIKE %s ESCAPE '\\'",
+        "icontains":    "LIKE UPPER(%s) ESCAPE '\\'",
         "gt":           "> %s",
         "gte":          ">= %s",
         "lt":           "< %s",
         "lte":          "<= %s",
         "startswith":   "LIKE %s ESCAPE '\\'",
         "endswith":     "LIKE %s ESCAPE '\\'",
-        "istartswith":  "LIKE %s ESCAPE '\\'",
-        "iendswith":    "LIKE %s ESCAPE '\\'",
+        "istartswith":  "LIKE UPPER(%s) ESCAPE '\\'",
+        "iendswith":    "LIKE UPPER(%s) ESCAPE '\\'",
     }
     if( djangoVersion[0:2] >= ( 1, 6 ) ):
         Database = Database
@@ -162,6 +163,11 @@ class DatabaseWrapper( BaseDatabaseWrapper ):
         else:
             self.features = DatabaseFeatures( self )
         self.creation = DatabaseCreation( self )
+        
+        if( djangoVersion[0:2] >= ( 1, 8 ) ): 
+            self.data_types=self.creation.data_types
+            self.data_type_check_constraints=self.creation.data_type_check_constraints
+        
         self.introspection = DatabaseIntrospection( self )
         if( djangoVersion[0:2] <= ( 1, 1 ) ):
             self.validation = DatabaseValidation()

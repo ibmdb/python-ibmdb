@@ -58,8 +58,7 @@ class IbmDbTestCase(unittest.TestCase):
 
 #__END__
 #__LUW_EXPECTED__
-#[IBM][CLI Driver] CLI0005W  Option value changed. SQLSTATE=01S02 SQLCODE=-99999
-#No Data
+#No Data[IBM][CLI Driver][DB2%s] SQL0100W  No row was found for FETCH, UPDATE or DELETE; or the result of a query is an empty table.  SQLSTATE=02000 SQLCODE=100
 #__ZOS_EXPECTED__
 #No Data[IBM][CLI Driver][DB2]
 # SQL0100W  No row was found for FETCH, UPDATE or DELETE; or the result of a query is an empty table.  SQLSTATE=02000 SQLCODE=100
@@ -67,4 +66,4 @@ class IbmDbTestCase(unittest.TestCase):
 #No Data
 #__IDS_EXPECTED__
 #No Data
-#[IBM][CLI Driver][IDS/UNIX64] SQL0100W  No row was found for FETCH, UPDATE or DELETE; or the result of a query is an empty table.  SQLSTATE=02000 SQLCODE=100
+#[IBM][CLI Driver][IDS/%s] SQL0100W  No row was found for FETCH, UPDATE or DELETE; or the result of a query is an empty table.  SQLSTATE=02000 SQLCODE=100

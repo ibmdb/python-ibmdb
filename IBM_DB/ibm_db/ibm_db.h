@@ -4,8 +4,8 @@
 |                                                                      |
 | (C) Copyright IBM Corporation 2006-2013.                             |
 +----------------------------------------------------------------------+
-| Authors: Manas Dadarkar, Abhigyan Agrawal, Rahul Priyadarshi         |
-|                                                                      | 
+| Authors: Manas Dadarkar, Abhigyan Agrawal, Rahul Priyadarshi,        |
+|          Saba Kauser                                                 | 
 +----------------------------------------------------------------------+
 */
 
@@ -157,6 +157,11 @@
 #define CASE_NATURAL 0
 #define CASE_LOWER 1
 #define CASE_UPPER 2
+
+/* data type switch for performance */
+#define USE_WCHAR 100
+#define WCHAR_YES 1
+#define WCHAR_NO  0
 
 /* maximum sizes */
 #define USERID_LEN 16

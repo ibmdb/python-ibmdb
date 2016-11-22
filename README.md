@@ -56,9 +56,7 @@ Use following pypi web location for downloading source code and binaries
   Oct 20th 2014: New Release of IBM_DB_SA (0.3.2) made.
 
 ### *Updated ibm_db*
-  Oct 28th 2015: A new release 2.0.6 of ibm_db and ibm_db_dbi
-  Note : 2.0.6 release is currently not available in https://pypi.python.org/pypi/ibm_db/ and ibm_db 2.0.5.1 will be replaced 
-  shortly with the new release ibm_db 2.0.6.  
+  Mar 23rd 2016: A new release 2.0.7 of ibm_db and ibm_db_dbi.
 
 ### *Support for Django on Jython*
   ibm_db_django supports Django on Jython (on Jython-Django v1.0.x and v1.1.x are supported).
@@ -73,5 +71,5 @@ Use following pypi web location for downloading source code and binaries
 
 <a name='contributing to the ibm_db python project'></a>
 ## Contributing to the ibm_db python project
-[Contributions Guidelines for Contributions](https://github.com/ibmdb/python-ibmdb)
+[Contributions Guidelines for Contributions](https://github.com/ibmdb/python-ibmdb/blob/master/Contributions.md)
 
