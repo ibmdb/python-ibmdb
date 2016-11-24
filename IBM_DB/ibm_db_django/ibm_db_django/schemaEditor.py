@@ -527,7 +527,7 @@ class DB2SchemaEditor(BaseDatabaseSchemaEditor):
         if( djangoVersion[0:2] < ( 1, 9 ) ):
             rel_condition = field.rel.through._meta.auto_created
         else:
-            if field.remote_field is not None and hasattr(old_field.remote_field,'through'):
+            if field.remote_field is not None and hasattr(field.remote_field,'through'):
                 rel_condition = field.remote_field.through._meta.auto_created
             else:
                 rel_condition = False
