@@ -1,5 +1,10 @@
 Change Log
 =============
+
+2016/11/23
+- Added support for Django-1.9.9, with backward compatibility
+- Update version to 1.1.0
+
 2016/01/28
 - Added support for Django-1.8.3, with backward compatibility
 - Update version to 1.0.9

@@ -1,7 +1,7 @@
 # +--------------------------------------------------------------------------+
 # |  Licensed Materials - Property of IBM                                    |
 # |                                                                          |
-# | (C) Copyright IBM Corporation 2009-2013.                                      |
+# | (C) Copyright IBM Corporation 2009-2016.                                      |
 # +--------------------------------------------------------------------------+
 # | This module complies with Django 1.0 and is                              |
 # | Licensed under the Apache License, Version 2.0 (the "License");          |
@@ -37,7 +37,13 @@ if ( djangoVersion[0:2] >= ( 1, 5 )):
     from django.utils.encoding import force_bytes, force_text
     from django.utils import six
     import re
-    
+ 
+_IS_JYTHON = sys.platform.startswith( 'java' )
+if _IS_JYTHON:
+    dbms_name = 'dbname'
+else:
+    dbms_name = 'dbms_name'
+
 DatabaseError = Database.DatabaseError
 IntegrityError = Database.IntegrityError
 if ( djangoVersion[0:2] >= ( 1, 6 )):

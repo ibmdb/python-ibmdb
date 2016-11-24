@@ -1,7 +1,7 @@
 # +--------------------------------------------------------------------------+
 # |  Licensed Materials - Property of IBM                                    |
 # |                                                                          |
-# | (C) Copyright IBM Corporation 2009-2014.                                 |
+# | (C) Copyright IBM Corporation 2009-2016.                                 |
 # +--------------------------------------------------------------------------+
 # | This module complies with Django 1.0 and is                              |
 # | Licensed under the Apache License, Version 2.0 (the "License");          |
@@ -13,7 +13,7 @@
 # | KIND, either express or implied. See the License for the specific        |
 # | language governing permissions and limitations under the License.        |
 # +--------------------------------------------------------------------------+
-# | Authors: Rahul Priyadarshi                                               |
+# | Authors: Rahul Priyadarshi, Hemlata Bhatt, Vyshakh A                     |
 # +--------------------------------------------------------------------------+
 
 import sys
@@ -124,8 +124,16 @@ class DB2SchemaEditor(BaseDatabaseSchemaEditor):
         new_db_field = new_field.db_parameters(connection=self.connection)
         old_db_field_type = old_db_field['type']
         new_db_field_type = new_db_field['type']
-        
-        if ((old_db_field_type, new_db_field_type) == (None, None)) and (old_field.rel.through and new_field.rel.through and old_field.rel.through._meta.auto_created and new_field.rel.through._meta.auto_created):
+
+        if( djangoVersion[0:2] < ( 1, 9 ) ):
+            rel_condition = (old_field.rel.through and new_field.rel.through and old_field.rel.through._meta.auto_created and new_field.rel.through._meta.auto_created)
+        else:
+            if old_field.remote_field is not None and hasattr(old_field.remote_field,'through'):
+                rel_condition = (old_field.remote_field.through and new_field.remote_field.through and old_field.remote_field.through._meta.auto_created and new_field.remote_field.through._meta.auto_created)
+            else:
+                rel_condition = False
+            
+        if ((old_db_field_type, new_db_field_type) == (None, None)) and rel_condition:
                 return self._alter_many_to_many(model, old_field, new_field, strict)
         elif old_db_field_type is None or new_db_field_type is None:
                 raise ValueError("Cannot alter field %s into %s" % (
@@ -172,7 +180,7 @@ class DB2SchemaEditor(BaseDatabaseSchemaEditor):
         #Need to remove Primary Key
         if alter_field_primary_key and old_field.primary_key:
             if strict:
-                pk_names = self._constraint_names(model, [old_field.column], parimary_key=True)
+                pk_names = self._constraint_names(model, [old_field.column], primary_key=True)
                 if len(pk_names) == 0:
                     raise ValueError("Found no primary key in %s.%s " % (model._meta.db_table, old_field.column))
             self.execute(
@@ -231,7 +239,11 @@ class DB2SchemaEditor(BaseDatabaseSchemaEditor):
             )
         
         #Drop all FK constraints, if require we will make it again
-        if old_field.rel:
+        if( djangoVersion[0:2] < ( 1, 9 ) ):
+            flag= old_field.rel
+        else:
+            flag= old_field.remote_field
+        if flag:
             fk_names = self._constraint_names(model, [old_field.column], foreign_key=True)
             for fk_name in fk_names:
                 self.execute(
@@ -451,17 +463,28 @@ class DB2SchemaEditor(BaseDatabaseSchemaEditor):
             self._reorg_tables()
 
         #Rebuild/make FK constraint, if it have any
-        if new_field.rel:
-            self.execute(
-                self.sql_create_fk % {
-                    'table': self.quote_name(model._meta.db_table),
-                    'name': self._create_index_name(model, [new_field.column], suffix="_fk"),
-                    'column': self.quote_name(new_field.column),
-                    'to_table': self.quote_name(new_field.rel.to._meta.db_table),
-                    'to_column': self.quote_name(new_field.rel.get_related_field().column),
-                }
+        if( djangoVersion[0:2] < ( 1, 9 ) ):
+            if new_field.rel:
+                self.execute(
+                    self.sql_create_fk % {
+                        'table': self.quote_name(model._meta.db_table),
+                        'name': self._create_index_name(model, [new_field.column], suffix="_fk"),
+                        'column': self.quote_name(new_field.column),
+                        'to_table': self.quote_name(new_field.rel._meta.db_table),
+                        'to_column': self.quote_name(new_field.rel.get_related_field().column),
+                    }
             )
-            
+        else:
+	    if new_field.remote_field:
+                self.execute(
+                    self.sql_create_fk % {
+                        'table': self.quote_name(model._meta.db_table),
+                        'name': self._create_index_name(model, [new_field.column], suffix="_fk"),
+                        'column': self.quote_name(new_field.column),
+                        'to_table': self.quote_name(new_field.remote_field.model._meta.db_table),
+                        'to_column': self.quote_name(new_field.remote_field.get_related_field().column),
+                    }
+            )
         #Rebuild incoming FK constraints
         if rebuild_incomming_fk:
             for inc_rel in new_field.model._meta.get_all_related_objects():
@@ -501,7 +524,15 @@ class DB2SchemaEditor(BaseDatabaseSchemaEditor):
         field._unique = False
         
         super(DB2SchemaEditor, self).add_field(model, field)
-        if isinstance(field, ManyToManyField) and field.rel.through._meta.auto_created:
+        if( djangoVersion[0:2] < ( 1, 9 ) ):
+            rel_condition = field.rel.through._meta.auto_created
+        else:
+            if field.remote_field is not None and hasattr(field.remote_field,'through'):
+                rel_condition = field.remote_field.through._meta.auto_created
+            else:
+                rel_condition = False
+                
+        if isinstance(field, ManyToManyField) and rel_condition:
             return
         else:
             self._reorg_tables()
@@ -556,8 +587,13 @@ class DB2SchemaEditor(BaseDatabaseSchemaEditor):
                           'unique': {},
                           'index': {},
                           'check': {}}
-        rel_old_field = old_field.rel.through._meta.get_field(old_field.m2m_reverse_field_name())[0]
-        rel_new_field = new_field.rel.through._meta.get_field(new_field.m2m_reverse_field_name())[0]
+
+	if( djangoVersion[0:2] < ( 1, 9 ) ):
+            rel_old_field = old_field.rel.through._meta.get_field(old_field.m2m_reverse_field_name())[0]
+            rel_new_field = new_field.rel.through._meta.get_field(new_field.m2m_reverse_field_name())[0]
+        else:
+	    rel_old_field = old_field.remote_field.through._meta.get_field(old_field.m2m_reverse_field_name())[0]
+            rel_new_field = new_field.remote_field.through._meta.get_field(new_field.m2m_reverse_field_name())[0]
 
         with self.connection.cursor() as cur:
             constraints = self.connection.introspection.get_constraints(cur, old_field.rel.through._meta.db_table)
