@@ -54,7 +54,7 @@ setup (
                          'Operating System :: POSIX :: Linux',
                          'Operating System :: MacOS',
                          'Topic :: Database :: Front-Ends'],
-    data_files        = [ ('', ['./README']),
+    data_files        = [ ('', ['./README.md']),
                           ('', ['./CHANGES']),
                           ('', ['./LICENSE']) ],
     zip_safe          = False,
