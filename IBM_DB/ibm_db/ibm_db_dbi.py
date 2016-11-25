@@ -640,7 +640,7 @@ def pconnect(dsn, user='', password='', host='', database='', conn_options=None)
         dsn = dsn + "PWD=" + password + ";"
     try:    
         conn = ibm_db.pconnect(dsn, '', '', conn_options)
-        ibm_db.set_option(conn, {SQL_ATTR_CURRENT_SCHEMA : user}, 1)
+        ibm_db.set_option(conn, {SQL_ATTR_CURRENT_SCHEMA : conn_options['schema']}, 1)
     except Exception, inst:
         raise _get_exception(inst)
 
