@@ -126,7 +126,10 @@ class DB2SchemaEditor(BaseDatabaseSchemaEditor):
         new_db_field_type = new_db_field['type']
 
         if( djangoVersion[0:2] < ( 1, 9 ) ):
-            rel_condition = (old_field.rel.through and new_field.rel.through and old_field.rel.through._meta.auto_created and new_field.rel.through._meta.auto_created)
+            if old_field.rel is not None and hasattr(old_field.rel,'through'):
+                rel_condition = (old_field.rel.through and new_field.rel.through and old_field.rel.through._meta.auto_created and new_field.rel.through._meta.auto_created)
+            else:
+                rel_condition = False
         else:
             if old_field.remote_field is not None and hasattr(old_field.remote_field,'through'):
                 rel_condition = (old_field.remote_field.through and new_field.remote_field.through and old_field.remote_field.through._meta.auto_created and new_field.remote_field.through._meta.auto_created)
@@ -525,7 +528,10 @@ class DB2SchemaEditor(BaseDatabaseSchemaEditor):
         
         super(DB2SchemaEditor, self).add_field(model, field)
         if( djangoVersion[0:2] < ( 1, 9 ) ):
-            rel_condition = field.rel.through._meta.auto_created
+            if field.rel is not None and hasattr(field.rel,'through'):
+                rel_condition = field.rel.through._meta.auto_created
+            else:
+                rel_condition = False
         else:
             if field.remote_field is not None and hasattr(field.remote_field,'through'):
                 rel_condition = field.remote_field.through._meta.auto_created
