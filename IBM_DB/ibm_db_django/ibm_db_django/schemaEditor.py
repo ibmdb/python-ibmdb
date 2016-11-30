@@ -126,13 +126,16 @@ class DB2SchemaEditor(BaseDatabaseSchemaEditor):
         new_db_field_type = new_db_field['type']
 
         if( djangoVersion[0:2] < ( 1, 9 ) ):
-            rel_condition = (old_field.rel.through and new_field.rel.through and old_field.rel.through._meta.auto_created and new_field.rel.through._meta.auto_created)
+            if old_field.rel is not None and hasattr(old_field.rel,'through'):
+                rel_condition = (old_field.rel.through and new_field.rel.through and old_field.rel.through._meta.auto_created and new_field.rel.through._meta.auto_created)
+            else:
+                rel_condition = False
         else:
             if old_field.remote_field is not None and hasattr(old_field.remote_field,'through'):
                 rel_condition = (old_field.remote_field.through and new_field.remote_field.through and old_field.remote_field.through._meta.auto_created and new_field.remote_field.through._meta.auto_created)
             else:
                 rel_condition = False
-            
+          
         if ((old_db_field_type, new_db_field_type) == (None, None)) and rel_condition:
                 return self._alter_many_to_many(model, old_field, new_field, strict)
         elif old_db_field_type is None or new_db_field_type is None:
