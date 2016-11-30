@@ -542,7 +542,7 @@ class DatabaseOperations ( BaseDatabaseOperations ):
     
     def bulk_insert_sql(self, fields, num_values):
         values_sql = "( %s )" %(", ".join( ["%s"] * len(fields)))
-        bulk_values_sql = "VALUES " + ", ".join([values_sql] * len(num_values) )
+        bulk_values_sql = "VALUES " + ", ".join([values_sql] * num_values )
         return bulk_values_sql
     
     def for_update_sql(self, nowait=False):
