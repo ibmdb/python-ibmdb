@@ -461,9 +461,15 @@ class DatabaseOperations ( BaseDatabaseOperations ):
             for field in model._meta.many_to_many:
                 m2m_table = field.m2m_db_table()
                 if( djangoVersion[0:2] < ( 1, 9 ) ):
-                    flag= field.rel.through
+                    if field.rel is not None and hasattr(field.rel,'through'):
+                        flag = field.rel.through
+                    else:
+                        flag = False
                 else:
-                    flag= field.remote_field.through
+                    if field.remote_field is not None and hasattr(field.remote_field,'through'):
+                        flag= field.remote_field.through
+                    else:
+                        flag = False
                 if not flag:
                     max_sql = "SELECT MAX(%s) FROM %s" % ( self.quote_name( 'ID' ), self.quote_name( table ) )
                     cursor.execute( max_sql )
