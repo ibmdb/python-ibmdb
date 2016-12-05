@@ -478,7 +478,7 @@ class DB2SchemaEditor(BaseDatabaseSchemaEditor):
                     }
             )
         else:
-	        if new_field.remote_field:
+            if new_field.remote_field:
                 self.execute(
                     self.sql_create_fk % {
                         'table': self.quote_name(model._meta.db_table),
