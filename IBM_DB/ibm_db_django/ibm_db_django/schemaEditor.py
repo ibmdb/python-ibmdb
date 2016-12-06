@@ -600,18 +600,18 @@ class DB2SchemaEditor(BaseDatabaseSchemaEditor):
                 rel_old_field = old_field.rel.through._meta.get_field(old_field.m2m_reverse_field_name())[0]
                 rel_new_field = new_field.rel.through._meta.get_field(new_field.m2m_reverse_field_name())[0]
             else:
-                rel_old_field = False
-                rel_new_field = False
+                rel_old_field = None
+                rel_new_field = None
         else:
             if((old_field.remote_field is not None and hasattr(old_field.remote_field,'through')) and 
                 (new_field.remote_field is not None and hasattr(new_field.remote_field,'through'))):
                 rel_old_field = old_field.remote_field.through._meta.get_field(old_field.m2m_reverse_field_name())[0]
                 rel_new_field = new_field.remote_field.through._meta.get_field(new_field.m2m_reverse_field_name())[0]
             else:
-                rel_old_field = False
-                rel_new_field = False
+                rel_old_field = None
+                rel_new_field = None
 
-        if((rel_old_field is not False) and (rel_new_field is not False)):
+        if((rel_old_field is not None) and (rel_new_field is not None)):
             with self.connection.cursor() as cur:
                 constraints = self.connection.introspection.get_constraints(cur, old_field_rel_through._meta.db_table)
             for constr_name, constr_dict in constraints.items():
