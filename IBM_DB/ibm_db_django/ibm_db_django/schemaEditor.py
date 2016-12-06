@@ -126,7 +126,10 @@ class DB2SchemaEditor(BaseDatabaseSchemaEditor):
         new_db_field_type = new_db_field['type']
 
         if( djangoVersion[0:2] < ( 1, 9 ) ):
-            rel_condition = (old_field.rel.through and new_field.rel.through and old_field.rel.through._meta.auto_created and new_field.rel.through._meta.auto_created)
+            if old_field.rel is not None and hasattr(old_field.rel,'through'):
+                rel_condition = (old_field.rel.through and new_field.rel.through and old_field.rel.through._meta.auto_created and new_field.rel.through._meta.auto_created)
+            else:
+                rel_condition = False
         else:
             if old_field.remote_field is not None and hasattr(old_field.remote_field,'through'):
                 rel_condition = (old_field.remote_field.through and new_field.remote_field.through and old_field.remote_field.through._meta.auto_created and new_field.remote_field.through._meta.auto_created)
@@ -475,7 +478,7 @@ class DB2SchemaEditor(BaseDatabaseSchemaEditor):
                     }
             )
         else:
-	    if new_field.remote_field:
+            if new_field.remote_field:
                 self.execute(
                     self.sql_create_fk % {
                         'table': self.quote_name(model._meta.db_table),
@@ -525,7 +528,10 @@ class DB2SchemaEditor(BaseDatabaseSchemaEditor):
         
         super(DB2SchemaEditor, self).add_field(model, field)
         if( djangoVersion[0:2] < ( 1, 9 ) ):
-            rel_condition = field.rel.through._meta.auto_created
+            if field.rel is not None and hasattr(field.rel,'through'):
+                rel_condition = field.rel.through._meta.auto_created
+            else:
+                rel_condition = False
         else:
             if field.remote_field is not None and hasattr(field.remote_field,'through'):
                 rel_condition = field.remote_field.through._meta.auto_created
@@ -588,27 +594,38 @@ class DB2SchemaEditor(BaseDatabaseSchemaEditor):
                           'index': {},
                           'check': {}}
 
-	if( djangoVersion[0:2] < ( 1, 9 ) ):
-            rel_old_field = old_field.rel.through._meta.get_field(old_field.m2m_reverse_field_name())[0]
-            rel_new_field = new_field.rel.through._meta.get_field(new_field.m2m_reverse_field_name())[0]
+        if( djangoVersion[0:2] < ( 1, 9 ) ):
+            if ((old_field.rel is not None and hasattr(old_field.rel,'through')) and 
+               (new_field.rel is not None and hasattr(new_field.rel,'through'))):
+                rel_old_field = old_field.rel.through._meta.get_field(old_field.m2m_reverse_field_name())[0]
+                rel_new_field = new_field.rel.through._meta.get_field(new_field.m2m_reverse_field_name())[0]
+            else:
+                rel_old_field = None
+                rel_new_field = None
         else:
-	    rel_old_field = old_field.remote_field.through._meta.get_field(old_field.m2m_reverse_field_name())[0]
-            rel_new_field = new_field.remote_field.through._meta.get_field(new_field.m2m_reverse_field_name())[0]
+            if((old_field.remote_field is not None and hasattr(old_field.remote_field,'through')) and 
+                (new_field.remote_field is not None and hasattr(new_field.remote_field,'through'))):
+                rel_old_field = old_field.remote_field.through._meta.get_field(old_field.m2m_reverse_field_name())[0]
+                rel_new_field = new_field.remote_field.through._meta.get_field(new_field.m2m_reverse_field_name())[0]
+            else:
+                rel_old_field = None
+                rel_new_field = None
 
-        with self.connection.cursor() as cur:
-            constraints = self.connection.introspection.get_constraints(cur, old_field.rel.through._meta.db_table)
-        for constr_name, constr_dict in constraints.items():
-            if constr_dict['foreign_key'] is not None:
-                self.execute( self.sql_delete_fk % {
-                                "table": self.quote_name(old_field.rel.through._meta.db_table),
-                                "name": constr_name,
-                            })
-        self._defer_constraints_check(constraints, deferred_constraints, rel_old_field, rel_new_field, old_field.rel.through, defer_pk=True, defer_unique=True, defer_index=True)
+        if((rel_old_field is not None) and (rel_new_field is not None)):
+            with self.connection.cursor() as cur:
+                constraints = self.connection.introspection.get_constraints(cur, old_field_rel_through._meta.db_table)
+            for constr_name, constr_dict in constraints.items():
+                if constr_dict['foreign_key'] is not None:
+                    self.execute( self.sql_delete_fk % {
+                        "table": self.quote_name(old_field_rel_through._meta.db_table),
+                        "name": constr_name,
+                    })
+            self._defer_constraints_check(constraints, deferred_constraints, rel_old_field, rel_new_field, old_field.rel.through, defer_pk=True, defer_unique=True, defer_index=True)
 
-        self._reorg_tables()
-        super(DB2SchemaEditor, self)._alter_many_to_many(model, old_field, new_field, strict)
-        self._restore_constraints_check(deferred_constraints, rel_old_field, rel_new_field, new_field.rel.through)
-        
+            self._reorg_tables()
+            super(DB2SchemaEditor, self)._alter_many_to_many(model, old_field, new_field, strict)
+            self._restore_constraints_check(deferred_constraints, rel_old_field, rel_new_field, new_field.rel.through)
+       
     def _reorg_tables(self):
         checkReorgSQL = "select TABSCHEMA, TABNAME from SYSIBMADM.ADMINTABINFO where REORG_PENDING = 'Y'"
         res = []
