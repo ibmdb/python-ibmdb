@@ -597,15 +597,21 @@ class DB2SchemaEditor(BaseDatabaseSchemaEditor):
         if( djangoVersion[0:2] < ( 1, 9 ) ):
             if ((old_field.rel is not None and hasattr(old_field.rel,'through')) and 
                (new_field.rel is not None and hasattr(new_field.rel,'through'))):
-                old_field_rel_through = old_field.rel.through
-                new_field_rel_through = new_field.rel.through
+                rel_old_field = old_field.rel.through._meta.get_field(old_field.m2m_reverse_field_name())[0]
+                rel_new_field = new_field.rel.through._meta.get_field(new_field.m2m_reverse_field_name())[0]
+            else:
+                rel_old_field = False
+                rel_new_field = False
         else:
             if((old_field.remote_field is not None and hasattr(old_field.remote_field,'through')) and 
                 (new_field.remote_field is not None and hasattr(new_field.remote_field,'through'))):
-                old_field_rel_through = old_field.remote_field.through
-                new_field_rel_through = new_field.remote_field.through                
+                rel_old_field = old_field.remote_field.through._meta.get_field(old_field.m2m_reverse_field_name())[0]
+                rel_new_field = new_field.remote_field.through._meta.get_field(new_field.m2m_reverse_field_name())[0]
+            else:
+                rel_old_field = False
+                rel_new_field = False
 
-        if((old_field_rel_through is not None) and (new_field_rel_through is not None)):
+        if((rel_old_field is not False) and (rel_new_field is not False)):
             with self.connection.cursor() as cur:
                 constraints = self.connection.introspection.get_constraints(cur, old_field_rel_through._meta.db_table)
             for constr_name, constr_dict in constraints.items():
@@ -614,11 +620,12 @@ class DB2SchemaEditor(BaseDatabaseSchemaEditor):
                         "table": self.quote_name(old_field_rel_through._meta.db_table),
                         "name": constr_name,
                     })
-            self._defer_constraints_check(constraints, deferred_constraints, old_field_rel_through._meta.get_field(old_field.m2m_reverse_field_name())[0], new_field_rel_through._meta.get_field(new_field.m2m_reverse_field_name())[0], old_field_rel_through, defer_pk=True, defer_unique=True, defer_index=True)
+            self._defer_constraints_check(constraints, deferred_constraints, rel_old_field, rel_new_field, old_field.rel.through, defer_pk=True, defer_unique=True, defer_index=True)
+
             self._reorg_tables()
             super(DB2SchemaEditor, self)._alter_many_to_many(model, old_field, new_field, strict)
-            self._restore_constraints_check(deferred_constraints, old_field_rel_through._meta.get_field(old_field.m2m_reverse_field_name())[0], new_field_rel_through._meta.get_field(new_field.m2m_reverse_field_name())[0], new_field_rel_through)
-            
+            self._restore_constraints_check(deferred_constraints, rel_old_field, rel_new_field, new_field.rel.through)
+       
     def _reorg_tables(self):
         checkReorgSQL = "select TABSCHEMA, TABNAME from SYSIBMADM.ADMINTABINFO where REORG_PENDING = 'Y'"
         res = []
