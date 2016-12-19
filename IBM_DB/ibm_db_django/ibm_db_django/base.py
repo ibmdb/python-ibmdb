@@ -116,7 +116,6 @@ class DatabaseFeatures( BaseDatabaseFeatures ):
     can_introspect_positive_integer_field = False
     can_introspect_small_integer_field = True
     can_introspect_null = True
-    can_introspect_max_length = True
     can_introspect_ip_address_field = False
     can_introspect_time_field = True
     
