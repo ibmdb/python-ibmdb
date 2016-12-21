@@ -552,7 +552,7 @@ class DB2SchemaEditor(BaseDatabaseSchemaEditor):
                 try:
                     self.execute(sql)
                     self._reorg_tables()
-                except Error, e:
+                except Error as e:
                     self.execute(del_column)
                     raise e
             if p_key:

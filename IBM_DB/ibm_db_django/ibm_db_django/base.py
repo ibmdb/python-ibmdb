@@ -206,24 +206,24 @@ class DatabaseWrapper( BaseDatabaseWrapper ):
             database_port = settings_dict['PORT']
             database_options = settings_dict['OPTIONS']
         
-        if database_name != '' and isinstance( database_name, basestring ):
+        if database_name != '' and isinstance( database_name, str ):
             kwargs['database'] = database_name
         else:
             raise ImproperlyConfigured( "Please specify the valid database Name to connect to" )
             
-        if isinstance( database_user, basestring ):
+        if isinstance( database_user, str ):
             kwargs['user'] = database_user
         
-        if isinstance( database_pass, basestring ):
+        if isinstance( database_pass, str ):
             kwargs['password'] = database_pass
         
-        if isinstance( database_host, basestring ):
+        if isinstance( database_host, str ):
             kwargs['host'] = database_host
         
-        if isinstance( database_port, basestring ):
+        if isinstance( database_port, str ):
             kwargs['port'] = database_port
             
-        if isinstance( database_host, basestring ):
+        if isinstance( database_host, str ):
             kwargs['host'] = database_host
         
         if isinstance( database_options, dict ):

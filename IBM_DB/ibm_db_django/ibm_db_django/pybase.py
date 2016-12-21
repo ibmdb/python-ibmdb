@@ -19,7 +19,7 @@
 # Importing IBM_DB wrapper ibm_db_dbi
 try:
     import ibm_db_dbi as Database
-except ImportError, e:
+except ImportError as e:
     raise ImportError( "ibm_db module not found. Install ibm_db module from http://code.google.com/p/ibm-db/. Error: %s" % e )
 
 import datetime
@@ -179,7 +179,7 @@ class DB2CursorWrapper( Database.Cursor ):
                         return self._reorg_tables()
                     else:    
                         return super( DB2CursorWrapper, self ).execute( operation, parameters )
-                except IntegrityError, e:
+                except IntegrityError as e:
                     if (djangoVersion[0:2] >= (1, 5)):
                         six.reraise(utils.IntegrityError, utils.IntegrityError( *tuple( six.PY3 and e.args or ( e._message, ) ) ), sys.exc_info()[2])
                         raise

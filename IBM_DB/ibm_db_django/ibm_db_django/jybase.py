@@ -21,7 +21,7 @@ try:
     from com.ziclix.python.sql import zxJDBC, PyConnection, DataHandler, PyCursor
     import datetime, decimal
     from java.sql import Connection
-except ImportError, e:
+except ImportError as e:
     from django.core.exceptions import ImproperlyConfigured
     raise ImproperlyConfigured( "Error loading zxJDBC module: %s" % e )
 # For checking django's version

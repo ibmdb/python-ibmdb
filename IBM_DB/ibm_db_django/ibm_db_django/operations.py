@@ -542,8 +542,8 @@ class DatabaseOperations ( BaseDatabaseOperations ):
                 return value
                     
     def year_lookup_bounds_for_date_field( self, value ):
-        lower_bound = datetime.date(long(value), 1, 1)
-        upper_bound = datetime.date(long(value), 12, 31)
+        lower_bound = datetime.date(int(value), 1, 1)
+        upper_bound = datetime.date(int(value), 12, 31)
         return [lower_bound, upper_bound]
     
     def bulk_insert_sql(self, fields, num_values):

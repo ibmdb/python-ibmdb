@@ -23,7 +23,7 @@ _IS_JYTHON = sys.platform.startswith( 'java' )
 if not _IS_JYTHON:
     try:
         import ibm_db_dbi as Database
-    except ImportError, e:
+    except ImportError as e:
         raise ImportError( "ibm_db module not found. Install ibm_db module from http://code.google.com/p/ibm-db/. Error: %s" % e )
 
 try:
@@ -181,7 +181,7 @@ class DatabaseCreation ( BaseDatabaseCreation ):
             if autoclobber or confirm == 'yes':
                 try:
                     if verbosity > 1:
-                        print "Creating Test Database %s" % ( kwargs.get( 'database' ) )
+                        print ("Creating Test Database %s" , ( kwargs.get( 'database' ) ))
                     Database.createdb( **kwargs )
                 except Exception, inst:
                     message = repr( inst )
@@ -340,7 +340,7 @@ class DatabaseCreation ( BaseDatabaseCreation ):
     #private method to create dictionary of login credentials for test database
     def __create_test_kwargs( self ):
         if( djangoVersion[0:2] <= ( 1, 1 ) ):
-            if( isinstance( settings.TEST_DATABASE_NAME, basestring ) and 
+            if( isinstance( settings.TEST_DATABASE_NAME, str ) and 
                 ( settings.TEST_DATABASE_NAME != '' ) ):
                 database = settings.TEST_DATABASE_NAME
             else:
@@ -351,7 +351,7 @@ class DatabaseCreation ( BaseDatabaseCreation ):
             database_port = settings.DATABASE_PORT
             settings.DATABASE_SUPPORTS_TRANSACTIONS = True
         else:
-            if( isinstance( self.connection.settings_dict['NAME'], basestring ) and 
+            if( isinstance( self.connection.settings_dict['NAME'], str ) and 
                 ( self.connection.settings_dict['NAME'] != '' ) ):
                 database = self.connection.settings_dict['NAME']
             else:
@@ -365,19 +365,19 @@ class DatabaseCreation ( BaseDatabaseCreation ):
         
         kwargs = { }   
         kwargs['database'] = database
-        if isinstance( database_user, basestring ):
+        if isinstance( database_user, str ):
             kwargs['user'] = database_user
         
-        if isinstance( database_pass, basestring ):
+        if isinstance( database_pass, str ):
             kwargs['password'] = database_pass
         
-        if isinstance( database_host, basestring ):
+        if isinstance( database_host, str ):
             kwargs['host'] = database_host
         
-        if isinstance( database_port, basestring ):
+        if isinstance( database_port, str ):
             kwargs['port'] = database_port
             
-        if isinstance( database_host, basestring ):
+        if isinstance( database_host, str ):
             kwargs['host'] = database_host
             
         return kwargs
