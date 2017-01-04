@@ -548,7 +548,7 @@ class DatabaseOperations ( BaseDatabaseOperations ):
     
     def bulk_insert_sql(self, fields, num_values):
         values_sql = "( %s )" %(", ".join( ["%s"] * len(fields)))
-        if isinstance(num_values,(int,long)):
+        if isinstance(num_values,(int)):
             bulk_values_sql = "VALUES " + ", ".join([values_sql] * (num_values) )
         else:
             bulk_values_sql = "VALUES " + ", ".join([values_sql] * len(num_values) )
