@@ -185,8 +185,8 @@ class DatabaseCreation ( BaseDatabaseCreation ):
                 except Exception as inst:
                     message = repr( inst )
                     if ( message.find( 'Not supported:' ) != -1 ):
-                        if not autoclobber and sys.version_info.major >= 3:
-                            confirm = input( "Not able to create test database, %s. Type yes to use %s as test database, or no to exit" % ( message.split( ":" )[1], old_database ) )
+                        if not autoclobber:
+                            confirm = raw_input( "Not able to create test database, %s. Type yes to use %s as test database, or no to exit" % ( message.split( ":" )[1], old_database ) )
                         else:
                             confirm = raw_input( "Not able to create test database, %s. Type yes to use %s as test database, or no to exit" % ( message.split( ":" )[1], old_database ) )
                         if autoclobber or confirm == 'yes':
@@ -207,8 +207,8 @@ class DatabaseCreation ( BaseDatabaseCreation ):
                                 print ("Tests cancelled")
                                 sys.exit( 1 )
                             else:
-                                if not autoclobber and sys.version_info.major >= 3:
-                                    confirm = input( "\nTest database: %s already exist. Type yes to recreate it, or no to exit" % ( kwargs.get( 'database' ) ) )
+                                if not autoclobber:
+                                    confirm = raw_input( "\nTest database: %s already exist. Type yes to recreate it, or no to exit" % ( kwargs.get( 'database' ) ) )
                                 else:
                                     confirm = raw_input( "\nTest database: %s already exist. Type yes to recreate it, or no to exit" % ( kwargs.get( 'database' ) ) )
                                 if autoclobber or confirm == 'yes':
