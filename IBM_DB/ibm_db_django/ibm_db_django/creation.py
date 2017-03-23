@@ -1,7 +1,7 @@
 # +--------------------------------------------------------------------------+
 # |  Licensed Materials - Property of IBM                                    |
 # |                                                                          |
-# | (C) Copyright IBM Corporation 2009-2014.                                      |
+# | (C) Copyright IBM Corporation 2009-2017.                                      |
 # +--------------------------------------------------------------------------+
 # | This module complies with Django 1.0 and is                              |
 # | Licensed under the Apache License, Version 2.0 (the "License");          |
@@ -23,7 +23,7 @@ _IS_JYTHON = sys.platform.startswith( 'java' )
 if not _IS_JYTHON:
     try:
         import ibm_db_dbi as Database
-    except ImportError, e:
+    except ImportError as e:
         raise ImportError( "ibm_db module not found. Install ibm_db module from http://code.google.com/p/ibm-db/. Error: %s" % e )
 
 try:
@@ -175,18 +175,20 @@ class DatabaseCreation ( BaseDatabaseCreation ):
                 kwargs['dsn'] = ''
             if kwargsKeys.__contains__( 'port' ):
                 del kwargs['port']
-            
+ 
             if not autoclobber:
                 confirm = raw_input( "Wants to create %s as test database. Type yes to create it else type no" % ( kwargs.get( 'database' ) ) )
             if autoclobber or confirm == 'yes':
                 try:
                     if verbosity > 1:
-                        print "Creating Test Database %s" % ( kwargs.get( 'database' ) )
+                        print ("Creating Test Database %s" % ( kwargs.get( 'database' ) ))
                     Database.createdb( **kwargs )
-                except Exception, inst:
+                except Exception as inst:
                     message = repr( inst )
                     if ( message.find( 'Not supported:' ) != -1 ):
                         if not autoclobber:
+                            confirm = raw_input( "Not able to create test database, %s. Type yes to use %s as test database, or no to exit" % ( message.split( ":" )[1], old_database ) )
+                        else:
                             confirm = raw_input( "Not able to create test database, %s. Type yes to use %s as test database, or no to exit" % ( message.split( ":" )[1], old_database ) )
                         if autoclobber or confirm == 'yes':
                             kwargs['database'] = old_database   
@@ -194,7 +196,7 @@ class DatabaseCreation ( BaseDatabaseCreation ):
                             self.connection._commit()
                             self.connection.close()                
                         else:
-                            print "Tests cancelled"
+                            print("Tests cancelled")
                             sys.exit( 1 )
                     else:
                         sys.stderr.write( "Error occurred during creation of test database: %s" % ( message ) )
@@ -203,20 +205,22 @@ class DatabaseCreation ( BaseDatabaseCreation ):
                         if( message != '' ) & ( index != -1 ):
                             error_code = message[( index + 8 ): ( index + 13 )]
                             if( error_code != '-1005' ):
-                                print "Tests cancelled"
+                                print ("Tests cancelled")
                                 sys.exit( 1 )
                             else:
                                 if not autoclobber:
                                     confirm = raw_input( "\nTest database: %s already exist. Type yes to recreate it, or no to exit" % ( kwargs.get( 'database' ) ) )
+                                else:
+                                    confirm = raw_input( "\nTest database: %s already exist. Type yes to recreate it, or no to exit" % ( kwargs.get( 'database' ) ) )
                                 if autoclobber or confirm == 'yes':
                                     if verbosity > 1:
-                                        print "Recreating Test Database %s" % ( kwargs.get( 'database' ) )
+                                        print(("Recreating Test Database %s" % ( kwargs.get( 'database' ) )))
                                     Database.recreatedb( **kwargs )
                                 else:
-                                    print "Tests cancelled."
+                                    print ("Tests cancelled.")
                                     sys.exit( 1 )
             else:
-                confirm = raw_input( "Wants to use %s as test database, Type yes to use it as test database or no to exit" % ( old_database ) )
+                confirm = raw_input("Wants to use %s as test database, Type yes to use it as test database or no to exit" % ( old_database ) )
                 if confirm == 'yes':
                     kwargs['database'] = old_database
                     self.__clean_up( self.connection.cursor() )
@@ -231,7 +235,7 @@ class DatabaseCreation ( BaseDatabaseCreation ):
             
         test_database = kwargs.get( 'database' )
         if verbosity > 1:
-            print "Preparing Database..." 
+            print ("Preparing Database..." )
             
         if( djangoVersion[0:2] <= ( 1, 1 ) ):
             settings.DATABASE_NAME = test_database
@@ -253,7 +257,7 @@ class DatabaseCreation ( BaseDatabaseCreation ):
     
     # Method to destroy database. For Jython nothing is getting done over here.
     def destroy_test_db( self, old_database_name, verbosity = 0 ):
-        print "Destroying Database..."
+        print ("Destroying Database...")
         if not _IS_JYTHON:
             kwargs = self.__create_test_kwargs()
             if( old_database_name != kwargs.get( 'database' ) ):
@@ -270,7 +274,7 @@ class DatabaseCreation ( BaseDatabaseCreation ):
                 if kwargsKeys.__contains__( 'port' ):
                     del kwargs['port']
                 if verbosity > 1:
-                    print "Droping Test Database %s" % ( kwargs.get( 'database' ) )
+                    print ("Droping Test Database %s" % ( kwargs.get( 'database' ) ))
                 Database.dropdb( **kwargs )
                 
             if( djangoVersion[0:2] <= ( 1, 1 ) ):
@@ -339,8 +343,12 @@ class DatabaseCreation ( BaseDatabaseCreation ):
         
     #private method to create dictionary of login credentials for test database
     def __create_test_kwargs( self ):
+        if sys.version_info.major >= 3:
+            strvar = str
+        else:
+            strvar = basestring
         if( djangoVersion[0:2] <= ( 1, 1 ) ):
-            if( isinstance( settings.TEST_DATABASE_NAME, basestring ) and 
+            if( isinstance( settings.TEST_DATABASE_NAME, strvar ) and 
                 ( settings.TEST_DATABASE_NAME != '' ) ):
                 database = settings.TEST_DATABASE_NAME
             else:
@@ -351,7 +359,7 @@ class DatabaseCreation ( BaseDatabaseCreation ):
             database_port = settings.DATABASE_PORT
             settings.DATABASE_SUPPORTS_TRANSACTIONS = True
         else:
-            if( isinstance( self.connection.settings_dict['NAME'], basestring ) and 
+            if( isinstance( self.connection.settings_dict['NAME'], strvar ) and 
                 ( self.connection.settings_dict['NAME'] != '' ) ):
                 database = self.connection.settings_dict['NAME']
             else:

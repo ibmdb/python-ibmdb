@@ -1,7 +1,7 @@
 # +--------------------------------------------------------------------------+
 # |  Licensed Materials - Property of IBM                                    |
 # |                                                                          |
-# | (C) Copyright IBM Corporation 2009-2014.                                      |
+# | (C) Copyright IBM Corporation 2009-2016.                                      |
 # +--------------------------------------------------------------------------+
 # | This module complies with Django 1.0 and is                              |
 # | Licensed under the Apache License, Version 2.0 (the "License");          |
@@ -24,7 +24,7 @@ if not _IS_JYTHON:
         # Import IBM_DB wrapper ibm_db_dbi
         import ibm_db_dbi as Database
         #from Database import DatabaseError
-    except ImportError, e:
+    except ImportError as e:
         raise ImportError( "ibm_db module not found. Install ibm_db module from http://code.google.com/p/ibm-db/. Error: %s" % e )
 else:
     from com.ziclix.python.sql import zxJDBC

@@ -1,7 +1,7 @@
 # +--------------------------------------------------------------------------+
 # |  Licensed Materials - Property of IBM                                    |
 # |                                                                          |
-# | (C) Copyright IBM Corporation 2009-2014.                                      |
+# | (C) Copyright IBM Corporation 2009-2017.                                      |
 # +--------------------------------------------------------------------------+
 # | This module complies with Django 1.0 and is                              |
 # | Licensed under the Apache License, Version 2.0 (the "License");          |
@@ -181,6 +181,10 @@ class DatabaseWrapper( BaseDatabaseWrapper ):
     
     # To get dict of connection parameters 
     def get_connection_params(self):
+        if sys.version_info.major >= 3:
+            strvar = str
+        else:
+            strvar = basestring
         kwargs = { }
         if ( djangoVersion[0:2] <= ( 1, 0 ) ):
             database_name = self.settings.DATABASE_NAME
@@ -205,25 +209,25 @@ class DatabaseWrapper( BaseDatabaseWrapper ):
             database_host = settings_dict['HOST']
             database_port = settings_dict['PORT']
             database_options = settings_dict['OPTIONS']
-        
-        if database_name != '' and isinstance( database_name, basestring ):
+ 
+        if database_name != '' and isinstance( database_name, strvar ):
             kwargs['database'] = database_name
         else:
             raise ImproperlyConfigured( "Please specify the valid database Name to connect to" )
             
-        if isinstance( database_user, basestring ):
+        if isinstance( database_user, strvar ):
             kwargs['user'] = database_user
         
-        if isinstance( database_pass, basestring ):
+        if isinstance( database_pass, strvar ):
             kwargs['password'] = database_pass
         
-        if isinstance( database_host, basestring ):
+        if isinstance( database_host, strvar ):
             kwargs['host'] = database_host
         
-        if isinstance( database_port, basestring ):
+        if isinstance( database_port, strvar ):
             kwargs['port'] = database_port
             
-        if isinstance( database_host, basestring ):
+        if isinstance( database_host, strvar ):
             kwargs['host'] = database_host
         
         if isinstance( database_options, dict ):

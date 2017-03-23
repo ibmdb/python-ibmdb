@@ -1,7 +1,7 @@
 # +--------------------------------------------------------------------------+
 # |  Licensed Materials - Property of IBM                                    |
 # |                                                                          |
-# | (C) Copyright IBM Corporation 2009-2016.                                      |
+# | (C) Copyright IBM Corporation 2009-2017.                                      |
 # +--------------------------------------------------------------------------+
 # | This module complies with Django 1.0 and is                              |
 # | Licensed under the Apache License, Version 2.0 (the "License");          |
@@ -19,7 +19,7 @@
 # Importing IBM_DB wrapper ibm_db_dbi
 try:
     import ibm_db_dbi as Database
-except ImportError, e:
+except ImportError as e:
     raise ImportError( "ibm_db module not found. Install ibm_db module from http://code.google.com/p/ibm-db/. Error: %s" % e )
 
 import datetime
@@ -179,26 +179,25 @@ class DB2CursorWrapper( Database.Cursor ):
                         return self._reorg_tables()
                     else:    
                         return super( DB2CursorWrapper, self ).execute( operation, parameters )
-                except IntegrityError, e:
+                except IntegrityError as e:
                     if (djangoVersion[0:2] >= (1, 5)):
                         six.reraise(utils.IntegrityError, utils.IntegrityError( *tuple( six.PY3 and e.args or ( e._message, ) ) ), sys.exc_info()[2])
                         raise
                     else:
                         raise utils.IntegrityError, utils.IntegrityError( *tuple( e ) ), sys.exc_info()[2]
                         
-                except ProgrammingError, e:
+                except ProgrammingError as e:
                     if (djangoVersion[0:2] >= (1, 5)):
                         six.reraise(utils.ProgrammingError, utils.ProgrammingError( *tuple( six.PY3 and e.args or ( e._message, ) ) ), sys.exc_info()[2])
                         raise
                     else:
                         raise utils.ProgrammingError, utils.ProgrammingError( *tuple( e ) ), sys.exc_info()[2]
-                        
-                except DatabaseError, e:
+                except DatabaseError as e:
                     if (djangoVersion[0:2] >= (1, 5)):
                         six.reraise(utils.DatabaseError, utils.DatabaseError( *tuple( six.PY3 and e.args or ( e._message, ) ) ), sys.exc_info()[2])
                         raise
                     else:
-                        raise utils.DatabaseError, utils.DatabaseError( *tuple( e ) ), sys.exc_info()[2]  
+                        raise utils.DatabaseError, utils.DatabaseError( *tuple( e ) ), sys.exc_info()[2]
         except ( TypeError ):
             return None
         
@@ -217,18 +216,18 @@ class DB2CursorWrapper( Database.Cursor ):
             else:
                 try:
                     return super( DB2CursorWrapper, self ).executemany( operation, seq_parameters )
-                except IntegrityError, e:
+                except IntegrityError as e:
                     if (djangoVersion[0:2] >= (1, 5)):
                         six.reraise(utils.IntegrityError, utils.IntegrityError( *tuple( six.PY3 and e.args or ( e._message, ) ) ), sys.exc_info()[2])
                         raise
                     else:
                         raise utils.IntegrityError, utils.IntegrityError( *tuple( e ) ), sys.exc_info()[2]
-                except DatabaseError, e:
+                except DatabaseError as e:
                     if (djangoVersion[0:2] >= (1, 5)):
                         six.reraise(utils.DatabaseError, utils.DatabaseError( *tuple( six.PY3 and e.args or ( e._message, ) ) ), sys.exc_info()[2])
                         raise
                     else:
-                        raise utils.DatabaseError, utils.DatabaseError( *tuple( e ) ), sys.exc_info()[2] 
+                        raise utils.DatabaseError, utils.DatabaseError( *tuple( e ) ), sys.exc_info()[2]
         except ( IndexError, TypeError ):
             return None
     

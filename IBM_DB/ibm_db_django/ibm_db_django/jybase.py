@@ -1,7 +1,7 @@
 # +--------------------------------------------------------------------------+
 # |  Licensed Materials - Property of IBM                                    |
 # |                                                                          |
-# | (C) Copyright IBM Corporation 2009-2013.                                      |
+# | (C) Copyright IBM Corporation 2009-2017.                                      |
 # +--------------------------------------------------------------------------+
 # | This module complies with Django 1.0 and is                              |
 # | Licensed under the Apache License, Version 2.0 (the "License");          |
@@ -21,7 +21,7 @@ try:
     from com.ziclix.python.sql import zxJDBC, PyConnection, DataHandler, PyCursor
     import datetime, decimal
     from java.sql import Connection
-except ImportError, e:
+except ImportError as e:
     from django.core.exceptions import ImproperlyConfigured
     raise ImproperlyConfigured( "Error loading zxJDBC module: %s" % e )
 # For checking django's version

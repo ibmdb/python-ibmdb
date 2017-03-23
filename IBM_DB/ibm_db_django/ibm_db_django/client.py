@@ -1,7 +1,7 @@
 # +--------------------------------------------------------------------------+
 # |  Licensed Materials - Property of IBM                                    |
 # |                                                                          |
-# | (C) Copyright IBM Corporation 2009-2013.                                      |
+# | (C) Copyright IBM Corporation 2009-2017.                                      |
 # +--------------------------------------------------------------------------+
 # | This module complies with Django 1.0 and is                              |
 # | Licensed under the Apache License, Version 2.0 (the "License");          |
@@ -56,7 +56,11 @@ class DatabaseClient( BaseDatabaseClient ):
             cmdArgs += ["db2 connect to %s" % database_name]
         else:
             cmdArgs += ["connect to %s" % database_name]
-        
+        if sys.version_info.major >= 3:
+            basestring = str
+        else:
+            basestring = basestring
+
         if ( isinstance( database_user, basestring ) and 
             ( database_user != '' ) ):
             cmdArgs += ["user %s" % database_user]
