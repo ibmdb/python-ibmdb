@@ -1,7 +1,7 @@
 # +--------------------------------------------------------------------------+
 # |  Licensed Materials - Property of IBM                                    |
 # |                                                                          |
-# | (C) Copyright IBM Corporation 2009-2014.                                      |
+# | (C) Copyright IBM Corporation 2009-2017.                                      |
 # +--------------------------------------------------------------------------+
 # | This module complies with Django 1.0 and is                              |
 # | Licensed under the Apache License, Version 2.0 (the "License");          |
@@ -175,12 +175,13 @@ class DatabaseCreation ( BaseDatabaseCreation ):
                 kwargs['dsn'] = ''
             if kwargsKeys.__contains__( 'port' ):
                 del kwargs['port']
-
-            confirm = raw_input( "Wants to create %s as test database. Type yes to create it else type no" % ( kwargs.get( 'database' ) ) )
+ 
+            if not autoclobber:
+                confirm = raw_input( "Wants to create %s as test database. Type yes to create it else type no" % ( kwargs.get( 'database' ) ) )
             if autoclobber or confirm == 'yes':
                 try:
                     if verbosity > 1:
-                        print ("Creating Test Database %s" , ( kwargs.get( 'database' ) ))
+                        print ("Creating Test Database %s" % ( kwargs.get( 'database' ) ))
                     Database.createdb( **kwargs )
                 except Exception as inst:
                     message = repr( inst )
