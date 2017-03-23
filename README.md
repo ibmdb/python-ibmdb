@@ -50,10 +50,10 @@ Use following pypi web location for downloading source code and binaries
   Oct 29th 2014: IBM DB2 backend support in Alembic application is now available to the community. Right now it is in beta stage.
 
 ### *Support for Django*
-  Nov 22th 2016: New Release of IBM_DB_DJANGO (1.1.0.0) with Django 1.9.x support made.
+  Mar 23th 2017: New Release of IBM_DB_DJANGO (1.1.1.0) with Python3.x support made.
 
 ### *Support for SQLAlchemy*
-  Oct 20th 2014: New Release of IBM_DB_SA (0.3.2) made.
+  Aug 30th 2016: New Release of IBM_DB_SA (0.3.3) made.
 
 ### *Updated ibm_db*
   Mar 23rd 2016: A new release 2.0.7 of ibm_db and ibm_db_dbi.
