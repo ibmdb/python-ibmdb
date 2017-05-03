@@ -150,6 +150,14 @@ class DatabaseWrapper( BaseDatabaseWrapper ):
     }
     if( djangoVersion[0:2] >= ( 1, 6 ) ):
         Database = Database
+
+    client_class = DatabaseClient
+    creation_class = DatabaseCreation
+    features_class = DatabaseFeatures
+    introspection_class = DatabaseIntrospection
+    validation_class = DatabaseValidation
+    ops_class = DatabaseOperation
+
     # Constructor of DB2 backend support. Initializing all other classes.
     def __init__( self, *args ):
         super( DatabaseWrapper, self ).__init__( *args )
@@ -268,7 +276,7 @@ class DatabaseWrapper( BaseDatabaseWrapper ):
                 cursor = self.databaseWrapper._cursor( self.connection )  
             return cursor
     else:
-        def create_cursor( self ):
+        def create_cursor( self, name = None ):
             return self.databaseWrapper._cursor( self.connection )
             
         def init_connection_state( self ):
