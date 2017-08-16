@@ -7,7 +7,7 @@ import glob
 import config
 if sys.version_info >=(3,3 ):
     from io import StringIO
-    test_dir='test'
+    test_dir='tests_1'
 else:
     import StringIO
     test_dir='tests'
@@ -29,7 +29,7 @@ class IbmDbTest(unittest.TestCase):
   def getFileList(self):
     if (sys.platform[0:3] == 'win'):
       self.slash = '\\'
-    dir = test_dir + self.slash
+    dir = config.test_dir + self.slash
     if (os.environ.get("SINGLE_PYTHON_TEST", None)):
       testfile = dir + os.environ.get("SINGLE_PYTHON_TEST", None)
       filelist = glob.glob(testfile)
@@ -38,7 +38,7 @@ class IbmDbTest(unittest.TestCase):
       
     for i in range(0, len(filelist)):
       filelist[i] = filelist[i].replace('.py', '')
-      filelist[i] = filelist[i].replace(test_dir + self.slash, '')
+      filelist[i] = filelist[i].replace(config.test_dir + self.slash, '')
     filelist.sort()
     return filelist
 
@@ -47,11 +47,11 @@ class IbmDbTest(unittest.TestCase):
     filelist = self.getFileList();
     suite = unittest.TestSuite()
     
-    sys.path = [os.path.dirname(os.path.abspath(__file__)) + self.slash + test_dir] + sys.path[0:]
+    sys.path = [os.path.dirname(os.path.abspath(__file__)) + self.slash + config.test_dir] + sys.path[0:]
     
     for i in range(0, len(filelist)):
       exec("import %s" % filelist[i])
-      testFuncName = filelist[i].replace(test_dir + self.slash, '')
+      testFuncName = filelist[i].replace(config.test_dir + self.slash, '')
       exec("suite.addTest(%s.IbmDbTestCase(testFuncName))" % filelist[i])
       
     unittest.TextTestRunner(verbosity=2).run(suite) 
