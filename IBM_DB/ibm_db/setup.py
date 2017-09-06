@@ -12,7 +12,11 @@ if sys.version_info >= (3, ):
 else:
     import urllib2 as request
     from cStringIO import StringIO as BytesIO
-    
+
+if sys.version_info >= (3,3 ):
+    os.rename('tests','test_2')
+    os.rename('tests_1','tests')
+       
 from setuptools import setup, find_packages
 from distutils.core import setup, Extension
 from distutils.sysconfig import get_python_lib

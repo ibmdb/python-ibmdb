@@ -7,10 +7,8 @@ import glob
 import config
 if sys.version_info >=(3,3 ):
     from io import StringIO
-    test_dir='tests_1'
 else:
     import StringIO
-    test_dir='tests'
 	
 class IbmDbTest(unittest.TestCase):
   
