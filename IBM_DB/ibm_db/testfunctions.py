@@ -1,7 +1,6 @@
 import os
 import sys
 import unittest
-#import StringIO
 import re
 import glob
 import inspect
