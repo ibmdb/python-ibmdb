@@ -187,3 +187,7 @@ only optimize for N rows issue #2 (defect #154260)
  
  2016/11/17
  - Added: Correct OUTPUT TIMESTAMP Parameters behavior in ibm_db.callproc API for stored procedure calls. 
+ 
+ 2017/08/09 (ibm-db 2.0.8)
+ -Python 3.6.x support for ibm_db. 
+ 

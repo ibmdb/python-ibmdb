@@ -1,13 +1,16 @@
 import os
 import sys
 import unittest
-import StringIO
 import re
 import glob
 import inspect
 
 import ibm_db
 import config
+if sys.version_info >=(3,3 ):
+    from io import StringIO
+else:
+    from StringIO import StringIO
 
 class IbmDbTestFunctions(unittest.TestCase):
   prepconn = ibm_db.connect(config.database, config.user, config.password)
@@ -20,7 +23,7 @@ class IbmDbTestFunctions(unittest.TestCase):
  
   # This function captures the output of the current test file.
   def capture(self, func):
-    buffer = StringIO.StringIO()
+    buffer = StringIO()
     sys.stdout = buffer
     func()
     sys.stdout = sys.__stdout__

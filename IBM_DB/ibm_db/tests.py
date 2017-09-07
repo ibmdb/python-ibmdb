@@ -1,11 +1,14 @@
 import os
 import sys
 import unittest
-import StringIO
 import re
 import glob
 import config
-
+if sys.version_info >=(3,3 ):
+    from io import StringIO
+else:
+    import StringIO
+	
 class IbmDbTest(unittest.TestCase):
   
   slash = '/'
