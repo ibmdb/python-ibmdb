@@ -71,5 +71,11 @@ Use following pypi web location for downloading source code and binaries
 
 <a name='contributing to the ibm_db python project'></a>
 ## Contributing to the ibm_db python project
-[Contributions Guidelines for Contributions](https://github.com/ibmdb/python-ibmdb/blob/master/Contributions.md)
+
+See [CONTRIBUTING](https://github.com/ibmdb/python-ibmdb/blob/master/contributing/CONTRIBUTING.md)
+
+```
+The developer sign-off should include the reference to the DCO in remarks(example below):
+DCO 1.1 Signed-off-by: Random J Developer <random@developer.org>
+```
 
