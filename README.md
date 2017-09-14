@@ -67,8 +67,7 @@ Use following pypi web location for downloading source code and binaries
 
  * Google Group: http://groups.google.com/group/ibm_db
    
- * Development: **opendev@us.ibm.com**
-
+ 
 <a name='contributing to the ibm_db python project'></a>
 ## Contributing to the ibm_db python project
 
