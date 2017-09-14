@@ -1,6 +1,7 @@
-#Python support for IBM DB2 and IBM Informix 
+Python support for IBM DB2 and IBM Informix
+=========
 
-##Python, DB-API, Django/Django_jython and SQLAlchemy components for IBM DB2 and Informix
+## Python, DB-API, Django/Django_jython and SQLAlchemy components for IBM DB2 and Informix
 
 Provides Python, Django and SQLAlchemy support for IBM DB2 and Informix 
 
