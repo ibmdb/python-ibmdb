@@ -1164,12 +1164,13 @@ static PyObject *_python_ibm_db_connect_helper( PyObject *self, PyObject *args, 
 		passwordObj = PyUnicode_FromObject(passwordObj);
 
 		/* Check if we already have a connection for this userID & database 
-		* combination
+		* combination in this process.
 		*/ 
 		if (isPersistent) {
 			hKey = PyUnicode_Concat(StringOBJ_FromASCII("__ibm_db_"), uidObj);
 			hKey = PyUnicode_Concat(hKey, databaseObj);
 			hKey = PyUnicode_Concat(hKey, passwordObj);
+			hKey = PyUnicode_Concat(hKey, PyUnicode_FromFormat("%zu", getpid()));
 
 			entry = PyDict_GetItem(persistent_list, hKey);
 
