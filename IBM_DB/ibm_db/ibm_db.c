@@ -262,6 +262,7 @@ static void python_ibm_db_init_globals(struct _ibm_db_globals *ibm_db_globals) {
 }
 
 static PyObject *persistent_list;
+static PyObject *os_getpid;
 
 char *estrdup(char *data) {
 	int len = strlen(data);
@@ -1152,6 +1153,7 @@ static PyObject *_python_ibm_db_connect_helper( PyObject *self, PyObject *args, 
 	PyObject *entry = NULL;
 	char server[2048];
 	int isNewBuffer;
+	PyObject *pid = NULL;
 	
 	conn_alive = 1;	
 
@@ -1170,7 +1172,14 @@ static PyObject *_python_ibm_db_connect_helper( PyObject *self, PyObject *args, 
 			hKey = PyUnicode_Concat(StringOBJ_FromASCII("__ibm_db_"), uidObj);
 			hKey = PyUnicode_Concat(hKey, databaseObj);
 			hKey = PyUnicode_Concat(hKey, passwordObj);
-			hKey = PyUnicode_Concat(hKey, PyUnicode_FromFormat("%zu", getpid()));
+
+			pid = PyObject_CallObject(os_getpid, NULL);
+			if (pid == NULL) {
+				PyErr_SetString(PyExc_Exception, "Failed to obtain current process id");
+				return NULL;
+			}
+			hKey = PyUnicode_Concat(hKey, PyUnicode_FromFormat("%ld", PyLong_AsLong(pid)));
+			Py_DECREF(pid);
 
 			entry = PyDict_GetItem(persistent_list, hKey);
 
@@ -11091,6 +11100,7 @@ INIT_ibm_db(void) {
 	python_ibm_db_init_globals(ibm_db_globals);
 
 	persistent_list = PyDict_New();
+	os_getpid = PyObject_GetAttrString(PyImport_ImportModule("os"), "getpid");
 
 	conn_handleType.tp_new = PyType_GenericNew;
 	if (PyType_Ready(&conn_handleType) < 0)
@@ -11125,8 +11135,8 @@ INIT_ibm_db(void) {
 	PyModule_AddIntConstant(m, "CASE_LOWER", CASE_LOWER);
 	PyModule_AddIntConstant(m, "CASE_UPPER", CASE_UPPER);
 	PyModule_AddIntConstant(m, "USE_WCHAR", USE_WCHAR);
-        PyModule_AddIntConstant(m, "WCHAR_YES", WCHAR_YES);
-        PyModule_AddIntConstant(m, "WCHAR_NO", WCHAR_NO);
+	PyModule_AddIntConstant(m, "WCHAR_YES", WCHAR_YES);
+	PyModule_AddIntConstant(m, "WCHAR_NO", WCHAR_NO);
 	PyModule_AddIntConstant(m, "SQL_ATTR_CURSOR_TYPE", SQL_ATTR_CURSOR_TYPE);
 	PyModule_AddIntConstant(m, "SQL_CURSOR_FORWARD_ONLY", SQL_CURSOR_FORWARD_ONLY);
 	PyModule_AddIntConstant(m, "SQL_CURSOR_KEYSET_DRIVEN", SQL_CURSOR_KEYSET_DRIVEN);
