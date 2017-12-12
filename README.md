@@ -1,6 +1,7 @@
-#Python support for IBM DB2 and IBM Informix 
+Python support for IBM DB2 and IBM Informix
+=========
 
-##Python, DB-API, Django/Django_jython and SQLAlchemy components for IBM DB2 and Informix
+## Python, DB-API, Django/Django_jython and SQLAlchemy components for IBM DB2 and Informix
 
 Provides Python, Django and SQLAlchemy support for IBM DB2 and Informix 
 
@@ -56,7 +57,7 @@ Use following pypi web location for downloading source code and binaries
   Aug 30th 2016: New Release of IBM_DB_SA (0.3.3) made.
 
 ### *Updated ibm_db*
-  Mar 23rd 2016: A new release 2.0.7 of ibm_db and ibm_db_dbi.
+  Dec 11th 2017: A new release 2.0.8 of ibm_db and ibm_db_dbi.
 
 ### *Support for Django on Jython*
   ibm_db_django supports Django on Jython (on Jython-Django v1.0.x and v1.1.x are supported).
@@ -67,9 +68,14 @@ Use following pypi web location for downloading source code and binaries
 
  * Google Group: http://groups.google.com/group/ibm_db
    
- * Development: **opendev@us.ibm.com**
-
+ 
 <a name='contributing to the ibm_db python project'></a>
 ## Contributing to the ibm_db python project
-[Contributions Guidelines for Contributions](https://github.com/ibmdb/python-ibmdb/blob/master/Contributions.md)
+
+See [CONTRIBUTING](https://github.com/ibmdb/python-ibmdb/blob/master/contributing/CONTRIBUTING.md)
+
+```
+The developer sign-off should include the reference to the DCO in remarks(example below):
+DCO 1.1 Signed-off-by: Random J Developer <random@developer.org>
+```
 
