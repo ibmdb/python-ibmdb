@@ -1,0 +1,13 @@
+language: python
+
+python:
+- 3.5
+
+install:
+- pip install ibm_db
+
+script:
+- python tests.py 
+
+notifications:
+  email: true
