@@ -261,7 +261,7 @@ class DBAPITypeObject(frozenset):
 STRING = DBAPITypeObject(("CHARACTER", "CHAR", "VARCHAR", 
                           "CHARACTER VARYING", "CHAR VARYING", "STRING",))
 
-TEXT = DBAPITypeObject(("CLOB", "CHARACTER LARGE OBJECT", "CHAR LARGE OBJECT",))
+TEXT = DBAPITypeObject(("CLOB", "CHARACTER LARGE OBJECT", "CHAR LARGE OBJECT","DBCLOB"))
 
 XML = DBAPITypeObject(("XML",))
 
