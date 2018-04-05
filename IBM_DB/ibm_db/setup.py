@@ -5,6 +5,7 @@ import warnings
 import tarfile
 import zipfile
 import shutil
+import platform
 
 if sys.version_info >= (3, ):
     from urllib import request
@@ -30,6 +31,7 @@ ibm_db_lib = ''
 ibm_db_lib_runtime = ''
 license_agreement = False
 prebuildIbmdbPYD = False
+process_ = ''
     
 if machine_bits == 64:
     is64Bit = True
@@ -98,7 +100,12 @@ if (('IBM_DB_HOME' not in os.environ) and ('IBM_DB_DIR' not in os.environ) and (
             cliFileName = 'aix32_odbc_cli.tar.gz'
     elif ('linux' in sys.platform):
         os_ = 'linux'
-        if (_checkOSList(os.uname(),'ppc')):	
+        if (_checkOSList(os.uname(),'ppc64le')):	
+            os_ = 'ppc64le'
+            if is64Bit:
+                cliFileName = 'ppc64le_odbc_cli.tar.gz'
+                arch_ = 'ppc64le'
+        elif (_checkOSList(os.uname(),'ppc')):	
             os_ = 'ppc'
             if is64Bit:
                 cliFileName = 'ppc64_odbc_cli.tar.gz'
@@ -258,7 +265,7 @@ setup( name    = PACKAGE,
        long_description = '''
                       This extension is the implementation of Python Database API Specification v2.0
                       The extension supports DB2 (LUW, zOS, i5) and IDS (Informix Dynamic Server)''',
-       platforms = 'Linux32/64, Win32/64, aix32/64, ppc32/64, sunamd32/64, sun32/64',
+       platforms = 'Linux32/64, Win32/64, aix32/64, ppc32/64, sunamd32/64, sun32/64, ppc64le',
        ext_modules  = ext_modules,
        py_modules   = modules,
        packages     = find_packages(),
