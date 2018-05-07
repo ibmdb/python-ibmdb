@@ -1,16 +1,16 @@
-# Installing ibm_db and ibm_db_dbi module 
+# Installing ibm_db and ibm_db_dbi module
 
 We are assuming that you have Python already installed. In Linux you may need the python-dev package (you can install python-dev package through "$yum install python-devel" if yum doesn't work then you can also install it through "$apt-get install python-dev")
 
 Note:The minimum python version supported by driver is python 2.7 and the latest version supported is python 3.7.
-     
- 
-## Installation 
+
+
+## Installation
 ```
-  pip install ibm_db 
-  
+  pip install ibm_db
+
   or
-  
+
   easy_install ibm_db
 ```
 This will install *ibm_db* and *ibm_db_dbi* module.
@@ -18,10 +18,10 @@ This will install *ibm_db* and *ibm_db_dbi* module.
 If you face problems due to missing python header files, you would need to install python developer package before installing python ibm_db driver.
 e.g:
 ```
-    zypper install python-devel 
+    zypper install python-devel
      or
     yum install python-devel
-```    
+```
 
 ### Environment Variables
 
@@ -30,7 +30,7 @@ e.g:
   Set this environment variable to avoid automatic downloading of the clidriver during installation. You could set this to the installation path of ODBC and CLI driver in your environment. The list of supported platforms and installation file names are listed in the table under License requirements.
 
 
-### IBM_DB and DB-API wrapper (ibm_db_dbi) sanity test 
+### IBM_DB and DB-API wrapper (ibm_db_dbi) sanity test
 
 ```python
 $ python
@@ -80,7 +80,7 @@ Following are the details of the client license versions that you need to be abl
 |Sun           | i86pc          |sunamd64_odbc_cli.tar.gz |  Yes         | V10.5       |
 |              |                |sunamd32_odbc_cli.tar.gz |  Yes         | V10.5       |
 |              | sparc          |sun64_odbc_cli.tar.gz    |  Yes         | V11.1       |
-|              | sparc          |sun32_odbc_cli.tar.gz    |  Yes         | V11.1       | 
+|              | sparc          |sun32_odbc_cli.tar.gz    |  Yes         | V11.1       |
 
 
 
@@ -94,7 +94,7 @@ Traceback (most recent call last):
 ImportError: dlopen(/usr/local/lib/python3.5/site-packages/ibm_db.cpython-35m-darwin.so, 2): Library not loaded: libdb2.dylib
   Referenced from: /usr/local/lib/python3.5/site-packages/ibm_db.cpython-35m-darwin.so
   Reason: image not found
-  
+
 ```
 
 You would need to set DYLD_LIBRARY_PATH to point to lib folder as per the installation location of clidriver in your environment. Assuming the driver is installed at /usr/local/lib/python3.5/site-packages/clidriver, you can set the path as:
@@ -115,7 +115,7 @@ If you hit following error while attempting to connect to a database:
 >>> ibm_db.connect("my_connection_string", "", "")
  Traceback (most recent call last):
    File "<stdin>", line 1, in <module>
- Exception: [IBM][CLI Driver] SQL1042C An unexpected system error occurred. SQLSTATE=58004 SQLCODE=-1042   
+ Exception: [IBM][CLI Driver] SQL1042C An unexpected system error occurred. SQLSTATE=58004 SQLCODE=-1042
 ```
 Set DYLD_LIBRARY_PATH to point to icc folder as per the installation location of clidriver in your environment.
 
@@ -139,7 +139,7 @@ export DYLD_LIBRARY_PATH=/usr/local/lib/python3.5/site-packages/clidriver/lib/ic
 
 # Testing
 
-Tests displaying Python ibm_db driver code examples are located in the tests 
+Tests displaying Python ibm_db driver code examples are located in the tests
 directory. A valid config.py will need to be created to configure your DB2
 settings. A config.py.sample exists that can be copied and modified for your
 environment.
@@ -158,32 +158,32 @@ port     =      50000           # Port Number
 
 Point the database to mydatabase as created by the following command.
 
-The tests that ibm_db driver uses depends on a UTF-8 database.  This can be 
+The tests that ibm_db driver uses depends on a UTF-8 database.  This can be
 created by running:
 ```
   CREATE DATABASE mydatabase USING CODESET UTF-8 TERRITORY US
-```    
-Some of the tests utilize XML functionality only available in version 9 or 
-later of DB2.  While DB2 v8.x is fully supported, two of the tests 
-(test_195.py and test_52949.py) utilize XML functionality.  These tests will 
+```
+Some of the tests utilize XML functionality only available in version 9 or
+later of DB2.  While DB2 v8.x is fully supported, two of the tests
+(test_195.py and test_52949.py) utilize XML functionality.  These tests will
 fail on version 8.x of DB2.
 
 ## Running the driver testsuite on Linux
-  In order to run the entire python driver testsuite on Linux, run this 
+  In order to run the entire python driver testsuite on Linux, run this
   command at the command prompt:
   ```
     python tests.py
-  ```  
-  To run a single test, set the environment variable, **SINGLE_PYTHON_TEST**, to 
+  ```
+  To run a single test, set the environment variable, **SINGLE_PYTHON_TEST**, to
   the test filename you would like to run, followed by the previous command.
-    
+
 ## Running the driver testsuite on Windows
-  In order to run the entire python driver testsuite on Windows, run this 
+  In order to run the entire python driver testsuite on Windows, run this
   command at the command prompt:
   ```
     tests.py
   ```
-  To run a single test, set the environment variable, **SINGLE_PYTHON_TEST**, to 
+  To run a single test, set the environment variable, **SINGLE_PYTHON_TEST**, to
   the test filename you would like to run, followed by the previous command.
 
 

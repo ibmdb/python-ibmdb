@@ -1,4 +1,4 @@
-# 
+#
 #  Licensed Materials - Property of IBM
 #
 #  (c) Copyright IBM Corp. 2007-2008
@@ -13,17 +13,17 @@ from testfunctions import IbmDbTestFunctions
 
 class IbmDbTestCase(unittest.TestCase):
 
-  def test_201_MultipleRsltsetsDiffColDefs(self):
-    obj = IbmDbTestFunctions()
-    obj.assert_expect(self.run_test_201)
+    def test_201_MultipleRsltsetsDiffColDefs(self):
+        obj = IbmDbTestFunctions()
+        obj.assert_expect(self.run_test_201)
 
-  def run_test_201(self):
-    conn = ibm_db.connect(config.database, config.user, config.password)
-    
-    serverinfo = ibm_db.server_info( conn )
-    server = serverinfo.DBMS_NAME[0:3]
-    if (server == 'IDS'):
-        procedure = """CREATE FUNCTION multiResults ()
+    def run_test_201(self):
+        conn = ibm_db.connect(config.database, config.user, config.password)
+
+        serverinfo = ibm_db.server_info( conn )
+        server = serverinfo.DBMS_NAME[0:3]
+        if (server == 'IDS'):
+            procedure = """CREATE FUNCTION multiResults ()
            RETURNING CHAR(16), INT, VARCHAR(32), NUMERIC(7,2);
            
            DEFINE p_name CHAR(16);
@@ -40,8 +40,8 @@ class IbmDbTestCase(unittest.TestCase):
            END FOREACH;
     
        END FUNCTION;"""
-    else:
-        procedure = """CREATE PROCEDURE multiResults ()
+        else:
+            procedure = """CREATE PROCEDURE multiResults ()
         RESULT SETS 3
         LANGUAGE SQL
         BEGIN
@@ -64,50 +64,50 @@ class IbmDbTestCase(unittest.TestCase):
          OPEN c2;
          OPEN c3;
         END"""
-    
-    if conn:
-        try:
-            ibm_db.exec_immediate(conn, 'DROP PROCEDURE multiResults')
-        except:
-            pass
-        ibm_db.exec_immediate(conn, procedure)
-        stmt = ibm_db.exec_immediate(conn, 'CALL multiResults()')
-    
-        print("Fetching first result set")
-        row = ibm_db.fetch_tuple(stmt)
-        while ( row ):
-           for i in row:
-                print(str(i).strip())
-           row = ibm_db.fetch_tuple(stmt)
-    
-        if (server == 'IDS') :
-           print("Fetching second result set (should fail -- IDS does not support multiple result sets)")
-        else:
-           print("Fetching second result set")
-        res = ibm_db.next_result(stmt)
-      
-        if res:
-           row = ibm_db.fetch_tuple(res)
-           while ( row ):
+
+        if conn:
+            try:
+                ibm_db.exec_immediate(conn, 'DROP PROCEDURE multiResults')
+            except:
+                pass
+            ibm_db.exec_immediate(conn, procedure)
+            stmt = ibm_db.exec_immediate(conn, 'CALL multiResults()')
+
+            print("Fetching first result set")
+            row = ibm_db.fetch_tuple(stmt)
+            while ( row ):
                 for i in row:
-                   print(str(i).strip())
+                    print(str(i).strip())
+                row = ibm_db.fetch_tuple(stmt)
+
+            if (server == 'IDS') :
+                print("Fetching second result set (should fail -- IDS does not support multiple result sets)")
+            else:
+                print("Fetching second result set")
+            res = ibm_db.next_result(stmt)
+
+            if res:
                 row = ibm_db.fetch_tuple(res)
-     
-        if (server == 'IDS'):
-           print("Fetching third result set (should fail -- IDS does not support multiple result sets)")
+                while ( row ):
+                    for i in row:
+                        print(str(i).strip())
+                    row = ibm_db.fetch_tuple(res)
+
+            if (server == 'IDS'):
+                print("Fetching third result set (should fail -- IDS does not support multiple result sets)")
+            else:
+                print("Fetching third result set")
+            res2 = ibm_db.next_result(stmt)
+            if res2:
+                row = ibm_db.fetch_tuple(res2)
+                while ( row ):
+                    for i in row:
+                        print(str(i).strip())
+                    row = ibm_db.fetch_tuple(res2)
+
+            ibm_db.close(conn)
         else:
-           print("Fetching third result set")
-        res2 = ibm_db.next_result(stmt)
-        if res2:
-           row = ibm_db.fetch_tuple(res2)
-           while ( row ):
-               for i in row: 
-                   print(str(i).strip())
-               row = ibm_db.fetch_tuple(res2)
-        
-        ibm_db.close(conn)
-    else:
-       print("Connection failed.")
+            print("Connection failed.")
 
 #__END__
 #__LUW_EXPECTED__

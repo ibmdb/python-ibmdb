@@ -1,4 +1,4 @@
-# 
+#
 #  Licensed Materials - Property of IBM
 #
 #  (c) Copyright IBM Corp. 2007-2008
@@ -43,8 +43,8 @@ class IbmDbTestCase(unittest.TestCase):
                     ibm_db.dropdb(conn_attach, database)
                 except:
                     print('Errors occurred during drop database')
-            try:        
-                # call createdbNX without  codeset argument when specified database not exeist   
+            try:
+                # call createdbNX without  codeset argument when specified database not exeist
                 rc = ibm_db.createdbNX(conn_attach, database)
                 if rc:
                     conn = ibm_db.connect(conn_str, '', '')
@@ -74,7 +74,7 @@ class IbmDbTestCase(unittest.TestCase):
                             print('Database not created')
                     else:
                         print('Error occurred during create db if not exist with codeset')
-                        
+
                 #drop database
                 rc = ibm_db.dropdb(conn_attach, database)
                 if rc:
@@ -94,7 +94,7 @@ class IbmDbTestCase(unittest.TestCase):
             ibm_db.close(conn_attach)
         else:
             print(ibm_db.conn_errormsg())
-            
+
 #__END__
 #__LUW_EXPECTED__
 #database created sucessfully

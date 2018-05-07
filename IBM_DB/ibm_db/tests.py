@@ -23,16 +23,16 @@ import importlib
 # Override standard test-loading behavior
 def load_tests(loader, tests, pattern):
     suite = unittest.TestSuite()
-    
+
     test_glob = os.environ.get("SINGLE_PYTHON_TEST", "test_*.py")
     files = glob.glob(join(config.test_dir, test_glob))
     tests = [ basename(_).replace('.py', '') for _ in files ]
     tests.sort()
-    
+
     for test in tests:
         mod = importlib.import_module(test)
         suite.addTest(mod.IbmDbTestCase(test))
-    
+
     return suite
 
 if __name__ == '__main__':
