@@ -14,7 +14,7 @@ class IbmDbTestCase(unittest.TestCase):
   def test_006_ConnPassingOpts(self):
     obj = IbmDbTestFunctions()
     obj.assert_expect(self.run_test_006)
-	  
+      
   def run_test_006(self):    
 
     options1 = {ibm_db.SQL_ATTR_CURSOR_TYPE:  ibm_db.SQL_CURSOR_KEYSET_DRIVEN}

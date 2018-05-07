@@ -16,7 +16,7 @@ class IbmDbTestCase(unittest.TestCase):
     obj = IbmDbTestFunctions()
     obj.assert_expect(self.run_test_200)
     self.maxDiff = None
-	
+    
   def run_test_200(self):
     conn = ibm_db.connect(config.database, config.user, config.password)
     serverinfo = ibm_db.server_info( conn )

@@ -60,7 +60,7 @@ setup (
     zip_safe          = False,
     include_package_data = True,
     entry_points = {
-		'django.db.backends': ['ibm_db_django = ibm_db_django']
+        'django.db.backends': ['ibm_db_django = ibm_db_django']
     },
     **extra
 )

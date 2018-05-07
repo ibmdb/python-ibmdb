@@ -30,9 +30,9 @@ class IbmDbTestCase(unittest.TestCase):
       row = ibm_db.fetch_assoc(result, i)
       while ( row ):
         if (server.DBMS_NAME[0:3] == 'IDS'):
-	           print "%-5d %-16s %-32s %10s\n" % (row['id'], row['name'], row['breed'], row['weight'])
+             print "%-5d %-16s %-32s %10s\n" % (row['id'], row['name'], row['breed'], row['weight'])
         else:
-	           print "%-5d %-16s %-32s %10s\n" % (row['ID'], row['NAME'], row['BREED'], row['WEIGHT'])
+             print "%-5d %-16s %-32s %10s\n" % (row['ID'], row['NAME'], row['BREED'], row['WEIGHT'])
         i = i + 2
         row = ibm_db.fetch_assoc(result, i)
 #

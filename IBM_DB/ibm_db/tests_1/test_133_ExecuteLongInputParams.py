@@ -36,7 +36,7 @@ class IbmDbTestCase(unittest.TestCase):
       row = ibm_db.fetch_assoc(stmt)
       
       for i in row:
-	         print i
+           print i
 
       ibm_db.rollback(conn)
       print "Done"
