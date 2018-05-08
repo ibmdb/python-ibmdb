@@ -1186,7 +1186,6 @@ static PyObject *_python_ibm_db_connect_helper( PyObject *self, PyObject *args, 
 					reused = 1;
 				} /* else will re-connect since connection is dead */
 #endif /* PASE */
-				reused = 1;
 			}
 		} else {
 			/* Need to check for max pconnections? */
