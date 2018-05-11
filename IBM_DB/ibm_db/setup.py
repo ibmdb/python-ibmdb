@@ -5,7 +5,6 @@ import warnings
 import tarfile
 import zipfile
 import shutil
-import platform
 
 if sys.version_info >= (3, ):
     from urllib import request
@@ -31,7 +30,6 @@ ibm_db_lib = ''
 ibm_db_lib_runtime = ''
 license_agreement = False
 prebuildIbmdbPYD = False
-process_ = ''
     
 if machine_bits == 64:
     is64Bit = True
