@@ -34,7 +34,7 @@ More examples can be found under 'tests' folder.
 ### Issues with MAC OS X
 * If you run into errors for libdb2.dylib as below:
 
-```
+```python
 >>> import ibm_db
 Traceback (most recent call last):
   File "<stdin>", line 1, in <module>
@@ -55,7 +55,7 @@ export DYLD_LIBRARY_PATH=/usr/local/lib/python3.5/site-packages/clidriver/lib:$D
 
 If you hit following error while attempting to connect to a database:
 
-```
+```python
 >>> import ibm_db
 >>> ibm_db.connect("my_connection_string", "", "")
  Traceback (most recent call last):
@@ -91,7 +91,7 @@ environment.
 
 The config.py should look like this:
 
-```
+```python
 test_dir =      'tests'         # Location of testsuite file (relative to current directory)
 
 database =      'test'          # Database to connect to
