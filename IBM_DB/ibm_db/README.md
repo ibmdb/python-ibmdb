@@ -14,7 +14,7 @@ This will install *ibm_db* and *ibm_db_dbi* module.
 
 ###IBM_DB and DB-API wrapper (ibm_db_dbi) sanity test 
 
-```
+```python
 $ python
 Python 3.6.5 (default, May 10 2018, 00:54:55)
 [GCC 4.3.4 [gcc-4_3-branch revision 152973]] on linux
