@@ -5,7 +5,7 @@
 | (C) Copyright IBM Corporation 2006-2013.                             |
 +----------------------------------------------------------------------+
 | Authors: Manas Dadarkar, Abhigyan Agrawal, Rahul Priyadarshi,        |
-|          Saba Kauser                                                 | 
+|          Saba Kauser                                                 |
 +----------------------------------------------------------------------+
 */
 
@@ -13,7 +13,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sqlcli1.h>
-#include <Python.h> 
+#include <Python.h>
 #include <structmember.h>
 
 /*
@@ -32,8 +32,8 @@
 #define PyVarObject_HEAD_INIT(type, size) \
                     PyObject_HEAD_INIT(type) size,
 #define Py_TYPE(ob)            (((PyObject*)(ob))->ob_type)
-#define MOD_RETURN_ERROR        
-#define MOD_RETURN_VAL(mod)            
+#define MOD_RETURN_ERROR
+#define MOD_RETURN_VAL(mod)
 #define INIT_ibm_db                 initibm_db
 #else
 #define PyInt_Check                 PyLong_Check
@@ -107,12 +107,12 @@
 */
 #define SQL_ATTR_REPLACE_QUOTED_LITERALS_OLDVALUE 116
 
-/* If using a DB2 CLI version which doesn't support this functionality, 
-* explicitly define this. We will rely on DB2 CLI to throw an error when 
+/* If using a DB2 CLI version which doesn't support this functionality,
+* explicitly define this. We will rely on DB2 CLI to throw an error when
 * SQLGetStmtAttr is called.
 */
 
-#ifndef SQL_ATTR_GET_GENERATED_VALUE 
+#ifndef SQL_ATTR_GET_GENERATED_VALUE
 #define SQL_ATTR_GET_GENERATED_VALUE 2578
 #endif
 
@@ -121,7 +121,7 @@
 
 /* Default initail LOB buffer size */
 #define INIT_BUFSIZ 10240
- 
+
 /* Used in _python_parse_options */
 #define DB2_ERRMSG 1
 #define DB2_ERR 2
