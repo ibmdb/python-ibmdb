@@ -2,6 +2,8 @@
 
 We are assuming that you have Python already installed. In Linux you may need the python-dev package (you can install python-dev package through "$yum install python-devel" if yum doesn't work then you can also install it through "$apt-get install python-dev")
 
+Note:The minimum python version supported by driver is python 2.7 and the latest version supported is python 3.6.
+     
  
 ## Installation 
 ```
@@ -14,15 +16,21 @@ This will install *ibm_db* and *ibm_db_dbi* module.
 
 ```
 $ python
-Python 2.5.1 (r251:54863, Oct  5 2007, 13:36:32)
-[GCC 4.1.3 20070929 (prerelease) (Ubuntu 4.1.2-16ubuntu2)] on linux2
+Python 3.6.5 (default, May 10 2018, 00:54:55)
+[GCC 4.3.4 [gcc-4_3-branch revision 152973]] on linux
 Type "help", "copyright", "credits" or "license" for more information.
 >>> import ibm_db
->>> ibm_db_conn = ibm_db.connect('pydev', 'db2inst1', 'secret')
+>>> #For connecting to local database named pydev for user db2inst1 and password secret, use below example
+>>> #ibm_db_conn = ibm_db.connect('pydev', 'db2inst1', 'secret')
+>>> #For connecting to remote database named pydev for uid db2inst and pwd secret on host host.test.com, use below example
+>>> conn_str='database=pydev;hostname=host.test.com;port=portno;protocol=tcpip;uid=db2inst1;pwd=secret'
+>>> ibm_db_conn = ibm_db.connect(conn_str,'','')
 >>> import ibm_db_dbi
 >>> conn = ibm_db_dbi.Connection(ibm_db_conn)
 >>> conn.tables('SYSCAT', '%')
 ```
+More examples can be found under 'tests' folder.
+
 ### Issues with MAC OS X
 * If you run into errors for libdb2.dylib as below:
 
