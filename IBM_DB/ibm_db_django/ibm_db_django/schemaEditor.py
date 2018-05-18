@@ -527,18 +527,8 @@ class DB2SchemaEditor(BaseDatabaseSchemaEditor):
         field._unique = False
         
         super(DB2SchemaEditor, self).add_field(model, field)
-        if( djangoVersion[0:2] < ( 1, 9 ) ):
-            if field.rel is not None and hasattr(field.rel,'through'):
-                rel_condition = field.rel.through._meta.auto_created
-            else:
-                rel_condition = False
-        else:
-            if field.remote_field is not None and hasattr(field.remote_field,'through'):
-                rel_condition = field.remote_field.through._meta.auto_created
-            else:
-                rel_condition = False
-                
-        if isinstance(field, ManyToManyField) and rel_condition:
+        
+        if isinstance(field, ManyToManyField):
             return
         else:
             self._reorg_tables()
