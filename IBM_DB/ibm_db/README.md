@@ -1,4 +1,4 @@
-#Installing ibm_db and ibm_db_dbi module 
+# Installing ibm_db and ibm_db_dbi module 
 
 We are assuming that you have Python already installed. In Linux you may need the python-dev package (you can install python-dev package through "$yum install python-devel" if yum doesn't work then you can also install it through "$apt-get install python-dev")
 
@@ -12,7 +12,7 @@ Note:The minimum python version supported by driver is python 2.7 and the latest
 This will install *ibm_db* and *ibm_db_dbi* module.
 
 
-###IBM_DB and DB-API wrapper (ibm_db_dbi) sanity test 
+### IBM_DB and DB-API wrapper (ibm_db_dbi) sanity test 
 
 ```python
 $ python
@@ -79,13 +79,13 @@ Set DYLD_LIBRARY_PATH to point to icc folder as per the installation location of
 export DYLD_LIBRARY_PATH=/usr/local/lib/python3.5/site-packages/clidriver/lib/icc:$DYLD_LIBRARY_PATH
 ```
 
-##Supported databases
+### Supported databases
  * **Minimum Supported version of IBM DB2 is V9fp2 for Linux, UNIX, and Windows**
  * Informix 11.10 **(Cheetah)**
  * Remote connections to i5/OS (iSeries)
  * Remote connections to z/OS (DB2 for z/OS)
 
-##Feedback
+# Feedback
 
 **Your feedback is very much appreciated and expected through project ibm-db:**
   * ibm-db issues reports: **https://github.com/ibmdb/python-ibmdb/issues**
@@ -93,7 +93,7 @@ export DYLD_LIBRARY_PATH=/usr/local/lib/python3.5/site-packages/clidriver/lib/ic
   * ibm-db developers: **opendev@us.ibm.com**
 
 
-#Testing
+# Testing
 
 Tests displaying Python ibm_db driver code examples are located in the tests 
 directory. A valid config.py will need to be created to configure your DB2
@@ -124,7 +124,7 @@ later of DB2.  While DB2 v8.x is fully supported, two of the tests
 (test_195.py and test_52949.py) utilize XML functionality.  These tests will 
 fail on version 8.x of DB2.
 
-##Running the driver testsuite on Linux
+## Running the driver testsuite on Linux
   In order to run the entire python driver testsuite on Linux, run this 
   command at the command prompt:
   ```
@@ -133,7 +133,7 @@ fail on version 8.x of DB2.
   To run a single test, set the environment variable, **SINGLE_PYTHON_TEST**, to 
   the test filename you would like to run, followed by the previous command.
     
-##Running the driver testsuite on Windows
+## Running the driver testsuite on Windows
   In order to run the entire python driver testsuite on Windows, run this 
   command at the command prompt:
   ```
@@ -143,12 +143,12 @@ fail on version 8.x of DB2.
   the test filename you would like to run, followed by the previous command.
 
 
-#Known Limitations for the Python driver
+## Known Limitations for the Python driver
 
 If trusted context is not set up, there will be two failures related to trusted context. When thick client has been used than additioanl three failures related to create, recreate DB.
 
 
-#Known Limitations for the Python wrapper
+## Known Limitations for the Python wrapper
 
 1. The rowcount for select statements can not be generated.
 2. Some warnings from the drivers are not caught by the wrapper.
