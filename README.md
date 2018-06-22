@@ -11,11 +11,11 @@ Provides Python, Django and SQLAlchemy support for IBM DB2 and Informix
 
 [Downloads](#downloads)
 
-[Latest Updates](#latest updates)
+[Latest Updates](#latest-updates)
 
 [Support](#support)
 
-[Contributing to the ibm_db python project](#contributing to the ibm_db python project)
+[Contributing to the ibm_db python project](#contributing-to-the-ibm_db-python-project)
 
 <a name='components'></a>
 ## Components (Python Eggs)
@@ -44,7 +44,7 @@ Use following pypi web location for downloading source code and binaries
  3. **ibm_db_sa**: https://pypi.python.org/pypi/ibm_db_sa .
  4. **ibm_db_alembic**: https://pypi.python.org/pypi/ibm_db_alembic .
 
-<a name='latest updates'></a>
+<a name='latest-updates'></a>
 ## Latest Updates
 
 ### *Support for Alembic*
@@ -69,7 +69,7 @@ Use following pypi web location for downloading source code and binaries
  * Google Group: http://groups.google.com/group/ibm_db
    
  
-<a name='contributing to the ibm_db python project'></a>
+<a name='contributing-to-the-ibm_db-python-project'></a>
 ## Contributing to the ibm_db python project
 
 See [CONTRIBUTING](https://github.com/ibmdb/python-ibmdb/blob/master/contributing/CONTRIBUTING.md)
