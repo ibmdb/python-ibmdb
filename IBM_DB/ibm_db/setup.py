@@ -126,7 +126,7 @@ if (('IBM_DB_HOME' not in os.environ) and ('IBM_DB_DIR' not in os.environ) and (
                 cliFileName = 'sunamd64_odbc_cli.tar.gz'
             else:
                 cliFileName = 'sunamd32_odbc_cli.tar.gz'
-        elif ('SPARC' in os.uname()[4]):
+        elif ('sun4' in os.uname()[4]):
             arch_ = 'SUNW'
             if is64Bit:
                 cliFileName = 'sun64_odbc_cli.tar.gz'
