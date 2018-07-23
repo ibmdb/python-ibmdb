@@ -40,13 +40,6 @@ else:
     libDir = 'lib32'
     sys.stdout.write("Detected 32-bit Python\n")
 
-# check if val exists in list
-def _checkOSList(list, val):
-    for s in list:
-        if ( val in s):
-            return True
-    return False
-
 # defining extension    
 def _ext_modules(include_dir, library, lib_dir, runtime_dir=None):
     ext_args = dict(include_dirs = [include_dir],
@@ -98,12 +91,12 @@ if (('IBM_DB_HOME' not in os.environ) and ('IBM_DB_DIR' not in os.environ) and (
             cliFileName = 'aix32_odbc_cli.tar.gz'
     elif ('linux' in sys.platform):
         os_ = 'linux'
-        if (_checkOSList(os.uname(),'ppc64le')):	
+        if ('ppc64le' in os.uname()[4]):	
             os_ = 'ppc64le'
             if is64Bit:
                 cliFileName = 'ppc64le_odbc_cli.tar.gz'
                 arch_ = 'ppc64le'
-        elif (_checkOSList(os.uname(),'ppc')):	
+        elif ('ppc' in os.uname()[4]):	
             os_ = 'ppc'
             if is64Bit:
                 cliFileName = 'ppc64_odbc_cli.tar.gz'
@@ -111,14 +104,14 @@ if (('IBM_DB_HOME' not in os.environ) and ('IBM_DB_DIR' not in os.environ) and (
             else:
                 cliFileName = 'ppc32_odbc_cli.tar.gz'
                 arch_ = 'ppc*'
-        elif (_checkOSList(os.uname(),'86')): # todo needs to search in list
+        elif ('86' in os.uname()[4]): # todo needs to search in list
             if is64Bit:
                 cliFileName = 'linuxx64_odbc_cli.tar.gz'
                 arch_ = 'x86_64'    
             else:
                 cliFileName = 'linuxia32_odbc_cli.tar.gz'
                 arch_ = 'i686'
-        elif (_checkOSList(os.uname(),'390')):
+        elif ('390' in os.uname()[4]):
             if is64Bit:
                 cliFileName = 's390x64_odbc_cli.tar.gz'
                 arch_ = 's390x'
@@ -127,13 +120,13 @@ if (('IBM_DB_HOME' not in os.environ) and ('IBM_DB_DIR' not in os.environ) and (
                 arch_ = 's390'
     elif ('sunos' in sys.platform):
         os_ = 'solaris*'
-        if ('i86pc' in os.uname()):
+        if ('i86pc' in os.uname()[4]):
             arch_ = 'i86pc'
             if is64Bit:
                 cliFileName = 'sunamd64_odbc_cli.tar.gz'
             else:
                 cliFileName = 'sunamd32_odbc_cli.tar.gz'
-        elif ('SPARC' in os.uname()):
+        elif ('sun4' in os.uname()[4]):
             arch_ = 'SUNW'
             if is64Bit:
                 cliFileName = 'sun64_odbc_cli.tar.gz'
