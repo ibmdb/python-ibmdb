@@ -32,11 +32,11 @@ class IbmDbTestCase(unittest.TestCase):
         while ( row ): 
           #row.each { |child| puts child }
           for child in row:
-            print child
+            print(child)
           row = ibm_db.fetch_tuple(stmt)
       ibm_db.rollback(conn)
     else:
-      print "Connection failed."
+      print("Connection failed.")
 
 #__END__
 #__LUW_EXPECTED__

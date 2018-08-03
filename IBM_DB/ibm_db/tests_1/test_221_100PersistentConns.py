@@ -16,7 +16,7 @@ class IbmDbTestCase(unittest.TestCase):
     obj.assert_expect(self.run_test_221)
 
   def run_test_221(self):
-    pconn = list(range(100))
+    pconn = range(100)
     
     for i in range(100):
       pconn[i] = ibm_db.pconnect(config.database, config.user, config.password)
@@ -25,11 +25,11 @@ class IbmDbTestCase(unittest.TestCase):
       conn = pconn[22]
       ibm_db.autocommit(conn, ibm_db.SQL_AUTOCOMMIT_OFF)
       stmt = ibm_db.exec_immediate(pconn[33], "UPDATE animals SET name = 'flyweight' WHERE weight < 10.0")
-      print("Number of affected rows:", ibm_db.num_rows( stmt ))
+      print "Number of affected rows:", ibm_db.num_rows( stmt )
       ibm_db.rollback(conn)
       ibm_db.close(pconn[33])
     else:
-      print("Connection failed.")
+      print "Connection failed."
 
 #__END__
 #__LUW_EXPECTED__

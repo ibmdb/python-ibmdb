@@ -24,17 +24,17 @@ class IbmDbTestCase(unittest.TestCase):
         
       while (ibm_db.fetch_row(stmt)):
         weight = ibm_db.result(stmt, 3)
-        print("string(%d) \"%s\"" % (len(str(weight)), weight))
+        print "string(%d) \"%s\"" % (len(str(weight)), weight)
         breed = ibm_db.result(stmt, 1)
-        print("string(%d) \"%s\"" % (len(breed), breed))
+        print "string(%d) \"%s\"" % (len(breed), breed)
         if (server.DBMS_NAME[0:3] == 'IDS'):
           name = ibm_db.result(stmt, "name")
         else:
           name = ibm_db.result(stmt, "NAME")
-        print("string(%d) \"%s\"" % (len(name), name))
+        print "string(%d) \"%s\"" % (len(name), name)
       ibm_db.close(conn)
     else:
-      print("Connection failed.")
+      print "Connection failed."
 
 #__END__
 #__LUW_EXPECTED__

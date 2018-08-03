@@ -22,35 +22,35 @@ class IbmDbTestCase(unittest.TestCase):
     
     i = "sales_person"
     
-    print "%s size %d\n" % (i, (ibm_db.field_display_size(result,i) or 0))
+    print("%s size %d\n" % (i, (ibm_db.field_display_size(result,i) or 0)))
     
     i = "REGION"
     
-    print "%s size %d\n" % (i, (ibm_db.field_display_size(result,i) or 0))
+    print("%s size %d\n" % (i, (ibm_db.field_display_size(result,i) or 0)))
     
     i = "REgion"
     
-    print "%s size %d\n" % (i, (ibm_db.field_display_size(result,i) or 0))
+    print("%s size %d\n" % (i, (ibm_db.field_display_size(result,i) or 0)))
     
     i = "HELMUT"
     
-    print "%s size %d\n" % (i, (ibm_db.field_display_size(result,i) or 0))
+    print("%s size %d\n" % (i, (ibm_db.field_display_size(result,i) or 0)))
     
     t = ibm_db.field_display_size(result,"")
     
-    print t
+    print(t)
     
     t = ibm_db.field_display_size(result,"HELMUT")
     
-    print t
+    print(t)
     
     t = ibm_db.field_display_size(result,"Region")
     
-    print t
+    print(t)
     
     t = ibm_db.field_display_size(result,"SALES_DATE")
     
-    print t
+    print(t)
 
 #__END__
 #__LUW_EXPECTED__

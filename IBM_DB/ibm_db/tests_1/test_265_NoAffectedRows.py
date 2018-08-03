@@ -33,7 +33,7 @@ class IbmDbTestCase(unittest.TestCase):
         stmt = ibm_db.prepare(conn, sql)
         ibm_db.set_option(stmt, cursor_option, 0)
         ibm_db.execute(stmt)
-        print("Number of affected rows: %d" % ibm_db.get_num_result(stmt))
+        print "Number of affected rows: %d" % ibm_db.get_num_result(stmt)
       except:
         pass
 
@@ -45,45 +45,45 @@ class IbmDbTestCase(unittest.TestCase):
       stmt = ibm_db.prepare(conn, sql)
       ibm_db.set_option(stmt, cursor_option, 0)
       ibm_db.execute(stmt)
-      print("Number of affected rows: %d" % ibm_db.get_num_result(stmt))
+      print "Number of affected rows: %d" % ibm_db.get_num_result(stmt)
 
       sql = 'select id from test'
 
       stmt = ibm_db.prepare(conn, sql)
       ibm_db.set_option(stmt, cursor_option, 0)
       ibm_db.execute(stmt)
-      print("Number of affected rows: %d" % ibm_db.get_num_result(stmt))
+      print "Number of affected rows: %d" % ibm_db.get_num_result(stmt)
 
       sql = "insert into test values( 1, 'some', 'here is a clob value', '<?xml version=\"1.0\" encoding=\"UTF-8\" ?><test attribute=\"value\"/>')"
 
       stmt = ibm_db.prepare(conn, sql)
       ibm_db.set_option(stmt, cursor_option, 0)
       ibm_db.execute(stmt)
-      print("Number of affected rows: %d" % ibm_db.get_num_result(stmt))
+      print "Number of affected rows: %d" % ibm_db.get_num_result(stmt)
 
       sql = "insert into test values(2, 'value', 'clob data', NULL)"
 
       stmt = ibm_db.prepare(conn, sql)
       ibm_db.set_option(stmt, cursor_option, 0)
       ibm_db.execute(stmt)
-      print("Number of affected rows: %d" % ibm_db.get_num_result(stmt))
+      print "Number of affected rows: %d" % ibm_db.get_num_result(stmt)
 
       sql = "insert into test values(2, 'in varchar', 'data2', NULL)"
 
       stmt = ibm_db.prepare(conn, sql)
       ibm_db.set_option(stmt, cursor_option, 0)
       ibm_db.execute(stmt)
-      print("Number of affected rows: %d" % ibm_db.get_num_result(stmt))
+      print "Number of affected rows: %d" % ibm_db.get_num_result(stmt)
 
       sql = 'select * from test'
 
       stmt = ibm_db.prepare(conn, sql)
       ibm_db.set_option(stmt, cursor_option, 0)
       ibm_db.execute(stmt)
-      print("Number of affected rows: %d" % ibm_db.get_num_result(stmt))
+      print "Number of affected rows: %d" % ibm_db.get_num_result(stmt)
       row = ibm_db.fetch_tuple(stmt)
       while ( row ):
-        print("%s, %s, %s, %s\n" %(row[0], row[1], row[2], ((row[3] is not None) and row[3].startswith('\ufeff')) and  row[3][1:] or  row[3]))
+        print "%s, %s, %s, %s\n" %(row[0], row[1], row[2], ((row[3] is not None) and row[3].startswith(u'\ufeff')) and  row[3][1:] or  row[3])
         row = ibm_db.fetch_tuple(stmt)
 
       sql = 'select id, name from test where id = ?'
@@ -91,10 +91,10 @@ class IbmDbTestCase(unittest.TestCase):
       stmt = ibm_db.prepare(conn, sql)
       ibm_db.set_option(stmt, cursor_option, 0)
       ibm_db.execute(stmt, (2,))
-      print("Number of affected rows: %d" % ibm_db.get_num_result(stmt))
+      print "Number of affected rows: %d" % ibm_db.get_num_result(stmt)
       row = ibm_db.fetch_tuple(stmt)
       while ( row ):
-        print("%s, %s\n" %(row[0], row[1]))
+        print "%s, %s\n" %(row[0], row[1])
         row = ibm_db.fetch_tuple(stmt)
 
       if (server.DBMS_NAME[0:3] == 'IDS'):
@@ -106,10 +106,10 @@ class IbmDbTestCase(unittest.TestCase):
       ibm_db.set_option(stmt, cursor_option, 0)
       #ibm_db.num_fields(stmt)
       ibm_db.execute(stmt)
-      print("Number of affected rows: %d" % ibm_db.get_num_result(stmt))
+      print "Number of affected rows: %d" % ibm_db.get_num_result(stmt)
       row = ibm_db.fetch_tuple(stmt)
       while ( row ):
-        print("%s, %s, %s, %s\n" %(row[0], row[1], row[2], ((row[3] is not None) and row[3].startswith('\ufeff')) and  row[3][1:] or  row[3]))
+        print "%s, %s, %s, %s\n" %(row[0], row[1], row[2], ((row[3] is not None) and row[3].startswith(u'\ufeff')) and  row[3][1:] or  row[3])
         row = ibm_db.fetch_tuple(stmt)
 
       ibm_db.close(conn)

@@ -31,7 +31,7 @@ class IbmDbTestCase(unittest.TestCase):
     
       if stmt is not None:
         print("Values of bound parameters _after_ CALL:")
-      #  print("  1: %s 2: %s 3: %d\n") % (name, second_name, weight) hema changes
+        print("  1: %s 2: %s 3: %d\n" % (name, second_name, weight))
 
         if (server.DBMS_NAME[0:3] != 'IDS'):
           print("Results:")

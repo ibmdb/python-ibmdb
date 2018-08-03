@@ -21,7 +21,7 @@ class IbmDbTestCase(unittest.TestCase):
     result = ibm_db.tables(conn, None, "SYSIBM", "", "VIEW")
     
     if (type(result) == ibm_db.IBM_DBStatement):
-      print "Resource is a DB2 Statement"
+      print("Resource is a DB2 Statement")
       
     ibm_db.free_result(result)
 

@@ -27,12 +27,12 @@ class IbmDbTestCase(unittest.TestCase):
     row = ibm_db.fetch_both(result)
     count = 1
     while ( row ):
-      print("Record",count,": %6s  %-6s %3d %9s %10s %10s %6s " % (row[0], row[1], row[2], row['EMPTIME'], row['EMSTDATE'], row['EMENDATE'], row[0]))
+      print "Record",count,": %6s  %-6s %3d %9s %10s %10s %6s " % (row[0], row[1], row[2], row['EMPTIME'], row['EMSTDATE'], row['EMENDATE'], row[0])
       
       result2 = ibm_db.exec_immediate(conn,"select * from employee where employee.empno='" + row['EMPNO'] + "'")
       row2 = ibm_db.fetch_both(result2)
       if row2:        
-         print(">>%s,%s,%s,%s,%s,%s,%s" % (row2['EMPNO'], row2['FIRSTNME'],row2['MIDINIT'], row2[3], row2[3], row2[5], row2[6]))
+         print ">>%s,%s,%s,%s,%s,%s,%s" % (row2['EMPNO'], row2['FIRSTNME'],row2['MIDINIT'], row2[3], row2[3], row2[5], row2[6])
       count = count + 1
       if (count > 10):
           break

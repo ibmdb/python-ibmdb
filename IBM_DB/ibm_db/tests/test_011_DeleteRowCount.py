@@ -21,11 +21,11 @@ class IbmDbTestCase(unittest.TestCase):
     if conn:
       ibm_db.autocommit(conn, ibm_db.SQL_AUTOCOMMIT_OFF)
       stmt = ibm_db.exec_immediate(conn, "DELETE FROM animals WHERE weight > 10.0")
-      print "Number of affected rows: %d" % ibm_db.num_rows( stmt )
+      print ("Number of affected rows: %d" % ibm_db.num_rows( stmt ))
       ibm_db.rollback(conn)
       ibm_db.close(conn)
     else:
-      print "Connection failed."
+      print ("Connection failed.")
 
 #__END__
 #__LUW_EXPECTED__

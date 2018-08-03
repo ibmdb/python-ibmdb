@@ -28,7 +28,7 @@ class IbmDbTestCase(unittest.TestCase):
       rc = ibm_db.exec_immediate(conn, "CREATE TABLE index_test (id INTEGER, data VARCHAR(50))")
       rc = ibm_db.exec_immediate(conn, "CREATE UNIQUE INDEX index1 ON index_test (id)")
 
-      print("Test first index table:")
+      print "Test first index table:"
       if (server.DBMS_NAME[0:3] == 'IDS'):
         result = ibm_db.statistics(conn,None,config.user,"index_test",True)
       else:
@@ -37,10 +37,10 @@ class IbmDbTestCase(unittest.TestCase):
       ## skipping table info row. statistics returns informtation about table itself for informix ###
       if (server.DBMS_NAME[0:3] == 'IDS'):
         row = ibm_db.fetch_tuple(result)
-      print(row[2])  # TABLE_NAME
-      print(row[3])  # NON_UNIQUE
-      print(row[5])  # INDEX_NAME
-      print(row[8])  # COLUMN_NAME
+      print row[2]  # TABLE_NAME
+      print row[3]  # NON_UNIQUE
+      print row[5]  # INDEX_NAME
+      print row[8]  # COLUMN_NAME
 
       try:
           rc = ibm_db.exec_immediate(conn, "DROP TABLE index_test2")
@@ -49,7 +49,7 @@ class IbmDbTestCase(unittest.TestCase):
       rc = ibm_db.exec_immediate(conn, "CREATE TABLE index_test2 (id INTEGER, data VARCHAR(50))")
       rc = ibm_db.exec_immediate(conn, "CREATE INDEX index2 ON index_test2 (data)")
 
-      print("Test second index table:")
+      print "Test second index table:"
       if (server.DBMS_NAME[0:3] == 'IDS'):
         result = ibm_db.statistics(conn,None,config.user,"index_test2",True)
       else:
@@ -58,23 +58,23 @@ class IbmDbTestCase(unittest.TestCase):
       ### skipping table info row. statistics returns informtation about table itself for informix ###
       if (server.DBMS_NAME[0:3] == 'IDS'):
         row = ibm_db.fetch_tuple(result)
-      print(row[2])  # TABLE_NAME
-      print(row[3])  # NON_UNIQUE
-      print(row[5])  # INDEX_NAME
-      print(row[8])  # COLUMN_NAME
+      print row[2]  # TABLE_NAME
+      print row[3]  # NON_UNIQUE
+      print row[5]  # INDEX_NAME
+      print row[8]  # COLUMN_NAME
 
-      print("Test non-existent table:")
+      print "Test non-existent table:"
       if (server.DBMS_NAME[0:3] == 'IDS'):
         result = ibm_db.statistics(conn,None,config.user,"non_existent_table",True)
       else:
         result = ibm_db.statistics(conn,None,None,"NON_EXISTENT_TABLE",True)
       row = ibm_db.fetch_tuple(result)
       if row:
-        print("Non-Empty")
+        print "Non-Empty"
       else:
-        print("Empty")
+        print "Empty"
     else:
-      print('no connection: ' + ibm_db.conn_errormsg())
+      print 'no connection: ' + ibm_db.conn_errormsg()
 
 #__END__
 #__LUW_EXPECTED__

@@ -25,19 +25,19 @@ class IbmDbTestCase(unittest.TestCase):
       statement = "SELECT count(id) FROM animals"
       result = ibm_db.exec_immediate(conn, statement)
       if ( (not result) and ibm_db.stmt_error() ):
-        print "ERROR: %s" % (ibm_db.stmt_errormsg(), )
+        print("ERROR: %s" % (ibm_db.stmt_errormsg(), ))
 
       row = ibm_db.fetch_tuple(result)
       while ( row ):
         for i in row:
-            print i
+            print(i)
         row = ibm_db.fetch_tuple(result)
     
       ibm_db.rollback(conn)
       ibm_db.close(conn)
       
     else:
-      print "Connection failed."
+      print("Connection failed.")
 
 #__END__
 #__LUW_EXPECTED__

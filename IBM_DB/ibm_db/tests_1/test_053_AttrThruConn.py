@@ -16,27 +16,27 @@ class IbmDbTestCase(unittest.TestCase):
     obj.assert_expect(self.run_test_053)
 
   def run_test_053(self):
-    print("Client attributes passed through conection string:")
+    print "Client attributes passed through conection string:"
 
     options1 = {ibm_db.SQL_ATTR_INFO_USERID: 'db2inst1'}
     conn1 = ibm_db.connect(config.database, config.user, config.password, options1)
     val = ibm_db.get_option(conn1, ibm_db.SQL_ATTR_INFO_USERID, 1)
-    print(val)
+    print val
 
     options2 = {ibm_db.SQL_ATTR_INFO_ACCTSTR: 'account'}
     conn2 = ibm_db.connect(config.database, config.user, config.password, options2)
     val = ibm_db.get_option(conn2, ibm_db.SQL_ATTR_INFO_ACCTSTR, 1)
-    print(val)
+    print val
 
     options3 = {ibm_db.SQL_ATTR_INFO_APPLNAME: 'myapp'}
     conn3 = ibm_db.connect(config.database, config.user, config.password, options3)
     val = ibm_db.get_option(conn3, ibm_db.SQL_ATTR_INFO_APPLNAME, 1)
-    print(val)
+    print val
 
     options4 = {ibm_db.SQL_ATTR_INFO_WRKSTNNAME: 'workstation'}
     conn4 = ibm_db.connect(config.database, config.user, config.password, options4)
     val = ibm_db.get_option(conn4, ibm_db.SQL_ATTR_INFO_WRKSTNNAME, 1)
-    print(val)
+    print val
 
     options5 = {ibm_db.SQL_ATTR_INFO_USERID: 'kfb',
                 ibm_db.SQL_ATTR_INFO_WRKSTNNAME: 'kfbwork',
@@ -44,39 +44,39 @@ class IbmDbTestCase(unittest.TestCase):
                 ibm_db.SQL_ATTR_INFO_APPLNAME: 'kfbapp'}
     conn5 = ibm_db.connect(config.database, config.user, config.password, options5)
     val = ibm_db.get_option(conn5, ibm_db.SQL_ATTR_INFO_USERID, 1)
-    print(val)
+    print val
     val = ibm_db.get_option(conn5, ibm_db.SQL_ATTR_INFO_ACCTSTR, 1)
-    print(val)
+    print val
     val = ibm_db.get_option(conn5, ibm_db.SQL_ATTR_INFO_APPLNAME, 1)
-    print(val)
+    print val
     val = ibm_db.get_option(conn5, ibm_db.SQL_ATTR_INFO_WRKSTNNAME, 1)
-    print(val)
+    print val
 
-    print("Client attributes passed post-conection:")
+    print "Client attributes passed post-conection:"
 
     options5 = {ibm_db.SQL_ATTR_INFO_USERID: 'db2inst1'}
     conn5 = ibm_db.connect(config.database, config.user, config.password)
     rc = ibm_db.set_option(conn5, options5, 1)
     val = ibm_db.get_option(conn5, ibm_db.SQL_ATTR_INFO_USERID, 1)
-    print(val)
+    print val
 
     options6 = {ibm_db.SQL_ATTR_INFO_ACCTSTR: 'account'}
     conn6 = ibm_db.connect(config.database, config.user, config.password)
     rc = ibm_db.set_option(conn6, options6, 1)
     val = ibm_db.get_option(conn6, ibm_db.SQL_ATTR_INFO_ACCTSTR, 1)
-    print(val)
+    print val
 
     options7 = {ibm_db.SQL_ATTR_INFO_APPLNAME: 'myapp'}
     conn7 = ibm_db.connect(config.database, config.user, config.password)
     rc = ibm_db.set_option(conn7, options7, 1)
     val = ibm_db.get_option(conn7, ibm_db.SQL_ATTR_INFO_APPLNAME, 1)
-    print(val)
+    print val
 
     options8 = {ibm_db.SQL_ATTR_INFO_WRKSTNNAME: 'workstation'}
     conn8 = ibm_db.connect(config.database, config.user, config.password)
     rc = ibm_db.set_option(conn8, options8, 1)
     val = ibm_db.get_option(conn8, ibm_db.SQL_ATTR_INFO_WRKSTNNAME, 1)
-    print(val)
+    print val
 
 #__END__
 #__LUW_EXPECTED__

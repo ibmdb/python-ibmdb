@@ -36,7 +36,7 @@ class IbmDbTestCase(unittest.TestCase):
             row['YEARS'] = ''
         if (row['COMM'] == None):
             row['COMM'] = ''
-        print(row['ID'],row['NAME'],row['JOB'],row['YEARS'], row['SALARY'], row['COMM'])
+        print row['ID'],row['NAME'],row['JOB'],row['YEARS'], row['SALARY'], row['COMM']
         row = ibm_db.fetch_assoc(result)
   
     result2 = ibm_db.exec_immediate(conn,"select * from department where substr(deptno,1,1) in ('A','B','C','D','E')")
@@ -44,7 +44,7 @@ class IbmDbTestCase(unittest.TestCase):
     while ( row2 ):    
         if (row2['MGRNO'] == None):
             row2['MGRNO'] = ''
-        print(row2['DEPTNO'], row2['DEPTNAME'], row2['MGRNO'], row2['ADMRDEPT'], row2['LOCATION'])
+        print row2['DEPTNO'], row2['DEPTNAME'], row2['MGRNO'], row2['ADMRDEPT'], row2['LOCATION']
         row2 = ibm_db.fetch_assoc(result2)
 
 #__END__

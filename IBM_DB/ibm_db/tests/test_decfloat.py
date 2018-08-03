@@ -64,7 +64,7 @@ class IbmDbTestCase(unittest.TestCase):
             except:
                 excp = sys.exc_info()
                 # slot 1 contains error message
-                print excp[1]
+                print(excp[1])
 			
             # Select the result from the table and
             query = 'SELECT * FROM STOCKPRICE ORDER BY id'
@@ -75,18 +75,18 @@ class IbmDbTestCase(unittest.TestCase):
             ibm_db.execute(stmt)
             data = ibm_db.fetch_both( stmt )
             while ( data ):
-                print "%s : %s : %s : %s\n" % (data[0], data[1], data[2], data[3])
+                print("%s : %s : %s : %s\n" % (data[0], data[1], data[2], data[3]))
                 data = ibm_db.fetch_both( stmt )
             try:
                 stmt = ibm_db.prepare(conn, query, {ibm_db.SQL_ATTR_CURSOR_TYPE:  ibm_db.SQL_CURSOR_KEYSET_DRIVEN})
                 ibm_db.execute(stmt)
                 rc = ibm_db.fetch_row(stmt, -1)
-                print "Fetch Row -1:%s " %str(rc)
+                print("Fetch Row -1:%s " %str(rc))
             except:
-                print "Requested row number must be a positive value"
+                print("Requested row number must be a positive value")
             ibm_db.close(conn)
         else:
-            print "Connection failed."
+            print("Connection failed.")
 
 #__END__
 #__LUW_EXPECTED__

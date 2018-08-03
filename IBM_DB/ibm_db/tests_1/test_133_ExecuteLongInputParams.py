@@ -19,12 +19,12 @@ class IbmDbTestCase(unittest.TestCase):
     conn = ibm_db.connect(config.database, config.user, config.password)
 
     if (not conn):
-      print("Connection failed.")
+      print "Connection failed."
       return 0
 
     ibm_db.autocommit(conn, ibm_db.SQL_AUTOCOMMIT_OFF)
 
-    print("Starting test ...")
+    print "Starting test ..."
     res = ''
     sql =  "INSERT INTO animals (id, breed, name, weight) VALUES (?, ?, ?, ?)"
     try:
@@ -36,13 +36,13 @@ class IbmDbTestCase(unittest.TestCase):
       row = ibm_db.fetch_assoc(stmt)
       
       for i in row:
-	         print(i)
+	         print i
 
       ibm_db.rollback(conn)
-      print("Done")
+      print "Done"
     except:
-      print("SQLSTATE: %s" % ibm_db.stmt_error(stmt))
-      print("Message: %s" % ibm_db.stmt_errormsg(stmt))
+      print "SQLSTATE: %s" % ibm_db.stmt_error(stmt)
+      print "Message: %s" % ibm_db.stmt_errormsg(stmt)
 
     try:
         stmt = ibm_db.prepare(conn, "SELECT breed, name FROM animals WHERE id = ?")
@@ -50,17 +50,17 @@ class IbmDbTestCase(unittest.TestCase):
         row = ibm_db.fetch_assoc(stmt)
         if (row):
             for i in row:
-                print(i)
-        print(res)
-        print("SQLSTATE: %s" % ibm_db.stmt_error(stmt))
-        print("Message: %s" % ibm_db.stmt_errormsg(stmt))
+                print i
+        print res
+        print "SQLSTATE: %s" % ibm_db.stmt_error(stmt)
+        print "Message: %s" % ibm_db.stmt_errormsg(stmt)
     except:
-        print("An Exception is not expected")
-        print("SQLSTATE: %s" % ibm_db.stmt_error(stmt))
-        print("Message: %s" % ibm_db.stmt_errormsg(stmt))
+        print "An Exception is not expected"
+        print "SQLSTATE: %s" % ibm_db.stmt_error(stmt)
+        print "Message: %s" % ibm_db.stmt_errormsg(stmt)
 
     ibm_db.rollback(conn)
-    print("Done")
+    print "Done"
 
 #__END__
 #__LUW_EXPECTED__

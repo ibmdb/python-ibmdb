@@ -25,31 +25,31 @@ class IbmDbTestCase(unittest.TestCase):
     
       fields1 = ibm_db.num_fields(stmt)
       
-      print "int(%d)" % fields1
+      print("int(%d)" % fields1)
       
       stmt = ibm_db.exec_immediate(conn, "SELECT name, breed FROM animals ORDER BY breed")
       fields2 = ibm_db.num_fields(stmt)
       
-      print "int(%d)" % fields2
+      print("int(%d)" % fields2)
       
       stmt = ibm_db.exec_immediate(conn, "DELETE FROM animals")
       fields3 = ibm_db.num_fields(stmt)
       
-      print "int(%d)" % fields3
+      print("int(%d)" % fields3)
       
       stmt = ibm_db.exec_immediate(conn, "INSERT INTO animals values (0, 'cat', 'Pook', 3.2)")
       fields4 = ibm_db.num_fields(stmt)
         
-      print "int(%d)" % fields4
+      print("int(%d)" % fields4)
       
       stmt = ibm_db.exec_immediate(conn, "SELECT name, breed, 'TEST' FROM animals")
       fields5 = ibm_db.num_fields(stmt)
         
-      print "int(%d)" % fields5
+      print("int(%d)" % fields5)
 
       ibm_db.rollback(conn)
     else:
-      print "Connection failed."
+      print("Connection failed.")
 
 #__END__
 #__LUW_EXPECTED__

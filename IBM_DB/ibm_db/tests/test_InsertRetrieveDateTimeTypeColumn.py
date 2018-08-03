@@ -47,7 +47,7 @@ class IbmDbTestCase(unittest.TestCase):
       result = ibm_db.exec_immediate(conn, statement)
       
       for i in range(0, ibm_db.num_fields(result)):
-        print str(i) + ":" + ibm_db.field_type(result,i)
+        print(str(i) + ":" + ibm_db.field_type(result,i))
 
       statement = "SELECT * FROM tab_datetime"
       stmt = ibm_db.prepare(conn, statement)
@@ -57,14 +57,14 @@ class IbmDbTestCase(unittest.TestCase):
         row0 = ibm_db.result(stmt, 0)
         row1 = ibm_db.result(stmt, 1)
         row2 = ibm_db.result(stmt, 2)
-        print type(row0), row0
-        print type(row1), row1
-        print type(row2), row2
+        print(type(row0), row0)
+        print(type(row1), row1)
+        print(type(row2), row2)
         result = ibm_db.fetch_row(stmt)
       
       ibm_db.close(conn)
     else:
-      print "Connection failed."
+      print("Connection failed.")
 
 #__END__
 #__LUW_EXPECTED__

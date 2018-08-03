@@ -26,7 +26,7 @@ class IbmDbTestCase(unittest.TestCase):
     row = ibm_db.fetch_tuple(result)
     while ( row ):
       if row[1] != 'xwd':
-        print "<a href='test_046.php?EMPNO=%s&FORMAT=%s' target=_blank>%s - %s - %s bytes</a><br>" % (row[0], row[1], row[0], row[1], row[2])
+        print("<a href='test_046.php?EMPNO=%s&FORMAT=%s' target=_blank>%s - %s - %s bytes</a><br>" % (row[0], row[1], row[0], row[1], row[2]))
       row = ibm_db.fetch_tuple(result)
 
 #__END__

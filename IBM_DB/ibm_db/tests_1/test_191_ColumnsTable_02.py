@@ -31,17 +31,17 @@ class IbmDbTestCase(unittest.TestCase):
       while ( row ):
         if (server.DBMS_NAME[0:3] == 'IDS'):
           if ( (row['column_name'] != 'emp_rowid') and (i < 3) ):
-            print("%s,%s,%s,%s\n" % (row['table_schem'], 
-            row['table_name'], row['column_name'], row['is_nullable']))
+            print "%s,%s,%s,%s\n" % (row['table_schem'], 
+            row['table_name'], row['column_name'], row['is_nullable'])
         else :
           if ( (row['COLUMN_NAME'] != 'EMP_ROWID') and (i < 3) ):
-            print("%s,%s,%s,%s\n" % (row['TABLE_SCHEM'], 
-            row['TABLE_NAME'], row['COLUMN_NAME'], row['IS_NULLABLE']))
+            print"%s,%s,%s,%s\n" % (row['TABLE_SCHEM'], 
+            row['TABLE_NAME'], row['COLUMN_NAME'], row['IS_NULLABLE'])
         i = i + 1
         row = ibm_db.fetch_both(result)
-      print("done!")
+      print "done!"
     else:
-      print("no connection: ", ibm_db.conn_errormsg())    
+      print "no connection: ", ibm_db.conn_errormsg()    
 
 #__END__
 #__LUW_EXPECTED__

@@ -36,17 +36,17 @@ class IbmDbTestCase(unittest.TestCase):
         name5 = ibm_db.field_name(stmt, "ID")
         name8 = ibm_db.field_name(stmt, "weight")
 
-      print("string(%d) \"%s\"" % (len(name1), name1))
-      print("string(%d) \"%s\"" % (len(name2), name2))
-      print("string(%d) \"%s\"" % (len(name3), name3))
-      print("%s" % name4)
+      print "string(%d) \"%s\"" % (len(name1), name1)
+      print "string(%d) \"%s\"" % (len(name2), name2)
+      print "string(%d) \"%s\"" % (len(name3), name3)
+      print "%s" % name4
 
-      print("string(%d) \"%s\"" % (len(name5), name5))
-      print("%s" % name6)
-      print("string(%d) \"%s\"" % (len(name7), name7))
-      print("%s" % name8)
+      print "string(%d) \"%s\"" % (len(name5), name5)
+      print "%s" % name6
+      print "string(%d) \"%s\"" % (len(name7), name7)
+      print "%s" % name8
     else:
-      print("Connection failed.")
+      print "Connection failed."
 
 #__END__
 #__LUW_EXPECTED__

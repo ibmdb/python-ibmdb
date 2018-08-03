@@ -64,19 +64,19 @@ class IbmDbTestCase(unittest.TestCase):
 
       stmt, out1, out2, out3, out4, out5 = ibm_db.callproc(conn, 'sp', (out1, out2, out3, out4, out5))
 
-      print "out 1:"
-      print out1
-      print "out 2:"
-      print out2
-      print "out 3:"
-      print out3
-      print "out 4:"
-      print out4
-      print "out 5:"
-      print out5
+      print("out 1:")
+      print(out1)
+      print("out 2:")
+      print(out2)
+      print("out 3:")
+      print(out3)
+      print("out 4:")
+      print(out4)
+      print("out 5:")
+      print(out5)
       #############################
     else:
-      print "Connection failed."
+      print("Connection failed.")
 
 #__END__
 #__LUW_EXPECTED__

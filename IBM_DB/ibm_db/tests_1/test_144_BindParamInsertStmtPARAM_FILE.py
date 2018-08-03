@@ -39,9 +39,9 @@ class IbmDbTestCase(unittest.TestCase):
       
       num = ibm_db.num_rows(stmt)
       
-      print(num)
+      print num
     else:
-      print("Connection failed.")
+      print "Connection failed."
 
 #__END__
 #__LUW_EXPECTED__

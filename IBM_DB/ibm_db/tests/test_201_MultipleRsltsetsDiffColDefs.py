@@ -71,41 +71,41 @@ class IbmDbTestCase(unittest.TestCase):
         ibm_db.exec_immediate(conn, procedure)
         stmt = ibm_db.exec_immediate(conn, 'CALL multiResults()')
     
-        print "Fetching first result set"
+        print("Fetching first result set")
         row = ibm_db.fetch_tuple(stmt)
         while ( row ):
            for i in row:
-                print str(i).strip()
+                print(str(i).strip())
            row = ibm_db.fetch_tuple(stmt)
     
         if (server == 'IDS') :
-           print "Fetching second result set (should fail -- IDS does not support multiple result sets)"
+           print("Fetching second result set (should fail -- IDS does not support multiple result sets)")
         else:
-           print "Fetching second result set"
+           print("Fetching second result set")
         res = ibm_db.next_result(stmt)
       
         if res:
            row = ibm_db.fetch_tuple(res)
            while ( row ):
                 for i in row:
-                   print str(i).strip()
+                   print(str(i).strip())
                 row = ibm_db.fetch_tuple(res)
      
         if (server == 'IDS'):
-           print "Fetching third result set (should fail -- IDS does not support multiple result sets)"
+           print("Fetching third result set (should fail -- IDS does not support multiple result sets)")
         else:
-           print "Fetching third result set"
+           print("Fetching third result set")
         res2 = ibm_db.next_result(stmt)
         if res2:
            row = ibm_db.fetch_tuple(res2)
            while ( row ):
                for i in row: 
-                   print str(i).strip()
+                   print(str(i).strip())
                row = ibm_db.fetch_tuple(res2)
         
         ibm_db.close(conn)
     else:
-       print "Connection failed."
+       print("Connection failed.")
 
 #__END__
 #__LUW_EXPECTED__

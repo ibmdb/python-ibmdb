@@ -46,19 +46,19 @@ class IbmDbTestCase(unittest.TestCase):
         num7 = ibm_db.field_num(stmt, 1)
         num8 = ibm_db.field_num(stmt, "weight")
   
-      print("%s" % num1)
-      print("int(%d)" % num2)
-      print("int(%d)" % num3)
-      print("%s" % num4)
+      print "%s" % num1
+      print "int(%d)" % num2
+      print "int(%d)" % num3
+      print "%s" % num4
       
-      print("%s" % num5)
-      print("%s" % num6)
-      print("int(%d)" % num7)
-      print("%s" % num8)
+      print "%s" % num5
+      print "%s" % num6
+      print "int(%d)" % num7
+      print "%s" % num8
 
       ibm_db.rollback(conn)
     else:
-      print("Connection failed.")
+      print "Connection failed."
 
 #__END__
 #__LUW_EXPECTED__

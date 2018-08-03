@@ -37,12 +37,12 @@ class IbmDbTestCase(unittest.TestCase):
       num2 = ibm_db.field_num(stmt, 'test')
       num3 = ibm_db.field_num(stmt, 'Test')
       
-      print("int(%d)" % num1)
-      print("int(%d)" % num2)
-      print("int(%d)" % num3)
+      print "int(%d)" % num1
+      print "int(%d)" % num2
+      print "int(%d)" % num3
       
     else:
-      print("Connection failed.")
+      print "Connection failed."
 
 #__END__
 #__LUW_EXPECTED__

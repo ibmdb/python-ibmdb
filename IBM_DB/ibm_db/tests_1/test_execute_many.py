@@ -36,30 +36,30 @@ class IbmDbTestCase(unittest.TestCase):
             ibm_db.execute_many(stmt_insert, params)
             #check the number of rows inserted
             row_count = ibm_db.num_rows(stmt_insert)
-            print(row_count)
+            print row_count
             
             # chaeck the inserted columns
             select = "SELECT * FROM TABMANY"
             stmt_select = ibm_db.exec_immediate(conn, select)
             cols = ibm_db.fetch_tuple( stmt_select )
             while( cols ):
-                print("%s, %s" % (cols[0], cols[1]))
+                print "%s, %s" % (cols[0], cols[1])
                 cols = ibm_db.fetch_tuple( stmt_select )
             
             #populate the tabmany table 
             params = ((50, 'Hanes'), (55, ), (55.5, 'invalid row'), (60, 'Quigley'), (70, None) )
             try:
                 ibm_db.execute_many(stmt_insert, params)
-            except Exception as inst:
+            except Exception, inst:
                 #check the no. of inserted rows
                 row_count = ibm_db.num_rows(stmt_insert)
                 #check the exception raised by execute_many API
-                print(inst)
-                print(row_count)
+                print inst
+                print row_count
             ibm_db.close(conn)
 
         else:
-            print(ibm_db.conn_errormsg())
+            print ibm_db.conn_errormsg()
 
 #__END__
 #__LUW_EXPECTED__

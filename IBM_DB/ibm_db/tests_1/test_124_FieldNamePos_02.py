@@ -29,8 +29,8 @@ class IbmDbTestCase(unittest.TestCase):
              value = row[ibm_db.field_name(result, i)]
              if (value == None): 
                 value = ''
-             print("%s:%s" % (field, value))
-          print("---------")
+             print "%s:%s" % (field, value)
+          print "---------"
           j += 1
           if (j == 10):
             break
@@ -38,9 +38,9 @@ class IbmDbTestCase(unittest.TestCase):
           row = ibm_db.fetch_both(result)
        
        ibm_db.close(conn)
-       print("done")
+       print "done"
     else:
-       print(ibm_db.conn_errormsg())
+       print ibm_db.conn_errormsg()
 #__END__
 #__LUW_EXPECTED__
 #ID:10

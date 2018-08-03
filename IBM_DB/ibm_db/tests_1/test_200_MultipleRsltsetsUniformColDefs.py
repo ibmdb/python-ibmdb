@@ -75,7 +75,7 @@ class IbmDbTestCase(unittest.TestCase):
        pass
      ibm_db.exec_immediate(conn, procedure)
      stmt = ibm_db.exec_immediate(conn, 'CALL multiResults()')
-     print(stmt)
+     #print(stmt)
      print("Fetching first result set")
      row = ibm_db.fetch_tuple(stmt)
      while ( row ):
@@ -87,7 +87,7 @@ class IbmDbTestCase(unittest.TestCase):
        print("Fetching second result set (should fail -- IDS does not support multiple result sets)")
      else:
        print("Fetching second result set")
-     print(stmt)
+     #print(stmt)
      res = ibm_db.next_result (stmt)
      if res:
        row = ibm_db.fetch_tuple(res)

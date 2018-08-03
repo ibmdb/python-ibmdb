@@ -24,7 +24,7 @@ class IbmDbTestCase(unittest.TestCase):
     
     while (i <= ibm_db.num_fields(result)):
       #printf("%d size %d\n",i, ibm_db.field_display_size(result,i) || 0)
-      print("%d size %d" % (i, ibm_db.field_display_size(result,i) or 0))
+      print "%d size %d" % (i, ibm_db.field_display_size(result,i) or 0)
       i += 1
     
     ibm_db.close(conn)

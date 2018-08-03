@@ -57,15 +57,15 @@ class IbmDbTestCase(unittest.TestCase):
     columns = ibm_db.num_fields(result)
     
     for i in range(0, columns):
-      print("%s, " % ibm_db.field_name(result, i))
-    print("\n\n")
+      print "%s, " % ibm_db.field_name(result, i)
+    print "\n\n"
    
     row = ibm_db.fetch_tuple(result) 
     while ( row ):
       final = ", " + row[1] + ", " + row[2] + ", " + row[3] + ", , ";
       row = ibm_db.fetch_tuple(result)
 
-    print(final)
+    print final
     
     ibm_db.free_result(result)
 

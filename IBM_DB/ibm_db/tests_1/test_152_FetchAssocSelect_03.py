@@ -38,7 +38,7 @@ class IbmDbTestCase(unittest.TestCase):
       #puts ""
       if (row['MAJPROJ'] == None):
         row['MAJPROJ'] = ''
-      print("%6s %-24s %3s %6s%7s %10s %10s %6s" % (row['PROJNO'], row['PROJNAME'], row['DEPTNO'], row['RESPEMP'], row['PRSTAFF'], row['PRSTDATE'], row['PRENDATE'], row['MAJPROJ']))
+      print "%6s %-24s %3s %6s%7s %10s %10s %6s" % (row['PROJNO'], row['PROJNAME'], row['DEPTNO'], row['RESPEMP'], row['PRSTAFF'], row['PRSTDATE'], row['PRENDATE'], row['MAJPROJ'])
       row = ibm_db.fetch_assoc(result) 
 
 #__END__

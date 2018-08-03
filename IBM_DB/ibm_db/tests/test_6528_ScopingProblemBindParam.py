@@ -19,7 +19,7 @@ class IbmDbTestCase(unittest.TestCase):
     ibm_db.execute(stmt)
     row = ibm_db.fetch_tuple(stmt)
     for i in row:
-      print i
+      print(i)
      
   def run_test_6528(self):
     conn = ibm_db.connect(config.database, config.user, config.password)
@@ -36,7 +36,7 @@ class IbmDbTestCase(unittest.TestCase):
       self.checked_db2_execute(stmt)
       ibm_db.close(conn)
     else:
-      print "Connection failed."
+      print("Connection failed.")
 
 #__END__
 #__LUW_EXPECTED__

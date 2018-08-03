@@ -24,16 +24,16 @@ class IbmDbTestCase(unittest.TestCase):
        j = 1
        row = ibm_db.fetch_tuple(result)
        while ( row ):
-          print("%d) " % j)
+          print "%d) " % j
           for i in range(0, cols):
-             print("%s " % row[i])
+             print "%s " % row[i]
           j += 1
           if (j > 10):
              break
           row = ibm_db.fetch_tuple(result)
        ibm_db.close(conn)
     else:
-      print(ibm_db.conn_errormsg())
+      print ibm_db.conn_errormsg()
 
 #__END__
 #__LUW_EXPECTED__

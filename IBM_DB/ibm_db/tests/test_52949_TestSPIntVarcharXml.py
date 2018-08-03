@@ -18,17 +18,17 @@ class IbmDbTestCase(unittest.TestCase):
   def test_int(self, conn):
     return_value = 0
     stmt, return_value = ibm_db.callproc(conn, 'PROCESSINT', (return_value,))
-    print "ProcessINT:", return_value
+    print("ProcessINT:", return_value)
 
   def test_varchar(self, conn):
     return_value = ""
     stmt, return_value = ibm_db.callproc(conn, 'PROCESSVAR', (return_value,))
-    print "ProcessVAR:", return_value
+    print("ProcessVAR:", return_value)
 
   def test_xml(self, conn):
     return_value = "This is just a test for XML Column. The data gets truncated since we do not "
     stmt, return_value = ibm_db.callproc(conn, 'PROCESSXML', (return_value,))
-    print "ProcessXML:", return_value.__str__()
+    print("ProcessXML:", return_value.__str__())
     
   def drop_tables(self, conn):
     if conn:
@@ -100,7 +100,7 @@ class IbmDbTestCase(unittest.TestCase):
 
      ibm_db.close(conn)
    else:
-     print "Connection failed."
+     print("Connection failed.")
 
 #__END__
 #__LUW_EXPECTED__

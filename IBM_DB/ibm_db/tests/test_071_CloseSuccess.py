@@ -21,16 +21,16 @@ class IbmDbTestCase(unittest.TestCase):
     if conn:
       rc = ibm_db.close(conn)
       if (rc == True):
-        print "ibm_db.close succeeded"
+        print("ibm_db.close succeeded")
       else:
-        print "ibm_db.close FAILED\n"
+        print("ibm_db.close FAILED\n")
     else:
-      print "%s" % ibm_db.conn_errormsg()
-      print ",sqlstate=%s" % ibm_db.conn_error()
-      print "%s" % ibm_db.conn_errormsg()
-      print "%s" % ibm_db.conn_errormsg()
-      print "%s" % ibm_db.conn_errormsg()
-      print "%s" % ibm_db.conn_errormsg()
+      print("%s" % ibm_db.conn_errormsg())
+      print(",sqlstate=%s" % ibm_db.conn_error())
+      print("%s" % ibm_db.conn_errormsg())
+      print("%s" % ibm_db.conn_errormsg())
+      print("%s" % ibm_db.conn_errormsg())
+      print("%s" % ibm_db.conn_errormsg())
 
 #__END__
 #__LUW_EXPECTED__

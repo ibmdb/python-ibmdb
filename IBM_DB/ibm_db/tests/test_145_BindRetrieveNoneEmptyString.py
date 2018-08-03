@@ -47,12 +47,12 @@ class IbmDbTestCase(unittest.TestCase):
       row = ibm_db.fetch_tuple(result)
       while ( row ): 
         for i in row:
-          print i
+          print(i)
         row = ibm_db.fetch_tuple(result)
 
       ibm_db.rollback(conn)
     else:
-      print "Connection failed."
+      print("Connection failed.")
 
 #__END__
 #__LUW_EXPECTED__

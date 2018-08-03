@@ -60,7 +60,7 @@ class IbmDbTestCase(unittest.TestCase):
       while ( row ):
         str = row[1] + "/" + row[2] + "/" + row[3]
         if (i < 4):
-          print str
+          print(str)
         i = i + 1
         row = ibm_db.fetch_both(result)
 
@@ -69,9 +69,9 @@ class IbmDbTestCase(unittest.TestCase):
       ibm_db.exec_immediate(conn, 'DROP TABLE t.t3')
       ibm_db.exec_immediate(conn, 'DROP TABLE t.t4')
 
-      print "done!"
+      print("done!")
     else:
-      print "no connection: #{ibm_db.conn_errormsg}";    
+      print("no connection: #{ibm_db.conn_errormsg}");    
 
 #__END__
 #__LUW_EXPECTED__

@@ -40,20 +40,20 @@ class IbmDbTestCase(unittest.TestCase):
         row.table_type = data['table_type']
         row.remarks = data['remarks']
           
-        print("Schema:  %s" % row.table_schem)
-        print("Name:    %s" % row.table_name)
-        print("Type:    %s" % row.table_type)
-        print("Remarks: %s\n" % row.remarks)
+        print "Schema:  %s" % row.table_schem
+        print "Name:    %s" % row.table_name
+        print "Type:    %s" % row.table_type
+        print "Remarks: %s\n" % row.remarks
       else:
         row.TABLE_SCHEM = data['TABLE_SCHEM']
         row.TABLE_NAME = data['TABLE_NAME']
         row.TABLE_TYPE = data['TABLE_TYPE']
         row.REMARKS = data['REMARKS']
           
-        print("Schema:  %s" % row.TABLE_SCHEM)
-        print("Name:    %s" % row.TABLE_NAME)
-        print("Type:    %s" % row.TABLE_TYPE)
-        print("Remarks: %s\n" % row.REMARKS)
+        print "Schema:  %s" % row.TABLE_SCHEM
+        print "Name:    %s" % row.TABLE_NAME
+        print "Type:    %s" % row.TABLE_TYPE
+        print "Remarks: %s\n" % row.REMARKS
 #      row = ibm_db.fetch_object(result)
       data = ibm_db.fetch_assoc(result)
 
@@ -72,20 +72,20 @@ class IbmDbTestCase(unittest.TestCase):
         row.table_type = data['table_type']
         row.remarks = data['remarks']
         
-        print("Schema:  %s" % row.table_schem)
-        print("Name:    %s" % row.table_name)
-        print("Type:    %s" % row.table_type)
-        print("Remarks: %s\n" % row.remarks)
+        print "Schema:  %s" % row.table_schem
+        print "Name:    %s" % row.table_name
+        print "Type:    %s" % row.table_type
+        print "Remarks: %s\n" % row.remarks
       else:
         row.TABLE_SCHEM = data['TABLE_SCHEM']
         row.TABLE_NAME = data['TABLE_NAME']
         row.TABLE_TYPE = data['TABLE_TYPE']
         row.REMARKS = data['REMARKS']
         
-        print("Schema:  %s" % row.TABLE_SCHEM)
-        print("Name:    %s" % row.TABLE_NAME)
-        print("Type:    %s" % row.TABLE_TYPE)
-        print("Remarks: %s\n" % row.REMARKS)
+        print "Schema:  %s" % row.TABLE_SCHEM
+        print "Name:    %s" % row.TABLE_NAME
+        print "Type:    %s" % row.TABLE_TYPE
+        print "Remarks: %s\n" % row.REMARKS
 #      row = ibm_db.fetch_object(result)
       data = ibm_db.fetch_assoc(result)
       
@@ -104,20 +104,20 @@ class IbmDbTestCase(unittest.TestCase):
         row.table_type = data['table_type']
         row.remarks = data['remarks']
         
-        print("Schema:  %s" % row.table_schem)
-        print("Name:    %s" % row.table_name)
-        print("Type:    %s" % row.table_type)
-        print("Remarks: %s\n" % row.remarks)
+        print "Schema:  %s" % row.table_schem
+        print "Name:    %s" % row.table_name
+        print "Type:    %s" % row.table_type
+        print "Remarks: %s\n" % row.remarks
       else:
         row.TABLE_SCHEM = data['TABLE_SCHEM']
         row.TABLE_NAME = data['TABLE_NAME']
         row.TABLE_TYPE = data['TABLE_TYPE']
         row.REMARKS = data['REMARKS']
         
-        print("Schema:  %s" % row.TABLE_SCHEM)
-        print("Name:    %s" % row.TABLE_NAME)
-        print("Type:    %s" % row.TABLE_TYPE)
-        print("Remarks: %s\n" % row.REMARKS)
+        print "Schema:  %s" % row.TABLE_SCHEM
+        print "Name:    %s" % row.TABLE_NAME
+        print "Type:    %s" % row.TABLE_TYPE
+        print "Remarks: %s\n" % row.REMARKS
 #      row = ibm_db.fetch_object(result)
       data = ibm_db.fetch_assoc(result)
     

@@ -26,9 +26,9 @@ class IbmDbTestCase(unittest.TestCase):
     r2 = ibm_db.free_result(result2)
     r3 = ibm_db.free_result(result3)
     
-    print r1
-    print r2
-    print r3
+    print(r1)
+    print(r2)
+    print(r3)
 
 #__END__
 #__LUW_EXPECTED__

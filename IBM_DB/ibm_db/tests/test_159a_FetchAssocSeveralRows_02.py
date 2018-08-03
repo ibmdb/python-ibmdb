@@ -29,7 +29,7 @@ class IbmDbTestCase(unittest.TestCase):
     row = ibm_db.fetch_assoc(result)
     while ( row ):
       #printf("%3d %10s %10s\n",i, row['PRSTDATE'], row['PRENDATE'])
-      print "%3d %10s %10s" % (i, row['PRSTDATE'], row['PRENDATE'])
+      print("%3d %10s %10s" % (i, row['PRSTDATE'], row['PRENDATE']))
       i += 1
       row = ibm_db.fetch_assoc(result)
 

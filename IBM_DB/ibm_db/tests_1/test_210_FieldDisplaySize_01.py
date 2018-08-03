@@ -23,7 +23,7 @@ class IbmDbTestCase(unittest.TestCase):
     
     for i in range(0, cols):
       size = ibm_db.field_display_size(result,i)
-      print("col:%d and size: %d" % (i, size))
+      print "col:%d and size: %d" % (i, size)
     
     ibm_db.close(conn)
 

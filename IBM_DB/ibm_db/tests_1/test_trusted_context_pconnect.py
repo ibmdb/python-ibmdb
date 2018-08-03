@@ -79,7 +79,7 @@ class IbmDbTestCase(unittest.TestCase):
 					result = ibm_db.execute(stmt, value)
 			ibm_db.close(conn)
 		else:
-			print("Connection failed.")
+			print "Connection failed."
 
 		options = {ibm_db.SQL_ATTR_USE_TRUSTED_CONTEXT:	ibm_db.SQL_TRUE}
 		tc_options = {ibm_db.SQL_ATTR_TRUSTED_CONTEXT_USERID: config.tc_user, ibm_db.SQL_ATTR_TRUSTED_CONTEXT_PASSWORD: config.tc_pass}
@@ -88,14 +88,14 @@ class IbmDbTestCase(unittest.TestCase):
 		# Making trusted connection and performing normal operations.
 		tc_conn = ibm_db.pconnect(dsn, "", "", options)
 		if tc_conn:
-			print("Trusted connection succeeded.")
+			print "Trusted connection succeeded."
 			val = ibm_db.get_option(tc_conn, ibm_db.SQL_ATTR_USE_TRUSTED_CONTEXT, 1)
 			if val:
 				userBefore = ibm_db.get_option(tc_conn, ibm_db.SQL_ATTR_TRUSTED_CONTEXT_USERID, 1)
 				ibm_db.set_option(tc_conn, tc_options, 1)
 				userAfter = ibm_db.get_option(tc_conn, ibm_db.SQL_ATTR_TRUSTED_CONTEXT_USERID, 1)
 				if userBefore != userAfter:
-					print("User has been switched.")
+					print "User has been switched."
 					
 					# Inserting into table using trusted_user.
 					sql_insert = "INSERT INTO " + config.user + ".trusted_table (i1, i2) VALUES (?, ?)"
@@ -107,26 +107,26 @@ class IbmDbTestCase(unittest.TestCase):
 					try:
 						stmt = ibm_db.exec_immediate(tc_conn, sql_update)
 					except:
-						print(ibm_db.stmt_errormsg())
+						print ibm_db.stmt_errormsg()
 			ibm_db.close(tc_conn)
 		else:
-			print("Trusted connection failed.")
+			print "Trusted connection failed."
 
 		# Creating 10 Persistance connections and checking if trusted context is enabled (Cataloged connections)
-		for i in range(10):
+		for i in xrange(10):
 			tc_conn = ibm_db.pconnect(dsn, "", "")
 			if tc_conn:
 				val = ibm_db.get_option(tc_conn, ibm_db.SQL_ATTR_USE_TRUSTED_CONTEXT, 1)
 				if val:
 					userAfter = ibm_db.get_option(tc_conn, ibm_db.SQL_ATTR_TRUSTED_CONTEXT_USERID, 1)
 					if userBefore != userAfter:
-						print("Explicit Trusted Connection succeeded.")
+						print "Explicit Trusted Connection succeeded."
 
 		# Cleaning up database.
 		conn = ibm_db.connect(config.database, config.user, config.password)
 
 		if conn:
-			print("Connection succeeded.")
+			print "Connection succeeded."
 
 			try:
 				result = ibm_db.exec_immediate(conn, sql_drop_trusted_context)
@@ -142,7 +142,7 @@ class IbmDbTestCase(unittest.TestCase):
 				pass
 			ibm_db.close(conn)
 		else:
-			print("Connection failed.")
+			print "Connection failed."
 #__END__
 #__LUW_EXPECTED__
 #Trusted connection succeeded.

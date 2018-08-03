@@ -32,10 +32,10 @@ class IbmDbTestCase(unittest.TestCase):
         result2 = ibm_db.prepare(conn, "SELECT * FROM animals")
       ibm_db.execute(result2)
       while (ibm_db.fetch_row(result2)):
-        print "%s : %s : %s : %s" % (ibm_db.result(result2, 0), \
+        print("%s : %s : %s : %s" % (ibm_db.result(result2, 0), \
                                      ibm_db.result(result2, 1), \
                                      ibm_db.result(result2, 2), \
-                                     ibm_db.result(result2, 3))
+                                     ibm_db.result(result2, 3)))
       row = ibm_db.fetch_row(result)
 
 #__END__

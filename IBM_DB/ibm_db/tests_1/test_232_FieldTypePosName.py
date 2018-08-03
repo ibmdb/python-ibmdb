@@ -23,15 +23,15 @@ class IbmDbTestCase(unittest.TestCase):
     for i in range(0, ibm_db.num_fields(result) + 1):
       field_name = ibm_db.field_name(result,i)
       field_type = ibm_db.field_type(result, ibm_db.field_name(result,i))
-      print(str(ibm_db.field_name(result, i)) + ":" + str(ibm_db.field_type(result, ibm_db.field_name(result, i))))
+      print str(ibm_db.field_name(result, i)) + ":" + str(ibm_db.field_type(result, ibm_db.field_name(result, i)))
           
-    print("-----")
+    print "-----"
     
     t = ibm_db.field_type(result,99)
-    print(t)
+    print t
     
     t1 = ibm_db.field_type(result, "HELMUT")
-    print(t1)
+    print t1
 
 #__END__
 #__LUW_EXPECTED__

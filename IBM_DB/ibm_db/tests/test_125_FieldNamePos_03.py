@@ -23,20 +23,20 @@ class IbmDbTestCase(unittest.TestCase):
     result2 = ibm_db.exec_immediate(conn, "SELECT * FROM staff")
     
     for i in range(0, ibm_db.num_fields(result)):
-      print "%d:%s" % (i, ibm_db.field_name(result,i))
+      print("%d:%s" % (i, ibm_db.field_name(result,i)))
     
-    print "-----"
+    print("-----")
     
     for i in range(0, ibm_db.num_fields(result2)):
-      print "%d:%s" % (i, ibm_db.field_name(result2,i))
+      print("%d:%s" % (i, ibm_db.field_name(result2,i)))
     
-    print "-----"
+    print("-----")
     
     if (server.DBMS_NAME[0:3] == 'IDS'):
-      print "Region:%s" % ibm_db.field_name(result, 'region')
+      print("Region:%s" % ibm_db.field_name(result, 'region'))
     else:
-      print "Region:%s" % ibm_db.field_name(result, 'REGION')
-    print "5:%s" % ibm_db.field_name(result2, 5)
+      print("Region:%s" % ibm_db.field_name(result, 'REGION'))
+    print("5:%s" % ibm_db.field_name(result2, 5))
 
 #__END__
 #__LUW_EXPECTED__
