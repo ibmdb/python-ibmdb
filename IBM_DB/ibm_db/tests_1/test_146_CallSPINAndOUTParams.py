@@ -24,20 +24,20 @@ class IbmDbTestCase(unittest.TestCase):
       second_name = "Rickety Ride"
       weight = 0
     
-      print("Values of bound parameters _before_ CALL:")
-      print("  1: %s 2: %s 3: %d\n" % (name, second_name, weight))
+      print "Values of bound parameters _before_ CALL:"
+      print " 1: %s 2: %s 3: %d\n" % (name, second_name, weight)
       
       stmt, name, second_name, weight = ibm_db.callproc(conn, 'match_animal', (name, second_name, weight))
     
       if stmt is not None:
-        print("Values of bound parameters _after_ CALL:")
-        print("  1: %s 2: %s 3: %d\n" % (name, second_name, weight))
+        print "Values of bound parameters _after_ CALL:"
+        print "  1: %s 2: %s 3: %d\n" % (name, second_name, weight)
 
         if (server.DBMS_NAME[0:3] != 'IDS'):
-          print("Results:")
+          print "Results:"
           row = ibm_db.fetch_tuple(stmt)
           while ( row ): 
-            print("  %s, %s, %s" % (row[0].strip(), row[1].strip(), row[2]))
+            print "  %s, %s, %s" % (row[0].strip(), row[1].strip(), row[2])
             row = ibm_db.fetch_tuple(stmt)
 
 #__END__
