@@ -99,7 +99,10 @@ class IbmDbTestFunctions(unittest.TestCase):
           pattern = re.sub(chr, '\\' + chr, pattern)
 
       pattern = re.sub('%s', '.*?', pattern)
-      pattern = re.sub('%d', '\\d+', pattern)
+      if sys.version_info >=(3,7 ):
+        pattern = re.sub('%d', r'\\d+', pattern)
+      else:
+        pattern = re.sub('%d', '\\d+', pattern)
 
       result = re.match(pattern, self.capture(testFuncName))
       self.assertNotEqual(result, None)

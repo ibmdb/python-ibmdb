@@ -18,7 +18,7 @@ from distutils.core import setup, Extension
 from distutils.sysconfig import get_python_lib
 
 PACKAGE = 'ibm_db'
-VERSION = '2.0.8'
+VERSION = '2.0.9'
 LICENSE = 'Apache License 2.0'
 
 machine_bits =  8 * struct.calcsize("P")
@@ -116,7 +116,7 @@ if (('IBM_DB_HOME' not in os.environ) and ('IBM_DB_DIR' not in os.environ) and (
                 cliFileName = 's390x64_odbc_cli.tar.gz'
                 arch_ = 's390x'
             else:
-                cliFileName = '390_odbc_cli.tar.gz'
+                cliFileName = 's390_odbc_cli.tar.gz'
                 arch_ = 's390'
     elif ('sunos' in sys.platform):
         os_ = 'solaris*'
@@ -226,7 +226,7 @@ modules = ['config', 'ibm_db_dbi', 'testfunctions', 'tests']
 ext_modules = _ext_modules(ibm_db_include, library, ibm_db_lib, ibm_db_lib_runtime)
 
 if (sys.platform[0:3] == 'win'):
-    library = ['db2cli']
+    library = ['db2cli64']
     if prebuildIbmdbPYD:
         ext_modules = None
         modules.append('ibm_db')
@@ -249,7 +249,7 @@ setup( name    = PACKAGE,
        classifiers  = [(sys.version_info >= (3, )) and 'Development Status :: 4 - Beta' or 'Development Status :: 5 - Production/Stable',
                       'Intended Audience :: Developers',
                       'License :: OSI Approved :: Apache Software License',
-                      'Operating System :: Microsoft :: Windows :: Windows NT/2000/XP',
+                      'Operating System :: Microsoft :: Windows :: Windows 10',
                       'Operating System :: Unix',
                       'Topic :: Database :: Front-Ends'],
 

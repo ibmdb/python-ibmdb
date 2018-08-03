@@ -8,13 +8,15 @@ import unittest, sys
 import ibm_db
 import config
 from testfunctions import IbmDbTestFunctions
-
+from unittest import TestCase
+TestCase.maxDiff=None
 class IbmDbTestCase(unittest.TestCase):
 
   def test_200_MultipleRsltsetsUniformColDefs(self):
     obj = IbmDbTestFunctions()
     obj.assert_expect(self.run_test_200)
-
+    self.maxDiff = None
+	
   def run_test_200(self):
     conn = ibm_db.connect(config.database, config.user, config.password)
     serverinfo = ibm_db.server_info( conn )
@@ -73,50 +75,51 @@ class IbmDbTestCase(unittest.TestCase):
        pass
      ibm_db.exec_immediate(conn, procedure)
      stmt = ibm_db.exec_immediate(conn, 'CALL multiResults()')
-    
-     print "Fetching first result set"
+     #print(stmt)
+     print("Fetching first result set")
      row = ibm_db.fetch_tuple(stmt)
      while ( row ):
        for i in row:
-         print i
+         print(i)
        row = ibm_db.fetch_tuple(stmt)
     
      if (server == 'IDS'):
-       print "Fetching second result set (should fail -- IDS does not support multiple result sets)"
+       print("Fetching second result set (should fail -- IDS does not support multiple result sets)")
      else:
-       print "Fetching second result set"
+       print("Fetching second result set")
+     #print(stmt)
      res = ibm_db.next_result (stmt)
      if res:
        row = ibm_db.fetch_tuple(res)
        while ( row ):
          for i in row:
-           print i
+           print(i)
          row = ibm_db.fetch_tuple(res)
     
      if (server == 'IDS'):
-       print "Fetching third result set (should fail -- IDS does not support multiple result sets)"
+       print("Fetching third result set (should fail -- IDS does not support multiple result sets)")
      else:
-       print "Fetching third result set"
+       print("Fetching third result set")
      res2 = ibm_db.next_result(stmt)
      if res2:
        row = ibm_db.fetch_tuple(res2)
        while ( row ):
          for i in row:
-           print i
+           print(i)
          row = ibm_db.fetch_tuple(res2)
     
-     print "Fetching fourth result set (should fail)"
+     print("Fetching fourth result set (should fail)")
      res3 = ibm_db.next_result(stmt)
      if res3:
        row = ibm_db.fetch_tuple(res3)
        while ( row ):
          for i in row:
-           print i
+           print(i)
          row = ibm_db.fetch_tuple(res3)
      
      ibm_db.close(conn)
     else:
-      print "Connection failed."
+      print("Connection failed.")
 
 #__END__
 #__LUW_EXPECTED__

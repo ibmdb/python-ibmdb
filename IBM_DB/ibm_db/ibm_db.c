@@ -22,7 +22,7 @@
 +--------------------------------------------------------------------------+
 */
 
-#define MODULE_RELEASE "2.0.8"
+#define MODULE_RELEASE "2.0.9"
 
 #include <Python.h>
 #include <datetime.h>
@@ -49,7 +49,7 @@ static int is_systemi, is_informix;	  /* 1 == TRUE; 0 == FALSE; */
 #define DLOPEN LoadLibrary
 #define DLSYM GetProcAddress
 #define DLCLOSE FreeLibrary
-#define LIBDB2 "db2cli.dll"
+#define LIBDB2 "db2cli64.dll"
 #elif _AIX
 #define DLOPEN dlopen
 #define DLSYM dlsym
