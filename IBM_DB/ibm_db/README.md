@@ -11,6 +11,12 @@ Note:The minimum python version supported by driver is python 2.7 and the latest
 ```
 This will install *ibm_db* and *ibm_db_dbi* module.
 
+### Environment Variables
+
+`IBM_DB_HOME :`
+
+  Set this environment variable to avoid automatic downloading of the clidriver during installation. You could set this to the installation path of ODBC and CLI driver in your environment. The list of supported platforms and installation file names are listed in the table under License requirements.
+
 
 ### IBM_DB and DB-API wrapper (ibm_db_dbi) sanity test 
 
@@ -40,6 +46,30 @@ To know more about license and purchasing cost, please contact [IBM Customer Sup
 To know more about server based licensing viz db2connectactivate, follow below links:
 * [Activating the license certificate file for DB2 Connect Unlimited Edition](https://www.ibm.com/developerworks/community/blogs/96960515-2ea1-4391-8170-b0515d08e4da/entry/unlimited_licensing_in_non_java_drivers_using_db2connectactivate_utlility1?lang=en).
 * [Unlimited licensing using db2connectactivate utility](https://www.ibm.com/developerworks/community/blogs/96960515-2ea1-4391-8170-b0515d08e4da/entry/unlimited_licensing_in_non_java_drivers_using_db2connectactivate_utlility1?lang=en.)
+
+Following are the details of the client license versions that you need to be able to connect to databases on non-LUW servers:
+
+#### <a name="LicenseDetails"></a> Client license for Specific Platform and Architecture
+
+|Platform      |Architecture    |Cli Driver               |Supported     |Version      |
+| :---:        |  :---:         |  :---:                  |  :---:       | :--:
+|AIX           |  ppc           |aix32_odbc_cli.tar.gz    |  Yes         | V11.1       |
+|              |  others        |aix64_odbc_cli.tar.gz    |  Yes         | V11.1       |
+|Darwin        |  x64           |macos64_odbc_cli.tar.gz  |  Yes         | V10.5       |
+|Linux         |  x64           |linuxx64_odbc_cli.tar.gz |  Yes         | V11.1       |
+|              |  s390x         |s390x64_odbc_cli.tar.gz  |  Yes         | V11.1       |
+|              |  s390          |s390_odbc_cli.tar.gz     |  Yes         | V11.1       |
+|              |  ppc64  (LE)   |ppc64le_odbc_cli.tar.gz  |  Yes         | V11.1       |
+|              |  ppc64         |ppc64_odbc_cli.tar.gz    |  Yes         | V10.5       |
+|              |  ppc32         |ppc32_odbc_cli.tar.gz    |  Yes         | V10.5       |
+|              |  others        |linuxia32_odbc_cli.tar.gz|  Yes         | V11.1       |
+|Windows       |  x64           |ntx64_odbc_cli.zip       |  Yes         | V10.5       |
+|              |  x32           |nt32_odbc_cli.zip        |  Deprecated  | NA          |
+|Sun           | i86pc          |sunamd64_odbc_cli.tar.gz |  Yes         | V10.5       |
+|              |                |sunamd32_odbc_cli.tar.gz |  Yes         | V10.5       |
+|              | sparc          |sun64_odbc_cli.tar.gz    |  Yes         | V11.1       |
+|              | sparc          |sun32_odbc_cli.tar.gz    |  Yes         | V11.1       | 
+
 
 
 ### Issues with MAC OS X
