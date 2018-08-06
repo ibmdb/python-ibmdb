@@ -91,6 +91,8 @@ You would need to set DYLD_LIBRARY_PATH to point to lib folder as per the instal
 export DYLD_LIBRARY_PATH=/usr/local/lib/python3.5/site-packages/clidriver/lib:$DYLD_LIBRARY_PATH
 
 ```
+If the issue is not resolved even after setting DYLD_LIBRARY_PATH, you could refer:
+[MAC OS Hints and Tips](https://www.ibm.com/developerworks/community/blogs/96960515-2ea1-4391-8170-b0515d08e4da/entry/ibm_db_on_MAC_OS_Hints_and_Tips?lang=en)
 
 * Resolving SQL1042C error
 
