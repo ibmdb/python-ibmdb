@@ -21,10 +21,10 @@ class IbmDbTestCase(unittest.TestCase):
     dsn = "DATABASE=" + config.database + ";UID=" + baduser + ";PWD=" + badpass + ";"
     try:
       conn = ibm_db.connect(dsn, "", "")
-      print ("odd, ibm_db.connect succeeded with an invalid user / password")
+      print "odd, ibm_db.connect succeeded with an invalid user / password"
       ibm_db.close(conn)
     except: 
-      print ("Ooops")
+      print "Ooops"
 
 #__END__
 #__LUW_EXPECTED__

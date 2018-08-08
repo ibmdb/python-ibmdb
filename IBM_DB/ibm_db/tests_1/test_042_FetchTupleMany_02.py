@@ -33,7 +33,7 @@ class IbmDbTestCase(unittest.TestCase):
     result = ibm_db.exec_immediate(conn, "select EMPNO, PHOTO_FORMAT from emp_photo where photo_format='jpg'")
     row = ibm_db.fetch_tuple(result)
     while ( row ):
-      print("<a href='test_042.php?EMPNO=%s' target=_blank>%s (%s)</a><br>" % (row[0], row[0], row[1]))
+      print "<a href='test_042.php?EMPNO=%s' target=_blank>%s (%s)</a><br>" % (row[0], row[0], row[1])
       row = ibm_db.fetch_tuple(result)
 
 #__END__

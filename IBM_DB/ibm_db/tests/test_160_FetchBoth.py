@@ -35,7 +35,7 @@ class IbmDbTestCase(unittest.TestCase):
       #printf("%10s ", row['EMENDATE'])
       #printf("%6s ", row[0])
       #puts ""
-      print "%6s  %-6s %3d %9s %10s %10s %6s " % (row[0], row[1], row[2], row['EMPTIME'], row['EMSTDATE'], row['EMENDATE'], row[0])
+      print("%6s  %-6s %3d %9s %10s %10s %6s " % (row[0], row[1], row[2], row['EMPTIME'], row['EMSTDATE'], row['EMENDATE'], row[0]))
       row = ibm_db.fetch_both(result)
 
 #__END__

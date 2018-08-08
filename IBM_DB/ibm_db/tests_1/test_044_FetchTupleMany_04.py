@@ -29,7 +29,7 @@ class IbmDbTestCase(unittest.TestCase):
       #print
       if (row[3] == None):
         row = row[0:3] + (' ',)
-      print("%-10s %-15s %-15s %4s" % (row[0], row[1], row[2], row[3]))
+      print "%-10s %-15s %-15s %4s" % (row[0], row[1], row[2], row[3])
       row = ibm_db.fetch_tuple(result)
 
 #__END__

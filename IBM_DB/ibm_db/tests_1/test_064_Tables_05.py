@@ -55,16 +55,16 @@ class IbmDbTestCase(unittest.TestCase):
         result = ibm_db.tables(conn, None, 'T')
     
     for i in range(0, ibm_db.num_fields(result)):
-      print("%s, " % ibm_db.field_name(result, i))
-    print()
-    print()
+      print "%s, " % ibm_db.field_name(result, i)
+    print
+    print
   
     i = 0
     row = ibm_db.fetch_tuple(result)
     while ( row ):
       ibm_db.num_fields(result)
       if (i < 4):
-        print(", " + row[1] + ", " + row[2] + ", " + row[3] + ", , \n")
+        print ", " + row[1] + ", " + row[2] + ", " + row[3] + ", , \n"
       i = i + 1
       row = ibm_db.fetch_tuple(result)
 

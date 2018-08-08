@@ -33,9 +33,9 @@ class IbmDbTestCase(unittest.TestCase):
       ibm_db.execute(stmt)
       result = ibm_db.fetch_both(stmt)
       while( result ):
-        print("Result ID:", result[0])
-        print("Result DATA:", result[1])
-        print("Result XMLCOL:", result[2])
+        print "Result ID:", result[0]
+        print "Result DATA:", result[1]
+        print "Result XMLCOL:", result[2]
         result = ibm_db.fetch_both(stmt)
 
       sql = "SELECT XMLSERIALIZE(XMLQUERY('for $i in $t/address where $i/city = \"Olathe\" return <zip>{$i/zip/text()}</zip>' passing c.xmlcol as \"t\") AS CLOB(32k)) FROM xml_test c WHERE id = 1"
@@ -43,7 +43,7 @@ class IbmDbTestCase(unittest.TestCase):
       ibm_db.execute(stmt)
       result = ibm_db.fetch_both(stmt)
       while( result ):
-        print("Result from XMLSerialize and XMLQuery:", result[0])
+        print "Result from XMLSerialize and XMLQuery:", result[0]
         result = ibm_db.fetch_both(stmt)
 
       sql = "select xmlquery('for $i in $t/address where $i/city = \"Olathe\" return <zip>{$i/zip/text()}</zip>' passing c.xmlcol as \"t\") from xml_test c where id = 1"
@@ -51,10 +51,10 @@ class IbmDbTestCase(unittest.TestCase):
       ibm_db.execute(stmt)
       result = ibm_db.fetch_both(stmt)
       while( result ):
-        print("Result from only XMLQuery:", result[0])
+        print "Result from only XMLQuery:", result[0]
         result = ibm_db.fetch_both(stmt)
     else:
-      print('Native XML datatype is not supported.')
+      print 'Native XML datatype is not supported.'
 
 #__END__
 #__LUW_EXPECTED__

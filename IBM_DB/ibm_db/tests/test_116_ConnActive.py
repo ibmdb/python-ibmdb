@@ -19,32 +19,32 @@ class IbmDbTestCase(unittest.TestCase):
     conn = None
     is_alive = ibm_db.active(conn)
     if is_alive:
-      print "Is active"
+      print("Is active")
     else:
-      print "Is not active"
+      print("Is not active")
 
     conn = ibm_db.connect(config.database, config.user, config.password)
     is_alive = ibm_db.active(conn)
     if is_alive:
-      print "Is active"
+      print("Is active")
     else:
-      print "Is not active"
+      print("Is not active")
 
     ibm_db.close(conn)
     is_alive = ibm_db.active(conn)
     if is_alive:
-      print "Is active"
+      print("Is active")
     else:
-      print "Is not active"
+      print("Is not active")
 
     # Executing active method multiple times to reproduce a customer reported defect
-    print ibm_db.active(conn)
-    print ibm_db.active(conn)
-    print ibm_db.active(conn)
+    print(ibm_db.active(conn))
+    print(ibm_db.active(conn))
+    print(ibm_db.active(conn))
     conn = ibm_db.connect(config.database, config.user, config.password)
-    print ibm_db.active(conn)
-    print ibm_db.active(conn)
-    print ibm_db.active(conn)
+    print(ibm_db.active(conn))
+    print(ibm_db.active(conn))
+    print(ibm_db.active(conn))
 
 #__END__
 #__LUW_EXPECTED__

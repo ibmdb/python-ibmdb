@@ -23,12 +23,12 @@ class IbmDbTestCase(unittest.TestCase):
       stmt = ibm_db.exec_immediate(conn, "SELECT count(*) FROM animals")
       res = ibm_db.fetch_tuple(stmt)
       rows = res[0]
-      print rows
+      print(rows)
       
       ibm_db.autocommit(conn, ibm_db.SQL_AUTOCOMMIT_OFF)
       ac = ibm_db.autocommit(conn)
       if ac != 0:
-        print "Cannot set ibm_db.SQL_AUTOCOMMIT_OFF\nCannot run test"
+        print("Cannot set ibm_db.SQL_AUTOCOMMIT_OFF\nCannot run test")
         #continue 
       
       ibm_db.exec_immediate(conn, "DELETE FROM animals")
@@ -36,17 +36,17 @@ class IbmDbTestCase(unittest.TestCase):
       stmt = ibm_db.exec_immediate(conn, "SELECT count(*) FROM animals")
       res = ibm_db.fetch_tuple(stmt)
       rows = res[0]
-      print rows
+      print(rows)
        
       ibm_db.rollback(conn)
        
       stmt = ibm_db.exec_immediate(conn, "SELECT count(*) FROM animals")
       res = ibm_db.fetch_tuple(stmt)
       rows = res[0]
-      print rows
+      print(rows)
       ibm_db.close(conn)
     else:
-      print "Connection failed."
+      print("Connection failed.")
 
 #__END__
 #__LUW_EXPECTED__

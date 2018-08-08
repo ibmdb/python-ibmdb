@@ -190,4 +190,13 @@ only optimize for N rows issue #2 (defect #154260)
  
  2017/08/09 (ibm-db 2.0.8)
  -Python 3.6.x support for ibm_db. 
+
+ 2018/08/06 (ibm_db-2.0.9)
+ -Python 3.7.0 support for ibm_db
+ -Read architecture from os.uname[4] - PR325
+ -fix pconnect : closed connection object reused and reported in error - PR316, issue 314
+ -add support for ppc64le - PR311
+ -add support for DBCLOB in ibm_db_dbi - PR307
+ -process unique persistent connections  - PR278
+ -Added new contribution guidelines - PR275
  

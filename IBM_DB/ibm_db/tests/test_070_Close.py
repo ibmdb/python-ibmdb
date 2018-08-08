@@ -20,13 +20,13 @@ class IbmDbTestCase(unittest.TestCase):
     
     if conn:
       if (type(conn) == ibm_db.IBM_DBConnection):
-        print "Resource is a DB2 Connection"
+        print("Resource is a DB2 Connection")
       
       rc = ibm_db.close(conn)
       
-      print rc
+      print(rc)
     else:
-      print "Connection failed."
+      print("Connection failed.")
 
 #__END__
 #__LUW_EXPECTED__

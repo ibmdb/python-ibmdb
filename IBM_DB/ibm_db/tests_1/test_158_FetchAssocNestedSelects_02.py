@@ -46,7 +46,7 @@ class IbmDbTestCase(unittest.TestCase):
     while ( row3 ):
         output += row3[0] + ', ' + row3[3] + ', ' + row3[5]
         row3=ibm_db.fetch_tuple(result3)
-    print(output)
+    print output
 
 #__END__
 #__LUW_EXPECTED__

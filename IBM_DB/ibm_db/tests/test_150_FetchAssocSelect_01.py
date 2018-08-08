@@ -38,7 +38,7 @@ class IbmDbTestCase(unittest.TestCase):
         row['YEARS'] = 0
       if (row['COMM'] == None):
         row['COMM'] = ''
-      print "%5d  %-10s %5d %-7s %5s %15s %10s " % (row['ID'], row['NAME'], row['DEPT'], row['JOB'], row['YEARS'], row['SALARY'], row['COMM'])
+      print("%5d  %-10s %5d %-7s %5s %15s %10s " % (row['ID'], row['NAME'], row['DEPT'], row['JOB'], row['YEARS'], row['SALARY'], row['COMM']))
       row = ibm_db.fetch_assoc(result)
 
 #__END__

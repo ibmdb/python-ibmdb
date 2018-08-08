@@ -21,22 +21,22 @@ class IbmDbTestCase(unittest.TestCase):
       result = ibm_db.exec_immediate(conn,"insert into t_string values(123,1.222333,'one to one')")
       if result:
         cols = ibm_db.num_fields(result)
-        print "col:", cols
+        print ("col:", cols)
         rows = ibm_db.num_rows(result)
-        print "affected row:", rows
+        print ("affected row:", rows)
       else:
-        print ibm_db.stmt_errormsg()
+        print (ibm_db.stmt_errormsg())
       result = ibm_db.exec_immediate(conn,"delete from t_string where a=123")
       if result:
         cols = ibm_db.num_fields(result)
-        print "col:", cols
+        print ("col:", cols)
         rows = ibm_db.num_rows(result)
-        print "affected row:", rows
+        print ("affected row:", rows)
       else:
-        print ibm_db.stmt_errormsg()
+        print (ibm_db.stmt_errormsg())
       ibm_db.close(conn)
     else:
-      print "no connection:", ibm_db.conn_errormsg()
+      print ("no connection:", ibm_db.conn_errormsg())
 
 #__END__
 #__LUW_EXPECTED__

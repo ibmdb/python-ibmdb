@@ -40,7 +40,7 @@ class IbmDbTestCase(unittest.TestCase):
     onerow = ibm_db.fetch_tuple(stmt)
      
     for element in onerow:
-      print(element)
+      print element
 
     ibm_db.rollback(conn)
 

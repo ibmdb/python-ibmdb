@@ -26,25 +26,25 @@ class IbmDbTestCase(unittest.TestCase):
         pass
       if result:
         cols = ibm_db.num_fields(result)
-        print("col:", cols,", ") 
+        print "col:", cols,", " 
         rows = ibm_db.num_rows(result)
-        print("affected row:", rows)
+        print "affected row:", rows
       else:
-        print(ibm_db.stmt_errormsg())
+        print ibm_db.stmt_errormsg()
       try:
         result = ibm_db.exec_immediate(conn,"delete from t_string where a=123")
       except:
         pass
       if result:
         cols = ibm_db.num_fields(result)
-        print("col:", cols,", ")
+        print "col:", cols,", "
         rows = ibm_db.num_rows(result)
-        print("affected row:", rows)
+        print "affected row:", rows
       else:
-        print(ibm_db.stmt_errormsg())
+        print ibm_db.stmt_errormsg()
     
     else:
-      print("no connection")
+      print "no connection"
 
 #__END__
 #__LUW_EXPECTED__

@@ -17,7 +17,7 @@ class IbmDbTestCase(unittest.TestCase):
         obj.assert_expect(self.run_test_recreateDB)
 
     def run_test_recreateDB(self):
-        database = 'test001'
+        database = 'temo'
         conn_str = "DATABASE=%s;HOSTNAME=%s;PORT=%d;PROTOCOL=TCPIP;UID=%s;PWD=%s;" % (database, config.hostname, config.port, config.user, config.password)
         conn_str_attach = "attach=true;HOSTNAME=%s;PORT=%d;PROTOCOL=TCPIP;UID=%s;PWD=%s;" % (config.hostname, config.port, config.user, config.password) #for create db or drop db API it is nessesory that connection only attach to the DB server not to any existing database of DB server
         
@@ -36,20 +36,20 @@ class IbmDbTestCase(unittest.TestCase):
                 try:
                     ibm_db.dropdb(conn_attach, database)
                 except:
-                    print 'Errors occurred during drop database'
+                    print('Errors occurred during drop database')
             try:        
                 # call recreatedb with no codeset argument when specified database not exeist   
                 rc = ibm_db.recreatedb(conn_attach, database)
                 if rc:
                     conn = ibm_db.connect(conn_str, '', '')
                     if conn:
-                        print 'database created sucessfully'
+                        print('database created sucessfully')
                         ibm_db.close(conn)
                         conn = False
                     else:
-                        print 'database is not created'
+                        print('database is not created')
                 else:
-                    print 'Errors occure during create database'
+                    print('Errors occure during create database')
 
                 conn = ibm_db.connect(conn_str, '', '')
                 if conn:
@@ -61,13 +61,13 @@ class IbmDbTestCase(unittest.TestCase):
                         conn = ibm_db.connect(conn_str, '', '')
                         server_info = ibm_db.server_info( conn )
                         if conn and (server_info.DB_CODEPAGE == 819):
-                            print 'database with codeset created sucessfully'
+                            print('database with codeset created sucessfully')
                             ibm_db.close(conn)
                             conn = False
                         else:
-                            print 'database is not created'
+                            print('database is not created')
                     else:
-                        print 'Error occure during recreate db with codeset'
+                        print('Error occure during recreate db with codeset')
                             
                 #drop database
                 rc = ibm_db.dropdb(conn_attach, database)
@@ -75,19 +75,19 @@ class IbmDbTestCase(unittest.TestCase):
                     try:
                         conn = ibm_db.connect(conn_str, '', '')
                     except:
-                        print 'datbase droped sucessfully'
+                        print('datbase droped sucessfully')
                     if conn:
-                        print 'Errors occurred during drop database'
+                        print('Errors occurred during drop database')
                         ibm_db.close(conn)
                         conn = False
                 else:
-                    print 'Errors occurred during drop database'
+                    print('Errors occurred during drop database')
             except:
-                print ibm_db.conn_errormsg()
+                print(ibm_db.conn_errormsg())
                 pass
             ibm_db.close(conn_attach)
         else:
-            print ibm_db.conn_errormsg()
+            print(ibm_db.conn_errormsg())
             
 #__END__
 #__LUW_EXPECTED__

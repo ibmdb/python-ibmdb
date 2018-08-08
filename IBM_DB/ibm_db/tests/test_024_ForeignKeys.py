@@ -56,47 +56,47 @@ class IbmDbTestCase(unittest.TestCase):
       else:
         stmt = ibm_db.foreign_keys(conn, None, None, 'TEST_PRIMARY_KEYS')
       row = ibm_db.fetch_tuple(stmt)
-      print row[2]
-      print row[3]
-      print row[6]
-      print row[7]
+      print(row[2])
+      print(row[3])
+      print(row[6])
+      print(row[7])
 
       if (server.DBMS_NAME[0:3] == 'IDS'):
         stmt = ibm_db.foreign_keys(conn, None, None, None, None, config.user, 'test_keys')
       else:
         stmt = ibm_db.foreign_keys(conn, None, None, None, None, None, 'TEST_KEYS')
       row = ibm_db.fetch_tuple(stmt)
-      print row[2]
-      print row[3]
-      print row[6]
-      print row[7]
+      print(row[2])
+      print(row[3])
+      print(row[6])
+      print(row[7])
 
       if (server.DBMS_NAME[0:3] == 'IDS'):
         stmt = ibm_db.foreign_keys(conn, None, config.user, 'test_keys', None, None, None)
       else:
         stmt = ibm_db.foreign_keys(conn, None, None, 'TEST_KEYS', None, None, None)
       row = ibm_db.fetch_tuple(stmt)
-      print row[2]
-      print row[3]
-      print row[6]
-      print row[7]
+      print(row[2])
+      print(row[3])
+      print(row[6])
+      print(row[7])
 
       if (server.DBMS_NAME[0:3] == 'IDS'):
         stmt = ibm_db.foreign_keys(conn, None, config.user, 'test_keys', None, config.user, 'test_foreign_keys')
       else:
         stmt = ibm_db.foreign_keys(conn, None, None, 'TEST_KEYS', None, None, 'TEST_FOREIGN_KEYS')
       row = ibm_db.fetch_tuple(stmt)
-      print row[2]
-      print row[3]
-      print row[6]
-      print row[7]
+      print(row[2])
+      print(row[3])
+      print(row[6])
+      print(row[7])
 
       try:
         stmt = ibm_db.foreign_keys(conn, None, None, None, None, None, None)
         row = ibm_db.fetch_tuple(stmt)
       except:
         if (not stmt):
-          print ibm_db.stmt_errormsg()
+          print(ibm_db.stmt_errormsg())
 
       if (server.DBMS_NAME[0:3] == 'IDS'):
         stmt = ibm_db.foreign_keys(conn, None, config.user, 'test_keys', None, 'dummy_schema')
@@ -104,13 +104,13 @@ class IbmDbTestCase(unittest.TestCase):
         stmt = ibm_db.foreign_keys(conn, None, None, 'TEST_KEYS', None, 'dummy_schema')
       row = ibm_db.fetch_tuple(stmt)
       if(not row):
-        print "No Data Found"
+        print("No Data Found")
       else:
-        print row
+        print(row)
       ibm_db.close(conn)
     else:
-      print ibm_db.conn_errormsg()
-      print "Connection failed\n"
+      print(ibm_db.conn_errormsg())
+      print("Connection failed\n")
 
 #__END__
 #__LUW_EXPECTED__

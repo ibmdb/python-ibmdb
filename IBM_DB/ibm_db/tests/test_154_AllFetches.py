@@ -57,8 +57,8 @@ class IbmDbTestCase(unittest.TestCase):
     while ( row ):
       #printf("\"%s\" from VARCHAR is %d bytes long, \"%s\" from CLOB is %d bytes long.\n",
       #        row[0],row[0].length, row[1],row[1].length)
-      print "\"%s\" from VARCHAR is %d bytes long, \"%s\" from CLOB is %d bytes long." %\
-        (row[0], len(row[0]), row[1], len(row[1]))
+      print("\"%s\" from VARCHAR is %d bytes long, \"%s\" from CLOB is %d bytes long." %\
+        (row[0], len(row[0]), row[1], len(row[1])))
       row = ibm_db.fetch_tuple(result)
 
     result = ibm_db.prepare(conn, statement)
@@ -68,8 +68,8 @@ class IbmDbTestCase(unittest.TestCase):
     while ( row ):
       #printf("\"%s\" from VARCHAR is %d bytes long, \"%s\" from CLOB is %d bytes long.\n",
       #        row['COL1'], row['COL1'].length, row['COL2'], row['COL2'].length)
-      print "\"%s\" from VARCHAR is %d bytes long, \"%s\" from CLOB is %d bytes long." %\
-        (row['COL1'], len(row['COL1']), row['COL2'], len(row['COL2']))
+      print("\"%s\" from VARCHAR is %d bytes long, \"%s\" from CLOB is %d bytes long." %\
+        (row['COL1'], len(row['COL1']), row['COL2'], len(row['COL2'])))
       row = ibm_db.fetch_assoc(result)
       
     result = ibm_db.prepare(conn, statement)
@@ -79,8 +79,8 @@ class IbmDbTestCase(unittest.TestCase):
     while ( row ):
       #printf("\"%s\" from VARCHAR is %d bytes long, \"%s\" from CLOB is %d bytes long.\n",
       #        row['COL1'], row['COL1'].length, row[1], row[1].length)
-      print "\"%s\" from VARCHAR is %d bytes long, \"%s\" from CLOB is %d bytes long.\n" % \
-        (row['COL1'],len(row['COL1']), row[1], len(row[1]))
+      print("\"%s\" from VARCHAR is %d bytes long, \"%s\" from CLOB is %d bytes long.\n" % \
+        (row['COL1'],len(row['COL1']), row[1], len(row[1])))
       row = ibm_db.fetch_both(result)
 
     ibm_db.close(conn)

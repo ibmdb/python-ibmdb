@@ -23,10 +23,10 @@ class IbmDbTestCase(unittest.TestCase):
     if row:
       fp.write(row[0])
     else:
-      print(ibm_db.stmt_errormsg())
+      print ibm_db.stmt_errormsg()
     fp.close()
     cmp = (open('tests/pic1_out.jpg', 'rb').read() == open('tests/pic1.jpg', 'rb').read())
-    print('Are the files the same:', cmp)
+    print 'Are the files the same:', cmp
 
 
 #__END__

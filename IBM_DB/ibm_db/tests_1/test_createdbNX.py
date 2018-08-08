@@ -35,20 +35,20 @@ class IbmDbTestCase(unittest.TestCase):
                 try:
                     ibm_db.dropdb(conn_attach, database)
                 except:
-                    print('Errors occurred during drop database')
+                    print 'Errors occurred during drop database'
             try:        
                 # call createdbNX without  codeset argument when specified database not exeist   
                 rc = ibm_db.createdbNX(conn_attach, database)
                 if rc:
                     conn = ibm_db.connect(conn_str, '', '')
                     if conn:
-                        print('database created sucessfully')
+                        print 'database created sucessfully'
                         ibm_db.close(conn)
                         conn = False
                     else:
-                        print('database is not created')
+                        print 'database is not created'
                 else:
-                    print('Error occurred during create db if not exist')
+                    print 'Error occurred during create db if not exist'
 
                 conn = ibm_db.connect(conn_str, '', '')
                 if conn:
@@ -60,13 +60,13 @@ class IbmDbTestCase(unittest.TestCase):
                         conn = ibm_db.connect(conn_str, '', '')
                         server_info = ibm_db.server_info( conn )
                         if conn and (server_info.DB_CODEPAGE != 819):
-                            print('database with codeset created sucessfully')
+                            print 'database with codeset created sucessfully'
                             ibm_db.close(conn)
                             conn = False
                         else:
-                            print('Database not created')
+                            print 'Database not created'
                     else:
-                        print('Error occurred during create db if not exist with codeset')
+                        print 'Error occurred during create db if not exist with codeset'
                         
                 #drop database
                 rc = ibm_db.dropdb(conn_attach, database)
@@ -74,19 +74,19 @@ class IbmDbTestCase(unittest.TestCase):
                     try:
                         conn = ibm_db.connect(conn_str, '', '')
                     except:
-                        print('datbase droped sucessfully')
+                        print 'datbase droped sucessfully'
                     if conn:
-                        print('Errors occurred during drop database')
+                        print 'Errors occurred during drop database'
                         ibm_db.close(conn)
                         conn = False
                 else:
-                    print('Errors occurred during drop database')
+                    print 'Errors occurred during drop database'
             except:
-                print(ibm_db.conn_errormsg())
+                print ibm_db.conn_errormsg()
                 pass
             ibm_db.close(conn_attach)
         else:
-            print(ibm_db.conn_errormsg())
+            print ibm_db.conn_errormsg()
             
 #__END__
 #__LUW_EXPECTED__

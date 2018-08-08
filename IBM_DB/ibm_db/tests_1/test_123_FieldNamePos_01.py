@@ -67,13 +67,13 @@ class IbmDbTestCase(unittest.TestCase):
         for i in range(0, cols):
           #print "#{ibm_db.field_name(result,i)}:" % (ibm_db.field_name(result, i), row[ibm_db.field_name(result, i)])
           #puts row[ibm_db.field_name(result,i)]
-          print("%s:%s" % (ibm_db.field_name(result, i), row[ibm_db.field_name(result, i)]))
-        print("---------");    
+          print "%s:%s" % (ibm_db.field_name(result, i), row[ibm_db.field_name(result, i)])
+        print "---------";    
         j += 1
         row = ibm_db.fetch_both(result)
       ibm_db.close(conn)
     else:
-      print(ibm_db.conn_errormsg())
+      print ibm_db.conn_errormsg()
 
 #__END__
 #__LUW_EXPECTED__

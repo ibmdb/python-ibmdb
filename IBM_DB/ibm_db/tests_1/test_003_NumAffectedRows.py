@@ -22,11 +22,11 @@ class IbmDbTestCase(unittest.TestCase):
       ibm_db.autocommit(conn, ibm_db.SQL_AUTOCOMMIT_OFF)
       sql = 'UPDATE animals SET id = 9'
       res = ibm_db.exec_immediate(conn, sql)
-      print ("Number of affected rows: %d" % ibm_db.num_rows(res))
+      print "Number of affected rows: %d" % ibm_db.num_rows(res)
       ibm_db.rollback(conn)
       ibm_db.close(conn)
     else:
-      print ("Connection failed.")
+      print "Connection failed."
 
 #__END__
 #__LUW_EXPECTED__

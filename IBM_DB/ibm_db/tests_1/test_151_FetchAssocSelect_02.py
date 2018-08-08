@@ -34,7 +34,7 @@ class IbmDbTestCase(unittest.TestCase):
       #puts ""
       if (row['SALES'] == None):
         row['SALES'] = ''
-      print("%-10s %-15s %-15s %4s" % (row['SALES_DATE'], row['SALES_PERSON'], row['REGION'], row['SALES']))
+      print "%-10s %-15s %-15s %4s" % (row['SALES_DATE'], row['SALES_PERSON'], row['REGION'], row['SALES'])
       row = ibm_db.fetch_assoc(result)
 
 #__END__

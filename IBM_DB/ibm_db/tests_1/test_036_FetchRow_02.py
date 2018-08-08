@@ -27,10 +27,10 @@ class IbmDbTestCase(unittest.TestCase):
        j=0
        row2 = ibm_db.fetch_row(result2) 
        while ( row2 ):
-          print("%d)%d," % (i, j))
+          print "%d)%d," % (i, j)
           j+=1
           row2 = ibm_db.fetch_row(result2)
-       print("%d, " % i)
+       print "%d, " % i
        i+=1
        row = ibm_db.fetch_row(result)
     ibm_db.close(conn)

@@ -24,31 +24,31 @@ class IbmDbTestCase(unittest.TestCase):
       result = ibm_db.execute(stmt)
       if result:
         rows = ibm_db.num_rows(stmt)
-        print "affected row:", rows
+        print("affected row:", rows)
         ibm_db.free_result(stmt)
       else:
-        print ibm_db.stmt_errormsg()
+        print(ibm_db.stmt_errormsg())
 
       ibm_db.set_option(stmt, {ibm_db.SQL_ATTR_ROWCOUNT_PREFETCH : ibm_db.SQL_ROWCOUNT_PREFETCH_OFF}, 2)
       result = ibm_db.execute(stmt)
       if result:
         rows = ibm_db.num_rows(stmt)
-        print "affected row:", rows
+        print("affected row:", rows)
         ibm_db.free_result(stmt)
       else:
-        print ibm_db.stmt_errormsg()
+        print(ibm_db.stmt_errormsg())
 
       ibm_db.set_option(stmt, {ibm_db.SQL_ATTR_ROWCOUNT_PREFETCH : ibm_db.SQL_ROWCOUNT_PREFETCH_ON}, 2)
       result = ibm_db.execute(stmt)
       if result:
         rows = ibm_db.num_rows(stmt)
-        print "affected row:", rows
+        print("affected row:", rows)
       else:
-        print ibm_db.stmt_errormsg()
+        print(ibm_db.stmt_errormsg())
 
       ibm_db.close(conn)
     else:
-      print "no connection:", ibm_db.conn_errormsg()
+      print("no connection:", ibm_db.conn_errormsg())
 
 #__END__
 #__LUW_EXPECTED__

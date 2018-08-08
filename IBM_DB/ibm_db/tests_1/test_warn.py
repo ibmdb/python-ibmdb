@@ -67,12 +67,3 @@ class IbmDbTestCase(unittest.TestCase):
 #__IDS_EXPECTED__
 #No Data
 #[IBM][CLI Driver][IDS/%s] SQL0100W  No row was found for FETCH, UPDATE or DELETE; or the result of a query is an empty table.  SQLSTATE=02000 SQLCODE=100
-
-
-
-
-
-
-
-
-	

@@ -18,7 +18,7 @@ class IbmDbTestCase(unittest.TestCase):
   def run_test_048(self):
     conn = ibm_db.connect(config.database, config.user, config.password)
     if (not conn):
-      print("Could not make a connection.") 
+      print "Could not make a connection." 
       return 0
     server = ibm_db.server_info( conn )
     
@@ -28,16 +28,16 @@ class IbmDbTestCase(unittest.TestCase):
     else:
         result = ibm_db.exec_immediate(conn, "SELECT picture, LENGTH(picture) FROM animal_pics WHERE name = 'Spook'")
     if (not result):
-      print("Could not execute SELECT statement.")
+      print "Could not execute SELECT statement."
       return 0
     row = ibm_db.fetch_tuple(result)
     if row:
       fp.write(row[0])
     else:
-      print(ibm_db.stmt_errormsg())
+      print ibm_db.stmt_errormsg()
     fp.close()
     cmp = (open('tests/spook_out.png', "rb").read() == open('tests/spook.png', "rb").read())
-    print("Are the files the same:", cmp)
+    print "Are the files the same:", cmp
 
 #__END__
 #__LUW_EXPECTED__

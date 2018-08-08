@@ -19,7 +19,7 @@ class IbmDbTestCase(unittest.TestCase):
     conn = ibm_db.connect(config.database, config.user, config.password)
     server = ibm_db.server_info( conn )
 
-    print("Starting...")
+    print "Starting..."
     if conn:
       sql = "SELECT id, name, breed, weight FROM animals ORDER BY breed"
       result = ibm_db.exec_immediate(conn, sql)
@@ -29,16 +29,16 @@ class IbmDbTestCase(unittest.TestCase):
           row = ibm_db.fetch_assoc(result, i)
           while ( row ):
               if (server.DBMS_NAME[0:3] == 'IDS'):
-                print("%-5d %-16s %-32s %10s" % (row['id'], row['name'], row['breed'], row['weight']))
+                print "%-5d %-16s %-32s %10s" % (row['id'], row['name'], row['breed'], row['weight'])
               else:
-                print("%-5d %-16s %-32s %10s" % (row['ID'], row['NAME'], row['BREED'], row['WEIGHT']))
+                print "%-5d %-16s %-32s %10s" % (row['ID'], row['NAME'], row['BREED'], row['WEIGHT'])
               i = i + 2
           row = ibm_db.fetch_assoc(result, i)
       except:
-          print("SQLSTATE: %s" % ibm_db.stmt_error(result))
-          print("Message: %s" % ibm_db.stmt_errormsg(result))
+          print "SQLSTATE: %s" % ibm_db.stmt_error(result)
+          print "Message: %s" % ibm_db.stmt_errormsg(result)
 	
-      print("DONE")
+      print "DONE"
 
 #__END__
 #__LUW_EXPECTED__

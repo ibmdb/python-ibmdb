@@ -41,16 +41,16 @@ class IbmDbTestCase(unittest.TestCase):
       num5 = ibm_db.field_name(stmt, 'test')
       num6 = ibm_db.field_name(stmt, 'Test')
 
-      print "string(%d) \"%s\"" % (len(num1), num1)
-      print "string(%d) \"%s\"" % (len(num2), num2)
-      print "string(%d) \"%s\"" % (len(num3), num3)
+      print("string(%d) \"%s\"" % (len(num1), num1))
+      print("string(%d) \"%s\"" % (len(num2), num2))
+      print("string(%d) \"%s\"" % (len(num3), num3))
 
-      print "string(%d) \"%s\"" % (len(num4), num4)
-      print "string(%d) \"%s\"" % (len(num5), num5)
-      print "string(%d) \"%s\"" % (len(num6), num6)
+      print("string(%d) \"%s\"" % (len(num4), num4))
+      print("string(%d) \"%s\"" % (len(num5), num5))
+      print("string(%d) \"%s\"" % (len(num6), num6))
       
     else:
-      print "Connection failed."
+      print("Connection failed.")
 
 #__END__
 #__LUW_EXPECTED__

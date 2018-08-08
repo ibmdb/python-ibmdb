@@ -18,9 +18,9 @@ class IbmDbTestCase(unittest.TestCase):
   def run_test_081(self):
     try:
       conn = ibm_db.connect(config.database, "y", config.password)
-      print("??? No way.")
+      print "??? No way."
     except:
-      print(ibm_db.conn_error())
+      print ibm_db.conn_error()
 
     #if conn:
     #  print "??? No way."

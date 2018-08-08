@@ -20,10 +20,10 @@ class IbmDbTestCase(unittest.TestCase):
     conn = ibm_db.connect(conn_str, '', '')
       
     if conn:
-      print ("Connection succeeded.")
+      print "Connection succeeded."
       ibm_db.close(conn)
     else:
-      print ("Connection failed.")
+      print "Connection failed."
 
 #__END__
 #__LUW_EXPECTED__

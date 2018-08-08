@@ -45,13 +45,13 @@ class IbmDbTestCase(unittest.TestCase):
       else:
         stmt = ibm_db.primary_keys(conn, None, None, 'TEST_PRIMARY_KEYS')
       row = ibm_db.fetch_tuple(stmt)
-      print row[2]
-      print row[3]
-      print row[4]
+      print(row[2])
+      print(row[3])
+      print(row[4])
       ibm_db.close(conn)
     else:
-      print ibm_db.conn_errormsg()
-      print "Connection failed\n"
+      print(ibm_db.conn_errormsg())
+      print("Connection failed\n")
 
 #__END__
 #__LUW_EXPECTED__
