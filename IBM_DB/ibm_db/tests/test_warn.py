@@ -14,7 +14,7 @@ from testfunctions import IbmDbTestFunctions
 class IbmDbTestCase(unittest.TestCase):
     def test_warn(self):
         obj = IbmDbTestFunctions()
-        obj.assert_expect(self.run_test_warn)
+        obj.assert_expectf(self.run_test_warn)
 
     def run_test_warn(self):
         conn = ibm_db.connect(config.database, config.user, config.password)
