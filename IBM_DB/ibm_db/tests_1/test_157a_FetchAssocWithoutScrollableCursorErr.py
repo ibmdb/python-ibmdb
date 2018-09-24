@@ -37,7 +37,7 @@ class IbmDbTestCase(unittest.TestCase):
       except:
           print "SQLSTATE: %s" % ibm_db.stmt_error(result)
           print "Message: %s" % ibm_db.stmt_errormsg(result)
-	
+  
       print "DONE"
 
 #__END__

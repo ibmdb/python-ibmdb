@@ -14,7 +14,7 @@ class IbmDbTestCase(unittest.TestCase):
   def test_049_InsertNoneParam(self):
     obj = IbmDbTestFunctions()
     obj.assert_expect(self.run_test_049)
-	  
+      
   def run_test_049(self):      
     conn = ibm_db.connect(config.database, config.user, config.password)
 

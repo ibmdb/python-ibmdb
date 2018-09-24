@@ -58,7 +58,7 @@ class IbmDbTestCase(unittest.TestCase):
          print data[1]
          print data[2]
          data = ibm_db.fetch_both(stmt)
-	 
+     
        sql = "DELETE FROM tab_num_literals WHERE col1 > '10.0'"
        res = ibm_db.exec_immediate(conn, sql)
        print "Number of deleted rows:", ibm_db.num_rows(res)

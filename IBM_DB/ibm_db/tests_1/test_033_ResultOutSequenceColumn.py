@@ -14,7 +14,7 @@ class IbmDbTestCase(unittest.TestCase):
   def test_033_ResultOutSequenceColumn(self):
     obj = IbmDbTestFunctions()
     obj.assert_expect(self.run_test_033)
-	  
+      
   def run_test_033(self): 
     conn = ibm_db.connect(config.database, config.user, config.password)
     server = ibm_db.server_info( conn )

@@ -37,14 +37,14 @@ class IbmDbTestCase(unittest.TestCase):
     result = ibm_db.exec_immediate(conn, create)
     # Populate the animal table
     animals = (\
-    	(0, 'cat',        'Pook',         3.2),\
-	(1, 'dog',        'Peaches',      12.3),\
-	(2, 'horse',      'Smarty',       350.0),\
-	(3, 'gold fish',  'Bubbles',      0.1),\
-	(4, 'budgerigar', 'Gizmo',        0.2),\
-	(5, 'goat',       'Rickety Ride', 9.7),\
-	(6, 'llama',      'Sweater',      150)\
-	)
+        (0, 'cat',        'Pook',         3.2),\
+    (1, 'dog',        'Peaches',      12.3),\
+    (2, 'horse',      'Smarty',       350.0),\
+    (3, 'gold fish',  'Bubbles',      0.1),\
+    (4, 'budgerigar', 'Gizmo',        0.2),\
+    (5, 'goat',       'Rickety Ride', 9.7),\
+    (6, 'llama',      'Sweater',      150)\
+    )
     insert = 'INSERT INTO animals (id, breed, name, weight) VALUES (?, ?, ?, ?)'
     stmt = ibm_db.prepare(conn, insert)
     if stmt:

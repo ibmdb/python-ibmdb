@@ -14,7 +14,7 @@ class IbmDbTestCase(unittest.TestCase):
   def test_052_SetAutocommit_02(self):
     obj = IbmDbTestFunctions()
     obj.assert_expect(self.run_test_052)
-	  
+      
   def run_test_052(self):
     conn = ibm_db.connect(config.database, config.user, config.password)
       
