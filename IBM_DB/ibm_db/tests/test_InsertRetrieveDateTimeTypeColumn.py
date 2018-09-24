@@ -4,7 +4,9 @@
 #  (c) Copyright IBM Corp. 2007-2013
 #
 
-import unittest, sys, datetime
+from __future__ import print_function
+import sys
+import unittest, datetime
 import ibm_db
 import config
 from testfunctions import IbmDbTestFunctions

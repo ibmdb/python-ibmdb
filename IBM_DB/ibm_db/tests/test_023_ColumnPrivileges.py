@@ -11,7 +11,9 @@
 #       that no other user has been granted permission and therefore
 #       will return no rows.
 
-import unittest, sys
+from __future__ import print_function
+import sys
+import unittest
 import ibm_db
 import config
 from testfunctions import IbmDbTestFunctions

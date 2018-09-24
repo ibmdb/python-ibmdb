@@ -5,7 +5,9 @@
 #
 # NOTE: IDS does not support XML as a native datatype (test is invalid for IDS)
 
-import unittest, sys
+from __future__ import print_function
+import sys
+import unittest
 import ibm_db
 import config
 from testfunctions import IbmDbTestFunctions

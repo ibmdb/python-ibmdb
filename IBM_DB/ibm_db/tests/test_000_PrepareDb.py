@@ -4,7 +4,10 @@
 #  (c) Copyright IBM Corp. 2007-2008
 #
 
-import unittest, sys, os
+from __future__ import print_function
+import sys
+import os
+import unittest
 import ibm_db
 #need to add this line below to each file to make the connect parameters available to all the test files
 import config
