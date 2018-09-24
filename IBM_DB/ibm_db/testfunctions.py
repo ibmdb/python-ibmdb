@@ -27,7 +27,8 @@ class IbmDbTestFunctions(unittest.TestCase):
     sys.stdout = buffer
     func()
     sys.stdout = sys.__stdout__
-    var = buffer.getvalue()
+    # str() ensures not Unicode object on Python 2
+    var = str(buffer.getvalue())
     var = var.replace('\n', '').replace('\r', '')
     return var
   

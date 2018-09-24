@@ -11,6 +11,9 @@ import ibm_db
 import config
 from testfunctions import IbmDbTestFunctions
 
+def strip_bom(s):
+    return s[1:] if (s and s[0] in (u'\ufeff', u'\uffef')) else s
+    
 class IbmDbTestCase(unittest.TestCase):
 
   def test_265_NoAffectedRows(self):
@@ -85,7 +88,7 @@ class IbmDbTestCase(unittest.TestCase):
       print("Number of affected rows: %d" % ibm_db.get_num_result(stmt))
       row = ibm_db.fetch_tuple(stmt)
       while ( row ):
-        print("%s, %s, %s, %s\n" %(row[0], row[1], row[2], ((row[3] is not None) and row[3].startswith('\ufeff')) and  row[3][1:] or  row[3]))
+        print("%s, %s, %s, %s\n" %(row[0], row[1], row[2], strip_bom(row[3])))
         row = ibm_db.fetch_tuple(stmt)
 
       sql = 'select id, name from test where id = ?'
@@ -111,7 +114,7 @@ class IbmDbTestCase(unittest.TestCase):
       print("Number of affected rows: %d" % ibm_db.get_num_result(stmt))
       row = ibm_db.fetch_tuple(stmt)
       while ( row ):
-        print("%s, %s, %s, %s\n" %(row[0], row[1], row[2], ((row[3] is not None) and row[3].startswith('\ufeff')) and  row[3][1:] or  row[3]))
+        print("%s, %s, %s, %s\n" % (row[0], row[1], row[2], strip_bom(row[3])))
         row = ibm_db.fetch_tuple(stmt)
 
       ibm_db.close(conn)
