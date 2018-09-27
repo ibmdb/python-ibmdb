@@ -8,7 +8,9 @@
 # for DB2.  If is is failing on your system, please 
 # increase the application heap size.
 
-import unittest, sys
+from __future__ import print_function
+import sys
+import unittest
 import ibm_db
 import config
 from testfunctions import IbmDbTestFunctions

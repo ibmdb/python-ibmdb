@@ -4,11 +4,16 @@
 #  (c) Copyright IBM Corp. 2007-2013
 #
 
-import unittest, sys
+from __future__ import print_function
+import sys
+import unittest
 import ibm_db
 import config
 from testfunctions import IbmDbTestFunctions
 
+def strip_bom(s):
+    return s[1:] if (s and s[0] in (u'\ufeff', u'\uffef')) else s
+    
 class IbmDbTestCase(unittest.TestCase):
 
   def test_265_NoAffectedRows(self):
@@ -26,14 +31,13 @@ class IbmDbTestCase(unittest.TestCase):
       if (server.DBMS_NAME[0:3] == 'IDS'):
          op = {ibm_db.ATTR_CASE: ibm_db.CASE_UPPER}
          ibm_db.set_option(conn, op, 1)
-
+      
       try:
         sql = 'drop table test'
 
         stmt = ibm_db.prepare(conn, sql)
         ibm_db.set_option(stmt, cursor_option, 0)
         ibm_db.execute(stmt)
-        print("Number of affected rows: %d" % ibm_db.get_num_result(stmt))
       except:
         pass
 
@@ -83,7 +87,7 @@ class IbmDbTestCase(unittest.TestCase):
       print("Number of affected rows: %d" % ibm_db.get_num_result(stmt))
       row = ibm_db.fetch_tuple(stmt)
       while ( row ):
-        print("%s, %s, %s, %s\n" %(row[0], row[1], row[2], ((row[3] is not None) and row[3].startswith('\ufeff')) and  row[3][1:] or  row[3]))
+        print("%s, %s, %s, %s\n" %(row[0], row[1], row[2], strip_bom(row[3])))
         row = ibm_db.fetch_tuple(stmt)
 
       sql = 'select id, name from test where id = ?'
@@ -109,15 +113,24 @@ class IbmDbTestCase(unittest.TestCase):
       print("Number of affected rows: %d" % ibm_db.get_num_result(stmt))
       row = ibm_db.fetch_tuple(stmt)
       while ( row ):
-        print("%s, %s, %s, %s\n" %(row[0], row[1], row[2], ((row[3] is not None) and row[3].startswith('\ufeff')) and  row[3][1:] or  row[3]))
+        print("%s, %s, %s, %s\n" % (row[0], row[1], row[2], strip_bom(row[3])))
         row = ibm_db.fetch_tuple(stmt)
+      
+      try:
+        sql = 'drop table test'
+
+        stmt = ibm_db.prepare(conn, sql)
+        ibm_db.set_option(stmt, cursor_option, 0)
+        ibm_db.execute(stmt)
+        print("Number of affected rows: %d" % ibm_db.get_num_result(stmt))
+      except:
+        pass
 
       ibm_db.close(conn)
 
 #__END__
 #__LUW_EXPECTED__
 #Number of affected rows: -1
-#Number of affected rows: -1
 #Number of affected rows: 0
 #Number of affected rows: -1
 #Number of affected rows: -1
@@ -133,9 +146,9 @@ class IbmDbTestCase(unittest.TestCase):
 #1, some, here is a clob value, <?xml version="1.0" encoding="UTF-16" ?><test attribute="value"/>
 #2, value, clob data, None
 #2, in varchar, data2, None
+#Number of affected rows: -1
 #__ZOS_EXPECTED__
 #Number of affected rows: -2
-#Number of affected rows: -2
 #Number of affected rows: 0
 #Number of affected rows: -2
 #Number of affected rows: -1
@@ -151,9 +164,9 @@ class IbmDbTestCase(unittest.TestCase):
 #1, some, here is a clob value, <?xml version="1.0" encoding="UTF-16" ?><test attribute="value"/>
 #2, value, clob data, None
 #2, in varchar, data2, None
+#Number of affected rows: -2
 #__SYSTEMI_EXPECTED__
 #Number of affected rows: -2
-#Number of affected rows: -2
 #Number of affected rows: 0
 #Number of affected rows: -2
 #Number of affected rows: -1
@@ -169,13 +182,13 @@ class IbmDbTestCase(unittest.TestCase):
 #1, some, here is a clob value, <?xml version="1.0" encoding="UTF-16" ?><test attribute="value"/>
 #2, value, clob data, None
 #2, in varchar, data2, None
+#Number of affected rows: -2
 #__IDS_EXPECTED__
 #Number of affected rows: -1
 #Number of affected rows: -1
 #Number of affected rows: -1
 #Number of affected rows: -1
 #Number of affected rows: -1
-#Number of affected rows: -1
 #Number of affected rows: 3
 #1, some, here is a clob value, <?xml version="1.0" encoding="UTF-16" ?><test attribute="value"/>
 #2, value, clob data, None
@@ -187,3 +200,4 @@ class IbmDbTestCase(unittest.TestCase):
 #1, some, here is a clob value, <?xml version="1.0" encoding="UTF-16" ?><test attribute="value"/>
 #2, value, clob data, None
 #2, in varchar, data2, None
+#Number of affected rows: -1

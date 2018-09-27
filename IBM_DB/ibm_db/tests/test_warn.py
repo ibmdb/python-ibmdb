@@ -4,7 +4,9 @@
 #  (c) Copyright IBM Corp. 2007-2016
 #
 
-import unittest, sys
+from __future__ import print_function
+import sys
+import unittest
 import ibm_db
 import config
 from testfunctions import IbmDbTestFunctions
@@ -12,7 +14,7 @@ from testfunctions import IbmDbTestFunctions
 class IbmDbTestCase(unittest.TestCase):
     def test_warn(self):
         obj = IbmDbTestFunctions()
-        obj.assert_expect(self.run_test_warn)
+        obj.assert_expectf(self.run_test_warn)
 
     def run_test_warn(self):
         conn = ibm_db.connect(config.database, config.user, config.password)

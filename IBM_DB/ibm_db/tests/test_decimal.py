@@ -4,8 +4,10 @@
 #  (c) Copyright IBM Corp. 2007-2008
 #
 
+from __future__ import print_function
 from decimal import Decimal
-import unittest, sys
+import sys
+import unittest
 import ibm_db
 import config
 from testfunctions import IbmDbTestFunctions

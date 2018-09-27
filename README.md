@@ -1,6 +1,8 @@
 Python support for IBM DB2 and IBM Informix
 =========
 
+[![Build Status](https://travis-ci.org/ibmdb/python-ibmdb.svg?branch=master)](https://travis-ci.org/ibmdb/python-ibmdb)
+
 ## Python, DB-API, Django/Django_jython and SQLAlchemy components for IBM DB2 and Informix
 
 Provides Python, Django and SQLAlchemy support for IBM DB2 and Informix 

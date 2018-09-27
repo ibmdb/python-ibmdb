@@ -5,10 +5,15 @@
 #
 # NOTE: IDS does not support XML as a native datatype (test is invalid for IDS)
 
-import unittest, sys
+from __future__ import print_function
+import sys
+import unittest
 import ibm_db
 import config
 from testfunctions import IbmDbTestFunctions
+
+def strip_bom(s):
+    return s[1:] if (s and s[0] in (u'\ufeff', u'\uffef')) else s
 
 class IbmDbTestCase(unittest.TestCase):
 
@@ -35,7 +40,7 @@ class IbmDbTestCase(unittest.TestCase):
       while( result ):
         print("Result ID:", result[0])
         print("Result DATA:", result[1])
-        print("Result XMLCOL:", result[2])
+        print("Result XMLCOL:", strip_bom(result[2]))
         result = ibm_db.fetch_both(stmt)
 
       sql = "SELECT XMLSERIALIZE(XMLQUERY('for $i in $t/address where $i/city = \"Olathe\" return <zip>{$i/zip/text()}</zip>' passing c.xmlcol as \"t\") AS CLOB(32k)) FROM xml_test c WHERE id = 1"
@@ -43,7 +48,7 @@ class IbmDbTestCase(unittest.TestCase):
       ibm_db.execute(stmt)
       result = ibm_db.fetch_both(stmt)
       while( result ):
-        print("Result from XMLSerialize and XMLQuery:", result[0])
+        print("Result from XMLSerialize and XMLQuery:", strip_bom(result[0]))
         result = ibm_db.fetch_both(stmt)
 
       sql = "select xmlquery('for $i in $t/address where $i/city = \"Olathe\" return <zip>{$i/zip/text()}</zip>' passing c.xmlcol as \"t\") from xml_test c where id = 1"
@@ -51,7 +56,7 @@ class IbmDbTestCase(unittest.TestCase):
       ibm_db.execute(stmt)
       result = ibm_db.fetch_both(stmt)
       while( result ):
-        print("Result from only XMLQuery:", result[0])
+        print("Result from only XMLQuery:", strip_bom(result[0]))
         result = ibm_db.fetch_both(stmt)
     else:
       print('Native XML datatype is not supported.')
