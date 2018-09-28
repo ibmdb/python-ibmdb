@@ -200,3 +200,4 @@ only optimize for N rows issue #2 (defect #154260)
  -process unique persistent connections  - PR278
  -Added new contribution guidelines - PR275
  
+ -enable travis CI 
