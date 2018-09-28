@@ -45,4 +45,4 @@ script:
 - python tests.py
 
 notifications:
-  email: false
+  email: true
