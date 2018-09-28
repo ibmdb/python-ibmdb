@@ -45,4 +45,5 @@ script:
 - python tests.py
 
 notifications:
-  email: skauser@rocketsoftware.com
+  email: 
+    - skauser@rocketsoftware.com
