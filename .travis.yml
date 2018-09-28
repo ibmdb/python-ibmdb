@@ -45,4 +45,4 @@ script:
 - python tests.py
 
 notifications:
-  email: true
+  email: skauser@rocketsoftware.com
