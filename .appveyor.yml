@@ -1,0 +1,55 @@
+version: 1.0.{build}
+
+#image:
+        #  - Visual Studio 2017
+
+environment:
+  matrix:
+    - PYTHON: "C:\\Python37-x64"
+    - PYTHON: "C:\\Python36-x64"
+    - PYTHON: "C:\\Python35-x64"
+    # Python 3.4 disabled due to this error:
+    # https://blog.ionelmc.ro/2014/12/21/compiling-python-extensions-on-windows/
+    #- PYTHON: "C:\\Python34-x64"
+    - PYTHON: "C:\\Python27-x64"
+
+install:
+  # Make sure the right python version is first on the PATH.
+  - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
+  - "python --version"
+  - "python -c \"import sys; print(sys.maxunicode)\""
+  
+  # TODO: Seems Appveyor doesn't have LCOW support yet
+  # https://blog.docker.com/2017/11/docker-for-windows-17-11/
+  # https://github.com/appveyor/ci/issues/1717#issuecomment-399608403
+  # So to run tests, we'd have to get a db2express-c Windows docker image instead
+  #
+  #- docker pull --platform linux ibmcom/db2express-c
+  #- docker run --name db2  -p 50000:50000 -e DB2INST1_PASSWORD=password -e LICENSE=accept -d ibmcom/db2express-c db2start
+  #- docker ps -as
+  #- docker exec -it db2 su - db2inst1 -c "db2 create db sample"
+  #- docker exec -it db2 useradd -ms /bin/bash auth_user -p auth_pass
+
+build: false
+
+build_script:
+  - pwd
+  - cd IBM_DB/ibm_db
+  - python setup.py install
+
+#test_script:
+  # set up tests
+  #- cp config.py.sample config.py
+  #
+  # These were deleted from git, but required by the tests
+  # we just create dummy files of the size expected
+  #- truncate -s 10291 tests/spook.png
+  #- truncate -s 15398 tests/pic1.jpg
+  #
+  # Create db2cli.ini
+  #- echo -e '[sample]\nHostname=localhost\nProtocol=TCPIP\nDatabase=sample' > db2cli.ini
+  #- export DB2CLIINIPATH=$PWD
+  #
+  # Run tests
+  #- python tests.py
+  
