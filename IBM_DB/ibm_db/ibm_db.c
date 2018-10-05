@@ -10396,7 +10396,7 @@ static PyObject* ibm_db_execute_many (PyObject *self, PyObject *args) {
 
 					if ( chaining_start ) {
 						if ( ( TYPE(data) != PYTHON_NIL ) && ( ref_data_type[curr->param_num - 1] != TYPE(data) ) ) {
-							sprintf(error, "Value parameters array %d is not homogeneous with privious parameters array", i + 1);
+							sprintf(error, "Value parameters array %d is not homogeneous with previous parameters array", i + 1);
 							_build_client_err_list(head_error_list, error);
 							err_count++;
 							break;
