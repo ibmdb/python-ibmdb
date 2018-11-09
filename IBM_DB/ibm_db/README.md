@@ -7,9 +7,21 @@ Note:The minimum python version supported by driver is python 2.7 and the latest
  
 ## Installation 
 ```
+  pip install ibm_db 
+  
+  or
+  
   easy_install ibm_db
 ```
 This will install *ibm_db* and *ibm_db_dbi* module.
+
+If you face problems due to missing python header files, you would need to install python developer package before installing python ibm_db driver.
+e.g:
+```
+    zypper install python-devel 
+     or
+    yum install python-devel
+```    
 
 ### Environment Variables
 
