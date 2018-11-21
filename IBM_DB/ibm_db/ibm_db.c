@@ -10142,7 +10142,8 @@ static PyObject *ibm_db_get_option(PyObject *self, PyObject *args)
 					PyErr_SetString(PyExc_Exception, "Failed to Allocate Memory");
 					return NULL;
 				}
-
+				memset(value, 0, ACCTSTR_LEN + 1);
+				
 				rc = SQLGetConnectAttr((SQLHDBC)conn_res->hdbc, op_integer, 
 					(SQLPOINTER)value, ACCTSTR_LEN, NULL);
 				if (rc == SQL_ERROR) {
