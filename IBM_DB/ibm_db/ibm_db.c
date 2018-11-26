@@ -580,6 +580,7 @@ static int _python_ibm_db_assign_options( void *handle, int type, long opt_key, 
 {
 	int rc = 0;
 	long option_num = 0;
+	SQLINTEGER value_int = 0;
 	SQLWCHAR *option_str = NULL;
 	int isNewBuffer;
 
@@ -667,6 +668,18 @@ static int _python_ibm_db_assign_options( void *handle, int type, long opt_key, 
 			if ( rc == SQL_ERROR ) {
 				_python_ibm_db_check_sql_errors((SQLHSTMT)((stmt_handle *)handle)->hstmt, SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
 			}
+			if (opt_key == SQL_ATTR_CURSOR_TYPE){ 
+				((stmt_handle *)handle)->cursor_type = option_num;
+				if ( rc == SQL_SUCCESS_WITH_INFO ) {
+					rc = SQLGetStmtAttr( ((stmt_handle *)handle)->hstmt, opt_key, &value_int, SQL_IS_INTEGER, NULL);
+					if (rc == SQL_ERROR) {
+						_python_ibm_db_check_sql_errors(((stmt_handle *)handle)->hstmt, SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
+						PyErr_Clear();
+						return -1;
+					}
+					((stmt_handle *)handle)->cursor_type = value_int;
+				}
+			}	
 		}
 	} else if (type == SQL_HANDLE_DBC) {
 		if (PyString_Check(data)|| PyUnicode_Check(data)) {
@@ -10094,6 +10107,7 @@ static PyObject *ibm_db_get_option(PyObject *self, PyObject *args)
 	conn_handle *conn_res = NULL;
 	stmt_handle *stmt_res = NULL;
 	SQLINTEGER op_integer = 0;
+	SQLINTEGER isInteger = 0;
 	long type = 0;
 	int rc;
 
@@ -10137,35 +10151,60 @@ static PyObject *ibm_db_get_option(PyObject *self, PyObject *args)
 				/* ACCTSTR_LEN is the largest possible length of the options to 
 				* retrieve 
 			 */
-				value = (SQLCHAR*)ALLOC_N(char, ACCTSTR_LEN + 1);
-				if ( value == NULL ) {
-					PyErr_SetString(PyExc_Exception, "Failed to Allocate Memory");
-					return NULL;
+				switch(op_integer)
+				{
+					case SQL_ATTR_AUTOCOMMIT:
+					case SQL_ATTR_USE_TRUSTED_CONTEXT:
+						isInteger = 1;
+						break;
+					default:
+						isInteger = 0;
+						break;
 				}
-				memset(value, 0, ACCTSTR_LEN + 1);
 				
-				rc = SQLGetConnectAttr((SQLHDBC)conn_res->hdbc, op_integer, 
-					(SQLPOINTER)value, ACCTSTR_LEN, NULL);
-				if (rc == SQL_ERROR) {
-					_python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, 
-						rc, 1, NULL, -1, 1);
+				if ( isInteger == 0 )
+				{
+					value = (SQLCHAR*)ALLOC_N(char, ACCTSTR_LEN + 1);
+					if ( value == NULL ) {
+						PyErr_SetString(PyExc_Exception, "Failed to Allocate Memory");
+						return NULL;
+					}
+					memset(value, 0, ACCTSTR_LEN + 1);
+
+					rc = SQLGetConnectAttr((SQLHDBC)conn_res->hdbc, op_integer,
+						(SQLPOINTER)value, ACCTSTR_LEN, NULL);
+					if (rc == SQL_ERROR) {
+						_python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC,
+							rc, 1, NULL, -1, 1);
+						if(value != NULL) {
+							PyMem_Del(value);
+							value = NULL;
+						}
+						PyErr_Clear();
+						Py_RETURN_FALSE;
+					}
+					retVal = StringOBJ_FromASCII((char *)value);
 					if(value != NULL) {
 						PyMem_Del(value);
 						value = NULL;
 					}
-					PyErr_Clear();
-					Py_RETURN_FALSE;
+					return retVal;
 				}
-				retVal = StringOBJ_FromASCII((char *)value);
-				if(value != NULL) {
-					PyMem_Del(value);
-					value = NULL;
+				else {
+					rc = SQLGetConnectAttr((SQLHDBC)conn_res->hdbc, op_integer,
+							&value_int, SQL_IS_INTEGER, NULL);
+					if (rc == SQL_ERROR) {
+						_python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC,
+							rc, 1, NULL, -1, 1);
+						PyErr_Clear();
+						Py_RETURN_FALSE;
+					}
+					return PyInt_FromLong(value_int);
 				}
-				return retVal;
 			} else {
 				PyErr_SetString(PyExc_Exception, "Supplied parameter is invalid");
 				return NULL;
-		 }
+			}
 			/* At this point we know we are to retreive a statement option */
 		} else {
 			stmt_res = (stmt_handle *)conn_or_stmt;
@@ -10175,18 +10214,54 @@ static PyObject *ibm_db_get_option(PyObject *self, PyObject *args)
 				/* Checking that the option to get is the cursor type because that 
 				* is what we support here 
 				*/
-				if (op_integer == SQL_ATTR_CURSOR_TYPE) {
+				switch(op_integer)
+				{
+					case SQL_ATTR_CURSOR_TYPE:
+					case SQL_ATTR_ROWCOUNT_PREFETCH:
+					case SQL_ATTR_QUERY_TIMEOUT:
+						isInteger = 1;
+						break;
+					default:
+						isInteger = 0;
+						break;
+				}
+
+				if( isInteger == 0 )
+				{
+					// string value pointer
+					value = (SQLCHAR*)ALLOC_N(char, ACCTSTR_LEN + 1);
+					if ( value == NULL ) {
+						PyErr_SetString(PyExc_Exception, "Failed to Allocate Memory");
+						return NULL;
+					}
+					memset(value, 0, ACCTSTR_LEN + 1);
 					rc = SQLGetStmtAttr((SQLHSTMT)stmt_res->hstmt, op_integer, 
-						&value_int, SQL_IS_INTEGER, NULL);
+							(SQLPOINTER)value, ACCTSTR_LEN, NULL);
+					if (rc == SQL_ERROR) {
+						_python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
+						if(value != NULL) {
+							PyMem_Del(value);
+							value = NULL;
+						}
+						PyErr_Clear();
+						Py_RETURN_FALSE;
+					}
+					retVal = StringOBJ_FromASCII((char *)value);
+					if(value != NULL) {
+						PyMem_Del(value);
+						value = NULL;
+					}
+					return retVal;
+				} else {
+					// integer value
+					rc = SQLGetStmtAttr((SQLHSTMT)stmt_res->hstmt, op_integer,
+							&value_int, SQL_IS_INTEGER, NULL);
 					if (rc == SQL_ERROR) {
 						_python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
 						PyErr_Clear();
 						Py_RETURN_FALSE;
 					}
 					return PyInt_FromLong(value_int);
-				} else {
-					PyErr_SetString(PyExc_Exception,"Supplied parameter is invalid");
-					return NULL;
 				}
 			} else {
 				PyErr_SetString(PyExc_Exception, "Supplied parameter is invalid");
