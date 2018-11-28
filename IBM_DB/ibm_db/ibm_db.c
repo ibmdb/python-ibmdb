@@ -10236,7 +10236,7 @@ static PyObject *ibm_db_get_option(PyObject *self, PyObject *args)
 					}
 					memset(value, 0, ACCTSTR_LEN + 1);
 					rc = SQLGetStmtAttr((SQLHSTMT)stmt_res->hstmt, op_integer, 
-							(SQLPOINTER)value, ACCTSTR_LEN, NULL);
+						(SQLPOINTER)value, ACCTSTR_LEN, NULL);
 					if (rc == SQL_ERROR) {
 						_python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
 						if(value != NULL) {
