@@ -10192,7 +10192,7 @@ static PyObject *ibm_db_get_option(PyObject *self, PyObject *args)
 				}
 				else {
 					rc = SQLGetConnectAttr((SQLHDBC)conn_res->hdbc, op_integer,
-							&value_int, SQL_IS_INTEGER, NULL);
+						&value_int, SQL_IS_INTEGER, NULL);
 					if (rc == SQL_ERROR) {
 						_python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC,
 							rc, 1, NULL, -1, 1);
