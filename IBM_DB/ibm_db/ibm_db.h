@@ -165,7 +165,7 @@
 
 /* maximum sizes */
 #define USERID_LEN 16
-#define ACCTSTR_LEN 200
+#define ACCTSTR_LEN 255
 #define APPLNAME_LEN 32
 #define WRKSTNNAME_LEN 18
 
