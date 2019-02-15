@@ -1,5 +1,6 @@
 import os
 import sys
+import ssl
 import struct
 import warnings
 import tarfile
@@ -20,6 +21,9 @@ from distutils.sysconfig import get_python_lib
 PACKAGE = 'ibm_db'
 VERSION = '2.0.9'
 LICENSE = 'Apache License 2.0'
+
+context = ssl.create_default_context()
+context.load_verify_locations('certs/ibm_certs.pem')
 
 machine_bits =  8 * struct.calcsize("P")
 is64Bit = True
@@ -161,7 +165,7 @@ if (('IBM_DB_HOME' not in os.environ) and ('IBM_DB_DIR' not in os.environ) and (
         url = 'https://public.dhe.ibm.com/ibmdl/export/pub/software/data/db2/drivers/odbc_cli/' + cliFileName
         sys.stdout.write("Downloading %s\n" % (url))
         sys.stdout.flush();
-        file_stream = BytesIO(request.urlopen(url).read())
+        file_stream = BytesIO(request.urlopen(url, context=context).read())
         if (os_ == 'win'):
             if sys.version_info[0:2] <= (2, 5):
                 sys.stdout.write("Auto installation of clidriver for Python Version %i.%i on Window platform is currently not supported \n" % (sys.version_info[0:2]))

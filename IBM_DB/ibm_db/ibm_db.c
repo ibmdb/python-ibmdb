@@ -10155,6 +10155,7 @@ static PyObject *ibm_db_get_option(PyObject *self, PyObject *args)
 				{
 					case SQL_ATTR_AUTOCOMMIT:
 					case SQL_ATTR_USE_TRUSTED_CONTEXT:
+					case SQL_ATTR_TXN_ISOLATION:	
 						isInteger = 1;
 						break;
 					default:
