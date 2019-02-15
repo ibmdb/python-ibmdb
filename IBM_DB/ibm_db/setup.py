@@ -272,3 +272,14 @@ setup( name    = PACKAGE,
 
 if license_agreement:
     sys.stdout.write(license_agreement)
+
+if('darwin' in sys.platform ):
+    ibm_db_so_path = glob.glob(r'build/lib*/ibm_db*.so')
+    if('IBM_DB_HOME' not in os.environ):
+        sys.stdout.write("IBM_DB_HOME is not set. Run install_name_tool with ")
+        sys.stdout.write("%s" % (ibm_db_so_path))
+        os.system("install_name_tool -change libdb2.dylib @loader_path/clidriver/lib/libdb2.dylib %s" % ibm_db_so_path[0])
+    else:
+        sys.stdout.write("IBM_DB_HOME is set. Run install_name_tool with ")
+        sys.stdout.write("%s\n" % (ibm_db_so_path))
+        os.system("install_name_tool -change libdb2.dylib $IBM_DB_HOME/lib/libdb2.dylib %s" % ibm_db_so_path[0])
