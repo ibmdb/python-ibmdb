@@ -283,7 +283,7 @@ setup( name    = PACKAGE,
        package_data = package_data,
        data_files   = data_files,
        include_package_data = True,
-	   cmdclass = cmd_class,
+       cmdclass = cmd_class,
        **extra
      )
 
