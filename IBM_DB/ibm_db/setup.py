@@ -6,6 +6,7 @@ import warnings
 import tarfile
 import zipfile
 import shutil
+import glob
 
 if sys.version_info >= (3, ):
     from urllib import request
@@ -17,6 +18,7 @@ else:
 from setuptools import setup, find_packages
 from distutils.core import setup, Extension
 from distutils.sysconfig import get_python_lib
+from setuptools.command.install import install
 
 PACKAGE = 'ibm_db'
 VERSION = '2.0.9'
@@ -34,6 +36,7 @@ ibm_db_lib = ''
 ibm_db_lib_runtime = ''
 license_agreement = False
 prebuildIbmdbPYD = False
+cmd_class = dict()
     
 if machine_bits == 64:
     is64Bit = True
@@ -44,6 +47,19 @@ else:
     libDir = 'lib32'
     sys.stdout.write("Detected 32-bit Python\n")
 
+# define post-install operation for mac OS
+if('darwin' in sys.platform):
+    class PostInstall(install):
+        """ Post installation - run install_name_tool on Darwin """
+        def run(self):
+            clipath = os.getenv('IBM_DB_HOME', '@loader_path/clidriver')
+            print("in PostInstall with {}".format(clipath))
+            for so in glob.glob(r'build/lib*/ibm_db*.so'):
+                os.system("install_name_tool -change libdb2.dylib {}/lib/libdb2.dylib {}".format(clipath, so))
+            install.run(self)
+    cmd_class = dict(install = PostInstall) 
+
+   	
 # defining extension    
 def _ext_modules(include_dir, library, lib_dir, runtime_dir=None):
     ext_args = dict(include_dirs = [include_dir],
@@ -150,7 +166,7 @@ if (('IBM_DB_HOME' not in os.environ) and ('IBM_DB_DIR' not in os.environ) and (
         cliFileName = 'macos64_odbc_cli.tar.gz' 
         arch_ = 'x86_64' 
     else:
-        sys.stdout.write("Not a known platform for python ibm_db . Contact opendev@us.ibm.com")
+        sys.stdout.write("Not a known platform for python ibm_db\n")
         sys.stdout.flush()
         sys.exit()
         
@@ -267,19 +283,9 @@ setup( name    = PACKAGE,
        package_data = package_data,
        data_files   = data_files,
        include_package_data = True,
+	   cmdclass = cmd_class,
        **extra
      )
 
 if license_agreement:
     sys.stdout.write(license_agreement)
-
-if('darwin' in sys.platform ):
-    ibm_db_so_path = glob.glob(r'build/lib*/ibm_db*.so')
-    if('IBM_DB_HOME' not in os.environ):
-        sys.stdout.write("IBM_DB_HOME is not set. Run install_name_tool with ")
-        sys.stdout.write("%s" % (ibm_db_so_path))
-        os.system("install_name_tool -change libdb2.dylib @loader_path/clidriver/lib/libdb2.dylib %s" % ibm_db_so_path[0])
-    else:
-        sys.stdout.write("IBM_DB_HOME is set. Run install_name_tool with ")
-        sys.stdout.write("%s\n" % (ibm_db_so_path))
-        os.system("install_name_tool -change libdb2.dylib $IBM_DB_HOME/lib/libdb2.dylib %s" % ibm_db_so_path[0])
