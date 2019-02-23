@@ -6687,6 +6687,7 @@ static PyObject *ibm_db_next_result(PyObject *self, PyObject *args)
 		new_stmt_res->s_bin_mode = stmt_res->s_bin_mode;
 		new_stmt_res->cursor_type = stmt_res->cursor_type;
 		new_stmt_res->s_case_mode = stmt_res->s_case_mode;
+		new_stmt_res->s_use_wchar = stmt_res->s_use_wchar;
 		new_stmt_res->head_cache_list = NULL;
 		new_stmt_res->current_node = NULL;
 		new_stmt_res->num_params = 0;
