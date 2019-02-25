@@ -166,7 +166,7 @@ if (('IBM_DB_HOME' not in os.environ) and ('IBM_DB_DIR' not in os.environ) and (
         cliFileName = 'macos64_odbc_cli.tar.gz' 
         arch_ = 'x86_64' 
     else:
-        sys.stdout.write("Not a known platform for python ibm_db\n")
+        sys.stdout.write("Not a known platform for python ibm_db.\n")
         sys.stdout.flush()
         sys.exit()
         
