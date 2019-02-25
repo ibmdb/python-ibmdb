@@ -6683,19 +6683,29 @@ static PyObject *ibm_db_next_result(PyObject *self, PyObject *args)
 
 		/* Initialize stmt resource members with default values. */
 		/* Parsing will update options if needed */
+		/* NOTE: This needs to match _ibm_db_new_stmt_struct */
 		new_stmt_res = PyObject_NEW(stmt_handle, &stmt_handleType);
+		new_stmt_res->hstmt = new_hstmt;
+		new_stmt_res->hdbc = stmt_res->hdbc;
+
 		new_stmt_res->s_bin_mode = stmt_res->s_bin_mode;
 		new_stmt_res->cursor_type = stmt_res->cursor_type;
 		new_stmt_res->s_case_mode = stmt_res->s_case_mode;
+		new_stmt_res->s_use_wchar = stmt_res->s_use_wchar;
+
 		new_stmt_res->head_cache_list = NULL;
 		new_stmt_res->current_node = NULL;
+
 		new_stmt_res->num_params = 0;
 		new_stmt_res->file_param = 0;
+
 		new_stmt_res->column_info = NULL;
 		new_stmt_res->num_columns = 0;
+
+		stmt_res->error_recno_tracker = 1;
+		stmt_res->errormsg_recno_tracker = 1;
+
 		new_stmt_res->row_data = NULL;
-		new_stmt_res->hstmt = new_hstmt;
-		new_stmt_res->hdbc = stmt_res->hdbc;
 
 		return (PyObject *)new_stmt_res;		
 	} else {
