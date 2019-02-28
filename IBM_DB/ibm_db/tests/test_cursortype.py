@@ -119,12 +119,3 @@ class IbmDbTestCase(unittest.TestCase):
 #Setting cursor type to SQL_CURSOR_DYNAMIC - zOS only
 #statement cursor type = 1
 #3
-
-
-
-
-
-
-
-
-	

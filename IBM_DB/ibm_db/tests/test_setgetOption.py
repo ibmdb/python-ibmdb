@@ -19,15 +19,15 @@ class IbmDbTestCase(unittest.TestCase):
     def run_test_setgetOption(self):
         options = { ibm_db.SQL_ATTR_INFO_PROGRAMNAME : 'TestProgram'}
         conn = ibm_db.connect(config.database, config.user, config.password, options)
-        
+
         # Get the server type
         serverinfo = ibm_db.server_info( conn )
-    
+
         if conn:
             value=ibm_db.get_option(conn, ibm_db.SQL_ATTR_INFO_PROGRAMNAME, 1)
             print("Connection options:\nSQL_ATTR_INFO_PROGRAMNAME = ", end="")
             print(value)
-            
+
             returncode=ibm_db.set_option(conn, {ibm_db.SQL_ATTR_AUTOCOMMIT:0},1)
             value=ibm_db.get_option(conn, ibm_db.SQL_ATTR_AUTOCOMMIT, 1)
             print("SQL_ATTR_AUTOCOMMIT = ", end="")
