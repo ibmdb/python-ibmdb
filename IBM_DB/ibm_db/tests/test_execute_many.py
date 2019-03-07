@@ -73,7 +73,7 @@ class IbmDbTestCase(unittest.TestCase):
 #30, Marenghi
 #40, OBrien
 #Error 1: Value parameter tuple: 2 has less no of param 
-#Error 2: Value parameters array 3 is not homogeneous with privious parameters array 
+#Error 2: Value parameters array 3 is not homogeneous with previous parameters array 
 #3
 #__ZOS_EXPECTED__
 #4
@@ -82,7 +82,7 @@ class IbmDbTestCase(unittest.TestCase):
 #30, Marenghi
 #40, OBrien
 #Error 1: Value parameter tuple: 2 has less no of param 
-#Error 2: Value parameters array 3 is not homogeneous with privious parameters array 
+#Error 2: Value parameters array 3 is not homogeneous with previous parameters array 
 #3
 #__IDS_EXPECTED__
 #4
@@ -91,5 +91,5 @@ class IbmDbTestCase(unittest.TestCase):
 #30, Marenghi
 #40, OBrien
 #Error 1: Value parameter tuple: 2 has less no of param 
-#Error 2: Value parameters array 3 is not homogeneous with privious parameters array 
+#Error 2: Value parameters array 3 is not homogeneous with previous parameters array 
 #3
