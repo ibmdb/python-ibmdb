@@ -242,7 +242,7 @@ data_files = [ ('', ['./README.md']),
                ('', ['./CHANGES']),
                ('', ['./LICENSE']) ]
 
-modules = ['config', 'ibm_db_dbi', 'testfunctions', 'tests']
+modules = ['ibm_db_dbi', 'testfunctions', 'tests']
 ext_modules = _ext_modules(ibm_db_include, library, ibm_db_lib, ibm_db_lib_runtime)
 
 if (sys.platform[0:3] == 'win'):
