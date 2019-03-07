@@ -238,9 +238,9 @@ if not prebuildIbmdbPYD and not os.path.isdir(ibm_db_include):
 
 library = ['db2']
 package_data = { 'tests': [ '*.png', '*.jpg']}
-data_files = [ ('', ['./README.md']),
-               ('', ['./CHANGES']),
-               ('', ['./LICENSE']) ]
+data_files = [ (get_python_lib(), ['./README.md']),
+               (get_python_lib(), ['./CHANGES']),
+               (get_python_lib(), ['./LICENSE']) ]
 
 modules = ['ibm_db_dbi', 'testfunctions', 'tests']
 ext_modules = _ext_modules(ibm_db_include, library, ibm_db_lib, ibm_db_lib_runtime)
