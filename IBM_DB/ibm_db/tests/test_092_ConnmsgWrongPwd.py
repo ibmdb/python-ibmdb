@@ -1,4 +1,4 @@
-# 
+#
 #  Licensed Materials - Property of IBM
 #
 #  (c) Copyright IBM Corp. 2007-2008
@@ -13,17 +13,17 @@ from testfunctions import IbmDbTestFunctions
 
 class IbmDbTestCase(unittest.TestCase):
 
-  def test_092_ConnmsgWrongPwd(self):
-    obj = IbmDbTestFunctions()
-    obj.assert_expect(self.run_test_092)
+    def test_092_ConnmsgWrongPwd(self):
+        obj = IbmDbTestFunctions()
+        obj.assert_expect(self.run_test_092)
 
-  def run_test_092(self):
-    try:
-      conn = ibm_db.connect(config.database, config.user, "z")
-      print("??? No way.")
-    except:
-      err = ibm_db.conn_errormsg()
-      print(err)
+    def run_test_092(self):
+        try:
+            conn = ibm_db.connect(config.database, config.user, "z")
+            print("??? No way.")
+        except:
+            err = ibm_db.conn_errormsg()
+            print(err)
 
 #__END__
 #__LUW_EXPECTED__

@@ -37,7 +37,7 @@ ibm_db_lib_runtime = ''
 license_agreement = False
 prebuildIbmdbPYD = False
 cmd_class = dict()
-    
+
 if machine_bits == 64:
     is64Bit = True
     libDir = 'lib64'
@@ -57,10 +57,10 @@ if('darwin' in sys.platform):
             for so in glob.glob(r'build/lib*/ibm_db*.so'):
                 os.system("install_name_tool -change libdb2.dylib {}/lib/libdb2.dylib {}".format(clipath, so))
             install.run(self)
-    cmd_class = dict(install = PostInstall) 
+    cmd_class = dict(install = PostInstall)
 
-   	
-# defining extension    
+
+# defining extension
 def _ext_modules(include_dir, library, lib_dir, runtime_dir=None):
     ext_args = dict(include_dirs = [include_dir],
                     libraries = library,
@@ -71,7 +71,7 @@ def _ext_modules(include_dir, library, lib_dir, runtime_dir=None):
     ibm_db = Extension('ibm_db', **ext_args)
     return [ibm_db]
 
-# set the win32 env, if not present    
+# set the win32 env, if not present
 def _setWinEnv(name, value):
     pyFile = open('ibm_db.py', 'r+')
     old = pyFile.read()
@@ -89,7 +89,7 @@ if('win32' in sys.platform):
         prebuildPYDname = "ibm_db64_py%i%i.pyd" % (sys.version_info[0], sys.version_info[1])
     else:
         prebuildPYDname = "ibm_db32_py%i%i.pyd" % (sys.version_info[0], sys.version_info[1])
-        
+
     if os.path.isfile(prebuildPYDname):
         # creating ibm_db_dlls package to put ibm_db.dll
         dllDir = 'ibm_db_dlls'
@@ -100,7 +100,7 @@ if('win32' in sys.platform):
         open(os.path.join(dllDir, '__init__.py'), 'w').close()
         shutil.copy(prebuildPYDname, os.path.join(dllDir, 'ibm_db.dll'))
         prebuildIbmdbPYD = True
-        
+
 if (('IBM_DB_HOME' not in os.environ) and ('IBM_DB_DIR' not in os.environ) and ('IBM_DB_LIB' not in os.environ)):
     if ('aix' in sys.platform):
         os_ = 'aix'
@@ -111,12 +111,12 @@ if (('IBM_DB_HOME' not in os.environ) and ('IBM_DB_DIR' not in os.environ) and (
             cliFileName = 'aix32_odbc_cli.tar.gz'
     elif ('linux' in sys.platform):
         os_ = 'linux'
-        if ('ppc64le' in os.uname()[4]):	
+        if ('ppc64le' in os.uname()[4]):
             os_ = 'ppc64le'
             if is64Bit:
                 cliFileName = 'ppc64le_odbc_cli.tar.gz'
                 arch_ = 'ppc64le'
-        elif ('ppc' in os.uname()[4]):	
+        elif ('ppc' in os.uname()[4]):
             os_ = 'ppc'
             if is64Bit:
                 cliFileName = 'ppc64_odbc_cli.tar.gz'
@@ -127,7 +127,7 @@ if (('IBM_DB_HOME' not in os.environ) and ('IBM_DB_DIR' not in os.environ) and (
         elif ('86' in os.uname()[4]): # todo needs to search in list
             if is64Bit:
                 cliFileName = 'linuxx64_odbc_cli.tar.gz'
-                arch_ = 'x86_64'    
+                arch_ = 'x86_64'
             else:
                 cliFileName = 'linuxia32_odbc_cli.tar.gz'
                 arch_ = 'i686'
@@ -161,22 +161,22 @@ if (('IBM_DB_HOME' not in os.environ) and ('IBM_DB_DIR' not in os.environ) and (
             cliFileName = 'nt32_odbc_cli.zip'
             arch_ = '32'
 
-    elif('darwin' in sys.platform and is64Bit): 
-        os_ = 'mac' 
-        cliFileName = 'macos64_odbc_cli.tar.gz' 
-        arch_ = 'x86_64' 
+    elif('darwin' in sys.platform and is64Bit):
+        os_ = 'mac'
+        cliFileName = 'macos64_odbc_cli.tar.gz'
+        arch_ = 'x86_64'
     else:
         sys.stdout.write("Not a known platform for python ibm_db.\n")
         sys.stdout.flush()
         sys.exit()
-        
+
     tmp_path = get_python_lib()
     easy_cli_path = os.path.join(tmp_path, 'ibm_db-%s.egg' % ("-".join([VERSION, "py"+sys.version.split(" ")[0][0:3]]) if('win32' in sys.platform) else "-".join([VERSION, "py"+sys.version.split(" ")[0][0:3], os_, arch_])), 'clidriver')
     pip_cli_path = os.path.join(tmp_path, 'clidriver')
     ibm_db_lib_runtime = os.path.join('$ORIGIN', 'clidriver', 'lib')
     ibm_db_dir = 'clidriver'
     ibm_db_lib = os.path.join(ibm_db_dir, 'lib')
-    
+
     if not os.path.isdir('clidriver'):
         url = 'https://public.dhe.ibm.com/ibmdl/export/pub/software/data/db2/drivers/odbc_cli/' + cliFileName
         sys.stdout.write("Downloading %s\n" % (url))
@@ -196,10 +196,10 @@ if (('IBM_DB_HOME' not in os.environ) and ('IBM_DB_DIR' not in os.environ) and (
         open(os.path.join(ibm_db_dir, '__init__.py'), 'w').close()
         if os.path.isfile('ibm_db.dll'):
             shutil.copy('ibm_db.dll', 'clidriver')
-        
+
     if prebuildIbmdbPYD:
         _setWinEnv("PATH", "clidriver")
-        
+
     license_agreement = '''\n****************************************\nYou are downloading a package which includes the Python module for IBM DB2/Informix.  The module is licensed under the Apache License 2.0. The package also includes IBM ODBC and CLI Driver from IBM, which is automatically downloaded as the python module is installed on your system/device. The license agreement to the IBM ODBC and CLI Driver is available in %s or %s.   Check for additional dependencies, which may come with their own license agreement(s). Your use of the components of the package and dependencies constitutes your acceptance of their respective license agreements. If you do not accept the terms of any license agreement(s), then delete the relevant component(s) from your device.\n****************************************\n''' % (pip_cli_path, easy_cli_path)
 
 if ('win32' not in sys.platform):
@@ -211,7 +211,7 @@ if ibm_db_dir == '':
         ibm_db_home = os.environ['IBM_DB_HOME']
         ibm_db_dir = ibm_db_home
         ibm_db_lib = os.path.join(ibm_db_dir, libDir)
-    except (KeyError):   
+    except (KeyError):
         try:
             ibm_db_dir = os.environ['IBM_DB_DIR']
             ibm_db_lib = os.path.join(ibm_db_dir, libDir)
@@ -235,14 +235,14 @@ ibm_db_include = os.path.join(ibm_db_dir, 'include')
 if not prebuildIbmdbPYD and not os.path.isdir(ibm_db_include):
     sys.stdout.write(" %s/include folder not found. Check if you have set the IBM_DB_HOME environment variable's value correctly\n " %(ibm_db_dir))
     sys.exit()
-    
+
 library = ['db2']
 package_data = { 'tests': [ '*.png', '*.jpg']}
 data_files = [ ('', ['./README.md']),
                ('', ['./CHANGES']),
                ('', ['./LICENSE']) ]
 
-modules = ['config', 'ibm_db_dbi', 'testfunctions', 'tests']
+modules = ['ibm_db_dbi', 'testfunctions', 'tests']
 ext_modules = _ext_modules(ibm_db_include, library, ibm_db_lib, ibm_db_lib_runtime)
 
 if (sys.platform[0:3] == 'win'):
@@ -257,7 +257,7 @@ extra = {}
 if sys.version_info >= (3, ):
     extra['use_2to3'] = True
 
-setup( name    = PACKAGE, 
+setup( name    = PACKAGE,
        version = VERSION,
        license = LICENSE,
        description      = 'Python DBI driver for DB2 (LUW, zOS, i5) and IDS',

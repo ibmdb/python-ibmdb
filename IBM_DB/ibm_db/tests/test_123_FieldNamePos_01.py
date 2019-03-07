@@ -1,4 +1,4 @@
-# 
+#
 #  Licensed Materials - Property of IBM
 #
 #  (c) Copyright IBM Corp. 2007-2008
@@ -13,69 +13,69 @@ from testfunctions import IbmDbTestFunctions
 
 class IbmDbTestCase(unittest.TestCase):
 
-  def test_123_FieldNamePos_01(self):
-    obj = IbmDbTestFunctions()
-    obj.assert_expect(self.run_test_123)
+    def test_123_FieldNamePos_01(self):
+        obj = IbmDbTestFunctions()
+        obj.assert_expect(self.run_test_123)
 
-  def run_test_123(self):
-    conn = ibm_db.connect(config.database, config.user, config.password)
+    def run_test_123(self):
+        conn = ibm_db.connect(config.database, config.user, config.password)
 
-    server = ibm_db.server_info( conn )
-    if (server.DBMS_NAME[0:3] == 'IDS'):
-      op = {ibm_db.ATTR_CASE: ibm_db.CASE_UPPER}
-      ibm_db.set_option(conn, op, 1)
-  
-    arr = [\
-    	    "HAAS",\
-	    "THOMPSON",\
-	    "KWAN",\
-	    "GEYER",\
-	    "STERN",\
-	    "PULASKI",\
-	    "HENDERSON",\
-	    "SPENSER",\
-	    "LUCCHESSI",\
-	    "O'CONNELL",\
-	    "QUINTANA",\
-	    "NICHOLLS",\
-	    "ADAMSON",\
-	    "PIANKA",\
-	    "YOSHIMURA",\
-	    "SCOUTTEN",\
-	    "WALKER",\
-	    "BROWN",\
-	    "JONES",\
-	    "LUTZ",\
-	    "JEFFERSON",\
-	    "MARINO",\
-	    "SMITH",\
-	    "JOHNSON",\
-	    "PEREZ",\
-	    "SCHNEIDER",\
-	    "PARKER",\
-	    "SMITH",\
-	    "SETRIGHT",\
-	    "MEHTA",\
-	    "LEE",\
-	    "GOUNOT"\
-	]
+        server = ibm_db.server_info( conn )
+        if (server.DBMS_NAME[0:3] == 'IDS'):
+            op = {ibm_db.ATTR_CASE: ibm_db.CASE_UPPER}
+            ibm_db.set_option(conn, op, 1)
 
-    if conn:
-      result = ibm_db.exec_immediate(conn, "select staff.id, employee.lastname from staff, employee order by employee.lastname,staff.id")
-      cols = ibm_db.num_fields(result)
-      j = 0
-      row = ibm_db.fetch_both(result)
-      while ( row ):
-        for i in range(0, cols):
-          #print "#{ibm_db.field_name(result,i)}:" % (ibm_db.field_name(result, i), row[ibm_db.field_name(result, i)])
-          #puts row[ibm_db.field_name(result,i)]
-          print("%s:%s" % (ibm_db.field_name(result, i), row[ibm_db.field_name(result, i)]))
-        print("---------");    
-        j += 1
-        row = ibm_db.fetch_both(result)
-      ibm_db.close(conn)
-    else:
-      print(ibm_db.conn_errormsg())
+        arr = [\
+                "HAAS",\
+            "THOMPSON",\
+            "KWAN",\
+            "GEYER",\
+            "STERN",\
+            "PULASKI",\
+            "HENDERSON",\
+            "SPENSER",\
+            "LUCCHESSI",\
+            "O'CONNELL",\
+            "QUINTANA",\
+            "NICHOLLS",\
+            "ADAMSON",\
+            "PIANKA",\
+            "YOSHIMURA",\
+            "SCOUTTEN",\
+            "WALKER",\
+            "BROWN",\
+            "JONES",\
+            "LUTZ",\
+            "JEFFERSON",\
+            "MARINO",\
+            "SMITH",\
+            "JOHNSON",\
+            "PEREZ",\
+            "SCHNEIDER",\
+            "PARKER",\
+            "SMITH",\
+            "SETRIGHT",\
+            "MEHTA",\
+            "LEE",\
+            "GOUNOT"\
+        ]
+
+        if conn:
+            result = ibm_db.exec_immediate(conn, "select staff.id, employee.lastname from staff, employee order by employee.lastname,staff.id")
+            cols = ibm_db.num_fields(result)
+            j = 0
+            row = ibm_db.fetch_both(result)
+            while ( row ):
+                for i in range(0, cols):
+                    #print "#{ibm_db.field_name(result,i)}:" % (ibm_db.field_name(result, i), row[ibm_db.field_name(result, i)])
+                    #puts row[ibm_db.field_name(result,i)]
+                    print("%s:%s" % (ibm_db.field_name(result, i), row[ibm_db.field_name(result, i)]))
+                print("---------");
+                j += 1
+                row = ibm_db.fetch_both(result)
+            ibm_db.close(conn)
+        else:
+            print(ibm_db.conn_errormsg())
 
 #__END__
 #__LUW_EXPECTED__

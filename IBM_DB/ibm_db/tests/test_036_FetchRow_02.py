@@ -1,4 +1,4 @@
-# 
+#
 #  Licensed Materials - Property of IBM
 #
 #  (c) Copyright IBM Corp. 2007-2008
@@ -13,29 +13,29 @@ from testfunctions import IbmDbTestFunctions
 
 class IbmDbTestCase(unittest.TestCase):
 
-  def test_036_FetchRow_02(self):
-    obj = IbmDbTestFunctions()
-    obj.assert_expect(self.run_test_036)
-      
-  def run_test_036(self):      
-    conn = ibm_db.connect(config.database, config.user, config.password)
-      
-    result = ibm_db.exec_immediate(conn, "select * from staff")
-    i=0
-    row = ibm_db.fetch_row(result)
-    
-    while ( row ):
-       result2 = ibm_db.exec_immediate(conn, "select * from staff")
-       j=0
-       row2 = ibm_db.fetch_row(result2) 
-       while ( row2 ):
-          print("%d)%d," % (i, j))
-          j+=1
-          row2 = ibm_db.fetch_row(result2)
-       print("%d, " % i)
-       i+=1
-       row = ibm_db.fetch_row(result)
-    ibm_db.close(conn)
+    def test_036_FetchRow_02(self):
+        obj = IbmDbTestFunctions()
+        obj.assert_expect(self.run_test_036)
+
+    def run_test_036(self):
+        conn = ibm_db.connect(config.database, config.user, config.password)
+
+        result = ibm_db.exec_immediate(conn, "select * from staff")
+        i=0
+        row = ibm_db.fetch_row(result)
+
+        while ( row ):
+            result2 = ibm_db.exec_immediate(conn, "select * from staff")
+            j=0
+            row2 = ibm_db.fetch_row(result2)
+            while ( row2 ):
+                print("%d)%d," % (i, j))
+                j+=1
+                row2 = ibm_db.fetch_row(result2)
+            print("%d, " % i)
+            i+=1
+            row = ibm_db.fetch_row(result)
+        ibm_db.close(conn)
 
 #__END__
 #__LUW_EXPECTED__

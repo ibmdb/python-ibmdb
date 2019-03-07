@@ -1,4 +1,4 @@
-# 
+#
 #  Licensed Materials - Property of IBM
 #
 #  (c) Copyright IBM Corp. 2007-2008
@@ -13,22 +13,22 @@ from testfunctions import IbmDbTestFunctions
 
 class IbmDbTestCase(unittest.TestCase):
 
-  def test_081_ConnWrongUser(self):
-    obj = IbmDbTestFunctions()
-    obj.assert_expect(self.run_test_081)
+    def test_081_ConnWrongUser(self):
+        obj = IbmDbTestFunctions()
+        obj.assert_expect(self.run_test_081)
 
-  def run_test_081(self):
-    try:
-      conn = ibm_db.connect(config.database, "y", config.password)
-      print("??? No way.")
-    except:
-      print(ibm_db.conn_error())
+    def run_test_081(self):
+        try:
+            conn = ibm_db.connect(config.database, "y", config.password)
+            print("??? No way.")
+        except:
+            print(ibm_db.conn_error())
 
-    #if conn:
-    #  print "??? No way."
-    #else:
-    #  err = ibm_db.conn_error 
-    #  print err
+        #if conn:
+        #  print "??? No way."
+        #else:
+        #  err = ibm_db.conn_error
+        #  print err
 
 #__END__
 #__LUW_EXPECTED__
