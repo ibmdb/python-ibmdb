@@ -1,4 +1,4 @@
-# 
+#
 #  Licensed Materials - Property of IBM
 #
 #  (c) Copyright IBM Corp. 2007-2008
@@ -13,33 +13,33 @@ from testfunctions import IbmDbTestFunctions
 
 class IbmDbTestCase(unittest.TestCase):
 
-  def test_162_FetchBothNestedSelects_02(self):
-    obj = IbmDbTestFunctions()
-    obj.assert_expect(self.run_test_162)
+    def test_162_FetchBothNestedSelects_02(self):
+        obj = IbmDbTestFunctions()
+        obj.assert_expect(self.run_test_162)
 
-  def run_test_162(self):
-    conn = ibm_db.connect(config.database, config.user, config.password)
+    def run_test_162(self):
+        conn = ibm_db.connect(config.database, config.user, config.password)
 
-    server = ibm_db.server_info( conn )
-    if (server.DBMS_NAME[0:3] == 'IDS'):
-      op = {ibm_db.ATTR_CASE: ibm_db.CASE_UPPER}
-      ibm_db.set_option(conn, op, 1)
+        server = ibm_db.server_info( conn )
+        if (server.DBMS_NAME[0:3] == 'IDS'):
+            op = {ibm_db.ATTR_CASE: ibm_db.CASE_UPPER}
+            ibm_db.set_option(conn, op, 1)
 
-    result = ibm_db.exec_immediate(conn, "select * from emp_act order by projno")
-    row = ibm_db.fetch_both(result)
-    # will only retrieve 10 records
-    count = 1
-    while ( row ):
-      print("Record ",count,": %6s  %-6s %3d %9s %10s %10s %6s " % (row[0], row[1], row[2], row['EMPTIME'], row['EMSTDATE'], row['EMENDATE'], row[0]))
-      
-      result2 = ibm_db.exec_immediate(conn,"select * from employee where employee.empno='" + row['EMPNO'] + "'")
-      row2 = ibm_db.fetch_both(result2)
-      if row2:        
-        print(">>%s,%s,%s,%s,%s,%s,%s" % (row2['EMPNO'], row2['FIRSTNME'],row2['MIDINIT'], row2[3], row2[3], row2[5], row2[6]))      
-      count = count + 1
-      if (count > 10):
-          break
-      row = ibm_db.fetch_both(result)
+        result = ibm_db.exec_immediate(conn, "select * from emp_act order by projno")
+        row = ibm_db.fetch_both(result)
+        # will only retrieve 10 records
+        count = 1
+        while ( row ):
+            print("Record ",count,": %6s  %-6s %3d %9s %10s %10s %6s " % (row[0], row[1], row[2], row['EMPTIME'], row['EMSTDATE'], row['EMENDATE'], row[0]))
+
+            result2 = ibm_db.exec_immediate(conn,"select * from employee where employee.empno='" + row['EMPNO'] + "'")
+            row2 = ibm_db.fetch_both(result2)
+            if row2:        
+                print(">>%s,%s,%s,%s,%s,%s,%s" % (row2['EMPNO'], row2['FIRSTNME'],row2['MIDINIT'], row2[3], row2[3], row2[5], row2[6]))      
+            count = count + 1
+            if (count > 10):
+                break
+            row = ibm_db.fetch_both(result)
 #__END__
 #__LUW_EXPECTED__
 #Record  1 : 000010  AD3100  10      0.50 1982-01-01 1982-07-01 000010 

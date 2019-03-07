@@ -1,4 +1,4 @@
-# 
+#
 #  Licensed Materials - Property of IBM
 #
 #  (c) Copyright IBM Corp. 2007-2008
@@ -13,20 +13,20 @@ from testfunctions import IbmDbTestFunctions
 
 class IbmDbTestCase(unittest.TestCase):
 
-  def test_005_ConnBadUserBadPwd(self):
-    obj = IbmDbTestFunctions()
-    obj.assert_expect(self.run_test_005)
+    def test_005_ConnBadUserBadPwd(self):
+        obj = IbmDbTestFunctions()
+        obj.assert_expect(self.run_test_005)
 
-  def run_test_005(self):
-    baduser = "non_user"
-    badpass = "invalid_password"
-    dsn = "DATABASE=" + config.database + ";UID=" + baduser + ";PWD=" + badpass + ";"
-    try:
-      conn = ibm_db.connect(dsn, "", "")
-      print ("odd, ibm_db.connect succeeded with an invalid user / password")
-      ibm_db.close(conn)
-    except: 
-      print ("Ooops")
+    def run_test_005(self):
+        baduser = "non_user"
+        badpass = "invalid_password"
+        dsn = "DATABASE=" + config.database + ";UID=" + baduser + ";PWD=" + badpass + ";"
+        try:
+            conn = ibm_db.connect(dsn, "", "")
+            print ("odd, ibm_db.connect succeeded with an invalid user / password")
+            ibm_db.close(conn)
+        except:
+            print ("Ooops")
 
 #__END__
 #__LUW_EXPECTED__

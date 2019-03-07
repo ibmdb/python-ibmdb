@@ -1,4 +1,4 @@
-# 
+#
 #  Licensed Materials - Property of IBM
 #
 #  (c) Copyright IBM Corp. 2007-2008
@@ -13,35 +13,35 @@ from testfunctions import IbmDbTestFunctions
 
 class IbmDbTestCase(unittest.TestCase):
 
-  def test_152_FetchAssocSelect_03(self):
-    obj = IbmDbTestFunctions()
-    obj.assert_expect(self.run_test_152)
+    def test_152_FetchAssocSelect_03(self):
+        obj = IbmDbTestFunctions()
+        obj.assert_expect(self.run_test_152)
 
-  def run_test_152(self):
-    conn = ibm_db.connect(config.database, config.user, config.password)
+    def run_test_152(self):
+        conn = ibm_db.connect(config.database, config.user, config.password)
 
-    server = ibm_db.server_info( conn )
-    if (server.DBMS_NAME[0:3] == 'IDS'):
-      op = {ibm_db.ATTR_CASE: ibm_db.CASE_UPPER}
-      ibm_db.set_option(conn, op, 1)
-    
-    result = ibm_db.exec_immediate(conn, "select * from project")
-    
-    row = ibm_db.fetch_assoc(result)
-    while ( row ):
-      #printf("%6s ",row['PROJNO'])
-      #printf("%-24s ",row['PROJNAME'])
-      #printf("%3s ",row['DEPTNO'])
-      #printf("%6s",row['RESPEMP'])
-      #printf("%7s ",row['PRSTAFF'])
-      #printf("%10s ",row['PRSTDATE'])
-      #printf("%10s ",row['PRENDATE'])
-      #printf("%6s",row['MAJPROJ'])
-      #puts ""
-      if (row['MAJPROJ'] == None):
-        row['MAJPROJ'] = ''
-      print("%6s %-24s %3s %6s%7s %10s %10s %6s" % (row['PROJNO'], row['PROJNAME'], row['DEPTNO'], row['RESPEMP'], row['PRSTAFF'], row['PRSTDATE'], row['PRENDATE'], row['MAJPROJ']))
-      row = ibm_db.fetch_assoc(result) 
+        server = ibm_db.server_info( conn )
+        if (server.DBMS_NAME[0:3] == 'IDS'):
+            op = {ibm_db.ATTR_CASE: ibm_db.CASE_UPPER}
+            ibm_db.set_option(conn, op, 1)
+
+        result = ibm_db.exec_immediate(conn, "select * from project")
+
+        row = ibm_db.fetch_assoc(result)
+        while ( row ):
+            #printf("%6s ",row['PROJNO'])
+            #printf("%-24s ",row['PROJNAME'])
+            #printf("%3s ",row['DEPTNO'])
+            #printf("%6s",row['RESPEMP'])
+            #printf("%7s ",row['PRSTAFF'])
+            #printf("%10s ",row['PRSTDATE'])
+            #printf("%10s ",row['PRENDATE'])
+            #printf("%6s",row['MAJPROJ'])
+            #puts ""
+            if (row['MAJPROJ'] == None):
+                row['MAJPROJ'] = ''
+            print("%6s %-24s %3s %6s%7s %10s %10s %6s" % (row['PROJNO'], row['PROJNAME'], row['DEPTNO'], row['RESPEMP'], row['PRSTAFF'], row['PRSTDATE'], row['PRENDATE'], row['MAJPROJ']))
+            row = ibm_db.fetch_assoc(result) 
 
 #__END__
 #__LUW_EXPECTED__

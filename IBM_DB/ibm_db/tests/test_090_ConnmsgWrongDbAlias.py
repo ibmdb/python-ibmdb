@@ -1,4 +1,4 @@
-# 
+#
 #  Licensed Materials - Property of IBM
 #
 #  (c) Copyright IBM Corp. 2007-2008
@@ -14,23 +14,23 @@ from testfunctions import IbmDbTestFunctions
 
 class IbmDbTestCase(unittest.TestCase):
 
-  @unittest.skipIf(os.environ.get("CI", False), "Test fails in CI")
-  # Gets this output instead:
-  # [IBM][CLI Driver] SQL1531N  The connection failed because the name specified
-  # with the DSN connection string keyword could not be found in either the
-  # db2dsdriver.cfg configuration file or the db2cli.ini configuration file.
-  # Data source name specified in the connection string: "X". SQLCODE=-1531
-  def test_090_ConnmsgWrongDbAlias(self):
-    obj = IbmDbTestFunctions()
-    obj.assert_expect(self.run_test_090)
+    @unittest.skipIf(os.environ.get("CI", False), "Test fails in CI")
+    # Gets this output instead:
+    # [IBM][CLI Driver] SQL1531N  The connection failed because the name specified
+    # with the DSN connection string keyword could not be found in either the
+    # db2dsdriver.cfg configuration file or the db2cli.ini configuration file.
+    # Data source name specified in the connection string: "X". SQLCODE=-1531
+    def test_090_ConnmsgWrongDbAlias(self):
+        obj = IbmDbTestFunctions()
+        obj.assert_expect(self.run_test_090)
 
-  def run_test_090(self):
-    try:
-      conn = ibm_db.connect("x", config.user, config.password)
-      print("??? No way.")
-    except:
-      err = ibm_db.conn_errormsg()
-      print(err)
+    def run_test_090(self):
+        try:
+            conn = ibm_db.connect("x", config.user, config.password)
+            print("??? No way.")
+        except:
+            err = ibm_db.conn_errormsg()
+            print(err)
 
 #__END__
 #__LUW_EXPECTED__
