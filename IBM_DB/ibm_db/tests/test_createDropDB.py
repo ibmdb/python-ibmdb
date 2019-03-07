@@ -1,4 +1,4 @@
-# 
+#
 #  Licensed Materials - Property of IBM
 #
 #  (c) Copyright IBM Corp. 2007-2008
@@ -43,8 +43,8 @@ class IbmDbTestCase(unittest.TestCase):
                     ibm_db.dropdb(conn_attach, database)
                 except:
                     print('Errors occurred during drop database')
-            try:        
-                #create databse   
+            try:
+                #create databse
                 rc = ibm_db.createdb(conn_attach, database)
                 if rc:
                     conn = ibm_db.connect(conn_str, '', '')
@@ -70,7 +70,7 @@ class IbmDbTestCase(unittest.TestCase):
                         conn = False
                 else:
                     print('Errors occurred during delete database')
-                    
+
                 #create database with codeset option
                 rc = ibm_db.createdb(conn_attach, database, 'iso88591')
                 if rc:

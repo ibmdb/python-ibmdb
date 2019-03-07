@@ -1,11 +1,11 @@
-# 
+#
 #  Licensed Materials - Property of IBM
 #
 #  (c) Copyright IBM Corp. 2007-2008
 #
 
 # This test will use a lot of the heap size allocated
-# for DB2.  If is is failing on your system, please 
+# for DB2.  If is is failing on your system, please
 # increase the application heap size.
 
 from __future__ import print_function
@@ -17,37 +17,37 @@ from testfunctions import IbmDbTestFunctions
 
 class IbmDbTestCase(unittest.TestCase):
 
-  def test_156_FetchAssocNestedSelects_01(self):
-    obj = IbmDbTestFunctions()
-    obj.assert_expect(self.run_test_156)
+    def test_156_FetchAssocNestedSelects_01(self):
+        obj = IbmDbTestFunctions()
+        obj.assert_expect(self.run_test_156)
 
-  def run_test_156(self):
-    conn = ibm_db.connect(config.database, config.user, config.password)
+    def run_test_156(self):
+        conn = ibm_db.connect(config.database, config.user, config.password)
 
-    server = ibm_db.server_info( conn )
-    if (server.DBMS_NAME[0:3] == 'IDS'):
-      op = {ibm_db.ATTR_CASE: ibm_db.CASE_UPPER}
-      ibm_db.set_option(conn, op, 1)
+        server = ibm_db.server_info( conn )
+        if (server.DBMS_NAME[0:3] == 'IDS'):
+            op = {ibm_db.ATTR_CASE: ibm_db.CASE_UPPER}
+            ibm_db.set_option(conn, op, 1)
 
-    result = ibm_db.exec_immediate(conn, "select * from staff")
+        result = ibm_db.exec_immediate(conn, "select * from staff")
 
-    row = ibm_db.fetch_assoc(result)      
-    count = 1
-    while ( row ): 
-        if (row['YEARS'] == None):
-            row['YEARS'] = ''
-        if (row['COMM'] == None):
-            row['COMM'] = ''
-        print(row['ID'],row['NAME'],row['JOB'],row['YEARS'], row['SALARY'], row['COMM'])
         row = ibm_db.fetch_assoc(result)
-  
-    result2 = ibm_db.exec_immediate(conn,"select * from department where substr(deptno,1,1) in ('A','B','C','D','E')")
-    row2 = ibm_db.fetch_assoc(result2)
-    while ( row2 ):    
-        if (row2['MGRNO'] == None):
-            row2['MGRNO'] = ''
-        print(row2['DEPTNO'], row2['DEPTNAME'], row2['MGRNO'], row2['ADMRDEPT'], row2['LOCATION'])
+        count = 1
+        while ( row ):
+            if (row['YEARS'] == None):
+                row['YEARS'] = ''
+            if (row['COMM'] == None):
+                row['COMM'] = ''
+            print(row['ID'],row['NAME'],row['JOB'],row['YEARS'], row['SALARY'], row['COMM'])
+            row = ibm_db.fetch_assoc(result)
+
+        result2 = ibm_db.exec_immediate(conn,"select * from department where substr(deptno,1,1) in ('A','B','C','D','E')")
         row2 = ibm_db.fetch_assoc(result2)
+        while ( row2 ):
+            if (row2['MGRNO'] == None):
+                row2['MGRNO'] = ''
+            print(row2['DEPTNO'], row2['DEPTNAME'], row2['MGRNO'], row2['ADMRDEPT'], row2['LOCATION'])
+            row2 = ibm_db.fetch_assoc(result2)
 
 #__END__
 #__LUW_EXPECTED__
