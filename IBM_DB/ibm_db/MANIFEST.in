@@ -4,3 +4,4 @@ recursive-include tests *.py *.png *.jpg
 include MANIFEST.in
 recursive-include clidriver *
 recursive-include ibm_db_dlls *
+recursive-include certs *
