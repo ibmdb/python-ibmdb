@@ -201,3 +201,16 @@ only optimize for N rows issue #2 (defect #154260)
  -Added new contribution guidelines - PR275
 
  -enable travis CI
+ 
+  2019/03/13 (ibm_db-3.0.1)
+ - Reference README.md in MANIFEST.in
+ - Fix ibm_db.get_option() to return correct attribute values
+ - Fix ibm_db.cursor_type() to return correct values
+ - Added test cases for ibm_db.get_option(), ibm_db.set_option(), ibm_db.cursor_type().
+ - Added SQL_ATTR_TXN_ISOLATION for get_option() as it's used by ibm_db_sa
+ - Add certificates needed to verify downloads from IBM FTP site - PR367
+ - Fix unpredictable returning bytes instead string for multiple result sets - PR374
+ - Removed unused tests_1 directory - PR376
+ - Run install_name_tool post installation on mac_os - PR377
+ - Ensure generated tarballs include IBM certificates - PR382
+- Copy README, LICENSE and CHANGES to ibm_db install location - PR384
