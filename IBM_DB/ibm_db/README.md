@@ -134,7 +134,6 @@ export DYLD_LIBRARY_PATH=/usr/local/lib/python3.5/site-packages/clidriver/lib/ic
 **Your feedback is very much appreciated and expected through project ibm-db:**
   * ibm-db issues reports: **https://github.com/ibmdb/python-ibmdb/issues**
   * ibm_db discuss: **http://groups.google.com/group/ibm_db**
-  * ibm-db developers: **opendev@us.ibm.com**
 
 
 # Testing
