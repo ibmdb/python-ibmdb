@@ -75,7 +75,7 @@ Following are the details of the client license versions that you need to be abl
 |              |  ppc64         |ppc64_odbc_cli.tar.gz    |  Yes         | V10.5       |
 |              |  ppc32         |ppc32_odbc_cli.tar.gz    |  Yes         | V10.5       |
 |              |  others        |linuxia32_odbc_cli.tar.gz|  Yes         | V11.1       |
-|Windows       |  x64           |ntx64_odbc_cli.zip       |  Yes         | V10.5       |
+|Windows       |  x64           |ntx64_odbc_cli.zip       |  Yes         | V11.1       |
 |              |  x32           |nt32_odbc_cli.zip        |  Deprecated  | NA          |
 |Sun           | i86pc          |sunamd64_odbc_cli.tar.gz |  Yes         | V10.5       |
 |              |                |sunamd32_odbc_cli.tar.gz |  Yes         | V10.5       |
