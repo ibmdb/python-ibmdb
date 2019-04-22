@@ -8,14 +8,34 @@ Python support for IBM DB2 and IBM Informix
 Provides Python interface for connecting to IBM DB2 and Informix
 
 ### Pre-requisites
-Install Python 2.7 or newer versions except python 3.3. Python ibm_db driver does not include support python 3.3.
+Install Python 2.7 or newer versions except python 3.3. Python ibm_db driver does not include support python 3.3 as it has reached end-of-life.
+You might need zlib, openssl, pip installations if not already available in your setup. 
 
 ### Installation
 You can install the driver using pip as:
 ```
 pip install ibm_db
 ```
+This will install ibm_db and ibm_db_dbi module. 
 
+* Environment Variables:
+  `IBM_DB_HOME :`
+
+  Set this environment variable to avoid automatic downloading of the clidriver during installation. You could set this to the installation path of ODBC and CLI driver in your environment. 
+  
+If you face any problems due to missing dependencies while installing the ibm_db module, you can refer to following section Installing Dependencies.
+
+#### <a name="Insdepen"></a> Installing Dependencies
+
+##### Linux/Unix/MAC OS:
+* If you face problems due to missing python header files, you would need to install python developer package before installing python ibm_db driver. e.g:
+
+```
+    zypper install python-devel
+     or
+    yum install python-devel
+```
+  
 ### Table of contents
 
 [Components](#components)
@@ -29,55 +49,32 @@ pip install ibm_db
 [Contributing to the ibm_db python project](#contributing-to-the-ibm_db-python-project)
 
 <a name='components'></a>
-## Components (Python Eggs)
+## Components
 
-1. The **ibm_db** Python Egg contains:
+1. The **ibm_db** contains:
    * **ibm_db** driver: Python driver for IBM DB2 and IBM Informix databases. Uses the IBM Data Server Driver for ODBC and CLI APIs to connect to IBM DB2 and Informix.
    * **ibm_db_dbi**: Python driver for IBM DB2 and IBM Informix databases that complies to the DB-API 2.0 specification.
    Checkout the [README](https://github.com/ibmdb/python-ibmdb/tree/master/IBM_DB/ibm_db) for getting started with ibm_db and ibm_db_dbi
 
-2. The **ibm_db_django**: Django adapter for IBM DB2 databases. Supports latest Django versions and Django on Jython as well.
-   Checkout the [README](https://github.com/ibmdb/python-ibmdb/tree/master/IBM_DB/ibm_db_django) for using DB2 with Django
-
-3. The **ibm_db_sa**: SQLAlchemy adapter for IBM DB2 and IBM Informix databases. Supports SQLAlchemy 0.7.3 and above.
-   Checkout the [README](https://github.com/ibmdb/python-ibmdbsa/tree/master/ibm_db_sa) to get you started
-
-4. The **ibm_db_alembic**: Alembic adaptor for IBM DB2 databases. Supports Alembic-0.6.5 and above
-
-Additional information is available in the README files provided in the Python Eggs and also the source repository. .
 
 <a name='downloads'></a>
 ## Downloads
 
 Use following pypi web location for downloading source code and binaries
- 1. **ibm_db**: https://pypi.python.org/pypi/ibm_db .
- 2. **ibm_db_django**: https://pypi.python.org/pypi/ibm_db_django .
- 3. **ibm_db_sa**: https://pypi.python.org/pypi/ibm_db_sa .
- 4. **ibm_db_alembic**: https://pypi.python.org/pypi/ibm_db_alembic .
+  **ibm_db**: https://pypi.python.org/pypi/ibm_db .
 
 <a name='latest-updates'></a>
 ## Latest Updates
 
-### *Support for Alembic*
-  Oct 29th 2014: IBM DB2 backend support in Alembic application is now available to the community. Right now it is in beta stage.
-
-### *Support for Django*
-  Mar 23th 2017: New Release of IBM_DB_DJANGO (1.1.1.0) with Python3.x support made.
-
-### *Support for SQLAlchemy*
-  Aug 30th 2016: New Release of IBM_DB_SA (0.3.3) made.
-
 ### *Updated ibm_db*
   Mar 14th 2019: A new release 3.0.1 of ibm_db and ibm_db_dbi available.
-
-### *Support for Django on Jython*
-  ibm_db_django supports Django on Jython (on Jython-Django v1.0.x and v1.1.x are supported).
 
 
 <a name='support'></a>
 ## Support
 
  * Google Group: http://groups.google.com/group/ibm_db
+ * Github issues tracker: https://github.com/ibmdb/python-ibmdb/issues
 
 
 <a name='contributing-to-the-ibm_db-python-project'></a>
