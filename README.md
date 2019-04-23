@@ -17,11 +17,13 @@ Provides Python interface for connecting to IBM DB2 and Informix
 
 [Quick Example](#eg)
 
+[API Documentation](#api)
+
 [Downloads](#downloads)
 
 [Latest Updates](#latest-updates)
 
-[Support](#support)
+[Support & Feedback](#support)
 
 [Contributing to the ibm_db python project](#contributing-to-the-ibm_db-python-project)
 
@@ -37,31 +39,46 @@ Provides Python interface for connecting to IBM DB2 and Informix
 Install Python 2.7 or newer versions except python 3.3. Python ibm_db driver does not include support python 3.3 as it has reached end-of-life.
 You might need zlib, openssl, pip installations if not already available in your setup. 
 
-## <a name="inst"></a> Installation
-You can install the driver using pip as:
-```
-pip install ibm_db
-```
-This will install ibm_db and ibm_db_dbi module. 
-
-* Environment Variables:
-  `IBM_DB_HOME :`
-
-  Set this environment variable to avoid automatic downloading of the clidriver during installation. You could set this to the installation path of ODBC and CLI driver in your environment. The ODBC and CLI driver is available for download at [Db2 LUW ODBC and CLI Driver](https://public.dhe.ibm.com/ibmdl/export/pub/software/data/db2/drivers/odbc_cli/).
-Refer to ([License requirements](#Licenserequirements)) for more details on the CLI driver for manual download and installation.
-  
-If you face any problems due to missing dependencies while installing the ibm_db module, you can refer to section [Installing Dependencies](#Insdepen).
-
-### <a name="Insdepen"></a> Installing Dependencies
-
-#### Linux/Unix:
-* If you face problems due to missing python header files, you would need to install python developer package before installing python ibm_db driver. e.g:
+* Linux/Unix:
+  If you face problems due to missing python header files while installing the driver, you would need to install python developer package and retry install. e.g:
 
 ```
     zypper install python-devel
      or
     yum install python-devel
 ```
+
+## <a name="inst"></a> Installation
+* MAC OS:
+You can install the driver using pip as:
+```
+pip install --no-cache-dir ibm_db
+```
+* All other platforms:
+You can install the driver using pip as:
+```
+pip install ibm_db
+```
+This will install ibm_db and ibm_db_dbi module. 
+
+The ODBC and CLI Driver(clidriver) is automatically downloaded at the time of installation and it is recommended to use this driver. However, if you wish to use an existing installation of clidriver or install the clidriver manually and use it, you can set IBM_DB_HOME environment variable. For more information on how to set this variable, refer [Environment Variables](#envvar) section.
+
+* <a name="envvar"></a>Environment Variables:
+  `IBM_DB_HOME :`
+
+  Set this environment variable to avoid automatic downloading of the clidriver during installation. You could set this to the installation path of ODBC and CLI driver in your environment. 
+  e.g:
+  ```
+  Windows :
+  set IBM_DB_HOME=c:/Users/skauser/clidriver
+  
+  Other platforms:
+  export IBM_DB_HOME=/home/skauser/clidriver
+  ```
+  The ODBC and CLI driver is available for download at [Db2 LUW ODBC and CLI Driver](https://public.dhe.ibm.com/ibmdl/export/pub/software/data/db2/drivers/odbc_cli/).
+Refer to ([License requirements](#Licenserequirements)) for more details on the CLI driver for manual download and installation.
+  
+
 ## <a name="eg"></a> Quick Example
 ```python
 $ python
@@ -80,6 +97,11 @@ Type "help", "copyright", "credits" or "license" for more information.
 ```
 More examples can be found under ['tests'](https://github.com/ibmdb/python-ibmdb/tree/master/IBM_DB/ibm_db/tests) folder.
 
+## <a name="api"></a> API Documentation
+For more information on the APIs supported by ibm_db, please refer to below link:
+
+https://github.com/ibmdb/python-ibmdb/wiki/APIs
+
 ### <a name="Licenserequirements"></a> License requirements for connecting to databases
 
 Python ibm_db driver can connect to DB2 on Linux Unix and Windows without any additional license/s, however, connecting to databases on DB2 for z/OS or DB2 for i(AS400) Servers require either client side or server side license/s. The client side license would need to be copied under `license` folder of your `cidriver` installation directory and for activating server side license, you would need to purchase DB2 Connect Unlimited for System z® and DB2 Connect Unlimited Edition for System i®.
@@ -90,9 +112,9 @@ To know more about server based licensing viz db2connectactivate, follow below l
 * [Activating the license certificate file for DB2 Connect Unlimited Edition](https://www.ibm.com/developerworks/community/blogs/96960515-2ea1-4391-8170-b0515d08e4da/entry/unlimited_licensing_in_non_java_drivers_using_db2connectactivate_utlility1?lang=en).
 * [Unlimited licensing using db2connectactivate utility](https://www.ibm.com/developerworks/community/blogs/96960515-2ea1-4391-8170-b0515d08e4da/entry/unlimited_licensing_in_non_java_drivers_using_db2connectactivate_utlility1?lang=en.)
 
-Following are the details of the client license versions that you need to be able to connect to databases on non-LUW servers:
+If you intend to install the clidriver manually, Following are the details of the client driver versions that you can download from [CLIDRIVER](https://public.dhe.ibm.com/ibmdl/export/pub/software/data/db2/drivers/odbc_cli/) to be able to connect to databases on non-LUW servers. You would need the client side license file as per Version for corresponding installation.:
 
-#### <a name="LicenseDetails"></a> Client license for Specific Platform and Architecture
+#### <a name="LicenseDetails"></a> CLIDriver and Client license versions for Specific Platform and Architecture
 
 |Platform      |Architecture    |Cli Driver               |Supported     |Version      |
 | :---:        |  :---:         |  :---:                  |  :---:       | :--:
@@ -134,10 +156,10 @@ git clone git@github.com:ibmdb/python-ibmdb.git
 
 
 <a name='support'></a>
-## Support
-
- * Google Group: http://groups.google.com/group/ibm_db
- * Github issues tracker: https://github.com/ibmdb/python-ibmdb/issues
+## Support & feedback
+**Your feedback is very much appreciated and expected through project ibm-db:**
+  * ibm-db issues reports: **https://github.com/ibmdb/python-ibmdb/issues**
+  * ibm_db discuss: **http://groups.google.com/group/ibm_db**
 
 
 <a name='contributing-to-the-ibm_db-python-project'></a>
