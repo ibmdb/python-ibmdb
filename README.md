@@ -89,18 +89,20 @@ Type "help", "copyright", "credits" or "license" for more information.
 >>> #For connecting to local database named pydev for user db2inst1 and password secret, use below example
 >>> #ibm_db_conn = ibm_db.connect('pydev', 'db2inst1', 'secret')
 >>> #For connecting to remote database named pydev for uid db2inst and pwd secret on host host.test.com, use below example
+# Connect using ibm_db
 >>> conn_str='database=pydev;hostname=host.test.com;port=portno;protocol=tcpip;uid=db2inst1;pwd=secret'
 >>> ibm_db_conn = ibm_db.connect(conn_str,'','')
+# Connect using ibm_db_dbi
 >>> import ibm_db_dbi
 >>> conn = ibm_db_dbi.Connection(ibm_db_conn)
+# Execute tables API
 >>> conn.tables('DB2ADMIN', '%')
 [{'TABLE_CAT': None, 'TABLE_SCHEM': 'DB2ADMIN', 'TABLE_NAME': 'MYTABLE', 'TABLE_TYPE': 'TABLE', 'REMARKS': None}]
+# create table using ibm_db
 >>> create="create table mytable(id int, name varchar(50))"
 >>> ibm_db.exec_immediate(ibm_db_conn, create)
 <ibm_db.IBM_DBStatement object at 0x7fcc5f44f650>
->>> create="create table mytable(id int, name varchar(50))"
->>> ibm_db.exec_immediate(ibm_db_conn, create)
-<ibm_db.IBM_DBStatement object at 0x7fcc5f44f650>
+# Insert 3 rows into the table
 >>> insert = "insert into mytable values(?,?)"
 >>> params=((1,'Sanders'),(2,'Pernal'),(3,'OBrien'))
 >>> stmt_insert = ibm_db.prepare(ibm_db_conn, insert)
@@ -132,6 +134,7 @@ True
 >>> print(cols)
 False
 >>>
+# Close connections
 >>> cur.close()
 True
 >>> ibm_db.close(ibm_db_conn)
