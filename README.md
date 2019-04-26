@@ -92,16 +92,19 @@ Type "help", "copyright", "credits" or "license" for more information.
 >>> # Connect using ibm_db
 >>> conn_str='database=pydev;hostname=host.test.com;port=portno;protocol=tcpip;uid=db2inst1;pwd=secret'
 >>> ibm_db_conn = ibm_db.connect(conn_str,'','')
+>>>
 >>> # Connect using ibm_db_dbi
 >>> import ibm_db_dbi
 >>> conn = ibm_db_dbi.Connection(ibm_db_conn)
 >>> # Execute tables API
 >>> conn.tables('DB2ADMIN', '%')
 [{'TABLE_CAT': None, 'TABLE_SCHEM': 'DB2ADMIN', 'TABLE_NAME': 'MYTABLE', 'TABLE_TYPE': 'TABLE', 'REMARKS': None}]
+>>>
 >>> # create table using ibm_db
 >>> create="create table mytable(id int, name varchar(50))"
 >>> ibm_db.exec_immediate(ibm_db_conn, create)
 <ibm_db.IBM_DBStatement object at 0x7fcc5f44f650>
+>>>
 >>> # Insert 3 rows into the table
 >>> insert = "insert into mytable values(?,?)"
 >>> params=((1,'Sanders'),(2,'Pernal'),(3,'OBrien'))
@@ -119,6 +122,7 @@ True
 >>> row=cur.fetchall()
 >>> print(row)
 []
+>>>
 >>> # Fetch data using ibm_db
 >>> stmt_select = ibm_db.exec_immediate(ibm_db_conn, select)
 >>> cols = ibm_db.fetch_tuple( stmt_select )
