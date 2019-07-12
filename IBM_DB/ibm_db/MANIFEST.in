@@ -1,6 +1,9 @@
 include ibm_db.h ibm_db.c
-include CHANGES LICENSE README
-recursive-include tests *.py *.png *.jpg 
+include CHANGES LICENSE README.md
+include config.py.sample
+recursive-include tests *.py *.png *.jpg
 include MANIFEST.in
 recursive-include clidriver *
 recursive-include ibm_db_dlls *
+recursive-include certs *
+exclude config.py

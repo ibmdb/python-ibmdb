@@ -1,10 +1,12 @@
-# 
+#
 #  Licensed Materials - Property of IBM
 #
 #  (c) Copyright IBM Corp. 2007-2014
 #
 
-import unittest, sys
+from __future__ import print_function
+import sys
+import unittest
 import ibm_db
 import config
 from testfunctions import IbmDbTestFunctions
@@ -13,30 +15,30 @@ class IbmDbTestCase(unittest.TestCase):
     def test_decfloat(self):
         obj = IbmDbTestFunctions()
         obj.assert_expect(self.run_test_decfloat)
-	
+
     def run_test_decfloat(self):
         conn = ibm_db.connect(config.database, config.user, config.password)
-		
+
         if conn:
             serverinfo = ibm_db.server_info( conn )
-			
+
             drop = "DROP TABLE STOCKPRICE"
             try:
                 result = ibm_db.exec_immediate(conn,drop)
             except:
                 pass
-			
+
             # Create the table stockprice
             if (serverinfo.DBMS_NAME[0:3] == 'IDS'):
                 create = "CREATE TABLE STOCKPRICE (id SMALLINT NOT NULL, company VARCHAR(30), stockshare DECIMAL(7,2), stockprice DECIMAL(16))"
             else:
                 create = "CREATE TABLE STOCKPRICE (id SMALLINT NOT NULL, company VARCHAR(30), stockshare DECIMAL(7,2), stockprice DECFLOAT(16))"
             result = ibm_db.exec_immediate(conn, create)
-			
+
             # Insert Directly
             insert = "INSERT INTO STOCKPRICE (id, company, stockshare, stockprice) VALUES (10,'Megadeth', 100.002, 990.356736488388374888532323)"
             result = ibm_db.exec_immediate(conn, insert)
-			
+
             # Prepare and Insert in the stockprice table
             stockprice = (\
                     (20, "Zaral", 102.205, "100.234"),\
@@ -50,7 +52,7 @@ class IbmDbTestCase(unittest.TestCase):
             if stmt:
                 for company in stockprice:
                     result = ibm_db.execute(stmt,company)
-			
+
             id = 70
             company = 'Nirvana'
             stockshare = 100.1234
@@ -65,7 +67,7 @@ class IbmDbTestCase(unittest.TestCase):
                 excp = sys.exc_info()
                 # slot 1 contains error message
                 print(excp[1])
-			
+
             # Select the result from the table and
             query = 'SELECT * FROM STOCKPRICE ORDER BY id'
             if (serverinfo.DBMS_NAME[0:3] != 'IDS'):

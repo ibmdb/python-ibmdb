@@ -1,66 +1,68 @@
-# 
+#
 #  Licensed Materials - Property of IBM
 #
 #  (c) Copyright IBM Corp. 2007-2008
 #
 
-import unittest, sys
+from __future__ import print_function
+import sys
+import unittest
 import ibm_db
 import config
 from testfunctions import IbmDbTestFunctions
 
 class IbmDbTestCase(unittest.TestCase):
 
-  def test_133_ExecuteLongInputParams(self):
-    obj = IbmDbTestFunctions()
-    obj.assert_expectf(self.run_test_133)
+    def test_133_ExecuteLongInputParams(self):
+        obj = IbmDbTestFunctions()
+        obj.assert_expectf(self.run_test_133)
 
-  def run_test_133(self):
-    conn = ibm_db.connect(config.database, config.user, config.password)
+    def run_test_133(self):
+        conn = ibm_db.connect(config.database, config.user, config.password)
 
-    if (not conn):
-      print("Connection failed.")
-      return 0
+        if (not conn):
+            print("Connection failed.")
+            return 0
 
-    ibm_db.autocommit(conn, ibm_db.SQL_AUTOCOMMIT_OFF)
+        ibm_db.autocommit(conn, ibm_db.SQL_AUTOCOMMIT_OFF)
 
-    print("Starting test ...")
-    res = ''
-    sql =  "INSERT INTO animals (id, breed, name, weight) VALUES (?, ?, ?, ?)"
-    try:
-      stmt = ibm_db.prepare(conn, sql)
-      res = ibm_db.execute(stmt,(128, 'hacker of human and technological nature', 'Wez the ruler of all things PECL', 88.3))
-      
-      stmt = ibm_db.prepare(conn, "SELECT breed, name FROM animals WHERE id = ?")
-      res = ibm_db.execute(stmt, (128,))
-      row = ibm_db.fetch_assoc(stmt)
-      
-      for i in row:
-	         print(i)
+        print("Starting test ...")
+        res = ''
+        sql =  "INSERT INTO animals (id, breed, name, weight) VALUES (?, ?, ?, ?)"
+        try:
+            stmt = ibm_db.prepare(conn, sql)
+            res = ibm_db.execute(stmt,(128, 'hacker of human and technological nature', 'Wez the ruler of all things PECL', 88.3))
 
-      ibm_db.rollback(conn)
-      print("Done")
-    except:
-      print("SQLSTATE: %s" % ibm_db.stmt_error(stmt))
-      print("Message: %s" % ibm_db.stmt_errormsg(stmt))
+            stmt = ibm_db.prepare(conn, "SELECT breed, name FROM animals WHERE id = ?")
+            res = ibm_db.execute(stmt, (128,))
+            row = ibm_db.fetch_assoc(stmt)
 
-    try:
-        stmt = ibm_db.prepare(conn, "SELECT breed, name FROM animals WHERE id = ?")
-        res = ibm_db.execute(stmt, (128,))
-        row = ibm_db.fetch_assoc(stmt)
-        if (row):
             for i in row:
                 print(i)
-        print(res)
-        print("SQLSTATE: %s" % ibm_db.stmt_error(stmt))
-        print("Message: %s" % ibm_db.stmt_errormsg(stmt))
-    except:
-        print("An Exception is not expected")
-        print("SQLSTATE: %s" % ibm_db.stmt_error(stmt))
-        print("Message: %s" % ibm_db.stmt_errormsg(stmt))
 
-    ibm_db.rollback(conn)
-    print("Done")
+            ibm_db.rollback(conn)
+            print("Done")
+        except:
+            print("SQLSTATE: %s" % ibm_db.stmt_error(stmt))
+            print("Message: %s" % ibm_db.stmt_errormsg(stmt))
+
+        try:
+            stmt = ibm_db.prepare(conn, "SELECT breed, name FROM animals WHERE id = ?")
+            res = ibm_db.execute(stmt, (128,))
+            row = ibm_db.fetch_assoc(stmt)
+            if (row):
+                for i in row:
+                    print(i)
+            print(res)
+            print("SQLSTATE: %s" % ibm_db.stmt_error(stmt))
+            print("Message: %s" % ibm_db.stmt_errormsg(stmt))
+        except:
+            print("An Exception is not expected")
+            print("SQLSTATE: %s" % ibm_db.stmt_error(stmt))
+            print("Message: %s" % ibm_db.stmt_errormsg(stmt))
+
+        ibm_db.rollback(conn)
+        print("Done")
 
 #__END__
 #__LUW_EXPECTED__

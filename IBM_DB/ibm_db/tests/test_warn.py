@@ -4,7 +4,9 @@
 #  (c) Copyright IBM Corp. 2007-2016
 #
 
-import unittest, sys
+from __future__ import print_function
+import sys
+import unittest
 import ibm_db
 import config
 from testfunctions import IbmDbTestFunctions
@@ -12,14 +14,14 @@ from testfunctions import IbmDbTestFunctions
 class IbmDbTestCase(unittest.TestCase):
     def test_warn(self):
         obj = IbmDbTestFunctions()
-        obj.assert_expect(self.run_test_warn)
+        obj.assert_expectf(self.run_test_warn)
 
     def run_test_warn(self):
         conn = ibm_db.connect(config.database, config.user, config.password)
-        
+
         # Get the server type
         serverinfo = ibm_db.server_info( conn )
-    
+
         if conn:
 
             drop = "DROP TABLE WITH_CLOB"
@@ -30,7 +32,7 @@ class IbmDbTestCase(unittest.TestCase):
 
             # Create the table with_clob
 
-            if (serverinfo.DBMS_NAME[0:3] != 'IDS'): 
+            if (serverinfo.DBMS_NAME[0:3] != 'IDS'):
                 create = "CREATE TABLE WITH_CLOB (id SMALLINT NOT NULL, clob_col CLOB(1k))"
             else:
                 create = "CREATE TABLE WITH_CLOB (id SMALLINT NOT NULL, clob_col CLOB(smart))"
@@ -43,7 +45,7 @@ class IbmDbTestCase(unittest.TestCase):
             if (serverinfo.DBMS_NAME[0:3] != 'IDS'):
                 stmt = ibm_db.prepare(conn, query, {ibm_db.SQL_ATTR_CURSOR_TYPE: ibm_db.SQL_CURSOR_KEYSET_DRIVEN})
             else:
-               stmt = ibm_db.prepare(conn, query)
+                stmt = ibm_db.prepare(conn, query)
 
             ibm_db.execute(stmt)
             data = ibm_db.fetch_both( stmt )
@@ -75,4 +77,4 @@ class IbmDbTestCase(unittest.TestCase):
 
 
 
-	
+

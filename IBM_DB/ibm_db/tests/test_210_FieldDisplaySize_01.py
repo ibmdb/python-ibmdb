@@ -1,31 +1,33 @@
-# 
+#
 #  Licensed Materials - Property of IBM
 #
 #  (c) Copyright IBM Corp. 2007-2008
 #
 
-import unittest, sys
+from __future__ import print_function
+import sys
+import unittest
 import ibm_db
 import config
 from testfunctions import IbmDbTestFunctions
 
 class IbmDbTestCase(unittest.TestCase):
 
-  def test_210_FieldDisplaySize_01(self):
-    obj = IbmDbTestFunctions()
-    obj.assert_expect(self.run_test_210)
+    def test_210_FieldDisplaySize_01(self):
+        obj = IbmDbTestFunctions()
+        obj.assert_expect(self.run_test_210)
 
-  def run_test_210(self):
-    conn = ibm_db.connect(config.database, config.user, config.password)
-    
-    result = ibm_db.exec_immediate(conn, "select * from staff")
-    cols = ibm_db.num_fields(result)
-    
-    for i in range(0, cols):
-      size = ibm_db.field_display_size(result,i)
-      print("col:%d and size: %d" % (i, size))
-    
-    ibm_db.close(conn)
+    def run_test_210(self):
+        conn = ibm_db.connect(config.database, config.user, config.password)
+
+        result = ibm_db.exec_immediate(conn, "select * from staff")
+        cols = ibm_db.num_fields(result)
+
+        for i in range(0, cols):
+            size = ibm_db.field_display_size(result,i)
+            print("col:%d and size: %d" % (i, size))
+
+        ibm_db.close(conn)
 
 #__END__
 #__LUW_EXPECTED__

@@ -1,45 +1,47 @@
-# 
+#
 #  Licensed Materials - Property of IBM
 #
 #  (c) Copyright IBM Corp. 2007-2008
 #
 
-import unittest, sys
+from __future__ import print_function
+import sys
+import unittest
 import ibm_db
 import config
 from testfunctions import IbmDbTestFunctions
 
 class IbmDbTestCase(unittest.TestCase):
 
-  def test_150_FetchAssocSelect_01(self):
-    obj = IbmDbTestFunctions()
-    obj.assert_expect(self.run_test_150)
+    def test_150_FetchAssocSelect_01(self):
+        obj = IbmDbTestFunctions()
+        obj.assert_expect(self.run_test_150)
 
-  def run_test_150(self):
-    conn = ibm_db.connect(config.database, config.user, config.password)
+    def run_test_150(self):
+        conn = ibm_db.connect(config.database, config.user, config.password)
 
-    server = ibm_db.server_info( conn )
-    if (server.DBMS_NAME[0:3] == 'IDS'):
-      op = {ibm_db.ATTR_CASE: ibm_db.CASE_UPPER}
-      ibm_db.set_option(conn, op, 1)
-    
-    result = ibm_db.exec_immediate(conn, "select * from staff")
+        server = ibm_db.server_info( conn )
+        if (server.DBMS_NAME[0:3] == 'IDS'):
+            op = {ibm_db.ATTR_CASE: ibm_db.CASE_UPPER}
+            ibm_db.set_option(conn, op, 1)
 
-    row = ibm_db.fetch_assoc(result)    
-    while ( row ):
-      #print "%5d  " % row['ID']
-      #print "%-10s " % row['NAME']
-      #print "%5d " % row['DEPT']
-      #print "%-7s " % row['JOB']
-      #print "%5d " % row['YEARS']
-      #print "%15s " % row['SALARY']
-      #print "%10s " % row['COMM']
-      if (row['YEARS'] == None):
-        row['YEARS'] = 0
-      if (row['COMM'] == None):
-        row['COMM'] = ''
-      print("%5d  %-10s %5d %-7s %5s %15s %10s " % (row['ID'], row['NAME'], row['DEPT'], row['JOB'], row['YEARS'], row['SALARY'], row['COMM']))
-      row = ibm_db.fetch_assoc(result)
+        result = ibm_db.exec_immediate(conn, "select * from staff")
+
+        row = ibm_db.fetch_assoc(result)
+        while ( row ):
+            #print "%5d  " % row['ID']
+            #print "%-10s " % row['NAME']
+            #print "%5d " % row['DEPT']
+            #print "%-7s " % row['JOB']
+            #print "%5d " % row['YEARS']
+            #print "%15s " % row['SALARY']
+            #print "%10s " % row['COMM']
+            if (row['YEARS'] == None):
+                row['YEARS'] = 0
+            if (row['COMM'] == None):
+                row['COMM'] = ''
+            print("%5d  %-10s %5d %-7s %5s %15s %10s " % (row['ID'], row['NAME'], row['DEPT'], row['JOB'], row['YEARS'], row['SALARY'], row['COMM']))
+            row = ibm_db.fetch_assoc(result)
 
 #__END__
 #__LUW_EXPECTED__

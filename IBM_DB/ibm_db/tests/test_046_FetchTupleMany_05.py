@@ -1,33 +1,35 @@
-# 
+#
 #  Licensed Materials - Property of IBM
 #
 #  (c) Copyright IBM Corp. 2007-2008
 #
 
-import unittest, sys
+from __future__ import print_function
+import sys
+import unittest
 import ibm_db
 import config
 from testfunctions import IbmDbTestFunctions
 
 class IbmDbTestCase(unittest.TestCase):
 
-  def test_046_FetchTupleMany_05(self):
-    obj = IbmDbTestFunctions()
-    obj.assert_expect(self.run_test_046)
+    def test_046_FetchTupleMany_05(self):
+        obj = IbmDbTestFunctions()
+        obj.assert_expect(self.run_test_046)
 
-  def run_test_046(self):
-    conn = ibm_db.connect(config.database, config.user, config.password)
+    def run_test_046(self):
+        conn = ibm_db.connect(config.database, config.user, config.password)
 
-    server = ibm_db.server_info( conn )
-    if (server.DBMS_NAME[0:3] == 'IDS'):
-      result = ibm_db.exec_immediate(conn, "SELECT empno, photo_format, photo_format FROM emp_photo") 
-    else:
-      result = ibm_db.exec_immediate(conn, "SELECT empno, photo_format, length(picture) FROM emp_photo")
-    row = ibm_db.fetch_tuple(result)
-    while ( row ):
-      if row[1] != 'xwd':
-        print("<a href='test_046.php?EMPNO=%s&FORMAT=%s' target=_blank>%s - %s - %s bytes</a><br>" % (row[0], row[1], row[0], row[1], row[2]))
-      row = ibm_db.fetch_tuple(result)
+        server = ibm_db.server_info( conn )
+        if (server.DBMS_NAME[0:3] == 'IDS'):
+            result = ibm_db.exec_immediate(conn, "SELECT empno, photo_format, photo_format FROM emp_photo")
+        else:
+            result = ibm_db.exec_immediate(conn, "SELECT empno, photo_format, length(picture) FROM emp_photo")
+        row = ibm_db.fetch_tuple(result)
+        while ( row ):
+            if row[1] != 'xwd':
+                print("<a href='test_046.php?EMPNO=%s&FORMAT=%s' target=_blank>%s - %s - %s bytes</a><br>" % (row[0], row[1], row[0], row[1], row[2]))
+            row = ibm_db.fetch_tuple(result)
 
 #__END__
 #__LUW_EXPECTED__

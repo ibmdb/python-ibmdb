@@ -5,7 +5,7 @@
 | (C) Copyright IBM Corporation 2006-2013.                             |
 +----------------------------------------------------------------------+
 | Authors: Manas Dadarkar, Abhigyan Agrawal, Rahul Priyadarshi,        |
-|          Saba Kauser                                                 | 
+|          Saba Kauser                                                 |
 +----------------------------------------------------------------------+
 */
 
@@ -13,7 +13,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sqlcli1.h>
-#include <Python.h> 
+#include <Python.h>
 #include <structmember.h>
 
 /*
@@ -22,30 +22,30 @@
 
 /* defining string methods */
 #if  PY_MAJOR_VERSION < 3
-#define PyBytes_Check			PyString_Check
-#define StringOBJ_FromASCII(str)	PyString_FromString(str)
-#define PyBytes_AsString		PyString_AsString
-#define PyBytes_FromStringAndSize	PyString_FromStringAndSize
-#define StringObj_Format		PyString_Format
-#define StringObj_Size			PyString_Size
-#define PyObject_CheckBuffer		PyObject_CheckReadBuffer
+#define PyBytes_Check               PyString_Check
+#define StringOBJ_FromASCII(str)    PyString_FromString(str)
+#define PyBytes_AsString            PyString_AsString
+#define PyBytes_FromStringAndSize   PyString_FromStringAndSize
+#define StringObj_Format            PyString_Format
+#define StringObj_Size              PyString_Size
+#define PyObject_CheckBuffer        PyObject_CheckReadBuffer
 #define PyVarObject_HEAD_INIT(type, size) \
-					PyObject_HEAD_INIT(type) size,
-#define Py_TYPE(ob)			(((PyObject*)(ob))->ob_type)
-#define MOD_RETURN_ERROR		
-#define MOD_RETURN_VAL(mod)			
-#define INIT_ibm_db			initibm_db
+                    PyObject_HEAD_INIT(type) size,
+#define Py_TYPE(ob)            (((PyObject*)(ob))->ob_type)
+#define MOD_RETURN_ERROR
+#define MOD_RETURN_VAL(mod)
+#define INIT_ibm_db                 initibm_db
 #else
-#define PyInt_Check			PyLong_Check
-#define PyInt_FromLong          	PyLong_FromLong
-#define PyInt_AsLong            	PyLong_AsLong
-#define PyInt_AS_LONG			PyLong_AsLong
-#define StringOBJ_FromASCII(str)	PyUnicode_DecodeASCII(str, strlen(str), NULL)
-#define PyString_Check			PyUnicode_Check
-#define StringObj_Format		PyUnicode_Format
-#define StringObj_Size			PyUnicode_GET_SIZE
-#define MOD_RETURN_ERROR		NULL
-#define MOD_RETURN_VAL(mod)		mod
+#define PyInt_Check                 PyLong_Check
+#define PyInt_FromLong              PyLong_FromLong
+#define PyInt_AsLong                PyLong_AsLong
+#define PyInt_AS_LONG               PyLong_AsLong
+#define StringOBJ_FromASCII(str)    PyUnicode_DecodeASCII(str, strlen(str), NULL)
+#define PyString_Check              PyUnicode_Check
+#define StringObj_Format            PyUnicode_Format
+#define StringObj_Size              PyUnicode_GET_SIZE
+#define MOD_RETURN_ERROR            NULL
+#define MOD_RETURN_VAL(mod)         mod
 #define INIT_ibm_db PyInit_ibm_db
 #endif
 
@@ -107,12 +107,12 @@
 */
 #define SQL_ATTR_REPLACE_QUOTED_LITERALS_OLDVALUE 116
 
-/* If using a DB2 CLI version which doesn't support this functionality, 
-* explicitly define this. We will rely on DB2 CLI to throw an error when 
+/* If using a DB2 CLI version which doesn't support this functionality,
+* explicitly define this. We will rely on DB2 CLI to throw an error when
 * SQLGetStmtAttr is called.
 */
 
-#ifndef SQL_ATTR_GET_GENERATED_VALUE 
+#ifndef SQL_ATTR_GET_GENERATED_VALUE
 #define SQL_ATTR_GET_GENERATED_VALUE 2578
 #endif
 
@@ -121,7 +121,7 @@
 
 /* Default initail LOB buffer size */
 #define INIT_BUFSIZ 10240
- 
+
 /* Used in _python_parse_options */
 #define DB2_ERRMSG 1
 #define DB2_ERR 2
@@ -148,9 +148,9 @@
 #endif
 
 /* fetch */
-#define FETCH_INDEX	0x01
-#define FETCH_ASSOC	0x02
-#define FETCH_BOTH	0x03
+#define FETCH_INDEX    0x01
+#define FETCH_ASSOC    0x02
+#define FETCH_BOTH     0x03
 
 /* Change column case */
 #define ATTR_CASE 3271982
@@ -165,7 +165,7 @@
 
 /* maximum sizes */
 #define USERID_LEN 16
-#define ACCTSTR_LEN 200
+#define ACCTSTR_LEN 255
 #define APPLNAME_LEN 32
 #define WRKSTNNAME_LEN 18
 
@@ -174,11 +174,11 @@
  *   * */
 enum
 {
-        ROUND_HALF_EVEN = 0,
-        ROUND_HALF_UP,
-        ROUND_DOWN,
-        ROUND_CEILING,
-        ROUND_FLOOR
+    ROUND_HALF_EVEN = 0,
+    ROUND_HALF_UP,
+    ROUND_DOWN,
+    ROUND_CEILING,
+    ROUND_FLOOR
 }ROUNDING_MODE;
 
 /*
@@ -186,174 +186,174 @@ enum
 * and END macros here:
 */
 struct _ibm_db_globals {
-	int  bin_mode;
-	char __python_conn_err_msg[DB2_MAX_ERR_MSG_LEN + 1];
-	char __python_conn_err_state[SQL_SQLSTATE_SIZE + 1];
-	char __python_stmt_err_msg[DB2_MAX_ERR_MSG_LEN + 1];
-	char __python_stmt_err_state[SQL_SQLSTATE_SIZE + 1];
+    int  bin_mode;
+    char __python_conn_err_msg[DB2_MAX_ERR_MSG_LEN + 1];
+    char __python_conn_err_state[SQL_SQLSTATE_SIZE + 1];
+    char __python_stmt_err_msg[DB2_MAX_ERR_MSG_LEN + 1];
+    char __python_stmt_err_state[SQL_SQLSTATE_SIZE + 1];
     char __python_conn_warn_msg[DB2_MAX_ERR_MSG_LEN + 1];
     char __python_conn_warn_state[SQL_SQLSTATE_SIZE + 1];
     char __python_stmt_warn_msg[DB2_MAX_ERR_MSG_LEN + 1];
     char __python_stmt_warn_state[SQL_SQLSTATE_SIZE + 1];
 #ifdef PASE /* i5/OS ease of use turn off commit */
-	long i5_allow_commit;
+    long i5_allow_commit;
 #endif /* PASE */
 };
 
 typedef struct {
-	PyObject_HEAD
-	PyObject *DRIVER_NAME;
-	PyObject *DRIVER_VER;
-	PyObject *DATA_SOURCE_NAME;
-	PyObject *DRIVER_ODBC_VER;
-	PyObject *ODBC_VER;
-	PyObject *ODBC_SQL_CONFORMANCE;
-	PyObject *APPL_CODEPAGE;
-	PyObject *CONN_CODEPAGE;
+    PyObject_HEAD
+    PyObject *DRIVER_NAME;
+    PyObject *DRIVER_VER;
+    PyObject *DATA_SOURCE_NAME;
+    PyObject *DRIVER_ODBC_VER;
+    PyObject *ODBC_VER;
+    PyObject *ODBC_SQL_CONFORMANCE;
+    PyObject *APPL_CODEPAGE;
+    PyObject *CONN_CODEPAGE;
 } le_client_info;
 
 static PyMemberDef le_client_info_members[] = {
-	{"DRIVER_NAME", T_OBJECT_EX, offsetof(le_client_info, DRIVER_NAME), 0, "Driver Name"},
-	{"DRIVER_VER", T_OBJECT_EX, offsetof(le_client_info, DRIVER_VER), 0, "Driver Version"},
-	{"DATA_SOURCE_NAME", T_OBJECT_EX, offsetof(le_client_info, DATA_SOURCE_NAME), 0, "Data Source Name"},
-	{"DRIVER_ODBC_VER", T_OBJECT_EX, offsetof(le_client_info, DRIVER_ODBC_VER), 0, "Driver ODBC Version"},
-	{"ODBC_VER", T_OBJECT_EX, offsetof(le_client_info, ODBC_VER), 0, "ODBC Version"},
-	{"ODBC_SQL_CONFORMANCE", T_OBJECT_EX, offsetof(le_client_info, ODBC_SQL_CONFORMANCE), 0, "ODBC SQL Conformance"},
-	{"APPL_CODEPAGE", T_OBJECT_EX, offsetof(le_client_info, APPL_CODEPAGE), 0, "Application Codepage"},
-	{"CONN_CODEPAGE", T_OBJECT_EX, offsetof(le_client_info, CONN_CODEPAGE), 0, "Connection Codepage"},
-	{NULL} /* Sentinel */
+    {"DRIVER_NAME", T_OBJECT_EX, offsetof(le_client_info, DRIVER_NAME), 0, "Driver Name"},
+    {"DRIVER_VER", T_OBJECT_EX, offsetof(le_client_info, DRIVER_VER), 0, "Driver Version"},
+    {"DATA_SOURCE_NAME", T_OBJECT_EX, offsetof(le_client_info, DATA_SOURCE_NAME), 0, "Data Source Name"},
+    {"DRIVER_ODBC_VER", T_OBJECT_EX, offsetof(le_client_info, DRIVER_ODBC_VER), 0, "Driver ODBC Version"},
+    {"ODBC_VER", T_OBJECT_EX, offsetof(le_client_info, ODBC_VER), 0, "ODBC Version"},
+    {"ODBC_SQL_CONFORMANCE", T_OBJECT_EX, offsetof(le_client_info, ODBC_SQL_CONFORMANCE), 0, "ODBC SQL Conformance"},
+    {"APPL_CODEPAGE", T_OBJECT_EX, offsetof(le_client_info, APPL_CODEPAGE), 0, "Application Codepage"},
+    {"CONN_CODEPAGE", T_OBJECT_EX, offsetof(le_client_info, CONN_CODEPAGE), 0, "Connection Codepage"},
+    {NULL} /* Sentinel */
 };
 
 static PyTypeObject client_infoType = {
-		PyVarObject_HEAD_INIT(NULL, 0)
-		"ibm_db.IBM_DBClientInfo", /*tp_name*/
-		sizeof(le_client_info), /*tp_basicsize*/
-		0,                                     /*tp_itemsize*/
-		0,                                     /*tp_dealloc*/
-		0,                                     /*tp_print*/
-		0,                                     /*tp_getattr*/
-		0,                                     /*tp_setattr*/
-		0,                                     /*tp_compare*/
-		0,                                     /*tp_repr*/
-		0,                                     /*tp_as_number*/
-		0,                                     /*tp_as_sequence */
-		0,                                     /*tp_as_mapping  */
-		0,                                     /*tp_hash */
-		0,                                     /*tp_call*/
-		0,                                     /*tp_str*/
-		0,                                     /*tp_getattro    */
-		0,                                     /*tp_setattro    */
-		0,                                     /*tp_as_buffer   */
-		Py_TPFLAGS_DEFAULT,            /*tp_flags                   */
-		"IBM DataServer Client Information object", /* tp_doc       */
-		0,                                     /* tp_traverse       */
-		0,                                     /* tp_clear          */
-		0,                                     /* tp_richcompare    */
-		0,                                     /* tp_weaklistoffset */
-		0,                                     /* tp_iter           */
-		0,                                     /* tp_iternext       */
-		0,   /* tp_methods            */
-		le_client_info_members,                /* tp_members        */
-		0,                                     /* tp_getset         */
-		0,                                     /* tp_base           */
-		0,                                     /* tp_dict           */
-		0,                                     /* tp_descr_get      */
-		0,                                     /* tp_descr_set      */
-		0,                                     /* tp_dictoffset     */
-		0,                                     /* tp_init           */
+    PyVarObject_HEAD_INIT(NULL, 0)
+    /* tp_name           */ "ibm_db.IBM_DBClientInfo",
+    /* tp_basicsize      */ sizeof(le_client_info),
+    /* tp_itemsize       */ 0,
+    /* tp_dealloc        */ 0,
+    /* tp_print          */ 0,
+    /* tp_getattr        */ 0,
+    /* tp_setattr        */ 0,
+    /* tp_compare        */ 0,
+    /* tp_repr           */ 0,
+    /* tp_as_number      */ 0,
+    /* tp_as_sequence    */ 0,
+    /* tp_as_mapping     */ 0,
+    /* tp_hash           */ 0,
+    /* tp_call           */ 0,
+    /* tp_str            */ 0,
+    /* tp_getattro       */ 0,
+    /* tp_setattro       */ 0,
+    /* tp_as_buffer      */ 0,
+    /* tp_flags          */ Py_TPFLAGS_DEFAULT,
+    /* tp_doc            */ "IBM DataServer Client Information object",
+    /* tp_traverse       */ 0,
+    /* tp_clear          */ 0,
+    /* tp_richcompare    */ 0,
+    /* tp_weaklistoffset */ 0,
+    /* tp_iter           */ 0,
+    /* tp_iternext       */ 0,
+    /* tp_methods        */ 0,
+    /* tp_members        */ le_client_info_members,
+    /* tp_getset         */ 0,
+    /* tp_base           */ 0,
+    /* tp_dict           */ 0,
+    /* tp_descr_get      */ 0,
+    /* tp_descr_set      */ 0,
+    /* tp_dictoffset     */ 0,
+    /* tp_init           */ 0,
 };
 
 
 typedef struct {
-	PyObject_HEAD
-	PyObject *DBMS_NAME;
-	PyObject *DBMS_VER;
-	PyObject *DB_CODEPAGE;
-	PyObject *DB_NAME;
-	PyObject *INST_NAME;
-	PyObject *SPECIAL_CHARS;
-	PyObject *KEYWORDS;
-	PyObject *DFT_ISOLATION;
-	PyObject *ISOLATION_OPTION;
-	PyObject *SQL_CONFORMANCE;
-	PyObject *PROCEDURES;
-	PyObject *IDENTIFIER_QUOTE_CHAR;
-	PyObject *LIKE_ESCAPE_CLAUSE;
-	PyObject *MAX_COL_NAME_LEN;
-	PyObject *MAX_IDENTIFIER_LEN;
-	PyObject *MAX_INDEX_SIZE;
-	PyObject *MAX_PROC_NAME_LEN;
-	PyObject *MAX_ROW_SIZE;
-	PyObject *MAX_SCHEMA_NAME_LEN;
-	PyObject *MAX_STATEMENT_LEN;
-	PyObject *MAX_TABLE_NAME_LEN;
-	PyObject *NON_NULLABLE_COLUMNS;
+    PyObject_HEAD
+    PyObject *DBMS_NAME;
+    PyObject *DBMS_VER;
+    PyObject *DB_CODEPAGE;
+    PyObject *DB_NAME;
+    PyObject *INST_NAME;
+    PyObject *SPECIAL_CHARS;
+    PyObject *KEYWORDS;
+    PyObject *DFT_ISOLATION;
+    PyObject *ISOLATION_OPTION;
+    PyObject *SQL_CONFORMANCE;
+    PyObject *PROCEDURES;
+    PyObject *IDENTIFIER_QUOTE_CHAR;
+    PyObject *LIKE_ESCAPE_CLAUSE;
+    PyObject *MAX_COL_NAME_LEN;
+    PyObject *MAX_IDENTIFIER_LEN;
+    PyObject *MAX_INDEX_SIZE;
+    PyObject *MAX_PROC_NAME_LEN;
+    PyObject *MAX_ROW_SIZE;
+    PyObject *MAX_SCHEMA_NAME_LEN;
+    PyObject *MAX_STATEMENT_LEN;
+    PyObject *MAX_TABLE_NAME_LEN;
+    PyObject *NON_NULLABLE_COLUMNS;
 } le_server_info;
 
 
 static PyMemberDef le_server_info_members[] = {
-	{"DBMS_NAME", T_OBJECT_EX, offsetof(le_server_info, DBMS_NAME), 0, "Database Server Name"},
-	{"DBMS_VER", T_OBJECT_EX, offsetof(le_server_info, DBMS_VER), 0, "Database Server Version"},
-	{"DB_CODEPAGE", T_OBJECT_EX, offsetof(le_server_info, DB_CODEPAGE), 0, "Database Codepage"},
-	{"DB_NAME", T_OBJECT_EX, offsetof(le_server_info, DB_NAME), 0, "Database Name"},
-	{"INST_NAME", T_OBJECT_EX, offsetof(le_server_info, INST_NAME), 0, "Database Server Instance Name"},
-	{"SPECIAL_CHARS", T_OBJECT_EX, offsetof(le_server_info, SPECIAL_CHARS), 0, "Characters that can be used in an identifier"},
-	{"KEYWORDS", T_OBJECT_EX, offsetof(le_server_info, KEYWORDS), 0, "Reserved words"},
-	{"DFT_ISOLATION", T_OBJECT_EX, offsetof(le_server_info, DFT_ISOLATION), 0, "Default Server Isolation"},
-	{"ISOLATION_OPTION", T_OBJECT_EX, offsetof(le_server_info, ISOLATION_OPTION), 0, "Supported Isolation Levels "},
-	{"SQL_CONFORMANCE", T_OBJECT_EX, offsetof(le_server_info, SQL_CONFORMANCE), 0, "ANSI/ISO SQL-92 Specification Conformance"},
-	{"PROCEDURES", T_OBJECT_EX, offsetof(le_server_info, PROCEDURES), 0, "True if CALL statement is supported by database server"},
-	{"IDENTIFIER_QUOTE_CHAR", T_OBJECT_EX, offsetof(le_server_info, IDENTIFIER_QUOTE_CHAR), 0, "Character to quote an identifier"},
-	{"LIKE_ESCAPE_CLAUSE", T_OBJECT_EX, offsetof(le_server_info, LIKE_ESCAPE_CLAUSE), 0, "TRUE if the database server supports the use of % and _ wildcard characters"},
-	{"MAX_COL_NAME_LEN", T_OBJECT_EX, offsetof(le_server_info, MAX_COL_NAME_LEN), 0, "Maximum length of column name supported by the database server in bytes"},
-	{"MAX_IDENTIFIER_LEN", T_OBJECT_EX, offsetof(le_server_info, MAX_IDENTIFIER_LEN), 0, "Maximum length of an SQL identifier supported by the database server, expressed in characters"},
-	{"MAX_INDEX_SIZE", T_OBJECT_EX, offsetof(le_server_info, MAX_INDEX_SIZE), 0, "Maximum size of columns combined in an index supported by the database server, expressed in bytes"},
-	{"MAX_PROC_NAME_LEN", T_OBJECT_EX, offsetof(le_server_info, MAX_PROC_NAME_LEN), 0, "Maximum length of a procedure name supported by the database server, expressed in bytes"},
-	{"MAX_ROW_SIZE", T_OBJECT_EX, offsetof(le_server_info, MAX_ROW_SIZE), 0, "Maximum length of a row in a base table supported by the database server, expressed in bytes"},
-	{"MAX_SCHEMA_NAME_LEN", T_OBJECT_EX, offsetof(le_server_info, MAX_SCHEMA_NAME_LEN), 0, "Maximum length of a schema name supported by the database server, expressed in bytes"},
-	{"MAX_STATEMENT_LEN", T_OBJECT_EX, offsetof(le_server_info, MAX_STATEMENT_LEN), 0, "Maximum length of an SQL statement supported by the database server, expressed in bytes"},
-	{"MAX_TABLE_NAME_LEN", T_OBJECT_EX, offsetof(le_server_info, MAX_TABLE_NAME_LEN), 0, "Maximum length of a table name supported by the database server, expressed in bytes"},
-	{"NON_NULLABLE_COLUMNS", T_OBJECT_EX, offsetof(le_server_info, NON_NULLABLE_COLUMNS), 0, "Connectionf the database server supports columns that can be defined as NOT NULL "},
-	{NULL} /* Sentinel */
+    {"DBMS_NAME", T_OBJECT_EX, offsetof(le_server_info, DBMS_NAME), 0, "Database Server Name"},
+    {"DBMS_VER", T_OBJECT_EX, offsetof(le_server_info, DBMS_VER), 0, "Database Server Version"},
+    {"DB_CODEPAGE", T_OBJECT_EX, offsetof(le_server_info, DB_CODEPAGE), 0, "Database Codepage"},
+    {"DB_NAME", T_OBJECT_EX, offsetof(le_server_info, DB_NAME), 0, "Database Name"},
+    {"INST_NAME", T_OBJECT_EX, offsetof(le_server_info, INST_NAME), 0, "Database Server Instance Name"},
+    {"SPECIAL_CHARS", T_OBJECT_EX, offsetof(le_server_info, SPECIAL_CHARS), 0, "Characters that can be used in an identifier"},
+    {"KEYWORDS", T_OBJECT_EX, offsetof(le_server_info, KEYWORDS), 0, "Reserved words"},
+    {"DFT_ISOLATION", T_OBJECT_EX, offsetof(le_server_info, DFT_ISOLATION), 0, "Default Server Isolation"},
+    {"ISOLATION_OPTION", T_OBJECT_EX, offsetof(le_server_info, ISOLATION_OPTION), 0, "Supported Isolation Levels "},
+    {"SQL_CONFORMANCE", T_OBJECT_EX, offsetof(le_server_info, SQL_CONFORMANCE), 0, "ANSI/ISO SQL-92 Specification Conformance"},
+    {"PROCEDURES", T_OBJECT_EX, offsetof(le_server_info, PROCEDURES), 0, "True if CALL statement is supported by database server"},
+    {"IDENTIFIER_QUOTE_CHAR", T_OBJECT_EX, offsetof(le_server_info, IDENTIFIER_QUOTE_CHAR), 0, "Character to quote an identifier"},
+    {"LIKE_ESCAPE_CLAUSE", T_OBJECT_EX, offsetof(le_server_info, LIKE_ESCAPE_CLAUSE), 0, "TRUE if the database server supports the use of % and _ wildcard characters"},
+    {"MAX_COL_NAME_LEN", T_OBJECT_EX, offsetof(le_server_info, MAX_COL_NAME_LEN), 0, "Maximum length of column name supported by the database server in bytes"},
+    {"MAX_IDENTIFIER_LEN", T_OBJECT_EX, offsetof(le_server_info, MAX_IDENTIFIER_LEN), 0, "Maximum length of an SQL identifier supported by the database server, expressed in characters"},
+    {"MAX_INDEX_SIZE", T_OBJECT_EX, offsetof(le_server_info, MAX_INDEX_SIZE), 0, "Maximum size of columns combined in an index supported by the database server, expressed in bytes"},
+    {"MAX_PROC_NAME_LEN", T_OBJECT_EX, offsetof(le_server_info, MAX_PROC_NAME_LEN), 0, "Maximum length of a procedure name supported by the database server, expressed in bytes"},
+    {"MAX_ROW_SIZE", T_OBJECT_EX, offsetof(le_server_info, MAX_ROW_SIZE), 0, "Maximum length of a row in a base table supported by the database server, expressed in bytes"},
+    {"MAX_SCHEMA_NAME_LEN", T_OBJECT_EX, offsetof(le_server_info, MAX_SCHEMA_NAME_LEN), 0, "Maximum length of a schema name supported by the database server, expressed in bytes"},
+    {"MAX_STATEMENT_LEN", T_OBJECT_EX, offsetof(le_server_info, MAX_STATEMENT_LEN), 0, "Maximum length of an SQL statement supported by the database server, expressed in bytes"},
+    {"MAX_TABLE_NAME_LEN", T_OBJECT_EX, offsetof(le_server_info, MAX_TABLE_NAME_LEN), 0, "Maximum length of a table name supported by the database server, expressed in bytes"},
+    {"NON_NULLABLE_COLUMNS", T_OBJECT_EX, offsetof(le_server_info, NON_NULLABLE_COLUMNS), 0, "Connectionf the database server supports columns that can be defined as NOT NULL "},
+    {NULL} /* Sentinel */
 };
 
 static PyTypeObject server_infoType = {
-		PyVarObject_HEAD_INIT(NULL, 0)
-		"ibm_db.IBM_DBServerInfo", /*tp_name*/
-		sizeof(le_server_info), /*tp_basicsize*/
-		0,                                     /*tp_itemsize*/
-		0,                                     /*tp_dealloc*/
-		0,                                     /*tp_print*/
-		0,                                     /*tp_getattr*/
-		0,                                     /*tp_setattr*/
-		0,                                     /*tp_compare*/
-		0,                                     /*tp_repr*/
-		0,                                     /*tp_as_number*/
-		0,                                     /*tp_as_sequence */
-		0,                                     /*tp_as_mapping  */
-		0,                                     /*tp_hash */
-		0,                                     /*tp_call*/
-		0,                                     /*tp_str*/
-		0,                                     /*tp_getattro    */
-		0,                                     /*tp_setattro    */
-		0,                                     /*tp_as_buffer   */
-		Py_TPFLAGS_DEFAULT,            /*tp_flags                   */
-		"IBM DataServer Information object", /* tp_doc       */
-		0,                                     /* tp_traverse       */
-		0,                                     /* tp_clear          */
-		0,                                     /* tp_richcompare    */
-		0,                                     /* tp_weaklistoffset */
-		0,                                     /* tp_iter           */
-		0,                                     /* tp_iternext       */
-		0,   /* tp_methods            */
-		le_server_info_members,                /* tp_members        */
-		0,                                     /* tp_getset         */
-		0,                                     /* tp_base           */
-		0,                                     /* tp_dict           */
-		0,                                     /* tp_descr_get      */
-		0,                                     /* tp_descr_set      */
-		0,                                     /* tp_dictoffset     */
-		0,                                     /* tp_init           */
+    PyVarObject_HEAD_INIT(NULL, 0)
+    /* tp_name           */ "ibm_db.IBM_DBServerInfo",
+    /* tp_basicsize      */ sizeof(le_server_info),
+    /* tp_itemsize       */ 0,
+    /* tp_dealloc        */ 0,
+    /* tp_print          */ 0,
+    /* tp_getattr        */ 0,
+    /* tp_setattr        */ 0,
+    /* tp_compare        */ 0,
+    /* tp_repr           */ 0,
+    /* tp_as_number      */ 0,
+    /* tp_as_sequence    */ 0,
+    /* tp_as_mapping     */ 0,
+    /* tp_hash           */ 0,
+    /* tp_call           */ 0,
+    /* tp_str            */ 0,
+    /* tp_getattro       */ 0,
+    /* tp_setattro       */ 0,
+    /* tp_as_buffer      */ 0,
+    /* tp_flags          */ Py_TPFLAGS_DEFAULT,
+    /* tp_doc            */ "IBM DataServer Information object",
+    /* tp_traverse       */ 0,
+    /* tp_clear          */ 0,
+    /* tp_richcompare    */ 0,
+    /* tp_weaklistoffset */ 0,
+    /* tp_iter           */ 0,
+    /* tp_iternext       */ 0,
+    /* tp_methods        */ 0,
+    /* tp_members        */ le_server_info_members,
+    /* tp_getset         */ 0,
+    /* tp_base           */ 0,
+    /* tp_dict           */ 0,
+    /* tp_descr_get      */ 0,
+    /* tp_descr_set      */ 0,
+    /* tp_dictoffset     */ 0,
+    /* tp_init           */ 0,
 };
 
 

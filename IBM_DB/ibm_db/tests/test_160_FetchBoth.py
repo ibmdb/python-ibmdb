@@ -1,42 +1,44 @@
-# 
+#
 #  Licensed Materials - Property of IBM
 #
 #  (c) Copyright IBM Corp. 2007-2008
 #
 
-import unittest, sys
+from __future__ import print_function
+import sys
+import unittest
 import ibm_db
 import config
 from testfunctions import IbmDbTestFunctions
 
 class IbmDbTestCase(unittest.TestCase):
 
-  def test_160_FetchBoth(self):
-    obj = IbmDbTestFunctions()
-    obj.assert_expect(self.run_test_160)
+    def test_160_FetchBoth(self):
+        obj = IbmDbTestFunctions()
+        obj.assert_expect(self.run_test_160)
 
-  def run_test_160(self):
-    conn = ibm_db.connect(config.database, config.user, config.password)
+    def run_test_160(self):
+        conn = ibm_db.connect(config.database, config.user, config.password)
 
-    server = ibm_db.server_info( conn )
-    if (server.DBMS_NAME[0:3] == 'IDS'):
-      op = {ibm_db.ATTR_CASE: ibm_db.CASE_UPPER}
-      ibm_db.set_option(conn, op, 1)
+        server = ibm_db.server_info( conn )
+        if (server.DBMS_NAME[0:3] == 'IDS'):
+            op = {ibm_db.ATTR_CASE: ibm_db.CASE_UPPER}
+            ibm_db.set_option(conn, op, 1)
 
-    result = ibm_db.exec_immediate(conn, "select * from emp_act")
-    
-    row = ibm_db.fetch_both(result)
-    while ( row ):
-      #printf("%6s  ",row[0])
-      #printf("%-6s ",row[1])
-      #printf("%3d ",row[2])
-      #printf("%9s ",row['EMPTIME'])
-      #printf("%10s ", row['EMSTDATE'])
-      #printf("%10s ", row['EMENDATE'])
-      #printf("%6s ", row[0])
-      #puts ""
-      print("%6s  %-6s %3d %9s %10s %10s %6s " % (row[0], row[1], row[2], row['EMPTIME'], row['EMSTDATE'], row['EMENDATE'], row[0]))
-      row = ibm_db.fetch_both(result)
+        result = ibm_db.exec_immediate(conn, "select * from emp_act")
+
+        row = ibm_db.fetch_both(result)
+        while ( row ):
+            #printf("%6s  ",row[0])
+            #printf("%-6s ",row[1])
+            #printf("%3d ",row[2])
+            #printf("%9s ",row['EMPTIME'])
+            #printf("%10s ", row['EMSTDATE'])
+            #printf("%10s ", row['EMENDATE'])
+            #printf("%6s ", row[0])
+            #puts ""
+            print("%6s  %-6s %3d %9s %10s %10s %6s " % (row[0], row[1], row[2], row['EMPTIME'], row['EMSTDATE'], row['EMENDATE'], row[0]))
+            row = ibm_db.fetch_both(result)
 
 #__END__
 #__LUW_EXPECTED__

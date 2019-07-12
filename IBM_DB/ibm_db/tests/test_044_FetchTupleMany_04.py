@@ -4,33 +4,35 @@
 #  (c) Copyright IBM Corp. 2007-2008
 #
 
-import unittest, sys
+from __future__ import print_function
+import sys
+import unittest
 import ibm_db
 import config
 from testfunctions import IbmDbTestFunctions
 
 class IbmDbTestCase(unittest.TestCase):
 
-  def test_044_FetchTupleMany_04(self):
-    obj = IbmDbTestFunctions()
-    obj.assert_expect(self.run_test_044)
+    def test_044_FetchTupleMany_04(self):
+        obj = IbmDbTestFunctions()
+        obj.assert_expect(self.run_test_044)
 
-  def run_test_044(self):
-    conn = ibm_db.connect(config.database, config.user, config.password)
-      
-    result = ibm_db.exec_immediate(conn, "select * from sales")
-     
-    row = ibm_db.fetch_tuple(result)
-    while ( row ):
-      #printf("%-10s ",row[0])
-      #printf("%-15s ",row[1])
-      #printf("%-15s ",row[2])
-      #printf("%4s",row[3])
-      #print
-      if (row[3] == None):
-        row = row[0:3] + (' ',)
-      print("%-10s %-15s %-15s %4s" % (row[0], row[1], row[2], row[3]))
-      row = ibm_db.fetch_tuple(result)
+    def run_test_044(self):
+        conn = ibm_db.connect(config.database, config.user, config.password)
+
+        result = ibm_db.exec_immediate(conn, "select * from sales")
+
+        row = ibm_db.fetch_tuple(result)
+        while ( row ):
+            #printf("%-10s ",row[0])
+            #printf("%-15s ",row[1])
+            #printf("%-15s ",row[2])
+            #printf("%4s",row[3])
+            #print
+            if (row[3] == None):
+                row = row[0:3] + (' ',)
+            print("%-10s %-15s %-15s %4s" % (row[0], row[1], row[2], row[3]))
+            row = ibm_db.fetch_tuple(result)
 
 #__END__
 #__LUW_EXPECTED__

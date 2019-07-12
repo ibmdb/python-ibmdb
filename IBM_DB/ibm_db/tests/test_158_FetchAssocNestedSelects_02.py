@@ -1,52 +1,54 @@
-# 
+#
 #  Licensed Materials - Property of IBM
 #
 #  (c) Copyright IBM Corp. 2007-2008
 #
 
-import unittest, sys
+from __future__ import print_function
+import sys
+import unittest
 import ibm_db
 import config
 from testfunctions import IbmDbTestFunctions
 
 class IbmDbTestCase(unittest.TestCase):
 
-  def test_158_FetchAssocNestedSelects_02(self):
-    obj = IbmDbTestFunctions()
-    obj.assert_expect(self.run_test_158)
+    def test_158_FetchAssocNestedSelects_02(self):
+        obj = IbmDbTestFunctions()
+        obj.assert_expect(self.run_test_158)
 
-  def run_test_158(self):
-    conn = ibm_db.connect(config.database, config.user, config.password)
+    def run_test_158(self):
+        conn = ibm_db.connect(config.database, config.user, config.password)
 
-    server = ibm_db.server_info( conn )
-    if (server.DBMS_NAME[0:3] == 'IDS'):
-      op = {ibm_db.ATTR_CASE: ibm_db.CASE_UPPER}
-      ibm_db.set_option(conn, op, 1)
+        server = ibm_db.server_info( conn )
+        if (server.DBMS_NAME[0:3] == 'IDS'):
+            op = {ibm_db.ATTR_CASE: ibm_db.CASE_UPPER}
+            ibm_db.set_option(conn, op, 1)
 
-    result = ibm_db.exec_immediate(conn, "SELECT * FROM staff WHERE id < 50")
-    
-    output = ''
-    row = ibm_db.fetch_assoc(result)
-    while ( row ):
-      output += str(row['ID']) + ', ' + row['NAME'] + ', ' + str(row['DEPT']) + ', ' + row['JOB'] + ', ' + str(row['YEARS']) + ', ' + str(row['SALARY']) + ', ' + str(row['COMM'])
-      row = ibm_db.fetch_assoc(result)
-      
-    result2 = ibm_db.exec_immediate(conn,"SELECT * FROM department WHERE substr(deptno,1,1) in ('A','B','C','D','E')")
-    row2 = ibm_db.fetch_assoc(result2)
-    while ( row2 ):
-        if (row2['MGRNO'] == None): 
-            row2['MGRNO'] = ''
-        if (row2['LOCATION'] == None): 
-            row2['LOCATION'] = ''
-        output += str(row2['DEPTNO']) + ', ' + row2['DEPTNAME'] + ', ' + str(row2['MGRNO']) + ', ' + row2['ADMRDEPT'] + ', ' + row2['LOCATION']
+        result = ibm_db.exec_immediate(conn, "SELECT * FROM staff WHERE id < 50")
+
+        output = ''
+        row = ibm_db.fetch_assoc(result)
+        while ( row ):
+            output += str(row['ID']) + ', ' + row['NAME'] + ', ' + str(row['DEPT']) + ', ' + row['JOB'] + ', ' + str(row['YEARS']) + ', ' + str(row['SALARY']) + ', ' + str(row['COMM'])
+            row = ibm_db.fetch_assoc(result)
+
+        result2 = ibm_db.exec_immediate(conn,"SELECT * FROM department WHERE substr(deptno,1,1) in ('A','B','C','D','E')")
         row2 = ibm_db.fetch_assoc(result2)
-    
-    result3 = ibm_db.exec_immediate(conn,"SELECT * FROM employee WHERE lastname IN ('HAAS','THOMPSON', 'KWAN', 'GEYER', 'STERN', 'PULASKI', 'HENDERSON', 'SPENSER', 'LUCCHESSI', 'OCONNELL', 'QUINTANA', 'NICHOLLS', 'ADAMSON', 'PIANKA', 'YOSHIMURA', 'SCOUTTEN', 'WALKER', 'BROWN', 'JONES', 'LUTZ', 'JEFFERSON', 'MARINO', 'SMITH', 'JOHNSON', 'PEREZ', 'SCHNEIDER', 'PARKER', 'SMITH', 'SETRIGHT', 'MEHTA', 'LEE', 'GOUNOT')")
-    row3 = ibm_db.fetch_tuple(result3)
-    while ( row3 ):
-        output += row3[0] + ', ' + row3[3] + ', ' + row3[5]
-        row3=ibm_db.fetch_tuple(result3)
-    print(output)
+        while ( row2 ):
+            if (row2['MGRNO'] == None):
+                row2['MGRNO'] = ''
+            if (row2['LOCATION'] == None):
+                row2['LOCATION'] = ''
+            output += str(row2['DEPTNO']) + ', ' + row2['DEPTNAME'] + ', ' + str(row2['MGRNO']) + ', ' + row2['ADMRDEPT'] + ', ' + row2['LOCATION']
+            row2 = ibm_db.fetch_assoc(result2)
+
+        result3 = ibm_db.exec_immediate(conn,"SELECT * FROM employee WHERE lastname IN ('HAAS','THOMPSON', 'KWAN', 'GEYER', 'STERN', 'PULASKI', 'HENDERSON', 'SPENSER', 'LUCCHESSI', 'OCONNELL', 'QUINTANA', 'NICHOLLS', 'ADAMSON', 'PIANKA', 'YOSHIMURA', 'SCOUTTEN', 'WALKER', 'BROWN', 'JONES', 'LUTZ', 'JEFFERSON', 'MARINO', 'SMITH', 'JOHNSON', 'PEREZ', 'SCHNEIDER', 'PARKER', 'SMITH', 'SETRIGHT', 'MEHTA', 'LEE', 'GOUNOT')")
+        row3 = ibm_db.fetch_tuple(result3)
+        while ( row3 ):
+            output += row3[0] + ', ' + row3[3] + ', ' + row3[5]
+            row3=ibm_db.fetch_tuple(result3)
+        print(output)
 
 #__END__
 #__LUW_EXPECTED__

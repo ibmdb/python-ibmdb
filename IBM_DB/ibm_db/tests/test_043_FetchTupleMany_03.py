@@ -1,41 +1,43 @@
-# 
+#
 #  Licensed Materials - Property of IBM
 #
 #  (c) Copyright IBM Corp. 2007-2008
 #
 
-import unittest, sys
+from __future__ import print_function
+import sys
+import unittest
 import ibm_db
 import config
 from testfunctions import IbmDbTestFunctions
 
 class IbmDbTestCase(unittest.TestCase):
 
-  def test_043_FetchTupleMany_03(self):
-    obj = IbmDbTestFunctions()
-    obj.assert_expect(self.run_test_043)
+    def test_043_FetchTupleMany_03(self):
+        obj = IbmDbTestFunctions()
+        obj.assert_expect(self.run_test_043)
 
-  def run_test_043(self):
-    conn = ibm_db.connect(config.database, config.user, config.password)
-      
-    result = ibm_db.exec_immediate(conn, "select * from staff")
-    
-    row = ibm_db.fetch_tuple(result)
-    while ( row ):
-      #printf("%5d  ",row[0])
-      #printf("%-10s ",row[1])
-      #printf("%5d ",row[2])
-      #printf("%-7s ",row[3])
-      #printf("%5d ", row[4])
-      #printf("%15s ", row[5])
-      #printf("%10s ", row[6])
-      #print
-      if (row[4] == None):
-        row = row[0:4] + (0,) + row[5:]
-      if (row[6] == None):
-        row = row[0:6] + (' ',)
-      print("%5s  %-10s %5s %-7s %5s %15s %10s " % (row[0], row[1], row[2], row[3], row[4], row[5], row[6]))
-      row = ibm_db.fetch_tuple(result)
+    def run_test_043(self):
+        conn = ibm_db.connect(config.database, config.user, config.password)
+
+        result = ibm_db.exec_immediate(conn, "select * from staff")
+
+        row = ibm_db.fetch_tuple(result)
+        while ( row ):
+            #printf("%5d  ",row[0])
+            #printf("%-10s ",row[1])
+            #printf("%5d ",row[2])
+            #printf("%-7s ",row[3])
+            #printf("%5d ", row[4])
+            #printf("%15s ", row[5])
+            #printf("%10s ", row[6])
+            #print
+            if (row[4] == None):
+                row = row[0:4] + (0,) + row[5:]
+            if (row[6] == None):
+                row = row[0:6] + (' ',)
+            print("%5s  %-10s %5s %-7s %5s %15s %10s " % (row[0], row[1], row[2], row[3], row[4], row[5], row[6]))
+            row = ibm_db.fetch_tuple(result)
 
 #__END__
 #__LUW_EXPECTED__

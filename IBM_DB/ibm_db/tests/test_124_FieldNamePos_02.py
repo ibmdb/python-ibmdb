@@ -1,46 +1,48 @@
-# 
+#
 #  Licensed Materials - Property of IBM
 #
 #  (c) Copyright IBM Corp. 2007-2008
 #
 
-import unittest, sys
+from __future__ import print_function
+import sys
+import unittest
 import ibm_db
 import config
 from testfunctions import IbmDbTestFunctions
 
 class IbmDbTestCase(unittest.TestCase):
 
-  def test_124_FieldNamePos_02(self):
-    obj = IbmDbTestFunctions()
-    obj.assert_expect(self.run_test_124)
+    def test_124_FieldNamePos_02(self):
+        obj = IbmDbTestFunctions()
+        obj.assert_expect(self.run_test_124)
 
-  def run_test_124(self):
-    conn = ibm_db.connect(config.database, config.user, config.password)
-  
-    if conn:
-       result = ibm_db.exec_immediate(conn, "select * from staff, employee, org where employee.lastname in ('HAAS','THOMPSON', 'KWAN', 'GEYER', 'STERN', 'PULASKI', 'HENDERSON', 'SPENSER', 'LUCCHESSI', 'OCONNELL', 'QUINTANA', 'NICHOLLS', 'ADAMSON', 'PIANKA', 'YOSHIMURA', 'SCOUTTEN', 'WALKER', 'BROWN', 'JONES', 'LUTZ', 'JEFFERSON', 'MARINO', 'SMITH', 'JOHNSON', 'PEREZ', 'SCHNEIDER', 'PARKER', 'SMITH', 'SETRIGHT', 'MEHTA', 'LEE', 'GOUNOT') order by org.location,employee.lastname,staff.id")
-       cols = ibm_db.num_fields(result)
-       j = 0
-       row = ibm_db.fetch_both(result)
-       while ( row ):
-          for i in range(0, cols):
-             field = ibm_db.field_name(result, i)
-             value = row[ibm_db.field_name(result, i)]
-             if (value == None): 
-                value = ''
-             print("%s:%s" % (field, value))
-          print("---------")
-          j += 1
-          if (j == 10):
-            break
-       
-          row = ibm_db.fetch_both(result)
-       
-       ibm_db.close(conn)
-       print("done")
-    else:
-       print(ibm_db.conn_errormsg())
+    def run_test_124(self):
+        conn = ibm_db.connect(config.database, config.user, config.password)
+
+        if conn:
+            result = ibm_db.exec_immediate(conn, "select * from staff, employee, org where employee.lastname in ('HAAS','THOMPSON', 'KWAN', 'GEYER', 'STERN', 'PULASKI', 'HENDERSON', 'SPENSER', 'LUCCHESSI', 'OCONNELL', 'QUINTANA', 'NICHOLLS', 'ADAMSON', 'PIANKA', 'YOSHIMURA', 'SCOUTTEN', 'WALKER', 'BROWN', 'JONES', 'LUTZ', 'JEFFERSON', 'MARINO', 'SMITH', 'JOHNSON', 'PEREZ', 'SCHNEIDER', 'PARKER', 'SMITH', 'SETRIGHT', 'MEHTA', 'LEE', 'GOUNOT') order by org.location,employee.lastname,staff.id")
+            cols = ibm_db.num_fields(result)
+            j = 0
+            row = ibm_db.fetch_both(result)
+            while ( row ):
+                for i in range(0, cols):
+                    field = ibm_db.field_name(result, i)
+                    value = row[ibm_db.field_name(result, i)]
+                    if (value == None):
+                        value = ''
+                    print("%s:%s" % (field, value))
+                print("---------")
+                j += 1
+                if (j == 10):
+                    break
+
+                row = ibm_db.fetch_both(result)
+
+            ibm_db.close(conn)
+            print("done")
+        else:
+            print(ibm_db.conn_errormsg())
 #__END__
 #__LUW_EXPECTED__
 #ID:10

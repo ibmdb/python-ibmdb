@@ -1,46 +1,48 @@
-# 
+#
 #  Licensed Materials - Property of IBM
 #
 #  (c) Copyright IBM Corp. 2007-2008
 #
 
-import unittest, sys
+from __future__ import print_function
+import sys
+import unittest
 import ibm_db
 import config
 from testfunctions import IbmDbTestFunctions
 
 class IbmDbTestCase(unittest.TestCase):
 
-  def test_155_FetchAssocSelect_05(self):
-    obj = IbmDbTestFunctions()
-    obj.assert_expect(self.run_test_155)
+    def test_155_FetchAssocSelect_05(self):
+        obj = IbmDbTestFunctions()
+        obj.assert_expect(self.run_test_155)
 
-  def run_test_155(self):
-    conn = ibm_db.connect(config.database, config.user, config.password)
-    serverinfo = ibm_db.server_info( conn )
-    
-    result = ibm_db.exec_immediate(conn, "select * from employee where lastname in ('HAAS','THOMPSON', 'KWAN', 'GEYER', 'STERN', 'PULASKI', 'HENDERSON', 'SPENSER', 'LUCCHESSI', 'OCONNELL', 'QUINTANA', 'NICHOLLS', 'ADAMSON', 'PIANKA', 'YOSHIMURA', 'SCOUTTEN', 'WALKER', 'BROWN', 'JONES', 'LUTZ', 'JEFFERSON', 'MARINO', 'SMITH', 'JOHNSON', 'PEREZ', 'SCHNEIDER', 'PARKER', 'SMITH', 'SETRIGHT', 'MEHTA', 'LEE', 'GOUNOT')")
-    i=0
-    row = ibm_db.fetch_assoc(result)
-    while ( row ):
-      i += 1
-      if (serverinfo.DBMS_NAME[0:3] == 'IDS'):
-        if (row['midinit'] == None):
-          row['midinit'] = ''
-        print("%6s %12s %s %-15s%3s %4s %10s %-8s%4d %s%10s %12s %12s %12s" % \
-          (row['empno'], row['firstnme'], row['midinit'], row['lastname'], row['workdept'], \
-          row['phoneno'], row['hiredate'], row['job'], row['edlevel'], row['sex'], \
-          row['birthdate'], row['salary'], row['bonus'], row['comm']))
+    def run_test_155(self):
+        conn = ibm_db.connect(config.database, config.user, config.password)
+        serverinfo = ibm_db.server_info( conn )
+
+        result = ibm_db.exec_immediate(conn, "select * from employee where lastname in ('HAAS','THOMPSON', 'KWAN', 'GEYER', 'STERN', 'PULASKI', 'HENDERSON', 'SPENSER', 'LUCCHESSI', 'OCONNELL', 'QUINTANA', 'NICHOLLS', 'ADAMSON', 'PIANKA', 'YOSHIMURA', 'SCOUTTEN', 'WALKER', 'BROWN', 'JONES', 'LUTZ', 'JEFFERSON', 'MARINO', 'SMITH', 'JOHNSON', 'PEREZ', 'SCHNEIDER', 'PARKER', 'SMITH', 'SETRIGHT', 'MEHTA', 'LEE', 'GOUNOT')")
+        i=0
         row = ibm_db.fetch_assoc(result)
-      else:
-        if (row['MIDINIT'] == None):
-          row['MIDINIT'] = ''
-        print("%6s %12s %s %-15s%3s %4s %10s %-8s%4d %s%10s %12s %12s %12s" % \
-          (row['EMPNO'], row['FIRSTNME'], row['MIDINIT'], row['LASTNAME'], row['WORKDEPT'], \
-          row['PHONENO'], row['HIREDATE'], row['JOB'], row['EDLEVEL'], row['SEX'], \
-          row['BIRTHDATE'], row['SALARY'], row['BONUS'], row['COMM']))
-        row = ibm_db.fetch_assoc(result)
-    print("%d record(s) selected." % i)
+        while ( row ):
+            i += 1
+            if (serverinfo.DBMS_NAME[0:3] == 'IDS'):
+                if (row['midinit'] == None):
+                    row['midinit'] = ''
+                print("%6s %12s %s %-15s%3s %4s %10s %-8s%4d %s%10s %12s %12s %12s" % \
+                  (row['empno'], row['firstnme'], row['midinit'], row['lastname'], row['workdept'], \
+                  row['phoneno'], row['hiredate'], row['job'], row['edlevel'], row['sex'], \
+                  row['birthdate'], row['salary'], row['bonus'], row['comm']))
+                row = ibm_db.fetch_assoc(result)
+            else:
+                if (row['MIDINIT'] == None):
+                    row['MIDINIT'] = ''
+                print("%6s %12s %s %-15s%3s %4s %10s %-8s%4d %s%10s %12s %12s %12s" % \
+                  (row['EMPNO'], row['FIRSTNME'], row['MIDINIT'], row['LASTNAME'], row['WORKDEPT'], \
+                  row['PHONENO'], row['HIREDATE'], row['JOB'], row['EDLEVEL'], row['SEX'], \
+                  row['BIRTHDATE'], row['SALARY'], row['BONUS'], row['COMM']))
+                row = ibm_db.fetch_assoc(result)
+        print("%d record(s) selected." % i)
 
 #__END__
 #__LUW_EXPECTED__
