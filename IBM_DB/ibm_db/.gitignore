@@ -3,6 +3,9 @@ build
 dist
 ibm_db.egg-info
 *.pyc
-*.jpg
-*.png
 config.py
+libdsnao64c.*
+*~
+*.out
+*.err
+*.rej
