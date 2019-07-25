@@ -105,7 +105,7 @@ if('win32' in sys.platform):
         prebuildIbmdbPYD = True
 
 if (('IBM_DB_HOME' not in os.environ) and ('IBM_DB_DIR' not in os.environ) and ('IBM_DB_LIB' not in os.environ)):
-    if ('zos' = sys.platform):
+    if ('zos' == sys.platform):
         sys.stdout.write("You must set the environment variable IBM_DB_HOME to the HLQ of a DB2 installation\n")
         sys.stdout.flush()
         sys.exit()
@@ -243,7 +243,7 @@ if not prebuildIbmdbPYD and not os.path.isdir(ibm_db_include) and 'zos' != sys.p
     sys.stdout.write(" %s/include folder not found. Check if you have set the IBM_DB_HOME environment variable's value correctly\n " %(ibm_db_dir))
     sys.exit()
 
-if 'zos' = sys.platform:
+if 'zos' == sys.platform:
     ibm_db_include = "//'%s.SDSNC.H'" % ibm_db_home
     library = ['dsnao64c'] 
     library_x = "libdsnao64c.x"
