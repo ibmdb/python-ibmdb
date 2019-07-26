@@ -147,6 +147,10 @@
 #define SQLFLOAT double
 #endif
 
+#ifndef SQLFLOAT
+#define SQLFLOAT double
+#endif
+
 /* fetch */
 #define FETCH_INDEX    0x01
 #define FETCH_ASSOC    0x02
@@ -382,3 +386,7 @@ typedef int Py_ssize_t;
 #define PY_SSIZE_T_MIN INT_MIN
 #endif
 
+#ifdef __MVS__
+#define SQL_ATTR_CHAINING_BEGIN 0
+#define SQL_ATTR_CHAINING_END 1
+#endif
