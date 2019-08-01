@@ -19,7 +19,7 @@ matrix:
           sudo: true
 
 install:
-- docker pull ibmcom/db2express-c
+- docker pull ibmcom/db2:latest
 - docker run --name db2  -p 50000:50000 -e DB2INST1_PASSWORD=password -e LICENSE=accept -d ibmcom/db2express-c db2start
 - docker ps -as
 - docker exec -it db2 useradd -ms /bin/bash auth_user -p auth_pass
