@@ -23,7 +23,7 @@ install:
 - docker run --name db2  -p 50000:50000 -e DB2INST1_PASSWORD=password -e LICENSE=accept -d ibmcom/db2:latest db2start
 - docker ps -as
 - docker exec -it db2 useradd -ms /bin/bash auth_user -p auth_pass
-- dokcer exec -it db2 su - db2inst1 -c "export PATH=$HOME/sqllib//bin/db2:$PATH"
+- docker exec -it db2 su - db2inst1 -c "export PATH=$HOME/sqllib//bin/db2:$PATH"
 - docker exec -it db2 su - db2inst1 -c "db2 create db sample"
 
 script:
