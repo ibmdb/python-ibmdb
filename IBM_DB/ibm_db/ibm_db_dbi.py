@@ -1252,7 +1252,7 @@ class Cursor(object):
             for param in parameters:
                 if isinstance(param, memoryview):
                     param = param.tobytes()
-                if isinstance(param, CONVERT_STR):
+                elif isinstance(param, CONVERT_STR):
                     param = str(param)
                 buff.append(param)
             parameters = tuple(buff)
