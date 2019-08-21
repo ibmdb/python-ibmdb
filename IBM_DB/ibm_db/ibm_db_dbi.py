@@ -1250,7 +1250,9 @@ class Cursor(object):
             # Convert date/time and binary objects to string for
             # inserting into the database.
             for param in parameters:
-                if isinstance(param, CONVERT_STR):
+                if isinstance(param, memoryview):
+                    param = param.tobytes()
+                elif isinstance(param, CONVERT_STR):
                     param = str(param)
                 buff.append(param)
             parameters = tuple(buff)
