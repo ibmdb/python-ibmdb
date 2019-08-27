@@ -1021,6 +1021,7 @@ static int _python_ibm_db_bind_column_helper(stmt_handle *stmt_res)
                 }
                 break;
 
+            case SQL_BIT:
             case SQL_SMALLINT:
 
                 Py_BEGIN_ALLOW_THREADS;
@@ -7474,6 +7475,7 @@ static PyObject *ibm_db_field_type(PyObject *self, PyObject *args)
         Py_RETURN_FALSE;
     }
     switch (stmt_res->column_info[col].type) {
+        case SQL_BIT:
         case SQL_SMALLINT:
         case SQL_INTEGER:
             str_val = "int";
@@ -8014,6 +8016,21 @@ static PyObject *ibm_db_result(PyObject *self, PyObject *args)
             }
             break;
 
+        case SQL_BIT:
+            rc = _python_ibm_db_get_data(stmt_res, col_num+1, SQL_C_BIT,
+                         &long_val, sizeof(long_val),
+                         &out_length);
+            if ( rc == SQL_ERROR ) {
+                PyErr_Clear();
+                Py_RETURN_FALSE;
+            }
+            if (out_length == SQL_NULL_DATA) {
+                Py_RETURN_NONE;
+            } else {
+                return PyBool_FromLong(long_val);
+            }
+            break;
+        
         case SQL_SMALLINT:
         case SQL_INTEGER:
             rc = _python_ibm_db_get_data(stmt_res, col_num+1, SQL_C_LONG,
@@ -8404,6 +8421,10 @@ static PyObject *_python_ibm_db_bind_fetch_helper(PyObject *args, int op)
 
                 case SQL_INTEGER:
                     value = PyInt_FromLong(row_data->i_val);
+                    break;
+
+                case SQL_BIT:
+                    value = PyBool_FromLong(row_data->i_val);
                     break;
 
                 case SQL_REAL:
