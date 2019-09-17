@@ -66,14 +66,15 @@ This will install ibm_db and ibm_db_dbi module.
 * <a name="docker"></a>For installing ibm_db on docker Linux container, you can refer as below:
 ```
 yum install python gcc pam wget python-devel.x86_64
+use, `yum install python3` to install python 3.x
 
 if pip or pip3 does not exist, install it as:
-
 wget https://bootstrap.pypa.io/get-pip.py
 docker cp get-pip.py root:<containerid>
 cd root
 python get-pip.py
 
+Install python ibm_db as:
 pip install ibm_db 
 or
 pip3 install ibm_db
