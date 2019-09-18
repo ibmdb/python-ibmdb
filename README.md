@@ -48,6 +48,8 @@ You might need zlib, openssl, pip installations if not already available in your
     yum install python-devel
 ```
 
+* For installing ibm_db on **Docker Linux container**, you may need to install **gcc, python, pip, python-devel and pam** if not already installed. Refer to [Installation](#docker) for more details.
+
 ## <a name="inst"></a> Installation
 * MAC OS:
 You can install the driver using pip as:
@@ -60,6 +62,24 @@ You can install the driver using pip as:
 pip install ibm_db
 ```
 This will install ibm_db and ibm_db_dbi module. 
+
+* <a name="docker"></a>For installing ibm_db on docker Linux container, you can refer as below:
+```
+yum install python gcc pam wget python-devel.x86_64
+use, `yum install python3` to install python 3.x
+
+if pip or pip3 does not exist, install it as:
+wget https://bootstrap.pypa.io/get-pip.py
+docker cp get-pip.py /root:<containerid>
+cd root
+python get-pip.py
+
+Install python ibm_db as:
+pip install ibm_db 
+or
+pip3 install ibm_db
+
+```
 
 The ODBC and CLI Driver(clidriver) is automatically downloaded at the time of installation and it is recommended to use this driver. However, if you wish to use an existing installation of clidriver or install the clidriver manually and use it, you can set IBM_DB_HOME environment variable. For more information on how to set this variable, refer [Environment Variables](#envvar) section.
 
