@@ -70,7 +70,7 @@ use, `yum install python3` to install python 3.x
 
 if pip or pip3 does not exist, install it as:
 wget https://bootstrap.pypa.io/get-pip.py
-docker cp get-pip.py root:<containerid>
+docker cp get-pip.py /root:<containerid>
 cd root
 python get-pip.py
 
