@@ -6462,14 +6462,14 @@ static PyObject *ibm_db_stmt_errormsg(PyObject *self, PyObject *args)
             stmt_res->error_recno_tracker = stmt_res->errormsg_recno_tracker;
         stmt_res->errormsg_recno_tracker++;
 
-        retVal = StringOBJ_FromASCII(return_str);
+        retVal = StringOBJ_FromStr(return_str);
         if(return_str != NULL) {
             PyMem_Del(return_str);
             return_str = NULL;
         }
         return retVal;
     } else {
-        return StringOBJ_FromASCII(IBM_DB_G(__python_stmt_err_msg));
+        return StringOBJ_FromStr(IBM_DB_G(__python_stmt_err_msg));
     }
 }
 
