@@ -81,6 +81,11 @@ pip3 install ibm_db
 
 ```
 
+* Uninstalling the ibm_db driver :
+```python
+pip uninstall ibm_db
+```
+
 The ODBC and CLI Driver(clidriver) is automatically downloaded at the time of installation and it is recommended to use this driver. However, if you wish to use an existing installation of clidriver or install the clidriver manually and use it, you can set IBM_DB_HOME environment variable. For more information on how to set this variable, refer [Environment Variables](#envvar) section.
 
 * <a name="envvar"></a>Environment Variables:
