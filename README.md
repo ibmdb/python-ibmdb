@@ -171,6 +171,10 @@ True
 ```
 More examples can be found under ['tests'](https://github.com/ibmdb/python-ibmdb/tree/master/IBM_DB/ibm_db/tests) folder.
 
+[API Documentation](https://github.com/ibmdb/python-ibmdb/wiki/APIs) has examples for each API.
+
+Jupyter Notebook examples can be found here -> [Other Examples](https://github.com/IBM/db2-python/tree/master/Jupyter_Notebooks)
+
 ## <a name="api"></a> API Documentation
 For more information on the APIs supported by ibm_db, please refer to below link:
 
