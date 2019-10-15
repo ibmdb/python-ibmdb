@@ -100,10 +100,27 @@ The ODBC and CLI Driver(clidriver) is automatically downloaded at the time of in
   Other platforms:
   export IBM_DB_HOME=/home/skauser/clidriver
   ```
+  
+  You are required to set the library path to the clidriver under IBM_DB_HOME to pick this version of the ODBC and CLI Driver.
+  e.g:
+  ```
+  Windows:
+  set LIB = %IBM_DB_HOME%/lib;%LIB%
+ 
+  AIX:
+  export LIBPATH = $IBM_DB_HOME/lib:$LIBPATH
+ 
+  MAC:
+  export DYLD_LIBRARY_PATH = $IBM_DB_HOME/lib:$DYLD_LIBRARY_PATH
+ 
+  Other platforms:
+  export LD_LIBRARY_PATH = $IBM_DB_HOME/lib:$LD_LIBRARY_PATH
+  ```
+ 
   The ODBC and CLI driver is available for download at [Db2 LUW ODBC and CLI Driver](https://public.dhe.ibm.com/ibmdl/export/pub/software/data/db2/drivers/odbc_cli/).
 Refer to ([License requirements](#Licenserequirements)) for more details on the CLI driver for manual download and installation.
-  
-
+ 
+ 
 ## <a name="eg"></a> Quick Example
 ```python
 $ python
