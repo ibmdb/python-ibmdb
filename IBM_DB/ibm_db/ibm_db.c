@@ -6462,14 +6462,14 @@ static PyObject *ibm_db_stmt_errormsg(PyObject *self, PyObject *args)
             stmt_res->error_recno_tracker = stmt_res->errormsg_recno_tracker;
         stmt_res->errormsg_recno_tracker++;
 
-        retVal = StringOBJ_FromASCII(return_str);
+        retVal = StringOBJ_FromStr(return_str);
         if(return_str != NULL) {
             PyMem_Del(return_str);
             return_str = NULL;
         }
         return retVal;
     } else {
-        return StringOBJ_FromASCII(IBM_DB_G(__python_stmt_err_msg));
+        return StringOBJ_FromStr(IBM_DB_G(__python_stmt_err_msg));
     }
 }
 
@@ -8385,12 +8385,12 @@ static PyObject *_python_ibm_db_bind_fetch_helper(PyObject *args, int op)
                     break;
 
                 case SQL_TYPE_TIME:
-                    value = PyTime_FromTime(row_data->time_val->hour, row_data->time_val->minute, row_data->time_val->second, 0);
+                    value = PyTime_FromTime(row_data->time_val->hour % 24, row_data->time_val->minute, row_data->time_val->second, 0);
                     break;
 
                 case SQL_TYPE_TIMESTAMP:
                     value = PyDateTime_FromDateAndTime(row_data->ts_val->year, row_data->ts_val->month, row_data->ts_val->day,
-                                    row_data->ts_val->hour, row_data->ts_val->minute, row_data->ts_val->second,
+                                    row_data->ts_val->hour % 24, row_data->ts_val->minute, row_data->ts_val->second,
                                     row_data->ts_val->fraction / 1000);
                     break;
 

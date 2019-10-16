@@ -24,6 +24,7 @@
 #if  PY_MAJOR_VERSION < 3
 #define PyBytes_Check               PyString_Check
 #define StringOBJ_FromASCII(str)    PyString_FromString(str)
+#define StringOBJ_FromStr(str)      PyString_FromString(str)
 #define PyBytes_AsString            PyString_AsString
 #define PyBytes_FromStringAndSize   PyString_FromStringAndSize
 #define StringObj_Format            PyString_Format
@@ -41,6 +42,7 @@
 #define PyInt_AsLong                PyLong_AsLong
 #define PyInt_AS_LONG               PyLong_AsLong
 #define StringOBJ_FromASCII(str)    PyUnicode_DecodeASCII(str, strlen(str), NULL)
+#define StringOBJ_FromStr(str)      PyUnicode_DecodeLocale(str, NULL)
 #define PyString_Check              PyUnicode_Check
 #define StringObj_Format            PyUnicode_Format
 #define StringObj_Size              PyUnicode_GET_SIZE
