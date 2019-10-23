@@ -51,3 +51,5 @@ class IbmDbTestCase(unittest.TestCase):
 #Statement Execute Failed: [IBM][CLI Driver] CLI0112E  Error in assignment. SQLSTATE=22005 SQLCODE=-99999
 #__IDS_EXPECTED__
 #Statement Execute Failed: [IBM][CLI Driver] CLI0112E  Error in assignment. SQLSTATE=22005 SQLCODE=-99999
+#__ZOS_ODBC_EXPECTED__
+#Statement Execute Failed: {DB2 FOR OS/390}{ODBC DRIVER}  SQLSTATE=22005  ERRLOC=4:3:2 SQLCODE=-99999

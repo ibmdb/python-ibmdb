@@ -67,7 +67,6 @@ class IbmDbTestFunctions(unittest.TestCase):
     #   located at the bottom of the current test file.
     def expected_ZOS(self, fileName):
         fileHandle = open(fileName, 'r')
-        #import pdb;pdb.set_trace()
         fileInput = fileHandle.read().split('#__ZOS_EXPECTED__')[-1].split('#__SYSTEMI_EXPECTED__')[0].replace('\n', '').replace('#', '')
         fileHandle.close()
         return fileInput
@@ -110,7 +109,6 @@ class IbmDbTestFunctions(unittest.TestCase):
     # This function will compare using Regular Expressions
     # based on the servre
     def assert_expectf(self, testFuncName):
-        import pdb;pdb.set_trace()
         callstack = inspect.stack(0)
         try:
             if (self.server.DBMS_NAME[0:2] == "AS"):

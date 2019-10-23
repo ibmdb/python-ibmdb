@@ -30,11 +30,21 @@ def load_tests(loader, tests, pattern):
     tests.sort()
 
     for test in tests:
-        mod = importlib.import_module(test)
-        suite.addTest(mod.IbmDbTestCase(test))
+        if not (test.startswith('test_002') or \
+            test.startswith('test_007') or \
+            test.startswith('test_080') or \
+            test.startswith('test_090') or \
+            test.startswith('test_053') or \
+            test.startswith('test_196') or \
+            test.startswith('test_220') or \
+            test.startswith('test_221') or \
+            test.startswith('test_264') or \
+            test.startswith('test_6792')):
+                mod = importlib.import_module(test)
+                suite.addTest(mod.IbmDbTestCase(test))
 
     return suite
 
 if __name__ == '__main__':
     sys.path.insert(0, config.test_dir)
-    unittest.main(verbosity=2)
+    unittest.main(verbosity=3)

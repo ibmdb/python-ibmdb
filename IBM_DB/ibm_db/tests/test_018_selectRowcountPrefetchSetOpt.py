@@ -22,7 +22,8 @@ class IbmDbTestCase(unittest.TestCase):
         ibm_db.autocommit(conn, ibm_db.SQL_AUTOCOMMIT_ON)
         if conn:
             stmt = ibm_db.prepare(conn, "SELECT * from animals WHERE weight < 10.0" )
-            ibm_db.set_option(stmt, {ibm_db.SQL_ATTR_ROWCOUNT_PREFETCH : ibm_db.SQL_ROWCOUNT_PREFETCH_ON}, 2)
+            if('zos' not in sys.platform):
+                ibm_db.set_option(stmt, {ibm_db.SQL_ATTR_ROWCOUNT_PREFETCH : ibm_db.SQL_ROWCOUNT_PREFETCH_ON}, 2)
             result = ibm_db.execute(stmt)
             if result:
                 rows = ibm_db.num_rows(stmt)
@@ -31,7 +32,8 @@ class IbmDbTestCase(unittest.TestCase):
             else:
                 print(ibm_db.stmt_errormsg())
 
-            ibm_db.set_option(stmt, {ibm_db.SQL_ATTR_ROWCOUNT_PREFETCH : ibm_db.SQL_ROWCOUNT_PREFETCH_OFF}, 2)
+            if('zos' not in sys.platform):
+                ibm_db.set_option(stmt, {ibm_db.SQL_ATTR_ROWCOUNT_PREFETCH : ibm_db.SQL_ROWCOUNT_PREFETCH_OFF}, 2)
             result = ibm_db.execute(stmt)
             if result:
                 rows = ibm_db.num_rows(stmt)
@@ -40,7 +42,8 @@ class IbmDbTestCase(unittest.TestCase):
             else:
                 print(ibm_db.stmt_errormsg())
 
-            ibm_db.set_option(stmt, {ibm_db.SQL_ATTR_ROWCOUNT_PREFETCH : ibm_db.SQL_ROWCOUNT_PREFETCH_ON}, 2)
+            if('zos' not in sys.platform):
+                ibm_db.set_option(stmt, {ibm_db.SQL_ATTR_ROWCOUNT_PREFETCH : ibm_db.SQL_ROWCOUNT_PREFETCH_ON}, 2)
             result = ibm_db.execute(stmt)
             if result:
                 rows = ibm_db.num_rows(stmt)

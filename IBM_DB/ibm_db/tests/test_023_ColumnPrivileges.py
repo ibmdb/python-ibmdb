@@ -32,7 +32,7 @@ class IbmDbTestCase(unittest.TestCase):
             if (server.DBMS_NAME[0:3] == 'IDS'):
                 stmt = ibm_db.column_privileges(conn, None, config.user, 'animals')
             else:
-                stmt = ibm_db.column_privileges(conn, None, None, 'ANIMALS')
+                stmt = ibm_db.column_privileges(conn, None, config.user, 'ANIMALS')
             row = ibm_db.fetch_tuple(stmt)
             if row:
                 print(row[0])
@@ -59,7 +59,7 @@ class IbmDbTestCase(unittest.TestCase):
 #%s
 #YES
 #__ZOS_EXPECTED__
-#%s
+#None
 #%s
 #ANIMALS
 #BREED
