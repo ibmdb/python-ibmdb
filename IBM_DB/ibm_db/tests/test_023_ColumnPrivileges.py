@@ -31,8 +31,10 @@ class IbmDbTestCase(unittest.TestCase):
         if (conn != 0):
             if (server.DBMS_NAME[0:3] == 'IDS'):
                 stmt = ibm_db.column_privileges(conn, None, config.user, 'animals')
-            else:
+            elif (sys.platform == 'zos'):
                 stmt = ibm_db.column_privileges(conn, None, config.user, 'ANIMALS')
+            else:
+                stmt = ibm_db.column_privileges(conn, None, None, 'ANIMALS')
             row = ibm_db.fetch_tuple(stmt)
             if row:
                 print(row[0])
