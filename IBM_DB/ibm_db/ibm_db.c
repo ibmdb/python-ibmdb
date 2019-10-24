@@ -7976,7 +7976,7 @@ static PyObject *ibm_db_result(PyObject *self, PyObject *args)
                 time_ptr = NULL;
                 Py_RETURN_NONE;
             } else {
-                return_value = PyTime_FromTime(time_ptr->hour, time_ptr->minute, time_ptr->second, 0);
+                return_value = PyTime_FromTime(time_ptr->hour % 24, time_ptr->minute, time_ptr->second, 0);
                 PyMem_Del(time_ptr);
                 time_ptr = NULL;
                 return return_value;
@@ -8007,7 +8007,7 @@ static PyObject *ibm_db_result(PyObject *self, PyObject *args)
                 ts_ptr = NULL;
                 Py_RETURN_NONE;
             } else {
-                return_value = PyDateTime_FromDateAndTime(ts_ptr->year, ts_ptr->month, ts_ptr->day, ts_ptr->hour, ts_ptr->minute, ts_ptr->second, ts_ptr->fraction / 1000);
+                return_value = PyDateTime_FromDateAndTime(ts_ptr->year, ts_ptr->month, ts_ptr->day, ts_ptr->hour % 24, ts_ptr->minute, ts_ptr->second, ts_ptr->fraction / 1000);
                 PyMem_Del(ts_ptr);
                 ts_ptr = NULL;
                 return return_value;
@@ -10841,7 +10841,7 @@ static PyObject* ibm_db_callproc(PyObject *self, PyObject *args){
                                 if( !NIL_P(tmp_curr->time_value))
                                 {
                                     PyTuple_SetItem(outTuple, paramCount,
-                                     PyTime_FromTime(tmp_curr->time_value->hour,
+                                     PyTime_FromTime(tmp_curr->time_value->hour % 24,
                                      tmp_curr->time_value->minute,
                                      tmp_curr->time_value->second, 0));
                                 }
@@ -10858,7 +10858,7 @@ static PyObject* ibm_db_callproc(PyObject *self, PyObject *args){
                                     PyTuple_SetItem(outTuple, paramCount,
                                      PyDateTime_FromDateAndTime(tmp_curr->ts_value->year,
                                      tmp_curr->ts_value->month, tmp_curr->ts_value->day,
-                                     tmp_curr->ts_value->hour,
+                                     tmp_curr->ts_value->hour % 24,
                                      tmp_curr->ts_value->minute,
                                      tmp_curr->ts_value->second,
                                      tmp_curr->ts_value->fraction / 1000));
