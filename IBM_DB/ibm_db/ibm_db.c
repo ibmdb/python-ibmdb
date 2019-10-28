@@ -382,6 +382,8 @@ static void _python_ibm_db_free_result_struct(stmt_handle* handle) {
                     case SQL_NUMERIC:
                     case SQL_XML:
                     case SQL_DECFLOAT:
+                    case SQL_BIT:
+                    case SQL_BLOB:
                         if ( handle->row_data[i].data.str_val != NULL ) {
                             PyMem_Del(handle->row_data[i].data.str_val);
                             handle->row_data[i].data.str_val = NULL;
@@ -5645,6 +5647,7 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
                     }
                 }
                 tmp = ALLOC_N(char, curr->ivalue+1);
+                memset(tmp, 0, curr->ivalue+1);
                 curr->svalue = memcpy(tmp, curr->svalue, param_length);
                 curr->svalue[param_length] = '\0';
 
@@ -5674,7 +5677,7 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
                             curr->param_type == SQL_PARAM_INPUT_OUTPUT) {
                             curr->ivalue = curr->ivalue -1;
                             curr->bind_indicator = param_length;
-                            paramValuePtr = (SQLPOINTER)curr;
+                            paramValuePtr = (SQLPOINTER)curr->svalue;
                         } else {
                             curr->bind_indicator = SQL_DATA_AT_EXEC;
 #ifndef PASE
@@ -5734,9 +5737,16 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
                 }
 
                 Py_BEGIN_ALLOW_THREADS;
-                rc = SQLBindParameter(stmt_res->hstmt, curr->param_num,
-                    curr->param_type, valueType, curr->data_type, curr->param_size,
-                    curr->scale, paramValuePtr, curr->ivalue, &(curr->bind_indicator));
+                rc = SQLBindParameter(stmt_res->hstmt,
+                                      curr->param_num,
+                                      curr->param_type,
+                                      valueType,
+                                      curr->data_type,
+                                      curr->param_size,
+                                      curr->scale,
+                                      paramValuePtr,
+                                      curr->ivalue,
+                                      &(curr->bind_indicator));
                 Py_END_ALLOW_THREADS;
 
                 if ( rc == SQL_ERROR || rc == SQL_SUCCESS_WITH_INFO ) {
@@ -5772,7 +5782,16 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
                 curr->bind_indicator = curr->ivalue;
 
                 Py_BEGIN_ALLOW_THREADS;
-                rc = SQLBindParameter(stmt_res->hstmt, curr->param_num, curr->param_type, valueType, curr->data_type, curr->param_size, curr->scale, paramValuePtr, curr->ivalue, &(curr->bind_indicator));
+                rc = SQLBindParameter(stmt_res->hstmt, 
+                                      curr->param_num,
+                                      curr->param_type,
+                                      valueType,
+                                      curr->data_type,
+                                      curr->param_size,
+                                      curr->scale,
+                                      paramValuePtr,
+                                      curr->ivalue,
+                                      &(curr->bind_indicator));
                 Py_END_ALLOW_THREADS;
 
                 if ( rc == SQL_ERROR || rc == SQL_SUCCESS_WITH_INFO ) {
@@ -6463,14 +6482,14 @@ static PyObject *ibm_db_stmt_errormsg(PyObject *self, PyObject *args)
             stmt_res->error_recno_tracker = stmt_res->errormsg_recno_tracker;
         stmt_res->errormsg_recno_tracker++;
 
-        retVal = StringOBJ_FromASCII(return_str);
+        retVal = StringOBJ_FromStr(return_str);
         if(return_str != NULL) {
             PyMem_Del(return_str);
             return_str = NULL;
         }
         return retVal;
     } else {
-        return StringOBJ_FromASCII(IBM_DB_G(__python_stmt_err_msg));
+        return StringOBJ_FromStr(IBM_DB_G(__python_stmt_err_msg));
     }
 }
 
@@ -7978,7 +7997,7 @@ static PyObject *ibm_db_result(PyObject *self, PyObject *args)
                 time_ptr = NULL;
                 Py_RETURN_NONE;
             } else {
-                return_value = PyTime_FromTime(time_ptr->hour, time_ptr->minute, time_ptr->second, 0);
+                return_value = PyTime_FromTime(time_ptr->hour % 24, time_ptr->minute, time_ptr->second, 0);
                 PyMem_Del(time_ptr);
                 time_ptr = NULL;
                 return return_value;
@@ -8009,7 +8028,7 @@ static PyObject *ibm_db_result(PyObject *self, PyObject *args)
                 ts_ptr = NULL;
                 Py_RETURN_NONE;
             } else {
-                return_value = PyDateTime_FromDateAndTime(ts_ptr->year, ts_ptr->month, ts_ptr->day, ts_ptr->hour, ts_ptr->minute, ts_ptr->second, ts_ptr->fraction / 1000);
+                return_value = PyDateTime_FromDateAndTime(ts_ptr->year, ts_ptr->month, ts_ptr->day, ts_ptr->hour % 24, ts_ptr->minute, ts_ptr->second, ts_ptr->fraction / 1000);
                 PyMem_Del(ts_ptr);
                 ts_ptr = NULL;
                 return return_value;
@@ -8402,12 +8421,12 @@ static PyObject *_python_ibm_db_bind_fetch_helper(PyObject *args, int op)
                     break;
 
                 case SQL_TYPE_TIME:
-                    value = PyTime_FromTime(row_data->time_val->hour, row_data->time_val->minute, row_data->time_val->second, 0);
+                    value = PyTime_FromTime(row_data->time_val->hour % 24, row_data->time_val->minute, row_data->time_val->second, 0);
                     break;
 
                 case SQL_TYPE_TIMESTAMP:
                     value = PyDateTime_FromDateAndTime(row_data->ts_val->year, row_data->ts_val->month, row_data->ts_val->day,
-                                    row_data->ts_val->hour, row_data->ts_val->minute, row_data->ts_val->second,
+                                    row_data->ts_val->hour % 24, row_data->ts_val->minute, row_data->ts_val->second,
                                     row_data->ts_val->fraction / 1000);
                     break;
 
@@ -10862,7 +10881,7 @@ static PyObject* ibm_db_callproc(PyObject *self, PyObject *args){
                                 if( !NIL_P(tmp_curr->time_value))
                                 {
                                     PyTuple_SetItem(outTuple, paramCount,
-                                     PyTime_FromTime(tmp_curr->time_value->hour,
+                                     PyTime_FromTime(tmp_curr->time_value->hour % 24,
                                      tmp_curr->time_value->minute,
                                      tmp_curr->time_value->second, 0));
                                 }
@@ -10879,7 +10898,7 @@ static PyObject* ibm_db_callproc(PyObject *self, PyObject *args){
                                     PyTuple_SetItem(outTuple, paramCount,
                                      PyDateTime_FromDateAndTime(tmp_curr->ts_value->year,
                                      tmp_curr->ts_value->month, tmp_curr->ts_value->day,
-                                     tmp_curr->ts_value->hour,
+                                     tmp_curr->ts_value->hour % 24,
                                      tmp_curr->ts_value->minute,
                                      tmp_curr->ts_value->second,
                                      tmp_curr->ts_value->fraction / 1000));
@@ -10897,6 +10916,19 @@ static PyObject* ibm_db_callproc(PyObject *self, PyObject *args){
                                     PyTuple_SetItem( outTuple, paramCount,
                                      PyLong_FromString(tmp_curr->svalue,
                                      NULL, 0));
+                                }
+                                else
+                                {
+                                    Py_INCREF(Py_None);
+                                    PyTuple_SetItem(outTuple, paramCount, Py_None);
+                                }
+                                paramCount++;
+                                break;
+                            case SQL_BLOB:
+                                if( !NIL_P(tmp_curr->svalue ))
+                                {
+                                     PyTuple_SetItem( outTuple, paramCount,
+                                     PyBytes_FromString(tmp_curr->svalue));
                                 }
                                 else
                                 {
