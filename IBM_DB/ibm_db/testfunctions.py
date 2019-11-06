@@ -24,7 +24,6 @@ class IbmDbTestFunctions(unittest.TestCase):
 
     # This function captures the output of the current test file.
     def capture(self, func):
-        import pdb;pdb.set_trace()
         buffer = StringIO()
         sys.stdout = buffer
         func()
@@ -37,6 +36,7 @@ class IbmDbTestFunctions(unittest.TestCase):
     def testCasesIn(self, fileName):
         if (fileName.startswith('tests/test_133') or \
                 fileName.startswith('tests/test_054') or \
+                fileName.startswith('tests/test_081') or \
                 fileName.startswith('tests/test_147') or \
                 fileName.startswith('tests/test_157a') or \
                 fileName.startswith('tests/test_240') or \
