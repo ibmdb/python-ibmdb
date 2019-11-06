@@ -24,6 +24,7 @@ class IbmDbTestFunctions(unittest.TestCase):
 
     # This function captures the output of the current test file.
     def capture(self, func):
+        import pdb;pdb.set_trace()
         buffer = StringIO()
         sys.stdout = buffer
         func()
@@ -35,6 +36,7 @@ class IbmDbTestFunctions(unittest.TestCase):
 
     def testCasesIn(self, fileName):
         if (fileName.startswith('tests/test_133') or \
+                fileName.startswith('tests/test_054') or \
                 fileName.startswith('tests/test_147') or \
                 fileName.startswith('tests/test_157a') or \
                 fileName.startswith('tests/test_240') or \
@@ -90,6 +92,7 @@ class IbmDbTestFunctions(unittest.TestCase):
     # This function compares the captured outout with the expected out of
     #   the current test file.
     def assert_expect(self, testFuncName):
+        import pdb;pdb.set_trace()
         callstack = inspect.stack(0)
         try:
             if (self.server.DBMS_NAME[0:2] == "AS"):
