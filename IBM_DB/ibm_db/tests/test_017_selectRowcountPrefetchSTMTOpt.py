@@ -83,3 +83,8 @@ class IbmDbTestCase(unittest.TestCase):
 #affected row: -1
 #affected row: 4
 #affected row: -1
+#__ZOS_ODBC_EXPECTED__
+#affected row: -1
+#affected row: -1
+#affected row: -1
+#affected row: -1
