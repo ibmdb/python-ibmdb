@@ -10,6 +10,7 @@ import unittest
 import ibm_db
 import config
 from testfunctions import IbmDbTestFunctions
+import getpass
 
 class IbmDbTestCase(unittest.TestCase):
 
@@ -29,7 +30,11 @@ class IbmDbTestCase(unittest.TestCase):
             print("Values of bound parameters _before_ CALL:")
             print("  1: %s 2: %s 3: %d\n" % (name, second_name, weight))
 
-            stmt, name, second_name, weight = ibm_db.callproc(conn, 'match_animal', (name, second_name, weight))
+            if('zos' in sys.platform):
+                proc_name = getpass.getuser() + ".MATCH_ANIMAL"
+            else:
+                proc_name = "match_animal"
+            stmt, name, second_name, weight = ibm_db.callproc(conn, proc_name, (name, second_name, weight))
 
             if stmt is not None:
                 print("Values of bound parameters _after_ CALL:")

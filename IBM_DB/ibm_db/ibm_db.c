@@ -1326,11 +1326,11 @@ static PyObject *_python_ibm_db_connect_helper( PyObject *self, PyObject *args, 
                 password = getUnicodeDataAsSQLWCHAR(passwordObj, &isNewBuffer);
                 rc = SQLConnectW((SQLHDBC)conn_res->hdbc,
                     database,
-                    PyUnicode_GetSize(databaseObj),
+                    PyUnicode_GetSize(databaseObj)*2,
                     uid,
-                    PyUnicode_GetSize(uidObj),
+                    PyUnicode_GetSize(uidObj)*2,
                     password,
-                    PyUnicode_GetSize(passwordObj));
+                    PyUnicode_GetSize(passwordObj)*2);
             }
             if( rc == SQL_ERROR || rc == SQL_SUCCESS_WITH_INFO )
             {
@@ -4898,7 +4898,6 @@ static PyObject *ibm_db_commit(PyObject *self, PyObject *args)
 static int _python_ibm_db_do_prepare(SQLHANDLE hdbc, SQLWCHAR *stmt, int stmt_size, stmt_handle *stmt_res, PyObject *options)
 {
     int rc;
-
     /* alloc handle and return only if it errors */
     rc = SQLAllocHandle(SQL_HANDLE_STMT, hdbc, &(stmt_res->hstmt));
     if ( rc == SQL_ERROR ) {
@@ -4933,7 +4932,7 @@ static int _python_ibm_db_do_prepare(SQLHANDLE hdbc, SQLWCHAR *stmt, int stmt_si
 
     Py_BEGIN_ALLOW_THREADS;
     rc = SQLPrepareW((SQLHSTMT)stmt_res->hstmt, stmt,
-                stmt_size);
+                stmt_size*2);
     Py_END_ALLOW_THREADS;
 
     if ( rc == SQL_ERROR ) {
@@ -10454,6 +10453,11 @@ static PyObject* ibm_db_execute_many (PyObject *self, PyObject *args) {
      *      1. statement handler Object
      *      2. Parameters
      *      3. Options (optional) */
+#if defined __MVS__
+    PyErr_SetString( PyExc_Exception, "Not supported: This function is currently not supported on this platform" );
+    return -1
+#endif
+
     if ( !PyArg_ParseTuple(args, "OO|O", &py_stmt_res, &params, &options) )
         return NULL;
 

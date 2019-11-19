@@ -33,6 +33,8 @@ class IbmDbTestCase(unittest.TestCase):
             print("Test first index table:")
             if (server.DBMS_NAME[0:3] == 'IDS'):
                 result = ibm_db.statistics(conn,None,config.user,"index_test",True)
+            elif ( sys.platform == 'zos'):
+                result = ibm_db.statistics(conn,None,config.user,"INDEX_TEST",True)
             else:
                 result = ibm_db.statistics(conn,None,None,"INDEX_TEST",True)
             row = ibm_db.fetch_tuple(result)
@@ -54,6 +56,8 @@ class IbmDbTestCase(unittest.TestCase):
             print("Test second index table:")
             if (server.DBMS_NAME[0:3] == 'IDS'):
                 result = ibm_db.statistics(conn,None,config.user,"index_test2",True)
+            elif ( sys.platform == 'zos'):
+                result = ibm_db.statistics(conn,None,config.user,"INDEX_TEST2",True)
             else:
                 result = ibm_db.statistics(conn,None,None,"INDEX_TEST2",True)
             row = ibm_db.fetch_tuple(result)

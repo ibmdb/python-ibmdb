@@ -64,7 +64,10 @@ class IbmDbTestCase(unittest.TestCase):
             out4 = 0
             out5 = ""
 
-            stmt, out1, out2, out3, out4, out5 = ibm_db.callproc(conn, 'sp', (out1, out2, out3, out4, out5))
+            if 'zos' == sys.platform:
+                stmt, out1, out2, out3, out4, out5 = ibm_db.callproc(conn, 'SP', (out1, out2, out3, out4, out5))
+            else:
+                stmt, out1, out2, out3, out4, out5 = ibm_db.callproc(conn, 'sp', (out1, out2, out3, out4, out5))
 
             print("out 1:")
             print(out1)

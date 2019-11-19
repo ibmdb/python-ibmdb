@@ -21,7 +21,10 @@ class IbmDbTestCase(unittest.TestCase):
         conn = ibm_db.connect(config.database, config.user, config.password)
         ibm_db.autocommit(conn, ibm_db.SQL_AUTOCOMMIT_ON)
         if conn:
-            stmt = ibm_db.prepare(conn, "SELECT * from animals WHERE weight < 10.0", {ibm_db.SQL_ATTR_ROWCOUNT_PREFETCH : ibm_db.SQL_ROWCOUNT_PREFETCH_ON} )
+            if('zos' in sys.platform):
+                stmt = ibm_db.prepare(conn, "SELECT * from animals WHERE weight < 10.0")
+            else:
+                stmt = ibm_db.prepare(conn, "SELECT * from animals WHERE weight < 10.0", {ibm_db.SQL_ATTR_ROWCOUNT_PREFETCH : ibm_db.SQL_ROWCOUNT_PREFETCH_ON} )
             result = ibm_db.execute(stmt)
             if result:
                 rows = ibm_db.num_rows(stmt)

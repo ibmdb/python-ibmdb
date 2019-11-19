@@ -19,7 +19,7 @@
 /*
  * Combability changes for Python 3
  */
-
+#define LONG_BIT 64
 /* defining string methods */
 #if  PY_MAJOR_VERSION < 3
 #define PyBytes_Check               PyString_Check

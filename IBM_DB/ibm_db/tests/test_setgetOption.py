@@ -17,16 +17,22 @@ class IbmDbTestCase(unittest.TestCase):
         obj.assert_expect(self.run_test_setgetOption)
 
     def run_test_setgetOption(self):
-        options = { ibm_db.SQL_ATTR_INFO_PROGRAMNAME : 'TestProgram'}
+        if sys.platform == 'zos':
+            options = {}
+        else:
+            options = { ibm_db.SQL_ATTR_INFO_PROGRAMNAME : 'TestProgram'}
         conn = ibm_db.connect(config.database, config.user, config.password, options)
 
         # Get the server type
         serverinfo = ibm_db.server_info( conn )
 
         if conn:
-            value=ibm_db.get_option(conn, ibm_db.SQL_ATTR_INFO_PROGRAMNAME, 1)
-            print("Connection options:\nSQL_ATTR_INFO_PROGRAMNAME = ", end="")
-            print(value)
+            if sys.platform != 'zos':
+                value=ibm_db.get_option(conn, ibm_db.SQL_ATTR_INFO_PROGRAMNAME, 1)
+                print("Connection options:\nSQL_ATTR_INFO_PROGRAMNAME = ", end="")
+                print(value)
+            else:
+                print("Connection options:\n", end="")
 
             returncode=ibm_db.set_option(conn, {ibm_db.SQL_ATTR_AUTOCOMMIT:0},1)
             value=ibm_db.get_option(conn, ibm_db.SQL_ATTR_AUTOCOMMIT, 1)
@@ -48,10 +54,11 @@ class IbmDbTestCase(unittest.TestCase):
             ibm_db.exec_immediate(conn, insert)
 
             stmt = ibm_db.prepare(conn, "SELECT * FROM temp_test WHERE id > 1" )
-            returnCode = ibm_db.set_option(stmt, {ibm_db.SQL_ATTR_QUERY_TIMEOUT : 20}, 0)
-            value = ibm_db.get_option(stmt, ibm_db.SQL_ATTR_QUERY_TIMEOUT, 0)
-            print("Statement options:\nSQL_ATTR_QUERY_TIMEOUT = ", end="")
-            print(str(value)+"\n")
+            if sys.platform != 'zos':
+                returnCode = ibm_db.set_option(stmt, {ibm_db.SQL_ATTR_QUERY_TIMEOUT : 20}, 0)
+                value = ibm_db.get_option(stmt, ibm_db.SQL_ATTR_QUERY_TIMEOUT, 0)
+                print("Statement options:\nSQL_ATTR_QUERY_TIMEOUT = ", end="")
+                print(str(value)+"\n")
 
             ibm_db.execute(stmt)
             if result:
@@ -82,3 +89,7 @@ class IbmDbTestCase(unittest.TestCase):
 #SQL_ATTR_AUTOCOMMIT = 0
 #Statement options:
 #SQL_ATTR_QUERY_TIMEOUT = 20
+#__ZOS_ODBC_EXPECTED__
+#Connection options:
+#SQL_ATTR_AUTOCOMMIT = 0
+

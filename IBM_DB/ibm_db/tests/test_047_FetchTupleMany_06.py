@@ -48,7 +48,7 @@ class IbmDbTestCase(unittest.TestCase):
 #<br><a href='test_047.php?EMPNO=000130&FORMAT=png' target=_blank>000130 - png - 10291 bytes</a>
 #<br><a href='test_047.php?EMPNO=000140&FORMAT=jpg' target=_blank>000140 - jpg - 15398 bytes</a>
 #<br><a href='test_047.php?EMPNO=000140&FORMAT=png' target=_blank>000140 - png - 10291 bytes</a>
-#<br><a href='test_047.php?EMPNO=000150&FORMAT=jpg' target=_blank>000150 - jpg -153988 bytes</a>
+#<br><a href='test_047.php?EMPNO=000150&FORMAT=jpg' target=_blank>000150 - jpg - 15398 bytes</a>
 #<br><a href='test_047.php?EMPNO=000150&FORMAT=png' target=_blank>000150 - png - 10291 bytes</a>
 #<br><a href='test_047.php?EMPNO=000190&FORMAT=jpg' target=_blank>000190 - jpg - 15398 bytes</a>
 #<br><a href='test_047.php?EMPNO=000190&FORMAT=png' target=_blank>000190 - png - 10291 bytes</a>
