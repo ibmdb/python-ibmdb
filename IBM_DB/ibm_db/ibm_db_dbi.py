@@ -35,6 +35,11 @@ else:
 import ibm_db
 __version__ = ibm_db.__version__
 
+try:
+    basestring  # Python 2
+except NameError:
+    basestring = str  # Python 3
+
 # Constants for specifying database connection options.
 SQL_ATTR_AUTOCOMMIT = ibm_db.SQL_ATTR_AUTOCOMMIT
 SQL_ATTR_CURRENT_SCHEMA = ibm_db.SQL_ATTR_CURRENT_SCHEMA
@@ -447,7 +452,7 @@ def _server_connect(dsn, user='', password='', host=''):
         dsn = dsn + "PWD=" + password + ";"
     try:
         conn = ibm_db.connect(dsn, '', '')
-    except Exception, inst:
+    except Exception as inst:
         raise _get_exception(inst)
 
     return conn
