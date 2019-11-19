@@ -26,7 +26,7 @@ class IbmDbTestCase(unittest.TestCase):
         r2 = ibm_db.free_result(result)
         r3 = ''
         try:
-            r3 = ibm_db.free_result(result99)
+            r3 = ibm_db.free_result(result99)  # noqa: F821
         except:
             r3 = None
 

@@ -1,23 +1,15 @@
 language: python
+python:
+  - 2.7
+  - 3.5
+  - 3.6
+  - 3.7
+  - 3.8
 
-matrix:
-    include:
-        - python: 2.7
-          dist: trusty
-          sudo: false
-        - python: 3.4
-          dist: trusty
-          sudo: false
-        - python: 3.5
-          dist: trusty
-          sudo: false
-        - python: 3.6
-          dist: trusty
-          sudo: false
-        - python: 3.7
-          dist: xenial
-          sudo: true
-
+before_install:
+- pip install --upgrade pip
+- pip install flake8  # find Python syntax errors and undefined names
+- flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
 install:
 - docker pull ibmcom/db2express-c
 - docker run --name db2  -p 50000:50000 -e DB2INST1_PASSWORD=password -e LICENSE=accept -d ibmcom/db2express-c db2start
@@ -45,5 +37,5 @@ script:
 - python tests.py
 
 notifications:
-  email: 
+  email:
     - skauser@rocketsoftware.com

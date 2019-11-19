@@ -32,6 +32,13 @@ if sys.version_info < (3, ):
 else:
     exception = Exception
 
+try:
+    basestring  # Python 2
+    long
+except NameError:
+    basestring = str  # Python 3
+    long = int
+
 import ibm_db
 __version__ = ibm_db.__version__
 
@@ -447,7 +454,7 @@ def _server_connect(dsn, user='', password='', host=''):
         dsn = dsn + "PWD=" + password + ";"
     try:
         conn = ibm_db.connect(dsn, '', '')
-    except Exception, inst:
+    except Exception as inst:
         raise _get_exception(inst)
 
     return conn
@@ -466,12 +473,12 @@ def createdb(database, dsn, user='', password='', host='', codeset='', mode=''):
     conn = _server_connect(dsn, user=user, password=password, host=host)
     try:
         return_value = ibm_db.createdb(conn, database, codeset, mode)
-    except Exception, inst:
+    except Exception as inst:
         raise _get_exception(inst)
     finally:
         try:
             ibm_db.close(conn)
-        except Exception, inst:
+        except Exception as inst:
             raise _get_exception(inst)
 
     return return_value
@@ -488,12 +495,12 @@ def dropdb(database, dsn, user='', password='', host=''):
     conn = _server_connect(dsn, user=user, password=password, host=host)
     try:
         return_value = ibm_db.dropdb(conn, database)
-    except Exception, inst:
+    except Exception as inst:
         raise _get_exception(inst)
     finally:
         try:
             ibm_db.close(conn)
-        except Exception, inst:
+        except Exception as inst:
             raise _get_exception(inst)
 
     return return_value
@@ -512,12 +519,12 @@ def recreatedb(database, dsn, user='', password='', host='', codeset='', mode=''
     conn = _server_connect(dsn, user=user, password=password, host=host)
     try:
         return_value = ibm_db.recreatedb(conn, database, codeset, mode)
-    except Exception, inst:
+    except Exception as inst:
         raise _get_exception(inst)
     finally:
         try:
             ibm_db.close(conn)
-        except Exception, inst:
+        except Exception as inst:
             raise _get_exception(inst)
 
     return return_value
@@ -536,12 +543,12 @@ def createdbNX(database, dsn, user='', password='', host='', codeset='', mode=''
     conn = _server_connect(dsn, user=user, password=password, host=host)
     try:
         return_value = ibm_db.createdbNX(conn, database, codeset, mode)
-    except Exception, inst:
+    except Exception as inst:
         raise _get_exception(inst)
     finally:
         try:
             ibm_db.close(conn)
-        except Exception, inst:
+        except Exception as inst:
             raise _get_exception(inst)
 
     return return_value
@@ -591,7 +598,7 @@ def connect(dsn, user='', password='', host='', database='', conn_options=None):
     try:
         conn = ibm_db.connect(dsn, '', '', conn_options)
         ibm_db.set_option(conn, {SQL_ATTR_CURRENT_SCHEMA : user}, 1)
-    except Exception, inst:
+    except Exception as inst:
         raise _get_exception(inst)
 
     return Connection(conn)
@@ -641,7 +648,7 @@ def pconnect(dsn, user='', password='', host='', database='', conn_options=None)
     try:
         conn = ibm_db.pconnect(dsn, '', '', conn_options)
         ibm_db.set_option(conn, {SQL_ATTR_CURRENT_SCHEMA : user}, 1)
-    except Exception, inst:
+    except Exception as inst:
         raise _get_exception(inst)
 
     return Connection(conn)
@@ -693,7 +700,7 @@ class Connection(object):
                                      "connection is no longer active.")
             else:
                 return_value = ibm_db.close(self.conn_handler)
-        except Exception, inst:
+        except Exception as inst:
             raise _get_exception(inst)
         self.conn_handler = None
         for index in range(len(self._cursor_list)):
@@ -712,7 +719,7 @@ class Connection(object):
         """
         try:
             return_value = ibm_db.commit(self.conn_handler)
-        except Exception, inst:
+        except Exception as inst:
             raise _get_exception(inst)
         return return_value
 
@@ -723,7 +730,7 @@ class Connection(object):
         """
         try:
             return_value = ibm_db.rollback(self.conn_handler)
-        except Exception, inst:
+        except Exception as inst:
             raise _get_exception(inst)
         return return_value
 
@@ -760,7 +767,7 @@ class Connection(object):
                 self.FIX_RETURN_TYPE = 1
             else:
                 self.FIX_RETURN_TYPE = 0
-        except Exception, inst:
+        except Exception as inst:
             raise _get_exception(inst)
         return self.FIX_RETURN_TYPE
 
@@ -774,7 +781,7 @@ class Connection(object):
                 is_set = ibm_db.set_option(self.conn_handler, {SQL_ATTR_AUTOCOMMIT : SQL_AUTOCOMMIT_ON}, 1)
             else:
                 is_set = ibm_db.set_option(self.conn_handler, {SQL_ATTR_AUTOCOMMIT : SQL_AUTOCOMMIT_OFF}, 1)
-        except Exception, inst:
+        except Exception as inst:
             raise _get_exception(inst)
         return is_set
 
@@ -786,7 +793,7 @@ class Connection(object):
         self.current_schema = schema_name
         try:
             is_set = ibm_db.set_option(self.conn_handler, {SQL_ATTR_CURRENT_SCHEMA : schema_name}, 1)
-        except Exception, inst:
+        except Exception as inst:
             raise _get_exception(inst)
         return is_set
 
@@ -798,7 +805,7 @@ class Connection(object):
             conn_schema = ibm_db.get_option(self.conn_handler, SQL_ATTR_CURRENT_SCHEMA, 1)
             if conn_schema is not None and conn_schema != '':
                 self.current_schema = conn_schema
-        except Exception, inst:
+        except Exception as inst:
             raise _get_exception(inst)
         return self.current_schema
 
@@ -810,7 +817,7 @@ class Connection(object):
             server_info = []
             server_info.append(self.dbms_name)
             server_info.append(self.dbms_ver)
-        except Exception, inst:
+        except Exception as inst:
             raise _get_exception(inst)
         return tuple(server_info)
 
@@ -838,7 +845,7 @@ class Connection(object):
                 i += 1
                 row = ibm_db.fetch_assoc(stmt)
             ibm_db.free_result(stmt)
-        except Exception, inst:
+        except Exception as inst:
             raise _get_exception(inst)
 
         return result
@@ -876,7 +883,7 @@ class Connection(object):
                 i += 1
                 row = ibm_db.fetch_assoc(stmt)
             ibm_db.free_result(stmt)
-        except Exception, inst:
+        except Exception as inst:
             raise _get_exception(inst)
 
         return result
@@ -910,7 +917,7 @@ class Connection(object):
                 i += 1
                 row = ibm_db.fetch_assoc(stmt)
             ibm_db.free_result(stmt)
-        except Exception, inst:
+        except Exception as inst:
             raise _get_exception(inst)
 
         return result
@@ -948,7 +955,7 @@ class Connection(object):
                 i += 1
                 row = ibm_db.fetch_assoc(stmt)
             ibm_db.free_result(stmt)
-        except Exception, inst:
+        except Exception as inst:
             raise _get_exception(inst)
 
         return result
@@ -999,7 +1006,7 @@ class Connection(object):
                             column['COLUMN_NAME'] = column['COLUMN_NAME'].lower()
                             include_columns.append(column)
                     result = include_columns
-        except Exception, inst:
+        except Exception as inst:
             raise _get_exception(inst)
 
         return result
@@ -1077,7 +1084,7 @@ class Cursor(object):
                                              self.stmt_handler, column_index))
 
                 self.__description.append(column_desc)
-        except Exception, inst:
+        except Exception as inst:
             self.messages.append(_get_exception(inst))
             raise self.messages[len(self.messages) - 1]
 
@@ -1145,7 +1152,7 @@ class Cursor(object):
             raise self.messages[len(self.messages) - 1]
         try:
             return_value = ibm_db.free_stmt(self.stmt_handler)
-        except Exception, inst:
+        except Exception as inst:
             self.messages.append(_get_exception(inst))
             raise self.messages[len(self.messages) - 1]
         self.stmt_handler = None
@@ -1173,13 +1180,13 @@ class Cursor(object):
 
             try:
                 result = ibm_db.callproc(self.conn_handler, procname,parameters)
-            except Exception, inst:
+            except Exception as inst:
                 self.messages.append(_get_exception(inst))
                 raise self.messages[len(self.messages) - 1]
         else:
             try:
                 result = ibm_db.callproc(self.conn_handler, procname)
-            except Exception, inst:
+            except Exception as inst:
                 self.messages.append(_get_exception(inst))
                 raise self.messages[len(self.messages) - 1]
         return result
@@ -1220,7 +1227,7 @@ class Cursor(object):
 
         try:
             self.stmt_handler = ibm_db.prepare(self.conn_handler, operation)
-        except Exception, inst:
+        except Exception as inst:
             self.messages.append(_get_exception(inst))
             raise self.messages[len(self.messages) - 1]
 
@@ -1233,7 +1240,7 @@ class Cursor(object):
         self._result_set_produced = False
         try:
             num_columns = ibm_db.num_fields(self.stmt_handler)
-        except Exception, inst:
+        except Exception as inst:
             self.messages.append(_get_exception(inst))
             raise self.messages[len(self.messages) - 1]
         if not num_columns:
@@ -1265,7 +1272,7 @@ class Cursor(object):
                     if ibm_db.stmt_errormsg() is not None:
                         self.messages.append(Error(str(ibm_db.stmt_errormsg())))
                         raise self.messages[len(self.messages) - 1]
-            except Exception, inst:
+            except Exception as inst:
                 self.messages.append(_get_exception(inst))
                 raise self.messages[len(self.messages) - 1]
         else:
@@ -1278,7 +1285,7 @@ class Cursor(object):
                     if ibm_db.stmt_errormsg() is not None:
                         self.messages.append(Error(str(ibm_db.stmt_errormsg())))
                         raise self.messages[len(self.messages) - 1]
-            except Exception, inst:
+            except Exception as inst:
                 self.messages.append(_get_exception(inst))
                 raise self.messages[len(self.messages) - 1]
         return return_value
@@ -1290,14 +1297,14 @@ class Cursor(object):
         if not self._result_set_produced:
             try:
                 counter = ibm_db.num_rows(self.stmt_handler)
-            except Exception, inst:
+            except Exception as inst:
                 self.messages.append(_get_exception(inst))
                 raise self.messages[len(self.messages) - 1]
             self.__rowcount = counter
         elif self._is_scrollable_cursor:
             try:
                 counter = ibm_db.get_num_result(self.stmt_handler)
-            except Exception, inst:
+            except Exception as inst:
                 self.messages.append(_get_exception(inst))
                 raise self.messages[len(self.messages) - 1]
             if counter >= 0:
@@ -1330,7 +1337,7 @@ class Cursor(object):
                 if ibm_db.stmt_errormsg() is not None:
                     self.messages.append(Error(str(ibm_db.stmt_errormsg())))
                     raise self.messages[len(self.messages) - 1]
-        except Exception, inst:
+        except Exception as inst:
             self.messages.append(_get_exception(inst))
             raise self.messages[len(self.messages) - 1]
         return identity_val
@@ -1409,7 +1416,7 @@ class Cursor(object):
                 if ibm_db.stmt_errormsg() is not None:
                     self.messages.append(Error(str(ibm_db.stmt_errormsg())))
                     raise self.messages[len(self.messages) - 1]
-        except Exception, inst:
+        except Exception as inst:
             self._set_rowcount()
             self.messages.append(Error(inst))
             raise self.messages[len(self.messages) - 1]
@@ -1434,7 +1441,7 @@ class Cursor(object):
               (fetch_size != -1 and rows_fetched < fetch_size):
             try:
                 row = ibm_db.fetch_tuple(self.stmt_handler)
-            except Exception, inst:
+            except Exception as inst:
                 if ibm_db.stmt_errormsg() is not None:
                     self.messages.append(Error(str(ibm_db.stmt_errormsg())))
                 else:
@@ -1506,7 +1513,7 @@ class Cursor(object):
             self.__description = None
             self._all_stmt_handlers.append(self.stmt_handler)
             self.stmt_handler = ibm_db.next_result(self._all_stmt_handlers[0])
-        except Exception, inst:
+        except Exception as inst:
             self.messages.append(_get_exception(inst))
             raise self.messages[len(self.messages) - 1]
 
@@ -1545,7 +1552,7 @@ class Cursor(object):
                             row_list = list(row)
                         row_list[index] = decimal.Decimal(str(row[index]).replace(",", "."))
 
-                except Exception, inst:
+                except Exception as inst:
                     self.messages.append(DataError("Data type format error: "+ str(inst)))
                     raise self.messages[len(self.messages) - 1]
         if row_list is None:
