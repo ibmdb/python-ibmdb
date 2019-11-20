@@ -1468,14 +1468,14 @@ static SQLCHAR* getUnicodeDataAsSQLCHAR(PyObject *pyobj, int *isNewBuffer)
     PyObject *sysmodule = NULL, *maxuni = NULL;
     long maxuniValue;
     SQLCHAR* pNewBuffer = NULL;
-    PyObject* pyUTF8obj = PyUnicode_AsUTF8String(pyobj);
-    int nCharLen = PyUnicode_GET_SIZE(pyUTF8obj);
+    PyObject* pyBytesobj = PyUnicode_AsUTF8String(pyobj);
+    int nCharLen = PyBytes_GET_SIZE(pyBytesobj);
 
     *isNewBuffer = 1;
     pNewBuffer = (SQLCHAR *)ALLOC_N(SQLCHAR, nCharLen + 1);
     memset(pNewBuffer, 0, sizeof(SQLCHAR) * (nCharLen + 1));
-    memcpy(pNewBuffer, PyBytes_AsString(pyUTF8obj), sizeof(SQLCHAR) * (nCharLen) );
-    Py_DECREF(pyUTF8obj);
+    memcpy(pNewBuffer, PyBytes_AsString(pyBytesobj), sizeof(SQLCHAR) * (nCharLen) );
+    Py_DECREF(pyBytesobj);
     return pNewBuffer;
 }
 
