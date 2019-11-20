@@ -36,6 +36,9 @@ PLANNAME=DSNACLI
 [$HOSTNAME$SUBSYSTEM]
 AUTOCOMMIT=1
 EOF
+chtag -r $DSNAOINI # we have to remove the tag, so that ODBC can read it, since python's program ccsid is ascii
+
+
 
 # A simple test of connecting to DB2
 python -c "import ibm_db; conn = ibm_db.connect('DSN=$HOSTNAME$SUBSYSTEM', None, None); print('connection=%r' % conn);"
@@ -63,5 +66,6 @@ PLANNAME=DSNACLI
 [$HOSTNAME$SUBSYSTEM]
 AUTOCOMMIT=1
 EOF
+chtag -r $DSNAOINI # we have to remove the tag, so that ODBC can read it, since python's program ccsid is ascii
 
 ```
