@@ -1469,8 +1469,8 @@ static SQLCHAR* getUnicodeDataAsSQLCHAR(PyObject *pyobj, int *isNewBuffer)
     long maxuniValue;
     SQLCHAR* pNewBuffer = NULL;
     PyObject* pyUTF8obj = PyUnicode_AsUTF8String(pyobj);
-    int nCharLen = PyUnicode_GET_SIZE(pyUTF8obj);
 
+    int nCharLen = PyBytes_GET_SIZE(pyUTF8obj);
     *isNewBuffer = 1;
     pNewBuffer = (SQLCHAR *)ALLOC_N(SQLCHAR, nCharLen + 1);
     memset(pNewBuffer, 0, sizeof(SQLCHAR) * (nCharLen + 1));
@@ -10455,7 +10455,7 @@ static PyObject* ibm_db_execute_many (PyObject *self, PyObject *args) {
      *      3. Options (optional) */
 #if defined __MVS__
     PyErr_SetString( PyExc_Exception, "Not supported: This function is currently not supported on this platform" );
-    return -1;
+    return NULL;
 #endif
 
     if ( !PyArg_ParseTuple(args, "OO|O", &py_stmt_res, &params, &options) )
