@@ -24,24 +24,26 @@ import importlib
 def load_tests(loader, tests, pattern):
     suite = unittest.TestSuite()
 
-    test_glob = os.environ.get("SINGLE_PYTHON_TEST", "test_*.py")
+    test_glob_default = "test_*.py"
+    test_glob = os.environ.get("SINGLE_PYTHON_TEST", test_glob_default)
     files = glob.glob(join(config.test_dir, test_glob))
     tests = [ basename(_).replace('.py', '') for _ in files ]
     tests.sort()
 
     for test in tests:
-        if not (test.startswith('test_002') or \
-            test.startswith('test_007') or \
-            test.startswith('test_080') or \
-            test.startswith('test_090') or \
-            test.startswith('test_053') or \
-            test.startswith('test_196') or \
-            test.startswith('test_220') or \
-            test.startswith('test_221') or \
-            test.startswith('test_264') or \
-            test.startswith('test_6792')):
-                mod = importlib.import_module(test)
-                suite.addTest(mod.IbmDbTestCase(test))
+        skip = (test.startswith('test_002') or \
+                test.startswith('test_007') or \
+                test.startswith('test_080') or \
+                test.startswith('test_090') or \
+                test.startswith('test_053') or \
+                test.startswith('test_196') or \
+                test.startswith('test_220') or \
+                test.startswith('test_221') or \
+                test.startswith('test_264') or \
+                test.startswith('test_6792'))
+        if test_glob != test_glob_default or not skip:
+            mod = importlib.import_module(test)
+            suite.addTest(mod.IbmDbTestCase(test))
 
     return suite
 

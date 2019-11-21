@@ -24,22 +24,24 @@ class IbmDbTestCase(unittest.TestCase):
             return 0
         server = ibm_db.server_info( conn )
 
-        fp = open("tests/spook_out.png", "wb")
-        if (server.DBMS_NAME[0:3] == 'IDS'):
-            result = ibm_db.exec_immediate(conn, "SELECT picture FROM animal_pics WHERE name = 'Spook'")
-        else:
-            result = ibm_db.exec_immediate(conn, "SELECT picture, LENGTH(picture) FROM animal_pics WHERE name = 'Spook'")
-        if (not result):
-            print("Could not execute SELECT statement.")
-            return 0
-        row = ibm_db.fetch_tuple(result)
-        if row:
-            fp.write(row[0])
-        else:
-            print(ibm_db.stmt_errormsg())
-        fp.close()
-        cmp = (open('tests/spook_out.png', "rb").read() == open('tests/spook.png', "rb").read())
-        print("Are the files the same:", cmp)
+        with open("tests/spook_out.png", "wb") as fp:
+            if (server.DBMS_NAME[0:3] == 'IDS'):
+                result = ibm_db.exec_immediate(conn, "SELECT picture FROM animal_pics WHERE name = 'Spook'")
+            else:
+                result = ibm_db.exec_immediate(conn, "SELECT picture, LENGTH(picture) FROM animal_pics WHERE name = 'Spook'")
+            if (not result):
+                print("Could not execute SELECT statement.")
+                return 0
+            row = ibm_db.fetch_tuple(result)
+            if row:
+                fp.write(row[0])
+            else:
+                print(ibm_db.stmt_errormsg())
+        with open('tests/spook_out.png', 'rb') as fp:
+            pic_out = fp.read()
+        with open('tests/spook.png', 'rb') as fp:
+            pic_in = fp.read()
+        cmp = pic_in == pic_out
 
 #__END__
 #__LUW_EXPECTED__
