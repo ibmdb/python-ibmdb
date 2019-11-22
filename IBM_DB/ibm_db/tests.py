@@ -32,12 +32,12 @@ def load_tests(loader, tests, pattern):
 
     for test in tests:
         skip = (test.startswith('test_002') or \
-                #test.startswith('test_007') or \
+                test.startswith('test_007') or \
                 test.startswith('test_080') or \
                 test.startswith('test_090') or \
                 test.startswith('test_053') or \
                 test.startswith('test_196') or \
-                #test.startswith('test_220') or \
+                test.startswith('test_220') or \
                 test.startswith('test_221') or \
                 test.startswith('test_264') or \
                 test.startswith('test_6792'))
