@@ -21,7 +21,10 @@ class IbmDbTestCase(unittest.TestCase):
         options1 = {ibm_db.SQL_ATTR_CURSOR_TYPE: ibm_db.SQL_CURSOR_KEYSET_DRIVEN}
         options2 = {ibm_db.SQL_ATTR_CURSOR_TYPE: ibm_db.SQL_CURSOR_FORWARD_ONLY}
 
-        conn = ibm_db.pconnect(config.database, config.user, config.password)
+        if sys.platform == 'zos':
+            conn = ibm_db.pconnect(config.database,'','')
+        else:
+            conn = ibm_db.pconnect(config.database, config.user, config.password)
 
         if conn:
             serverinfo = ibm_db.server_info( conn )

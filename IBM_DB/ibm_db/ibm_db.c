@@ -8434,7 +8434,7 @@ static PyObject *_python_ibm_db_bind_fetch_helper(PyObject *args, int op)
                 case SQL_DECIMAL:
                 case SQL_NUMERIC:
                 case SQL_DECFLOAT:
-                    value = StringOBJ_FromASCII((char *)row_data->str_val);
+		    value = StringOBJ_FromASCIIAndSize((char *)row_data->str_val, out_length);
                     break;
 
                 case SQL_TYPE_DATE:

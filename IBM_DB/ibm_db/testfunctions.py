@@ -34,10 +34,20 @@ class IbmDbTestFunctions(unittest.TestCase):
         return var
 
     def testCasesIn(self, fileName):
-        if (fileName.startswith('tests/test_133') or \
+        if (fileName.startswith('tests/test_017') or \
+                fileName.startswith('tests/test_018') or \
+                fileName.startswith('tests/test_019') or \
+                fileName.startswith('tests/test_054') or \
+                fileName.startswith('tests/test_081') or \
+                fileName.startswith('tests/test_082') or \
+                fileName.startswith('tests/test_091') or \
+                fileName.startswith('tests/test_092') or \
+                fileName.startswith('tests/test_103') or \
+                fileName.startswith('tests/test_133') or \
                 fileName.startswith('tests/test_147') or \
                 fileName.startswith('tests/test_157a') or \
                 fileName.startswith('tests/test_240') or \
+                fileName.startswith('tests/test_241') or \
                 fileName.startswith('tests/test_cursortype') or \
                 fileName.startswith('tests/test_decfloat') or \
                 fileName.startswith('tests/test_setgetOption') or \

@@ -89,3 +89,17 @@ class IbmDbTestCase(unittest.TestCase):
 #6
 #9
 #9
+#__ZOS_ODBC_EXPECTED__
+#10
+#15
+#15
+#10
+#
+#-----
+#5
+#9
+#5
+#5
+#5
+#7
+#7
