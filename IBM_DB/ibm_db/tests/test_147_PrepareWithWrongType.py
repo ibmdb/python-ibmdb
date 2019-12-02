@@ -39,6 +39,8 @@ class IbmDbTestCase(unittest.TestCase):
                 excp = sys.exc_info()
                 # slot 1 contains error message
                 print(excp[1])
+            finally:
+                ibm_db.close(conn)
         else:
             print("Connection failed.")
 

@@ -1468,14 +1468,14 @@ static SQLCHAR* getUnicodeDataAsSQLCHAR(PyObject *pyobj, int *isNewBuffer)
     PyObject *sysmodule = NULL, *maxuni = NULL;
     long maxuniValue;
     SQLCHAR* pNewBuffer = NULL;
-    PyObject* pyUTF8obj = PyUnicode_AsUTF8String(pyobj);
+    PyObject* pyBytesobj = PyUnicode_AsUTF8String(pyobj);
+    int nCharLen = PyBytes_GET_SIZE(pyBytesobj);
 
-    int nCharLen = PyBytes_GET_SIZE(pyUTF8obj);
     *isNewBuffer = 1;
     pNewBuffer = (SQLCHAR *)ALLOC_N(SQLCHAR, nCharLen + 1);
     memset(pNewBuffer, 0, sizeof(SQLCHAR) * (nCharLen + 1));
-    memcpy(pNewBuffer, PyBytes_AsString(pyUTF8obj), sizeof(SQLCHAR) * (nCharLen) );
-    Py_DECREF(pyUTF8obj);
+    memcpy(pNewBuffer, PyBytes_AsString(pyBytesobj), sizeof(SQLCHAR) * (nCharLen) );
+    Py_DECREF(pyBytesobj);
     return pNewBuffer;
 }
 
@@ -8434,7 +8434,7 @@ static PyObject *_python_ibm_db_bind_fetch_helper(PyObject *args, int op)
                 case SQL_DECIMAL:
                 case SQL_NUMERIC:
                 case SQL_DECFLOAT:
-                    value = StringOBJ_FromASCII((char *)row_data->str_val);
+		    value = StringOBJ_FromASCIIAndSize((char *)row_data->str_val, out_length);
                     break;
 
                 case SQL_TYPE_DATE:
