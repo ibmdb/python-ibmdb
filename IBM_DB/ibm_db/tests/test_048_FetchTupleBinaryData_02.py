@@ -39,9 +39,10 @@ class IbmDbTestCase(unittest.TestCase):
                 print(ibm_db.stmt_errormsg())
         with open('tests/spook_out.png', 'rb') as fp:
             pic_out = fp.read()
-        with open('tests/spook.png', 'rb') as fp:
-            pic_in = fp.read()
+        with open('tests/spook.png', 'rb') as fp1:
+            pic_in = fp1.read()
         cmp = pic_in == pic_out
+        print("Are the files the same:", cmp)
 
 #__END__
 #__LUW_EXPECTED__

@@ -37,6 +37,7 @@ class IbmDbTestFunctions(unittest.TestCase):
         if (fileName.startswith('tests/test_017') or \
                 fileName.startswith('tests/test_018') or \
                 fileName.startswith('tests/test_019') or \
+                fileName.startswith('tests/test_053') or \
                 fileName.startswith('tests/test_054') or \
                 fileName.startswith('tests/test_081') or \
                 fileName.startswith('tests/test_082') or \
