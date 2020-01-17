@@ -18,6 +18,7 @@ else:
 from setuptools import setup, find_packages
 from distutils.core import setup, Extension
 from distutils.sysconfig import get_python_lib
+from setuptools.command.build_ext import build_ext
 from setuptools.command.install import install
 
 PACKAGE = 'ibm_db'
@@ -47,19 +48,28 @@ else:
     libDir = 'lib32'
     sys.stdout.write("Detected 32-bit Python\n")
 
-# define post-install operation for mac OS
+# define post-build-ext and post-install operation for mac OS
 if('darwin' in sys.platform):
     class PostInstall(install):
         """ Post installation - run install_name_tool on Darwin """
         def run(self):
             install.run(self)
-            clipath = os.getenv('IBM_DB_HOME', '@loader_path/clidriver')
-            print("in PostInstall with {}".format(clipath))
+            clipath = os.getenv('IBM_DB_HOME')
+            if not clipath:
+                # no IBM_DB_HOME during install, keep current value
+                return
+
             for so in glob.glob(get_python_lib()+r'/ibm_db*.so'):
-                os.system("install_name_tool -change libdb2.dylib {}/lib/libdb2.dylib {}".format(clipath, so))
+                os.system("install_name_tool -change @loader_path/clidriver/lib/libdb2.dylib {}/lib/libdb2.dylib {}".format(clipath, so))
 
-    cmd_class = dict(install = PostInstall)
+    class PostBuildExt(build_ext):
+        """ Post build_ext - update db2 dynamic lib to use loader_path on Darwin """
+        def run(self):
+            super().run()
+            for so in glob.glob(self.build_lib+r'/ibm_db*.so'):
+                os.system("install_name_tool -change libdb2.dylib @loader_path/clidriver/lib/libdb2.dylib {}".format(so))
 
+    cmd_class = dict(install = PostInstall, build_ext = PostBuildExt)
 
 # defining extension
 def _ext_modules(include_dir, library, lib_dir, runtime_dir=None):
