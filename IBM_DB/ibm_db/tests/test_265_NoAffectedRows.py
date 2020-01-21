@@ -36,7 +36,8 @@ class IbmDbTestCase(unittest.TestCase):
                 sql = 'drop table test'
 
                 stmt = ibm_db.prepare(conn, sql)
-                ibm_db.set_option(stmt, cursor_option, 0)
+                if sys.platform != 'zos':
+                    ibm_db.set_option(stmt, cursor_option, 0)
                 ibm_db.execute(stmt)
             except:
                 pass

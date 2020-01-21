@@ -1205,6 +1205,25 @@ static PyObject *_python_ibm_db_connect_helper( PyObject *self, PyObject *args, 
         * combination in this process.
         */
         if (isPersistent) {
+	    // we do not want to process a None type and segfault. Better safe than sorry!
+	    if (NIL_P(databaseObj)) {
+		PyErr_SetString(PyExc_Exception, "Supplied Parameter is invalid");
+		return NULL;
+	    }
+	    else if(!(PyUnicode_Contains(databaseObj, equal) > 0) && ( NIL_P(uidObj) || NIL_P(passwordObj)))
+	    {
+		PyErr_SetString(PyExc_Exception, "Supplied Parameter is invalid");
+		return NULL;
+	    }
+	    else
+	    {
+		if (NIL_P(uidObj) || NIL_P(passwordObj))
+		{
+                    PyErr_SetString(PyExc_Exception, "Supplied Parameter is invalid");
+		    return NULL;
+		}
+	    }
+
             hKey = PyUnicode_Concat(StringOBJ_FromASCII("__ibm_db_"), uidObj);
             hKey = PyUnicode_Concat(hKey, databaseObj);
             hKey = PyUnicode_Concat(hKey, passwordObj);
@@ -1232,6 +1251,11 @@ static PyObject *_python_ibm_db_connect_helper( PyObject *self, PyObject *args, 
                     reused = 1;
                 } /* else will re-connect since connection is dead */
 #endif /* PASE */
+#if defined(__MVS__)
+		/* Since SQL_ATTR_PING_DB is not supported by z ODBC driver,
+		 * we will not check for db connection status */
+		reused = 1;
+#endif
             }
         } else {
             /* Need to check for max pconnections? */
