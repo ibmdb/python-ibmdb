@@ -1004,6 +1004,12 @@ class Connection(object):
 
         return result
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        return self.close()
+
 
 # Defines a cursor for the driver connection
 class Cursor(object):
@@ -1250,7 +1256,9 @@ class Cursor(object):
             # Convert date/time and binary objects to string for
             # inserting into the database.
             for param in parameters:
-                if isinstance(param, CONVERT_STR):
+                if isinstance(param, memoryview):
+                    param = param.tobytes()
+                elif isinstance(param, CONVERT_STR):
                     param = str(param)
                 buff.append(param)
             parameters = tuple(buff)
@@ -1550,3 +1558,9 @@ class Cursor(object):
             return row
         else:
             return tuple(row_list)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        return self.close()
