@@ -54,7 +54,7 @@ You might need zlib, openssl, pip installations if not already available in your
 * MAC OS:
 You can install the driver using pip as:
 ```
-pip install --no-cache-dir ibm_db
+pip install --no-binary "ibm_db" ibm_db
 ```
 * All other platforms:
 You can install the driver using pip as:
