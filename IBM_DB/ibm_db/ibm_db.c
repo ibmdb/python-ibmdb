@@ -1348,6 +1348,7 @@ static PyObject *_python_ibm_db_connect_helper( PyObject *self, PyObject *args, 
                 }
                 uid = getUnicodeDataAsSQLWCHAR(uidObj, &isNewBuffer);
                 password = getUnicodeDataAsSQLWCHAR(passwordObj, &isNewBuffer);
+#ifdef __MVS__
                 rc = SQLConnectW((SQLHDBC)conn_res->hdbc,
                     database,
                     PyUnicode_GetSize(databaseObj)*2,
@@ -1355,6 +1356,15 @@ static PyObject *_python_ibm_db_connect_helper( PyObject *self, PyObject *args, 
                     PyUnicode_GetSize(uidObj)*2,
                     password,
                     PyUnicode_GetSize(passwordObj)*2);
+#else
+		rc = SQLConnectW((SQLHDBC)conn_res->hdbc,
+                    database,
+		    PyUnicode_GetSize(databaseObj),
+		    uid,
+		    PyUnicode_GetSize(uidObj),
+		    password,
+		    PyUnicode_GetSize(passwordObj));
+#endif
             }
             if( rc == SQL_ERROR || rc == SQL_SUCCESS_WITH_INFO )
             {
@@ -4955,8 +4965,13 @@ static int _python_ibm_db_do_prepare(SQLHANDLE hdbc, SQLWCHAR *stmt, int stmt_si
     */
 
     Py_BEGIN_ALLOW_THREADS;
+#ifdef __MVS__
     rc = SQLPrepareW((SQLHSTMT)stmt_res->hstmt, stmt,
                 stmt_size*2);
+#else
+    rc = SQLPrepareW((SQLHSTMT)stmt_res->hstmt, stmt,
+		stmt_size);
+#endif
     Py_END_ALLOW_THREADS;
 
     if ( rc == SQL_ERROR ) {
@@ -10904,8 +10919,16 @@ static PyObject* ibm_db_callproc(PyObject *self, PyObject *args){
                         switch (tmp_curr->data_type) {
                             case SQL_SMALLINT:
                             case SQL_INTEGER:
-			        PyTuple_SetItem(outTuple, paramCount,
-						PyInt_FromLong(tmp_curr->ivalue));
+                                if( !NIL_P(tmp_curr->ivalue ))
+                                {
+			            PyTuple_SetItem(outTuple, paramCount,
+                                            PyInt_FromLong(tmp_curr->ivalue));
+                                }
+                                else
+                                {
+                                    Py_INCREF(Py_None);
+                                    PyTuple_SetItem(outTuple, paramCount, Py_None);
+                                }
                                 paramCount++;
                                 break;
                             case SQL_REAL:
