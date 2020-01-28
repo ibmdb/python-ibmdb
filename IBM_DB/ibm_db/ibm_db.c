@@ -1357,13 +1357,13 @@ static PyObject *_python_ibm_db_connect_helper( PyObject *self, PyObject *args, 
                     password,
                     PyUnicode_GetSize(passwordObj)*2);
 #else
-		rc = SQLConnectW((SQLHDBC)conn_res->hdbc,
+                rc = SQLConnectW((SQLHDBC)conn_res->hdbc,
                     database,
-		    PyUnicode_GetSize(databaseObj),
-		    uid,
-		    PyUnicode_GetSize(uidObj),
-		    password,
-		    PyUnicode_GetSize(passwordObj));
+                    PyUnicode_GetSize(databaseObj),
+                    uid,
+                    PyUnicode_GetSize(uidObj),
+                    password,
+                    PyUnicode_GetSize(passwordObj));
 #endif
             }
             if( rc == SQL_ERROR || rc == SQL_SUCCESS_WITH_INFO )
@@ -10919,16 +10919,21 @@ static PyObject* ibm_db_callproc(PyObject *self, PyObject *args){
                         switch (tmp_curr->data_type) {
                             case SQL_SMALLINT:
                             case SQL_INTEGER:
-                                if( !NIL_P(tmp_curr->ivalue ))
-                                {
+#ifdef __MVS__
+                                PyTuple_SetItem(outTuple, paramCount,
+                                    PyInt_FromLong(tmp_curr->ivalue));
+#else
+				if( !NIL_P(tmp_curr->ivalue ))
+			        {
 			            PyTuple_SetItem(outTuple, paramCount,
-                                            PyInt_FromLong(tmp_curr->ivalue));
-                                }
-                                else
-                                {
-                                    Py_INCREF(Py_None);
-                                    PyTuple_SetItem(outTuple, paramCount, Py_None);
-                                }
+				        PyInt_FromLong(tmp_curr->ivalue));
+				}
+				else
+				{
+				    Py_INCREF(Py_None);
+				    PyTuple_SetItem(outTuple, paramCount, Py_None);
+				}
+#endif
                                 paramCount++;
                                 break;
                             case SQL_REAL:
