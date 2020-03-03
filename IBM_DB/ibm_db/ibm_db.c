@@ -8523,6 +8523,11 @@ static PyObject *_python_ibm_db_bind_fetch_helper(PyObject *args, int op)
         }
         if (op & FETCH_ASSOC) {
             key = StringOBJ_FromASCII((char*)stmt_res->column_info[column_number].name);
+            if (value == NULL) {
+                Py_XDECREF(key);
+                Py_XDECREF(value);
+                return NULL;
+            }
             PyDict_SetItem(return_value, key, value);
             Py_DECREF(key);
         }
