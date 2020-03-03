@@ -1428,16 +1428,24 @@ static PyObject* getSQLWCharAsPyUnicodeObject(SQLWCHAR* sqlwcharData, int sqlwch
         return PyUnicode_FromUnicode((Py_UNICODE *)sqlwcharData, sqlwcharBytesLen / sizeof(SQLWCHAR));
         }
 
-    if (is_bigendian()) {
-        int bo = 1;
-        u = PyUnicode_DecodeUTF16((char *)sqlwcharData, sqlwcharBytesLen, "strict", &bo);
-    } else {
-        int bo = -1;
-        u = PyUnicode_DecodeUTF16((char *)sqlwcharData, sqlwcharBytesLen, "strict", &bo);
+    /* Clause D98 of conformance (section 3.10) of the Unicode standard states,
+    "The UTF-16 encoding scheme may or may not begin with a BOM.
+    However, when there is no BOM, and in the absence of a higher-level
+    protocol, the byte order of the UTF-16 encoding scheme is big-endian.
+
+    If *bo == NULL, CPython will check for a BOM, or convert it as littleendian
+    otherwise. In case of failure, we try as bigendian.
+    */
+    u = PyUnicode_DecodeUTF16((char *)sqlwcharData, sqlwcharBytesLen, "strict", NULL);
+    if (PyErr_Occurred()){
+        if (PyErr_ExceptionMatches(PyExc_UnicodeDecodeError)){
+            PyErr_Clear();
+            int bo = 1;
+            u = PyUnicode_DecodeUTF16((char *)sqlwcharData, sqlwcharBytesLen, "strict", &bo);
+        }
     }
     return u;
 }
-
 
 /**
 *This function takes value as pyObject and convert it to SQLWCHAR and return it
