@@ -4837,7 +4837,9 @@ static PyObject *ibm_db_commit(PyObject *self, PyObject *args)
             return NULL;
         }
 
+        Py_BEGIN_ALLOW_THREADS;
         rc = SQLEndTran(SQL_HANDLE_DBC, conn_res->hdbc, SQL_COMMIT);
+        Py_END_ALLOW_THREADS;
 
         if ( rc == SQL_ERROR ) {
             _python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, rc, 1,
