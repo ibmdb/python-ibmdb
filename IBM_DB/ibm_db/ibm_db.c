@@ -10805,16 +10805,8 @@ static PyObject* ibm_db_callproc(PyObject *self, PyObject *args){
                         switch (tmp_curr->data_type) {
                             case SQL_SMALLINT:
                             case SQL_INTEGER:
-                                if( !NIL_P(tmp_curr->ivalue ))
-                                {
-                                    PyTuple_SetItem(outTuple, paramCount,
+                                PyTuple_SetItem(outTuple, paramCount,
                                             PyInt_FromLong(tmp_curr->ivalue));
-                                }
-                                else
-                                {
-                                    Py_INCREF(Py_None);
-                                    PyTuple_SetItem(outTuple, paramCount, Py_None);
-                                }
                                 paramCount++;
                                 break;
                             case SQL_REAL:
