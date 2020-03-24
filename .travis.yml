@@ -15,7 +15,7 @@ before_install:
 - pip install flake8  # find Python syntax errors and undefined names
 - flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
 install:
-- docker pull ibmcom/db2express-c
+- docker pull ibmcom/db2
 - docker run --name db2  -p 50000:50000 -e DB2INST1_PASSWORD=password -e LICENSE=accept -d ibmcom/db2express-c db2start
 - docker ps -as
 - docker exec -it db2 useradd -ms /bin/bash auth_user -p auth_pass
