@@ -366,9 +366,14 @@ def _get_exception(inst):
     # return the generic Error exception.
     if inst is not None:
         message = repr(inst)
-        if message.startswith("Exception('") and message.endswith("',)"):
-            message = message[11:]
-            message = message[:len(message)-3]
+        if message.startswith("Exception('"):
+            if message.endswith("',)"):
+                message = message[11:]
+                message = message[:len(message)-3]
+            elif message.endswith("')"):
+                message = message[11:]
+                message = message[:len(message)-2]
+
 
         index = message.find('SQLSTATE=')
         if( message != '') & (index != -1):
