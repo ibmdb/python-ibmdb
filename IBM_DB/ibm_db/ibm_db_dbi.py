@@ -369,10 +369,10 @@ def _get_exception(inst):
     if inst is not None:
         message = repr(inst)
         if message.startswith("Exception('"):
-            if message.endswith("',)"):
+            if message.endswith("',)"):  # python 2
                 message = message[11:]
                 message = message[:len(message)-3]
-            elif message.endswith("')"):
+            elif message.endswith("')"): # python 3
                 message = message[11:]
                 message = message[:len(message)-2]
 
