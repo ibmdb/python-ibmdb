@@ -249,7 +249,7 @@ if not prebuildIbmdbPYD and not os.path.isdir(ibm_db_include):
     sys.exit()
 
 library = ['db2']
-package_data = { 'tests': [ '*.png', '*.jpg']}
+package_data = { 'ibm_db_tests': [ '*.png', '*.jpg']}
 data_files = [ (get_python_lib(), ['./README.md']),
                (get_python_lib(), ['./CHANGES']),
                (get_python_lib(), ['./LICENSE']),
