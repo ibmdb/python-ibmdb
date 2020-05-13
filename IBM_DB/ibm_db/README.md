@@ -47,7 +47,7 @@ Type "help", "copyright", "credits" or "license" for more information.
 >>> conn = ibm_db_dbi.Connection(ibm_db_conn)
 >>> conn.tables('SYSCAT', '%')
 ```
-More examples can be found under 'tests' folder.
+More examples can be found under 'ibm_db_tests' folder.
 
 ### License requirements for connecting to databases
 
@@ -138,7 +138,7 @@ export DYLD_LIBRARY_PATH=/usr/local/lib/python3.5/site-packages/clidriver/lib/ic
 
 # Testing
 
-Tests displaying Python ibm_db driver code examples are located in the tests
+Tests displaying Python ibm_db driver code examples are located in the ibm_db_tests
 directory. A valid config.py will need to be created to configure your DB2
 settings. A config.py.sample exists that can be copied and modified for your
 environment.
@@ -146,7 +146,7 @@ environment.
 The config.py should look like this:
 
 ```python
-test_dir =      'tests'         # Location of testsuite file (relative to current directory)
+test_dir =      'ibm_db_tests'         # Location of testsuite file (relative to current directory)
 
 database =      'test'          # Database to connect to
 user     =      'db2inst1'      # User ID to connect with

@@ -2,7 +2,7 @@
 +--------------------------------------------------------------------------+
 | Licensed Materials - Property of IBM                                     |
 |                                                                          |
-| (C) Copyright IBM Corporation 2006-2015                                  |
+| (C) Copyright IBM Corporation 2006-2020                                 |
 +--------------------------------------------------------------------------+
 | This module complies with SQLAlchemy 0.4 and is                          |
 | Licensed under the Apache License, Version 2.0 (the "License");          |
@@ -10639,6 +10639,15 @@ static PyObject* ibm_db_execute_many (PyObject *self, PyObject *args) {
                             }
                             rc = SQLParamData((SQLHSTMT)stmt_res->hstmt, (SQLPOINTER *)&valuePtr);
                         }
+                    }
+                    else if (rc == SQL_ERROR)
+                    {
+                       _python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, rc,1, NULL, -1, 1);
+                       sprintf(error, "SQLExecute failed: %s", IBM_DB_G(__python_stmt_err_msg));
+                       PyErr_SetString(PyExc_Exception, error);
+                       _build_client_err_list(head_error_list, error);
+                       err_count++;
+                       break;
                     }
                 }
             }
