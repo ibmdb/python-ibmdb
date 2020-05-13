@@ -7188,6 +7188,7 @@ static PyObject *ibm_db_field_nullable(PyObject *self, PyObject *args)
     {
         _python_ibm_db_check_sql_errors( stmt_res->hstmt, SQL_HANDLE_STMT, rc,1,
                                           NULL, -1, 1);
+        Py_RETURN_FALSE;
     }
     else if ( nullableCol == SQL_NULLABLE ) {
         Py_RETURN_TRUE;
