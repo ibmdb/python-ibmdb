@@ -24,6 +24,13 @@ import importlib
 def load_tests(loader, tests, pattern):
     suite = unittest.TestSuite()
 
+    # We need files of a given size for some of the test units, so create them
+    # here.
+    with open("ibm_db_tests/spook.png", "wb") as f:
+        f.truncate(10291)
+    with open("ibm_db_tests/pic1.jpg", "wb") as f:
+        f.truncate(15398)
+
     test_glob = os.environ.get("SINGLE_PYTHON_TEST", "test_*.py")
     files = glob.glob(join(config.test_dir, test_glob))
     tests = [ basename(_).replace('.py', '') for _ in files ]
