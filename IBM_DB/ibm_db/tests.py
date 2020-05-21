@@ -1,5 +1,6 @@
 import os
 from os.path import basename, join
+import random
 import sys
 import unittest
 import glob
@@ -23,6 +24,13 @@ import importlib
 # Override standard test-loading behavior
 def load_tests(loader, tests, pattern):
     suite = unittest.TestSuite()
+
+    # We need files of a given size for some of the test units, so create them
+    # here.
+    with open("ibm_db_tests/spook.png", "wb") as f:
+        f.write(bytearray([random.getrandbits(8) for _ in range(0, 10291)]))
+    with open("ibm_db_tests/pic1.jpg", "wb") as f:
+        f.write(bytearray([random.getrandbits(8) for _ in range(0, 15398)]))
 
     test_glob = os.environ.get("SINGLE_PYTHON_TEST", "test_*.py")
     files = glob.glob(join(config.test_dir, test_glob))
