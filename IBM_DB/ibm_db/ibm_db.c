@@ -1053,6 +1053,22 @@ static int _python_ibm_db_bind_column_helper(stmt_handle *stmt_res)
                 }
                 break;
 
+            case SQL_BIT:
+
+                Py_BEGIN_ALLOW_THREADS;
+                rc = SQLBindCol((SQLHSTMT)stmt_res->hstmt, (SQLUSMALLINT)(i+1),
+                    SQL_C_LONG, &row_data->i_val,
+                    sizeof(row_data->i_val),
+                    (SQLINTEGER *)(&stmt_res->row_data[i].out_length));
+                Py_END_ALLOW_THREADS;
+
+                if ( rc == SQL_ERROR ) {
+                    _python_ibm_db_check_sql_errors((SQLHSTMT)stmt_res->hstmt,
+                        SQL_HANDLE_STMT, rc, 1, NULL, -1,
+                        1);
+                }
+                break;
+
             case SQL_REAL:
 
                 Py_BEGIN_ALLOW_THREADS;
@@ -5646,6 +5662,7 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
                     }
                 }
                 tmp = ALLOC_N(char, curr->ivalue+1);
+                memset(tmp, 0, curr->ivalue+1);
                 curr->svalue = memcpy(tmp, curr->svalue, param_length);
                 curr->svalue[param_length] = '\0';
 
@@ -5675,7 +5692,7 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
                             curr->param_type == SQL_PARAM_INPUT_OUTPUT) {
                             curr->ivalue = curr->ivalue -1;
                             curr->bind_indicator = param_length;
-                            paramValuePtr = (SQLPOINTER)curr;
+                            paramValuePtr = (SQLPOINTER)curr->svalue;
                         } else {
                             curr->bind_indicator = SQL_DATA_AT_EXEC;
 #ifndef PASE
@@ -7479,6 +7496,7 @@ static PyObject *ibm_db_field_type(PyObject *self, PyObject *args)
     switch (stmt_res->column_info[col].type) {
         case SQL_SMALLINT:
         case SQL_INTEGER:
+        case SQL_BIT:
             str_val = "int";
             break;
         case SQL_BIGINT:
@@ -8033,6 +8051,22 @@ static PyObject *ibm_db_result(PyObject *self, PyObject *args)
             }
             break;
 
+        case SQL_BIT:
+            rc = _python_ibm_db_get_data(stmt_res, col_num+1, SQL_C_LONG,
+                         &long_val, sizeof(long_val),
+                         &out_length);
+            if ( rc == SQL_ERROR ) {
+                PyErr_Clear();
+                Py_RETURN_FALSE; 
+            }
+            if (out_length == SQL_NULL_DATA) {
+                Py_RETURN_NONE;
+            } else {
+                return PyBool_FromLong(long_val);
+            }
+            break;
+
+
         case SQL_REAL:
         case SQL_FLOAT:
         case SQL_DOUBLE:
@@ -8407,6 +8441,10 @@ static PyObject *_python_ibm_db_bind_fetch_helper(PyObject *args, int op)
 
                 case SQL_INTEGER:
                     value = PyInt_FromLong(row_data->i_val);
+                    break;
+
+                case SQL_BIT:
+                    value = PyBool_FromLong(row_data->i_val);
                     break;
 
                 case SQL_REAL:
@@ -10893,6 +10931,20 @@ static PyObject* ibm_db_callproc(PyObject *self, PyObject *args){
                                 }
                                 paramCount++;
                                 break;
+                            case SQL_BLOB:
+                                if( !NIL_P(tmp_curr->svalue ))
+                                {
+                                    PyTuple_SetItem( outTuple, paramCount,
+                                                     PyBytes_FromString(tmp_curr->svalue));
+                                }
+                                else
+                                {
+                                    Py_INCREF(Py_None);
+                                    PyTuple_SetItem(outTuple, paramCount, Py_None);
+                                }
+                                paramCount++;
+                                break;
+
                             default:
                                 if (!NIL_P(tmp_curr->svalue)) {
                                     PyTuple_SetItem(outTuple, paramCount, StringOBJ_FromASCII(tmp_curr->svalue));
