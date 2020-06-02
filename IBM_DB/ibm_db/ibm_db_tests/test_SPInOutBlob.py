@@ -39,11 +39,11 @@ class IbmDbTestCase(unittest.TestCase):
             except:
                 pass
             ibm_db.exec_immediate(conn, procedure)
-            p1 = bytes('1234567801234567890', 'utf8')
-            p2 = bytes('0','utf8')
+            #p1 = bytes('1234567801234567890', 'utf8')
+            #p2 = bytes('0','utf8')
 
-            print("Values of bound parameters _before_ CALL:")
-            print("  1: %s  2: %s\n" % ((p1.decode('utf8')),p2.decode('utf8')))
+            #print("Values of bound parameters _before_ CALL:")
+            #print("  1: %s  2: %s\n" % ((p1.decode('utf8')),p2.decode('utf8')))
 
             stmt, inparam, outparam = ibm_db.callproc(conn, "TEST_OUT_BLOB",(b'1234567801234567890',b'0'))
 
@@ -58,8 +58,6 @@ class IbmDbTestCase(unittest.TestCase):
 
 #__END__
 #__LUW_EXPECTED__
-#Values of bound parameters _before_ CALL:
-#  1: 1234567801234567890  2: 0
 #Values of bound parameters _after_ CALL:
 #  1: 1234567801234567890  2: 1234567801234567890
 #__ZOS_EXPECTED__
