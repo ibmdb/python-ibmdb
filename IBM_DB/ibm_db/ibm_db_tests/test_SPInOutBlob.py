@@ -45,7 +45,7 @@ class IbmDbTestCase(unittest.TestCase):
             print("Values of bound parameters _before_ CALL:")
             print("  1: %s  2: %s\n" % ((p1.decode('utf8')),p2.decode('utf8')))
 
-            stmt, inparam, outparam = ibm_db.callproc(conn, "TEST_OUT_BLOB",(p1,p2))
+            stmt, inparam, outparam = ibm_db.callproc(conn, "TEST_OUT_BLOB",(b'1234567801234567890',b'0'))
 
             if stmt is not None:
                 print("Values of bound parameters _after_ CALL:")
