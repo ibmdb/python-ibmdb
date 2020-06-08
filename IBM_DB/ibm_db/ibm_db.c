@@ -10495,7 +10495,7 @@ static PyObject* ibm_db_execute_many (PyObject *self, PyObject *args) {
                 PyObject *param = PyTuple_GET_ITEM(params, i);
                 error[0] = '\0';
                 if ( !PyTuple_Check(param) ) {
-                    sprintf(error, "Value parameter: %d is not a tuple", i + 1);
+                    sprintf(error, "Value parameter %d is not a tuple", i + 1);
                     _build_client_err_list(head_error_list, error);
                     err_count++;
                     continue;
@@ -10504,7 +10504,7 @@ static PyObject* ibm_db_execute_many (PyObject *self, PyObject *args) {
                 numOfParam = PyTuple_Size(param);
                 if ( numOpts < numOfParam ) {
                     /* More are passed in -- Warning - Use the max number present */
-                    sprintf(error, "Value parameter tuple: %d has more no of param", i + 1);
+                    sprintf(error, "Value parameter tuple %d has more parameters than previous tuple", i + 1);
                     _build_client_err_list(head_error_list, error);
                     err_count++;
                     continue;
@@ -10512,7 +10512,7 @@ static PyObject* ibm_db_execute_many (PyObject *self, PyObject *args) {
                     /* If there are less params passed in, than are present
                     * -- Error
                     */
-                    sprintf(error, "Value parameter tuple: %d has less no of param", i + 1);
+                    sprintf(error, "Value parameter tuple %d has fewer parameters than previous tuple", i + 1);
                     _build_client_err_list(head_error_list, error);
                     err_count++;
                     continue;
@@ -10533,7 +10533,7 @@ static PyObject* ibm_db_execute_many (PyObject *self, PyObject *args) {
                     if ( chaining_start ) {
                         // This check is not required for python boolean values True and False as both True and False are homogeneous for boolean.
                         if ( ( TYPE(data) != PYTHON_NIL ) && (TYPE(data) != PYTHON_TRUE) && (TYPE(data) != PYTHON_FALSE) && ( ref_data_type[curr->param_num - 1] != TYPE(data) ) ) {
-                            sprintf(error, "Value parameters array %d is not homogeneous with previous parameters array", i + 1);
+                            sprintf(error, "Value parameter tuple %d has types that are not homogeneous with previous tuple", i + 1);
                             _build_client_err_list(head_error_list, error);
                             err_count++;
                             break;
