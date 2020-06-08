@@ -65,7 +65,7 @@ if('darwin' in sys.platform):
     class PostBuildExt(build_ext):
         """ Post build_ext - update db2 dynamic lib to use loader_path on Darwin """
         def run(self):
-            super().run()
+            build_ext.run(self)
             clipath = os.getenv('IBM_DB_HOME', '@loader_path/clidriver')
             for so in glob.glob(self.build_lib+r'/ibm_db*.so'):
                 os.system("install_name_tool -change libdb2.dylib {}/lib/libdb2.dylib {}".format(clipath, so))
