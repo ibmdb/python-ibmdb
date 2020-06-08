@@ -68,30 +68,30 @@ class IbmDbTestCase(unittest.TestCase):
 #__END__
 #__LUW_EXPECTED__
 #4
-#10, Sanders, 1
-#20, Pernal, 0
-#30, Marenghi, 1
-#40, OBrien, 0
+#10, Sanders, True
+#20, Pernal, False
+#30, Marenghi, True
+#40, OBrien, False
 #Error 1: Value parameter tuple: 2 has less no of param 
 #Error 2: Value parameters array 3 is not homogeneous with previous parameters array 
 #Error 3: Value parameter tuple: 4 has less no of param 
 #2
 #__ZOS_EXPECTED__
 #4
-#10, Sanders, 1
-#20, Pernal, 0
-#30, Marenghi, 1
-#40, OBrien, 0
+#10, Sanders, True
+#20, Pernal, False
+#30, Marenghi, True
+#40, OBrien, False
 #Error 1: Value parameter tuple: 2 has less no of param 
 #Error 2: Value parameters array 3 is not homogeneous with previous parameters array 
 #Error 3: Value parameter tuple: 4 has less no of param 
 #2
 #__IDS_EXPECTED__
 #4
-#10, Sanders, 1
-#20, Pernal, 0
-#30, Marenghi, 1
-#40, OBrien, 0
+#10, Sanders, True
+#20, Pernal, False
+#30, Marenghi, True
+#40, OBrien, False
 #Error 1: Value parameter tuple: 2 has less no of param 
 #Error 2: Value parameters array 3 is not homogeneous with previous parameters array 
 #Error 3: Value parameter tuple: 4 has less no of param 
