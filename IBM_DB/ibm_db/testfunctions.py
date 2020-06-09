@@ -67,6 +67,7 @@ class IbmDbTestFunctions(unittest.TestCase):
     # This function compares the captured outout with the expected out of
     #   the current test file.
     def assert_expect(self, testFuncName):
+        self.maxDiff = None
         callstack = inspect.stack(0)
         try:
             if (self.server.DBMS_NAME[0:2] == "AS"):
