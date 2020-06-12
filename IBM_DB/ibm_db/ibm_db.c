@@ -10329,9 +10329,6 @@ static PyObject *ibm_db_get_option(PyObject *self, PyObject *args)
     Py_RETURN_FALSE;
 }
 
-
-#define ERROR_FMT "Error %d: %s\n"
-
 static int _ibm_db_chaining_flag(stmt_handle *stmt_res, SQLINTEGER flag, error_msg_node *error_list, int client_err_cnt) {
     int rc;
     Py_BEGIN_ALLOW_THREADS;
@@ -10354,17 +10351,18 @@ static int _ibm_db_chaining_flag(stmt_handle *stmt_res, SQLINTEGER flag, error_m
                 SQLGetDiagField(SQL_HANDLE_STMT, (SQLHSTMT)stmt_res->hstmt, 0, SQL_DIAG_NUMBER, (SQLPOINTER) &err_cnt, SQL_IS_POINTER, NULL);
             }
             errTuple = PyTuple_New(err_cnt + client_err_cnt);
-            err_fmt = (char *)PyMem_Malloc(strlen(ERROR_FMT) * (err_cnt + client_err_cnt) + 1);
+            /* ########## represents the size of MAX_INT. */
+            err_fmt = (char *)PyMem_Malloc(strlen("Error ##########: %s\n") * (err_cnt + client_err_cnt) + 1);
             err_fmt[0] = '\0';
             errNo = 1;
             while( error_list != NULL ) {
-                err_fmt_offset += sprintf(err_fmt+err_fmt_offset, ERROR_FMT, (int)errNo, "%s");
+                err_fmt_offset += sprintf(err_fmt+err_fmt_offset, "Error %d: %s\n", (int)errNo, "%s");
                 PyTuple_SetItem(errTuple, errNo - 1, StringOBJ_FromASCII(error_list->err_msg));
                 error_list = error_list->next;
                 errNo++;
             }
             for ( errNo = client_err_cnt + 1; errNo <= (err_cnt + client_err_cnt); errNo++ ) {
-                err_fmt_offset += sprintf(err_fmt+err_fmt_offset, ERROR_FMT, (int)errNo, "%s");
+                err_fmt_offset += sprintf(err_fmt+err_fmt_offset, "Error %d: %s\n", (int)errNo, "%s");
                 _python_ibm_db_check_sql_errors((SQLHSTMT)stmt_res->hstmt, SQL_HANDLE_STMT, SQL_ERROR, 1, NULL, -1, (errNo - client_err_cnt));
                 PyTuple_SetItem(errTuple, errNo - 1, StringOBJ_FromASCII(IBM_DB_G(__python_stmt_err_msg)));
             }
