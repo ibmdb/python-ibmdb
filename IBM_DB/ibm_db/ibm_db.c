@@ -10351,8 +10351,8 @@ static int _ibm_db_chaining_flag(stmt_handle *stmt_res, SQLINTEGER flag, error_m
                 SQLGetDiagField(SQL_HANDLE_STMT, (SQLHSTMT)stmt_res->hstmt, 0, SQL_DIAG_NUMBER, (SQLPOINTER) &err_cnt, SQL_IS_POINTER, NULL);
             }
             errTuple = PyTuple_New(err_cnt + client_err_cnt);
-            /* ########## represents the size of MAX_INT. */
-            err_fmt = (char *)PyMem_Malloc(strlen("Error ##########: %s\n") * (err_cnt + client_err_cnt) + 1);
+            /* Allocate enough space for largest possible int value. */
+            err_fmt = (char *)PyMem_Malloc(strlen("Error 2147483647: %s\n") * (err_cnt + client_err_cnt) + 1);
             err_fmt[0] = '\0';
             errNo = 1;
             while( error_list != NULL ) {
