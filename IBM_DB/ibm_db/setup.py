@@ -22,7 +22,7 @@ from setuptools.command.build_ext import build_ext
 from setuptools.command.install import install
 
 PACKAGE = 'ibm_db'
-VERSION = '3.0.1'
+VERSION = '3.0.2'
 LICENSE = 'Apache License 2.0'
 
 context = ssl.create_default_context()
@@ -93,6 +93,17 @@ def _setWinEnv(name, value):
                 '''if 'clidriver' not in os.environ['%(name)s']:\n    os.environ['%(name)s'] = os.environ['%(name)s']''' % {'name': name}
         envVal = envVal + ''' + ";" + os.path.join(os.path.abspath(os.path.dirname(__file__)), '%(val)s', 'bin')''' % {'val': value}
         pyFile.write( envVal + "\n" + old )
+    pyFile.close()
+
+# add add_dll_directory to ibm_db.py for python 3.8. refer https://bugs.python.org/issue36085 for details
+def _setDllPath():
+    pyFile = open('ibm_db.py', 'r+')
+    old = pyFile.read()
+    if "add_dll_directory" not in old:
+        pyFile.seek(0)
+        add_dll_directory = "import os\n" + '''if 'IBM_DB_HOME' not in os.environ:\n    os.add_dll_directory(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'clidriver', 'bin'))\nelse:\n    ibm_db_home = os.environ['IBM_DB_HOME'].strip('"')\n    os.add_dll_directory(os.path.join(ibm_db_home, 'bin'))'''
+
+        pyFile.write( add_dll_directory + "\n" + old )
     pyFile.close()
 
 if('win32' in sys.platform):
@@ -211,6 +222,8 @@ if (('IBM_DB_HOME' not in os.environ) and ('IBM_DB_DIR' not in os.environ) and (
 
     if prebuildIbmdbPYD:
         _setWinEnv("PATH", "clidriver")
+        if (sys.version_info >= (3, 8,)):
+            _setDllPath()
 
     license_agreement = '''\n****************************************\nYou are downloading a package which includes the Python module for IBM DB2/Informix.  The module is licensed under the Apache License 2.0. The package also includes IBM ODBC and CLI Driver from IBM, which is automatically downloaded as the python module is installed on your system/device. The license agreement to the IBM ODBC and CLI Driver is available in %s or %s.   Check for additional dependencies, which may come with their own license agreement(s). Your use of the components of the package and dependencies constitutes your acceptance of their respective license agreements. If you do not accept the terms of any license agreement(s), then delete the relevant component(s) from your device.\n****************************************\n''' % (pip_cli_path, easy_cli_path)
 
