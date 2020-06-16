@@ -36,7 +36,7 @@ Provides Python interface for connecting to IBM DB2 and Informix
    Checkout the [README](https://github.com/ibmdb/python-ibmdb/tree/master/IBM_DB/ibm_db) for getting started with ibm_db and ibm_db_dbi
 
 ## <a name="prereq"></a> Pre-requisites
-Install Python 2.7 or Python 3 <= 3.7. The minimum python version supported by driver is python 2.7 and the latest version supported is python 3.7 except version 3.3 as it has reached end-of-life.
+Install Python 2.7 or Python 3 <= 3.8. The minimum python version supported by driver is python 2.7 and the latest version supported is python 3.8 except version 3.3 as it has reached end-of-life.
 
 The pre-built 32-bit and 64-bit binaries on windows are available for the following versions:
 ```
@@ -45,6 +45,7 @@ python 3.4
 python 3.5
 python 3.6
 python 3.7
+python 3.8
 ```
 
 You might need zlib, openssl, pip installations if not already available in your setup.
