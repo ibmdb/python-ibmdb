@@ -70,6 +70,16 @@ pip install ibm_db
 ```
 This will install ibm_db and ibm_db_dbi module.
 
+If you are using python 3.8 on windows and building the source manually, you will need to set dll path of dependent library of clidriver before importing the module as:
+```
+import os
+os.add_dll_directory('path to clidriver installation until bin')
+
+e.g:
+os.add_dll_directory('C:\Program Files\IBM\CLIDRIVER\\bin')
+```
+Refer https://bugs.python.org/issue36085 for more details.
+
 * <a name="docker"></a>For installing ibm_db on docker Linux container, you can refer as below:
 ```
 yum install python gcc pam wget python-devel.x86_64
