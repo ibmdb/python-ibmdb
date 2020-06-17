@@ -62,13 +62,9 @@ You might need zlib, openssl, pip installations if not already available in your
 * For installing ibm_db on **Docker Linux container**, you may need to install **gcc, python, pip, python-devel and pam** if not already installed. Refer to [Installation](#docker) for more details.
 
 ## <a name="inst"></a> Installation
-* MAC OS:
+
 You can install the driver using pip as:
-```
-pip install --no-binary "ibm_db" ibm_db
-```
-* All other platforms:
-You can install the driver using pip as:
+
 ```
 pip install ibm_db
 ```
