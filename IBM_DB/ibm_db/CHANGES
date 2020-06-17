@@ -226,7 +226,7 @@ only optimize for N rows issue #2 (defect #154260)
 - travis.yml update 
 - execute_many() does not check correctly for errors, throws CLI0126E. - PR499
 - Fix Python 3 syntax errors in ibm_db_dbi.py - PR488
-- Release GIL during SQLEndTran - PR482,  David Mooney, Théophile Chevalier, killuazhu, Andrew Sheridan, 
+- Release GIL during SQLEndTran - PR482
 - Context Management - PR437
 - stmt_errormsg() to handle non-ascii and hours mod 24 for Db2 LUW. - PR430
 - fix for Blob data not inserted from ibm_db_sa orm. PR408
