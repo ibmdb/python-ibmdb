@@ -59,7 +59,7 @@ You might need zlib, openssl, pip installations if not already available in your
     yum install python-devel
 ```
 
-* For installing ibm_db on **Docker Linux container**, you may need to install **gcc, python, pip, python-devel and pam** if not already installed. Refer to [Installation](#docker) for more details.
+* For installing ibm_db on **Docker Linux container**, you may need to install **gcc, python, pip, python-devel, libxml2 and pam** if not already installed. Refer to [Installation](#docker) for more details.
 
 ## <a name="inst"></a> Installation
 
@@ -82,7 +82,7 @@ Refer https://bugs.python.org/issue36085 for more details.
 
 * <a name="docker"></a>For installing ibm_db on docker Linux container, you can refer as below:
 ```
-yum install python gcc pam wget python-devel.x86_64
+yum install python gcc pam wget python-devel.x86_64 libxml2
 use, `yum install python3` to install python 3.x
 
 if pip or pip3 does not exist, install it as:
