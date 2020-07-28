@@ -67,7 +67,7 @@ Following are the details of the client license versions that you need to be abl
 | :---:        |  :---:         |  :---:                  |  :---:       | :--:
 |AIX           |  ppc           |aix32_odbc_cli.tar.gz    |  Yes         | V11.1       |
 |              |  others        |aix64_odbc_cli.tar.gz    |  Yes         | V11.1       |
-|Darwin        |  x64           |macos64_odbc_cli.tar.gz  |  Yes         | V10.5       |
+|Darwin        |  x64           |macos64_odbc_cli.tar.gz  |  Yes         | V11.1       |
 |Linux         |  x64           |linuxx64_odbc_cli.tar.gz |  Yes         | V11.1       |
 |              |  s390x         |s390x64_odbc_cli.tar.gz  |  Yes         | V11.1       |
 |              |  s390          |s390_odbc_cli.tar.gz     |  Yes         | V11.1       |
@@ -76,7 +76,7 @@ Following are the details of the client license versions that you need to be abl
 |              |  ppc32         |ppc32_odbc_cli.tar.gz    |  Yes         | V10.5       |
 |              |  others        |linuxia32_odbc_cli.tar.gz|  Yes         | V11.1       |
 |Windows       |  x64           |ntx64_odbc_cli.zip       |  Yes         | V11.1       |
-|              |  x32           |nt32_odbc_cli.zip        |  Deprecated  | NA          |
+|              |  x32           |nt32_odbc_cli.zip        |  Yes         | V11.1       |
 |Sun           | i86pc          |sunamd64_odbc_cli.tar.gz |  Yes         | V10.5       |
 |              |                |sunamd32_odbc_cli.tar.gz |  Yes         | V10.5       |
 |              | sparc          |sun64_odbc_cli.tar.gz    |  Yes         | V11.1       |
