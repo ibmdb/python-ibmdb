@@ -44,7 +44,7 @@ class IbmDbTestCase(unittest.TestCase):
                 statement = "INSERT INTO tab_datetime (col1, col2, col3) values (?, ?, ?)"
                 stmt = ibm_db.prepare(conn, statement)
                 result = ibm_db.execute(stmt, (t_val, d_val, ts_val))
-                if (server.DBMS_NAME == 'DB2/NT64'):
+                if (server.DBMS_NAME.startswith('DB2/')):
                     d_val = datetime.date(2019, 10, 16)
                     ts_val = datetime.datetime(2019, 10, 16, 23, 0, 0, 0)
                     statement = "INSERT INTO tab_datetime (col1, col2, col3) values ('24:00:00', ?, ?)"

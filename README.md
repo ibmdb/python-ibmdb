@@ -1,7 +1,7 @@
 Python support for IBM DB2 and IBM Informix
 =========
 
-[![Build Status](https://travis-ci.org/ibmdb/python-ibmdb.svg?branch=master)](https://travis-ci.org/ibmdb/python-ibmdb)
+[![Build Status](https://travis-ci.com/ibmdb/python-ibmdb.svg?branch=master)](https://travis-ci.com/ibmdb/python-ibmdb)
 
 ## Python, DB-API components for IBM DB2 and Informix
 
@@ -36,8 +36,19 @@ Provides Python interface for connecting to IBM DB2 and Informix
    Checkout the [README](https://github.com/ibmdb/python-ibmdb/tree/master/IBM_DB/ibm_db) for getting started with ibm_db and ibm_db_dbi
 
 ## <a name="prereq"></a> Pre-requisites
-Install Python 2.7 or newer versions except python 3.3. Python ibm_db driver does not include support python 3.3 as it has reached end-of-life.
-You might need zlib, openssl, pip installations if not already available in your setup. 
+Install Python 2.7 or Python 3 <= 3.8. The minimum python version supported by driver is python 2.7 and the latest version supported is python 3.8 except version 3.3 as it has reached end-of-life.
+
+The pre-built 32-bit and 64-bit binaries on windows are available for the following versions:
+```
+python 2.7
+python 3.4
+python 3.5
+python 3.6
+python 3.7
+python 3.8
+```
+
+You might need zlib, openssl, pip installations if not already available in your setup.
 
 * Linux/Unix:
   If you face problems due to missing python header files while installing the driver, you would need to install python developer package and retry install. e.g:
@@ -48,34 +59,40 @@ You might need zlib, openssl, pip installations if not already available in your
     yum install python-devel
 ```
 
-* For installing ibm_db on **Docker Linux container**, you may need to install **gcc, python, pip, python-devel and pam** if not already installed. Refer to [Installation](#docker) for more details.
+* For installing ibm_db on **Docker Linux container**, you may need to install **gcc, python, pip, python-devel, libxml2 and pam** if not already installed. Refer to [Installation](#docker) for more details.
 
 ## <a name="inst"></a> Installation
-* MAC OS:
+
 You can install the driver using pip as:
-```
-pip install --no-binary "ibm_db" ibm_db
-```
-* All other platforms:
-You can install the driver using pip as:
+
 ```
 pip install ibm_db
 ```
-This will install ibm_db and ibm_db_dbi module. 
+This will install ibm_db and ibm_db_dbi module.
+
+If you are using python 3.8 on windows and building the source manually, you will need to set dll path of dependent library of clidriver before importing the module as:
+```
+import os
+os.add_dll_directory('path to clidriver installation until bin')
+
+e.g:
+os.add_dll_directory('C:\Program Files\IBM\CLIDRIVER\\bin')
+```
+Refer https://bugs.python.org/issue36085 for more details.
 
 * <a name="docker"></a>For installing ibm_db on docker Linux container, you can refer as below:
 ```
-yum install python gcc pam wget python-devel.x86_64
+yum install python gcc pam wget python-devel.x86_64 libxml2
 use, `yum install python3` to install python 3.x
 
 if pip or pip3 does not exist, install it as:
 wget https://bootstrap.pypa.io/get-pip.py
 docker cp get-pip.py /root:<containerid>
 cd root
-python get-pip.py
+python2 get-pip.py or python3 get-pip.py
 
 Install python ibm_db as:
-pip install ibm_db 
+pip install ibm_db
 or
 pip3 install ibm_db
 
@@ -91,36 +108,36 @@ The ODBC and CLI Driver(clidriver) is automatically downloaded at the time of in
 * <a name="envvar"></a>Environment Variables:
   `IBM_DB_HOME :`
 
-  Set this environment variable to avoid automatic downloading of the clidriver during installation. You could set this to the installation path of ODBC and CLI driver in your environment. 
+  Set this environment variable to avoid automatic downloading of the clidriver during installation. You could set this to the installation path of ODBC and CLI driver in your environment.
   e.g:
   ```
   Windows :
   set IBM_DB_HOME=c:/Users/skauser/clidriver
-  
+
   Other platforms:
   export IBM_DB_HOME=/home/skauser/clidriver
   ```
-  
+
   You are required to set the library path to the clidriver under IBM_DB_HOME to pick this version of the ODBC and CLI Driver.
   e.g:
   ```
   Windows:
   set LIB = %IBM_DB_HOME%/lib;%LIB%
- 
+
   AIX:
   export LIBPATH = $IBM_DB_HOME/lib:$LIBPATH
- 
+
   MAC:
   export DYLD_LIBRARY_PATH = $IBM_DB_HOME/lib:$DYLD_LIBRARY_PATH
- 
+
   Other platforms:
   export LD_LIBRARY_PATH = $IBM_DB_HOME/lib:$LD_LIBRARY_PATH
   ```
- 
+
   The ODBC and CLI driver is available for download at [Db2 LUW ODBC and CLI Driver](https://public.dhe.ibm.com/ibmdl/export/pub/software/data/db2/drivers/odbc_cli/).
 Refer to ([License requirements](#Licenserequirements)) for more details on the CLI driver for manual download and installation.
- 
- 
+
+
 ## <a name="eg"></a> Quick Example
 ```python
 $ python
@@ -215,7 +232,7 @@ If you intend to install the clidriver manually, Following are the details of th
 | :---:        |  :---:         |  :---:                  |  :---:       | :--:
 |AIX           |  ppc           |aix32_odbc_cli.tar.gz    |  Yes         | V11.1       |
 |              |  others        |aix64_odbc_cli.tar.gz    |  Yes         | V11.1       |
-|Darwin        |  x64           |macos64_odbc_cli.tar.gz  |  Yes         | V10.5       |
+|Darwin        |  x64           |macos64_odbc_cli.tar.gz  |  Yes         | V11.1       |
 |Linux         |  x64           |linuxx64_odbc_cli.tar.gz |  Yes         | V11.1       |
 |              |  s390x         |s390x64_odbc_cli.tar.gz  |  Yes         | V11.1       |
 |              |  s390          |s390_odbc_cli.tar.gz     |  Yes         | V11.1       |
@@ -224,7 +241,7 @@ If you intend to install the clidriver manually, Following are the details of th
 |              |  ppc32         |ppc32_odbc_cli.tar.gz    |  Yes         | V10.5       |
 |              |  others        |linuxia32_odbc_cli.tar.gz|  Yes         | V11.1       |
 |Windows       |  x64           |ntx64_odbc_cli.zip       |  Yes         | V11.1       |
-|              |  x32           |nt32_odbc_cli.zip        |  Deprecated  | NA          |
+|              |  x32           |nt32_odbc_cli.zip        |  Yes         | V11.1       |
 |Sun           | i86pc          |sunamd64_odbc_cli.tar.gz |  Yes         | V10.5       |
 |              |                |sunamd32_odbc_cli.tar.gz |  Yes         | V10.5       |
 |              | sparc          |sun64_odbc_cli.tar.gz    |  Yes         | V11.1       |
@@ -238,7 +255,7 @@ You can refer to [ODBC and CLI Driver installation](http://www-01.ibm.com/suppor
 
 Use following pypi web location for downloading source code and binaries
 **ibm_db**: https://pypi.python.org/pypi/ibm_db .
-You can also get the source code by cloning the ibm_db github repository as : 
+You can also get the source code by cloning the ibm_db github repository as :
 ```
 git clone git@github.com:ibmdb/python-ibmdb.git
 ```
@@ -247,7 +264,7 @@ git clone git@github.com:ibmdb/python-ibmdb.git
 ## Latest Updates
 
 ### *Updated ibm_db*
-  Mar 14th 2019: A new release 3.0.1 of ibm_db and ibm_db_dbi available.
+  June 17, 2020: A new release 3.0.2 of ibm_db and ibm_db_dbi available.
 
 
 <a name='support'></a>
