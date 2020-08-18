@@ -6767,6 +6767,9 @@ static PyObject *ibm_db_next_result(PyObject *self, PyObject *args)
             return Py_False;
         }
 
+#ifdef __MVS__
+	SQLFreeStmt(stmt_res->hstmt, SQL_UNBIND);
+#endif
         /* Initialize stmt resource members with default values. */
         /* Parsing will update options if needed */
         /* NOTE: This needs to match _ibm_db_new_stmt_struct */
