@@ -59,6 +59,9 @@ You might need zlib, openssl, pip installations if not already available in your
     yum install python-devel
 ```
 
+* MAC OS:
+  Db2 V11.5.4 clidriver is built with GCC version 8 and hence you may need to upgrade to this version if you face problems due to old version of the GCC compiler in your environment while loading the ibm_db library.
+
 * For installing ibm_db on **Docker Linux container**, you may need to install **gcc, python, pip, python-devel, libxml2 and pam** if not already installed. Refer to [Installation](#docker) for more details.
 
 ## <a name="inst"></a> Installation
@@ -230,18 +233,18 @@ If you intend to install the clidriver manually, Following are the details of th
 
 |Platform      |Architecture    |Cli Driver               |Supported     |Version      |
 | :---:        |  :---:         |  :---:                  |  :---:       | :--:
-|AIX           |  ppc           |aix32_odbc_cli.tar.gz    |  Yes         | V11.1       |
-|              |  others        |aix64_odbc_cli.tar.gz    |  Yes         | V11.1       |
-|Darwin        |  x64           |macos64_odbc_cli.tar.gz  |  Yes         | V11.1       |
-|Linux         |  x64           |linuxx64_odbc_cli.tar.gz |  Yes         | V11.1       |
-|              |  s390x         |s390x64_odbc_cli.tar.gz  |  Yes         | V11.1       |
+|AIX           |  ppc           |aix32_odbc_cli.tar.gz    |  Yes         | V11.5.4     |
+|              |  others        |aix64_odbc_cli.tar.gz    |  Yes         | V11.5.4     |
+|Darwin        |  x64           |macos64_odbc_cli.tar.gz  |  Yes         | V11.5.4     |
+|Linux         |  x64           |linuxx64_odbc_cli.tar.gz |  Yes         | V11.5.4     |
+|              |  s390x         |s390x64_odbc_cli.tar.gz  |  Yes         | V11.5.4     |
 |              |  s390          |s390_odbc_cli.tar.gz     |  Yes         | V11.1       |
-|              |  ppc64  (LE)   |ppc64le_odbc_cli.tar.gz  |  Yes         | V11.1       |
+|              |  ppc64  (LE)   |ppc64le_odbc_cli.tar.gz  |  Yes         | V11.5.4     |
 |              |  ppc64         |ppc64_odbc_cli.tar.gz    |  Yes         | V10.5       |
 |              |  ppc32         |ppc32_odbc_cli.tar.gz    |  Yes         | V10.5       |
-|              |  others        |linuxia32_odbc_cli.tar.gz|  Yes         | V11.1       |
-|Windows       |  x64           |ntx64_odbc_cli.zip       |  Yes         | V11.1       |
-|              |  x32           |nt32_odbc_cli.zip        |  Yes         | V11.1       |
+|              |  others        |linuxia32_odbc_cli.tar.gz|  Yes         | V11.5.4     |
+|Windows       |  x64           |ntx64_odbc_cli.zip       |  Yes         | V11.5.4     |
+|              |  x32           |nt32_odbc_cli.zip        |  Yes         | V11.5.4     |
 |Sun           | i86pc          |sunamd64_odbc_cli.tar.gz |  Yes         | V10.5       |
 |              |                |sunamd32_odbc_cli.tar.gz |  Yes         | V10.5       |
 |              | sparc          |sun64_odbc_cli.tar.gz    |  Yes         | V11.1       |
