@@ -186,7 +186,7 @@ if (('IBM_DB_HOME' not in os.environ) and ('IBM_DB_DIR' not in os.environ) and (
 
     elif('darwin' in sys.platform and is64Bit):
         os_ = 'mac'
-        cliFileName = 'macos64_odbc_cli.tar.gz'
+        cliFileName = 'linuxx64/macos64_odbc_cli.tar.gz'
         arch_ = 'x86_64'
     else:
         sys.stdout.write("Not a known platform for python ibm_db.\n")
