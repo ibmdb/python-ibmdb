@@ -60,7 +60,7 @@ You might need zlib, openssl, pip installations if not already available in your
 ```
 
 * MAC OS:
-  Db2 V11.5.4 clidriver is built with GCC version 8 and hence you may need to upgrade to this version if you face problems due to old version of the GCC compiler in your environment while loading the ibm_db library.
+  Db2 V11.5.4 clidriver is built with GCC version 8.4.0 and hence you may need to upgrade to this version if you face problems due to old version of the GCC compiler in your environment while loading the ibm_db library.
 
 * For installing ibm_db on **Docker Linux container**, you may need to install **gcc, python, pip, python-devel, libxml2 and pam** if not already installed. Refer to [Installation](#docker) for more details.
 
