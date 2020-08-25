@@ -24,7 +24,7 @@ class IbmDbTestCase(unittest.TestCase):
             return 0
         server = ibm_db.server_info( conn )
 
-        with open("tests/spook_out.png", "wb") as fp:
+        with open("ibm_db_tests/spook_out.png", "wb") as fp:
             if (server.DBMS_NAME[0:3] == 'IDS'):
                 result = ibm_db.exec_immediate(conn, "SELECT picture FROM animal_pics WHERE name = 'Spook'")
             else:
@@ -37,9 +37,9 @@ class IbmDbTestCase(unittest.TestCase):
                 fp.write(row[0])
             else:
                 print(ibm_db.stmt_errormsg())
-        with open('tests/spook_out.png', 'rb') as fp:
+        with open('ibm_db_tests/spook_out.png', 'rb') as fp:
             pic_out = fp.read()
-        with open('tests/spook.png', 'rb') as fp1:
+        with open('ibm_db_tests/spook.png', 'rb') as fp1:
             pic_in = fp1.read()
         cmp = pic_in == pic_out
         print("Are the files the same:", cmp)
