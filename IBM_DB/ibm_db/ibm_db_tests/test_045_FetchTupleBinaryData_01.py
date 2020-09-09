@@ -19,7 +19,7 @@ class IbmDbTestCase(unittest.TestCase):
 
     def run_test_045(self):
         conn = ibm_db.connect(config.database, config.user, config.password)
-        fp = open("tests/pic1_out.jpg", "wb")
+        fp = open("ibm_db_tests/pic1_out.jpg", "wb")
         result = ibm_db.exec_immediate(conn, "SELECT picture FROM animal_pics WHERE name = 'Helmut'")
         row = ibm_db.fetch_tuple(result)
         if row:
@@ -27,7 +27,8 @@ class IbmDbTestCase(unittest.TestCase):
         else:
             print(ibm_db.stmt_errormsg())
         fp.close()
-        cmp = (open('tests/pic1_out.jpg', 'rb').read() == open('tests/pic1.jpg', 'rb').read())
+        with open('ibm_db_tests/pic1_out.jpg', 'rb') as fp1, open('ibm_db_tests/pic1.jpg', 'rb') as fp2:
+            cmp = (fp1.read() == fp2.read())
         print('Are the files the same:', cmp)
 
 

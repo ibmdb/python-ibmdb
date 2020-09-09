@@ -87,14 +87,15 @@ class IbmDbTestCase(unittest.TestCase):
             return 0
         for animal in animals:
             name = animal[0]
-            fileHandle = open(os.path.dirname(os.path.abspath(__file__)) + '/' + animal[1], 'rb')
-            picture = fileHandle.read()
-            if (not picture):
-                print ("Could not retrieve picture '%s'" % animal[1])
-                return 0
-            ibm_db.bind_param(stmt, 1, name, ibm_db.SQL_PARAM_INPUT)
-            ibm_db.bind_param(stmt, 2, picture, ibm_db.SQL_PARAM_INPUT)
-            result = ibm_db.execute(stmt)
+
+            with open(os.path.dirname(os.path.abspath(__file__)) + '/' + animal[1], 'rb') as fileHandle:
+                picture = fileHandle.read()
+                if (not picture):
+                    print ("Could not retrieve picture '%s'" % animal[1])
+                    return 0
+                ibm_db.bind_param(stmt, 1, name, ibm_db.SQL_PARAM_INPUT)
+                ibm_db.bind_param(stmt, 2, picture, ibm_db.SQL_PARAM_INPUT)
+                result = ibm_db.execute(stmt)
 
         # Drop the department table, in case it exists
         drop = 'DROP TABLE department'
@@ -295,12 +296,12 @@ class IbmDbTestCase(unittest.TestCase):
             for photo in emp_photo:
                 empno = photo[0]
                 photo_format = photo[1]
-                fileHandler = open(os.path.dirname(os.path.abspath(__file__)) + '/' + photo[2], 'rb')
-                picture = fileHandler.read()
-                ibm_db.bind_param(stmt, 1, empno, ibm_db.SQL_PARAM_INPUT)
-                ibm_db.bind_param(stmt, 2, photo_format, ibm_db.SQL_PARAM_INPUT)
-                ibm_db.bind_param(stmt, 3, picture, ibm_db.SQL_PARAM_INPUT)
-                result = ibm_db.execute(stmt)
+                with open(os.path.dirname(os.path.abspath(__file__)) + '/' + photo[2], 'rb') as fileHandler:
+                    picture = fileHandler.read()
+                    ibm_db.bind_param(stmt, 1, empno, ibm_db.SQL_PARAM_INPUT)
+                    ibm_db.bind_param(stmt, 2, photo_format, ibm_db.SQL_PARAM_INPUT)
+                    ibm_db.bind_param(stmt, 3, picture, ibm_db.SQL_PARAM_INPUT)
+                    result = ibm_db.execute(stmt)
 
         # Drop the org table, in case it exists
         drop = 'DROP TABLE org'

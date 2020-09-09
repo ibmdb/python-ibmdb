@@ -214,3 +214,24 @@ only optimize for N rows issue #2 (defect #154260)
  - Run install_name_tool post installation on mac_os - PR377
  - Ensure generated tarballs include IBM certificates - PR382
 - Copy README, LICENSE and CHANGES to ibm_db install location - PR384
+
+2020/06/16 (ibm_db-3.0.2)
+- Support for python 3.8
+- Support for Boolean datatype to correctly interpret the values
+- Blob support for OUT parameter in stored procedure
+- MAC OS : add post build script to run install_name_tool 
+- rename tests to ibm_db_tests for seamless installation using conda-forge
+- add_dll_directory() for specifying the path of dependent libraries of ibm_db
+- Fix segfault in case of NULL returned by getSQLWCharAsPyUnicodeObject - PR479
+- travis.yml update 
+- execute_many() does not check correctly for errors, throws CLI0126E. - PR499
+- Fix Python 3 syntax errors in ibm_db_dbi.py - PR488
+- Release GIL during SQLEndTran - PR482
+- Context Management - PR437
+- stmt_errormsg() to handle non-ascii and hours mod 24 for Db2 LUW. - PR430
+- fix for Blob data not inserted from ibm_db_sa orm. PR408
+- Add Trove classifiers for supported Python versions. PR395
+- Simplify by defining "long" in Python 3. PR397
+- ibm_db.callproc returns None if OUT parameter is SMALLINT and the value is zero. PR489
+
+With thanks to the contributors : kevin Adler, Christian Clauss,  David Mooney, Jorge Sierra, Théophile Chevalier, killuazhu, Andrew Sheridan, 

@@ -24,11 +24,6 @@ script:
 # set up tests
 - cp config.py.sample config.py
 #
-# These were deleted from git, but required by the tests
-# we just create dummy files of the size expected
-- truncate -s 10291 tests/spook.png
-- truncate -s 15398 tests/pic1.jpg
-#
 # Create db2cli.ini
 - echo -e '[sample]\nHostname=localhost\nProtocol=TCPIP\nDatabase=sample' > db2cli.ini
 - export DB2CLIINIPATH=$PWD
