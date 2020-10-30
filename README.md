@@ -51,7 +51,7 @@ python 3.8
 You might need zlib, openssl, pip installations if not already available in your setup.
 
 * Z/OS
-  Follow steps mentioned in this [file] (install.md) and also refer to this [doc] (https://github.com/ibmdb/node-ibm_db#configure-odbc-driver-on-zos).
+  Follow steps mentioned in this [file](install.md) and also refer to this [doc](https://github.com/ibmdb/node-ibm_db#configure-odbc-driver-on-zos).
 
 * Linux/Unix:
   If you face problems due to missing python header files while installing the driver, you would need to install python developer package and retry install. e.g:
