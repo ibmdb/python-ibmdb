@@ -4,7 +4,7 @@ Below steps were followed for the same:
 
 1. Make sure that the susbystem where the Python &amp; ODBC is getting installed has the latest version of Z/OS i.e. v2.4 or later. There are known issues in Z/OS v2.3 C compiler which prevents the Python driver for Db2 to be installed smoothly.
 2. Select the Db2 which you want to connect to via ODBC as the same needs to be configured as part of ODBC installation in &quot;odbc.ini&quot; file. e.g.
-
+```
 [COMMON]
 
 MVSDEFAULTSSID=LDS8
@@ -23,12 +23,15 @@ MVSATTACHTYPE=RRSAF
 
 PLANNAME=DSNACLI
 
+```
+
 1. Create a shell profile (i.e. &quot;. profile&quot; file in your home environment) which includes environment variables, needed for python and DB2 ODBC(make sure all the below paths are changed based on your Python Home and other parameters and all the variables are configured with none missed).
 
 **NOTE:** step 4 (create python venv) should be executed only after &quot;fresh&quot; login, where .profile from step 3 will be auto-executed.
 
 e.g.
 
+```
 export PATH=$HOME/bin:/rsusr/pyz/bin:$PATH
 
 export LIBPATH=$HOME/lib:/rsusr/pyz/lib:$PATH
@@ -69,16 +72,24 @@ export IBM\_DB\_HOME=RSRTE.DSN.VC10
 
 . $HOME/ibm\_python\_venv/bin/activate
 
+```
+
 1. Create python virtual environment, to be able install packages into own local repository:
+
+```
 
 mkdir $HOME/ibm\_python\_venv
 
 python3 -m venv $HOME/ibm\_python\_venv --system-site-packages
 
+```
+
 1. Make sure when python is installed, you validate the same by typing &quot;python3 -V&quot; and it should return 3.8.3.
 2. Now there are some changes that needs to be done to **ccompiler.py** file under $PYTHON\_HOME/pyz/usr/lpp/IBM/cyp/v3r8/pyz/lib/python3.8/distutils i.e.
 
-# **NOTE:**** the following lines should be pythonized and put into setup.py so that user doesn&#39;t need to do the same manually.**
+**NOTE: The following lines should be pythonized and put into setup.py so that user doesn&#39;t need to do the same manually.(Work In Progress.)**
+
+```
 
 if [[-d sdsnc.h]]; then
 
@@ -116,12 +127,18 @@ cp -X &quot;//&#39;DSN.VB10.SDSNLOD2(DSNAO64C)&#39;&quot; libdsnao64c.so
 
 echo &#39;Please add \*dsnao64c\* to your .gitignore file&#39;
 
+```
+
 1. Make sure &quot;pip&quot; is installed and enabled as part of Python installation and is working.
 2. ODBC installed connects and works with the DB2 on the same susbsytem or Sysplex with details configured in &quot;.ini&quot; file. No additional setting has to be done or credentials needs to be given during connection creation in python program. e.g.
+
+```
 
 import ibm\_db
 
 conn = ibm\_db.connect(&#39;&#39;,&#39;&#39;,&#39;&#39;)
+
+```
 
 _ **Installing Python driver for DB2 i.e. ibm\_db &amp; Running a validation Program** _
 
@@ -166,6 +183,8 @@ This will create the ibm\_db(Python driver&#39;s **.so** i.e. object file egg in
 
 1. Now assuming everything went fine. You can run a test program i.e. **odbc\_test.py** with below content to validate if the setup has been done perfectly i.e. (ibm\_python\_venv) bash-4.3$ python3 odbc\_test.py:
 
+```
+
 from \_\_future\_\_ import print\_function
 
 import sys
@@ -199,3 +218,5 @@ else:
 print(&quot;No connection:&quot;, ibm\_db.conn\_errormsg())
 
 print(&#39;ODBC Test end&#39;)
+
+```
