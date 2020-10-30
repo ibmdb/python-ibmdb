@@ -6,21 +6,13 @@ Below steps were followed for the same:
 2. Select the Db2 which you want to connect to via ODBC as the same needs to be configured as part of ODBC installation in &quot;odbc.ini&quot; file. e.g.
 ```
 [COMMON]
-
 MVSDEFAULTSSID=LDS8
-
 CONNECTTYPE=2
-
 APPLTRACE=0
-
 APPLTRACEFILENAME=./odbctrace.txt
-
 DIAGTRACE=0
-
 [LDS8]
-
 MVSATTACHTYPE=RRSAF
-
 PLANNAME=DSNACLI
 
 ```
@@ -33,44 +25,25 @@ e.g.
 
 ```
 export PATH=$HOME/bin:/rsusr/pyz/bin:$PATH
-
 export LIBPATH=$HOME/lib:/rsusr/pyz/lib:$PATH
-
-export \_BPXK\_AUTOCVT=&#39;ON&#39;
-
-export \_CEE\_RUNOPTS=&#39;FILETAG(AUTOCVT,AUTOTAG) POSIX(ON) XPLINK(ON)&#39;
-
-export \_CC\_ASUFFIX=so
-
-export \_C89\_ASUFFIX=so
-
-export \_CXX\_ASUFFIX=so
-
-export \_CC\_CCMODE=1
-
-export \_C89\_CCMODE=1
-
-export \_CXX\_CCMODE=1
-
-export \_TAG\_REDIR\_ERR=txt
-
-export \_TAG\_REDIR\_IN=txt
-
-export \_TAG\_REDIR\_OUT=txt
-
+export _BPXK_AUTOCVT='ON'
+export _CEE_RUNOPTS='FILETAG(AUTOCVT,AUTOTAG) POSIX(ON) XPLINK(ON)'
+export _CC_ASUFFIX=so
+export _C89_ASUFFIX=so
+export _CXX_ASUFFIX=so
+export _CC_CCMODE=1
+export _C89_CCMODE=1
+export _CXX_CCMODE=1
+export _TAG_REDIR_ERR=txt
+export _TAG_REDIR_IN=txt
+export _TAG_REDIR_OUT=txt
 export STEPLIB=RSRTE.DSN.VC10.SDSNLOAD
-
 export STEPLIB=RSRTE.DSN.VC10.SDSNLOD2:$STEPLIB
-
 export STEPLIB=LDS8.SDSNEXIT:$STEPLIB
-
-export DSNAOINI=$HOME/odbc\_LDS8.ini
-
+export DSNAOINI=$HOME/odbc_LDS8.ini
 export TMPDIR=$HOME/tmp
-
-export IBM\_DB\_HOME=RSRTE.DSN.VC10
-
-. $HOME/ibm\_python\_venv/bin/activate
+export IBM_DB_HOME=RSRTE.DSN.VC10
+. $HOME/ibm_python_venv/bin/activate
 
 ```
 
@@ -79,7 +52,6 @@ export IBM\_DB\_HOME=RSRTE.DSN.VC10
 ```
 
 mkdir $HOME/ibm\_python\_venv
-
 python3 -m venv $HOME/ibm\_python\_venv --system-site-packages
 
 ```
@@ -91,41 +63,25 @@ python3 -m venv $HOME/ibm\_python\_venv --system-site-packages
 
 ```
 
-if [[-d sdsnc.h]]; then
-
-rm -rf sdsnc.h
-
+if [[ -d sdsnc.h ]]; then
+    rm -rf sdsnc.h
 fi
-
 mkdir sdsnc.h
-
-cp &quot;//&#39;DSN.VC10.SDSNC.H&#39;&quot; sdsnc.h
-
-echo &quot;Please add sdsnc.h to your .gitignore file&quot;
-
-for f in sdsnc.h/\*; do
-
-chtag -t -c 1047 $f
-
-mv $f $f.h
-
+cp "//'DSN.VC10.SDSNC.H'" sdsnc.h
+echo "Please add sdsnc.h to your .gitignore file"
+for f in sdsnc.h/*; do
+    chtag -t -c 1047 $f
+    mv $f $f.h
 done
-
-cp &quot;//&#39;DSN.VC10.SDSNMACS(DSNAO64C)&#39;&quot; dsnao64c
-
+cp "//'DSN.VC10.SDSNMACS(DSNAO64C)'" dsnao64c
 chtag -t -c 1047 dsnao64c
-
 cat dsnao64c \
-
-| dd conv=block cbs=80 \
-
-\&gt; libdsnao64c.x
-
+  | dd conv=block cbs=80 \
+  > libdsnao64c.x
 chtag -t -c 1047 libdsnao64c.x
+cp -X "//'DSN.VB10.SDSNLOD2(DSNAO64C)'" libdsnao64c.so
+echo 'Please add *dsnao64c* to your .gitignore file'
 
-cp -X &quot;//&#39;DSN.VB10.SDSNLOD2(DSNAO64C)&#39;&quot; libdsnao64c.so
-
-echo &#39;Please add \*dsnao64c\* to your .gitignore file&#39;
 
 ```
 
@@ -134,9 +90,9 @@ echo &#39;Please add \*dsnao64c\* to your .gitignore file&#39;
 
 ```
 
-import ibm\_db
+import ibm_db
+conn = ibm_db.connect('','','')
 
-conn = ibm\_db.connect(&#39;&#39;,&#39;&#39;,&#39;&#39;)
 
 ```
 
@@ -185,38 +141,22 @@ This will create the ibm\_db(Python driver&#39;s **.so** i.e. object file egg in
 
 ```
 
-from \_\_future\_\_ import print\_function
-
+from __future__ import print_function
 import sys
-
-import ibm\_db
-
-print(&#39;ODBC Test start&#39;)
-
-conn = ibm\_db.connect(&#39;&#39;,&#39;&#39;,&#39;&#39;)
-
+import ibm_db
+print('ODBC Test start')
+conn = ibm_db.connect('','','')
 if conn:
-
-stmt = ibm\_db.exec\_immediate(conn,&quot;SELECT CURRENT DATE FROM SYSIBM.SYSDUMMY1&quot;)
-
-if stmt:
-
-while (ibm\_db.fetch\_row(stmt)):
-
-date = ibm\_db.result(stmt, 0)
-
-print(&quot;Current date is :&quot;,date)
-
+    stmt = ibm_db.exec_immediate(conn,"SELECT CURRENT DATE FROM SYSIBM.SYSDUMMY1")
+    if stmt:
+        while (ibm_db.fetch_row(stmt)):
+            date = ibm_db.result(stmt, 0)
+            print("Current date is :",date)
+    else:
+        print(ibm_db.stmt_errormsg())
+    ibm_db.close(conn)
 else:
-
-print(ibm\_db.stmt\_errormsg())
-
-ibm\_db.close(conn)
-
-else:
-
-print(&quot;No connection:&quot;, ibm\_db.conn\_errormsg())
-
-print(&#39;ODBC Test end&#39;)
+    print("No connection:", ibm_db.conn_errormsg())
+print('ODBC Test end')
 
 ```
