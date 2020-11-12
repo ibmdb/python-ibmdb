@@ -1,9 +1,9 @@
-_ **Installing IBM Python &amp; ODBC on Z/OS** _
+_ **Installing IBM Python &amp; ODBC on z/OS** _
 
 Below steps were followed for the same:
 
-1. Make sure that the susbystem where the Python &amp; ODBC is getting installed has the latest version of Z/OS i.e. v2.4 or later. There are known issues in Z/OS v2.3 C compiler which prevents the Python driver for Db2 to be installed smoothly.
-2. Select the Db2 which you want to connect to via ODBC as the same needs to be configured as part of ODBC installation in &quot;odbc.ini&quot; file. e.g.
+1. Make sure that the susbystem where the Python &amp; ODBC is getting installed has the latest version of z/OS i.e. v2.4 or later. There are known issues in z/OS v2.3 C compiler which prevents the Python driver for Db2 to be installed smoothly.
+2. Set the desired Db2 for z/OS subsystem to connect to via ODBC as the same needs to be configured as part of ODBC installation in &quot;odbc.ini&quot; file. e.g.
 ```
 [COMMON]
 MVSDEFAULTSSID=LDS8
@@ -17,7 +17,7 @@ PLANNAME=DSNACLI
 
 ```
 
-1. Create a shell profile (i.e. &quot;. profile&quot; file in your home environment) which includes environment variables, needed for python and DB2 ODBC(make sure all the below paths are changed based on your Python Home and other parameters and all the variables are configured with none missed).
+1. Create a shell profile (i.e. &quot;. profile&quot; file in your home environment) which includes environment variables, needed for python and Db2 for z/OS ODBC(make sure all the below paths are changed based on your Python Home and other parameters and all the variables are configured with none missed).
 
 **NOTE:** step 4 (create python venv) should be executed only after &quot;fresh&quot; login, where .profile from step 3 will be auto-executed.
 
@@ -86,7 +86,7 @@ echo 'Please add *dsnao64c* to your .gitignore file'
 ```
 
 1. Make sure &quot;pip&quot; is installed and enabled as part of Python installation and is working.
-2. ODBC installed connects and works with the DB2 on the same susbsytem or Sysplex with details configured in &quot;.ini&quot; file. No additional setting has to be done or credentials needs to be given during connection creation in python program. e.g.
+2. ODBC installed connects and works with the Db2 for z/OS on the same subsystem or Sysplex with details configured in &quot;.ini&quot; file. No additional setting has to be done or credentials needs to be given during connection creation in python program. e.g.
 
 ```
 
