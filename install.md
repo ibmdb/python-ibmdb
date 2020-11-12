@@ -2,7 +2,7 @@ _ **Installing IBM Python &amp; ODBC on Z/OS** _
 
 Below steps were followed for the same:
 
-1. Make sure that the susbystem where the Python &amp; ODBC is getting installed has the latest version of Z/OS i.e. v2.4 or later. There are known issues in Z/OS v2.3 C compiler which prevents the Python driver for Db2 to be installed smoothly.
+1. Make sure that the subsystem where the Python &amp; ODBC is getting installed has the latest version of Z/OS i.e. v2.4 or later. There are known issues in Z/OS v2.3 C compiler which prevents the Python driver for Db2 to be installed smoothly.
 2. Select the Db2 which you want to connect to via ODBC as the same needs to be configured as part of ODBC installation in &quot;odbc.ini&quot; file. e.g.
 ```
 [COMMON]
