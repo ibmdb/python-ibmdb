@@ -9,6 +9,7 @@ import tarfile
 import zipfile
 import shutil
 import glob
+import subprocess
 
 if sys.version_info >= (3, ):
     from urllib import request
@@ -80,6 +81,8 @@ def _ext_modules(include_dir, library, lib_dir, runtime_dir=None):
                     libraries = library if library else [],
                     library_dirs = [lib_dir] if lib_dir else [],
                     sources = ['ibm_db.c'])
+    if sys.platform == 'zos':
+        ext_args['extra_objects'] = [os.path.join(os.getcwd(), "libdsnao64c.x")]
     if runtime_dir:
         ext_args['runtime_library_dirs'] = [runtime_dir]
     ibm_db = Extension('ibm_db', **ext_args)
@@ -269,14 +272,17 @@ if not prebuildIbmdbPYD and not os.path.isdir(ibm_db_include) and 'zos' != sys.p
 
 if 'zos' == sys.platform:
     ibm_db_include = "//'%s.SDSNC.H'" % ibm_db_home
-    library = ['dsnao64c'] 
+    #library = ['dsnao64c'] 
+    library = []
     library_x = "libdsnao64c.x"
     library_so = "libdsnao64c.so" # fake, but helpful for gen_lib_options in cpython/Lib/distutils/ccompiler.py
     ibm_db_lib = '.'
     if not os.path.isfile(library_x):
-        with open("//'%s.SDSNMACS(DSNAO64C)'" % ibm_db_home, "rt", encoding='cp1047_oe') as x_in:
-            with open(library_x, "wt", encoding='cp1047_oe') as x_out:
-                x_out.write(''.join(["%-80s" % x for x in x_in.read().split('\n')]))
+        #with open("//'%s.SDSNMACS(DSNAO64C)'" % ibm_db_home, "rt", encoding='cp1047_oe') as x_in:
+            #with open(library_x, "wt", encoding='cp1047_oe') as x_out:
+                #x_out.write(''.join(["%-80s" % x for x in x_in.read().split('\n')]))
+        command = ['tso', "oput '{}.SDSNMACS(DSNAO64C)' '{}'".format(ibm_db_home, os.path.join(os.getcwd(), library_x))]
+        subprocess.run(['tso', "oput '{}.SDSNMACS(DSNAO64C)' '{}'".format(ibm_db_home, os.path.join(os.getcwd(), library_x))])
     if not os.path.isfile(library_so):
         with open(library_so, "wb") as x_out:
             pass

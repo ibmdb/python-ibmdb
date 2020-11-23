@@ -2,16 +2,30 @@ _ **Installing IBM Python &amp; ODBC on Z/OS** _
 
 Below steps were followed for the same:
 
-1. Make sure that the susbystem where the Python &amp; ODBC is getting installed has the latest version of Z/OS i.e. v2.4 or later. There are known issues in Z/OS v2.3 C compiler which prevents the Python driver for Db2 to be installed smoothly.
+1. Pre-Requisite:
+```
+
+-- zODBC(64 bit) installed with z/OS 2.3
+-- IBM Python 3.8.3 64 bit
+-- Install the ++APAR PH27502
+-- In order for Python driver for Db2 to be installed smoothly on z/OS 2.3 make sure & NOTE of below:
+
+	a.	Removing text tag from ibm_db.so resolves error with  "CEE3512S An HFS load of module ... failed." i.e. chtag -R <path to Python ibm-db egg file>/ibm_db.so
+	b.	File, which is used in DSNAOINI should be tagged as binary, if it tagged as text - it can't be used for some reason by python/db2 code.
+	c.	It is possible to connect to default DB2  subsystem (set in DSNAOINI file) by using empty connection string in python ibm_db.
+	d.	You need to make sure all environment variables are set before compiling a python module as mentioned below.
+
+```
+
 2. Select the Db2 which you want to connect to via ODBC as the same needs to be configured as part of ODBC installation in &quot;odbc.ini&quot; file. e.g.
 ```
 [COMMON]
-MVSDEFAULTSSID=LDS8
+MVSDEFAULTSSID=XXXX
 CONNECTTYPE=2
 APPLTRACE=0
 APPLTRACEFILENAME=./odbctrace.txt
 DIAGTRACE=0
-[LDS8]
+[XXXX]
 MVSATTACHTYPE=RRSAF
 PLANNAME=DSNACLI
 
@@ -37,12 +51,13 @@ export _CXX_CCMODE=1
 export _TAG_REDIR_ERR=txt
 export _TAG_REDIR_IN=txt
 export _TAG_REDIR_OUT=txt
-export STEPLIB=RSRTE.DSN.VC10.SDSNLOAD
-export STEPLIB=RSRTE.DSN.VC10.SDSNLOD2:$STEPLIB
-export STEPLIB=LDS8.SDSNEXIT:$STEPLIB
-export DSNAOINI=$HOME/odbc_LDS8.ini
+export STEPLIB=RSREE.DSN.VC10.SDSNLOAD
+export STEPLIB=RSREE.DSN.VC10.SDSNLOD2:$STEPLIB
+export STEPLIB=XXXX.SDSNEXIT:$STEPLIB
+export DSNAOINI=$HOME/odbc_XXXX.ini
 export TMPDIR=$HOME/tmp
-export IBM_DB_HOME=RSRTE.DSN.VC10
+export IBM_DB_HOME=RSREE.DSN.VC10
+export PYTHONPATH=<ibm-db egg installation directory>/python
 . $HOME/ibm_python_venv/bin/activate
 
 ```
@@ -57,33 +72,6 @@ python3 -m venv $HOME/ibm\_python\_venv --system-site-packages
 ```
 
 1. Make sure when python is installed, you validate the same by typing &quot;python3 -V&quot; and it should return 3.8.3.
-2. Now there are some changes that needs to be done to **ccompiler.py** file under $PYTHON\_HOME/pyz/usr/lpp/IBM/cyp/v3r8/pyz/lib/python3.8/distutils i.e.
-
-**NOTE: The following lines should be pythonized and put into setup.py so that user doesn&#39;t need to do the same manually.(Work In Progress.)**
-
-```
-
-if [[ -d sdsnc.h ]]; then
-    rm -rf sdsnc.h
-fi
-mkdir sdsnc.h
-cp "//'DSN.VC10.SDSNC.H'" sdsnc.h
-echo "Please add sdsnc.h to your .gitignore file"
-for f in sdsnc.h/*; do
-    chtag -t -c 1047 $f
-    mv $f $f.h
-done
-cp "//'DSN.VC10.SDSNMACS(DSNAO64C)'" dsnao64c
-chtag -t -c 1047 dsnao64c
-cat dsnao64c \
-  | dd conv=block cbs=80 \
-  > libdsnao64c.x
-chtag -t -c 1047 libdsnao64c.x
-cp -X "//'DSN.VB10.SDSNLOD2(DSNAO64C)'" libdsnao64c.so
-echo 'Please add *dsnao64c* to your .gitignore file'
-
-
-```
 
 1. Make sure &quot;pip&quot; is installed and enabled as part of Python installation and is working.
 2. ODBC installed connects and works with the DB2 on the same susbsytem or Sysplex with details configured in &quot;.ini&quot; file. No additional setting has to be done or credentials needs to be given during connection creation in python program. e.g.
@@ -122,7 +110,7 @@ More detailed description can be found here:
 3. Now make sure you have &quot;ibmdb\_test&quot; directory in your $HOME directory.
 4. Once conformed, go to $HOME/ibmdb\_test/python-ibmdb/IBM\_DB/ibm\_db/ directory and run below command:
 
-(ibm\_python\_venv) bash-4.3$ python3 setup.py install --home $HOME/ibm\_python\_venv/
+(ibm\_python\_venv) bash-4.3$ python3 setup.py -v -v -v install --home $HOME/ibm\_python\_venv/
 
 This will create the ibm\_db(Python driver&#39;s **.so** i.e. object file egg in your Python Virtual Environment for future usage by Python to install the driver).
 
