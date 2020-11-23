@@ -110,7 +110,10 @@ More detailed description can be found here:
 3. Now make sure you have &quot;ibmdb\_test&quot; directory in your $HOME directory.
 4. Once conformed, go to $HOME/ibmdb\_test/python-ibmdb/IBM\_DB/ibm\_db/ directory and run below command:
 
+```
 (ibm\_python\_venv) bash-4.3$ python3 setup.py -v -v -v install --home $HOME/ibm\_python\_venv/
+
+```
 
 This will create the ibm\_db(Python driver&#39;s **.so** i.e. object file egg in your Python Virtual Environment for future usage by Python to install the driver).
 
