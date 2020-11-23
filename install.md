@@ -1,4 +1,4 @@
-_ **Installing IBM Python &amp; ODBC on Z/OS** _
+_ **Installing IBM Python &amp; ODBC on z/OS** _
 
 Below steps were followed for the same:
 
@@ -17,7 +17,7 @@ Below steps were followed for the same:
 
 ```
 
-2. Select the Db2 which you want to connect to via ODBC as the same needs to be configured as part of ODBC installation in &quot;odbc.ini&quot; file. e.g.
+2. Set the desired Db2 for z/OS subsystem to connect to via ODBC as the same needs to be configured as part of ODBC installation in &quot;odbc.ini&quot; file. e.g.
 ```
 [COMMON]
 MVSDEFAULTSSID=XXXX
@@ -31,7 +31,7 @@ PLANNAME=DSNACLI
 
 ```
 
-1. Create a shell profile (i.e. &quot;. profile&quot; file in your home environment) which includes environment variables, needed for python and DB2 ODBC(make sure all the below paths are changed based on your Python Home and other parameters and all the variables are configured with none missed).
+1. Create a shell profile (i.e. &quot;. profile&quot; file in your home environment) which includes environment variables, needed for python and DB2 for z/OS ODBC(make sure all the below paths are changed based on your Python Home and other parameters and all the variables are configured with none missed).
 
 **NOTE:** step 4 (create python venv) should be executed only after &quot;fresh&quot; login, where .profile from step 3 will be auto-executed.
 
@@ -74,7 +74,7 @@ python3 -m venv $HOME/ibm\_python\_venv --system-site-packages
 1. Make sure when python is installed, you validate the same by typing &quot;python3 -V&quot; and it should return 3.8.3.
 
 1. Make sure &quot;pip&quot; is installed and enabled as part of Python installation and is working.
-2. ODBC installed connects and works with the DB2 on the same susbsytem or Sysplex with details configured in &quot;.ini&quot; file. No additional setting has to be done or credentials needs to be given during connection creation in python program. e.g.
+2. ODBC installed connects and works with the DB2 for z/OS on the same subsytem or Sysplex with details configured in &quot;.ini&quot; file. No additional setting has to be done or credentials needs to be given during connection creation in python program. e.g.
 
 ```
 
@@ -132,6 +132,7 @@ This will create the ibm\_db(Python driver&#39;s **.so** i.e. object file egg in
 
 ```
 
+
 from __future__ import print_function
 import sys
 import ibm_db
@@ -149,5 +150,6 @@ if conn:
 else:
     print("No connection:", ibm_db.conn_errormsg())
 print('ODBC Test end')
+
 
 ```
