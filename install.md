@@ -13,7 +13,7 @@ Below steps were followed for the same:
 	a.	Removing text tag from ibm_db.so resolves error with  "CEE3512S An HFS load of module ... failed." i.e. chtag -R <path to Python ibm-db egg file>/ibm_db.so
 	b.	File, which is used in DSNAOINI should be tagged as binary, if it tagged as text - it can't be used for some reason by python/db2 code.
 	c.	It is possible to connect to default DB2  subsystem (set in DSNAOINI file) by using empty connection string in python ibm_db.
-	d.	You need to make sure all environment variables are set before compiling a python module as mentioned below.
+	d.	You need to make sure all environment variables as mentioned below are set before running the installation script i.e. Install_z_ibm-db.
 
 ```
 
@@ -40,38 +40,16 @@ e.g.
 ```
 export PATH=$HOME/bin:/rsusr/pyz/bin:$PATH
 export LIBPATH=$HOME/lib:/rsusr/pyz/lib:$PATH
-export _BPXK_AUTOCVT='ON'
-export _CEE_RUNOPTS='FILETAG(AUTOCVT,AUTOTAG) POSIX(ON) XPLINK(ON)'
-export _CC_ASUFFIX=so
-export _C89_ASUFFIX=so
-export _CXX_ASUFFIX=so
-export _CC_CCMODE=1
-export _C89_CCMODE=1
-export _CXX_CCMODE=1
-export _TAG_REDIR_ERR=txt
-export _TAG_REDIR_IN=txt
-export _TAG_REDIR_OUT=txt
 export STEPLIB=RSREE.DSN.VC10.SDSNLOAD
 export STEPLIB=RSREE.DSN.VC10.SDSNLOD2:$STEPLIB
 export STEPLIB=XXXX.SDSNEXIT:$STEPLIB
-export DSNAOINI=$HOME/odbc_XXXX.ini
-export TMPDIR=$HOME/tmp
 export IBM_DB_HOME=RSREE.DSN.VC10
-export PYTHONPATH=<ibm-db egg installation directory>/python
+export DSNAOINI=$HOME/odbc_XXXX.ini
 . $HOME/ibm_python_venv/bin/activate
 
 ```
 
-1. Create python virtual environment, to be able install packages into own local repository:
-
-```
-
-mkdir $HOME/ibm\_python\_venv
-python3 -m venv $HOME/ibm\_python\_venv --system-site-packages
-
-```
-
-1. Make sure when python is installed, you validate the same by typing &quot;python3 -V&quot; and it should return 3.8.3.
+1. Make sure when python is installed, you validate the same by typing &quot;python3 -V&quot; and it should return 3.8.3 or greater.
 
 1. Make sure &quot;pip&quot; is installed and enabled as part of Python installation and is working.
 2. ODBC installed connects and works with the DB2 for z/OS on the same subsytem or Sysplex with details configured in &quot;.ini&quot; file. No additional setting has to be done or credentials needs to be given during connection creation in python program. e.g.
@@ -91,8 +69,6 @@ Now that the Python and ODBC is ready, for connecting to DB2 you need a DB2 Pyth
 Follow the below steps for the same:
 
 1. Open Putty tool and enter the subsystem address and login using your TSO ID and PWD.
-2. Make directory for Python Virtual Environment i.e. $mkdir $HOME/ibm\_python\_venv
-3. Make sure that as soon as you login, you are in ibm\_python\_venv if you have already created $HOME/ibm\_python\_venv i.e. Python&#39;s virtual environment i.e. (ibm\_python\_venv)$ prompt else logoff and login post the directory creation. This will happen only when the &quot;.profile&quot; file is there in your $HOME directory. Make sure it doesn&#39;t collide with .bashrc file, so either merge the .profile and .bashrc or disable the .bashrc i.e. $mv .bashrc .bashrc\_temp
 4. Type bash so that you will feel more comfortable working on unix environment i.e. (ibm\_python\_venv) bash-4.3$ prompt.
 5. Download the ibm\_db source from GIT i.e. zODBC\_support branch of python-ibmdb located at [git@github.com:ibmdb/python-ibmdb.git](mailto:git@github.com:ibmdb/python-ibmdb.git).
 6. For performing step-1 make sure you have executed the below steps i.e.
@@ -111,14 +87,13 @@ More detailed description can be found here:
 4. Once conformed, go to $HOME/ibmdb\_test/python-ibmdb/IBM\_DB/ibm\_db/ directory and run below command:
 
 ```
-(ibm\_python\_venv) bash-4.3$ python3 setup.py -v -v -v install --home $HOME/ibm\_python\_venv/
+(ibm\_python\_venv) bash-4.3$ ./Install_z_ibm-db
 
 ```
 
 This will create the ibm\_db(Python driver&#39;s **.so** i.e. object file egg in your Python Virtual Environment for future usage by Python to install the driver).
 
-1. Or you can simply build i.e. (ibm\_python\_venv) bash-4.3$ python3 setup.py build --home $HOME/ibm\_python\_venv and later install the same using pip3 i.e. (ibm\_python\_venv) bash-4.3$ pip3 install
-2. If you face any issues make sure you clean the existing setup by doing below steps:
+1. If you face any issues make sure you clean the existing setup by doing below steps:
 
 1. Uninstall current package. pip3 uninstall ibm-db
  2. Cleanup build directories. python3 setup.py clean -a
