@@ -93,13 +93,10 @@ This will create the ibm\_db(Python driver&#39;s **.so** i.e. object file egg in
 
 1. If you face any issues make sure you clean the existing setup by doing below steps:
 
-1. Uninstall current package. pip3 uninstall ibm-db
- 2. Cleanup build directories. python3 setup.py clean -a
- 3. Do a fresh build. python3 setup.py build
- 4. Do a fresh install python3 setup.py install
- 5. Check places where you have &quot;old&quot; ibm\_db.so files: find ~ -name &quot;ibm\_db.so&quot;
- You should have only 2 files: one in build dir and one in site-packages dir.
- 6. Execute test once more to see that error has gone.
+  1. Uninstall current package. pip3 uninstall ibm-db
+  2. Cleanup build directories. python3 setup.py clean -a
+  3. Do a fresh install following above mentioned steps post the GIT checkout step.
+  4. Execute test once more to see that error has gone.
 
 1. Now assuming everything went fine. You can run a test program i.e. **odbc\_test.py** with below content to validate if the setup has been done perfectly i.e. (ibm\_python\_venv) bash-4.3$ python3 odbc\_test.py:
 
