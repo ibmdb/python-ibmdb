@@ -33,8 +33,6 @@ PLANNAME=DSNACLI
 
 1. Create a shell profile (i.e. &quot;. profile&quot; file in your home environment) which includes environment variables, needed for python and DB2 for z/OS ODBC(make sure all the below paths are changed based on your Python Home and other parameters and all the variables are configured with none missed).
 
-**NOTE:** step 4 (create python venv) should be executed only after &quot;fresh&quot; login, where .profile from step 3 will be auto-executed.
-
 e.g.
 
 ```
