@@ -420,6 +420,25 @@ def _get_exception(inst):
         return NotSupportedError(message)
     return DatabaseError(message)
 
+
+def _retrieve_current_schema(dsn):
+    """This method retrieve the value of ODBC keyword CURRENTSCHEMA from DSN
+    """
+
+    ODBC_CURRENTSCHEMA_KEYWORD = 'CURRENTSCHEMA='
+    current_schema_value = None
+    current_schema_start = dsn.find(ODBC_CURRENTSCHEMA_KEYWORD)
+
+    if current_schema_start > -1:
+        current_schema_end = dsn.find(';', current_schema_start)
+        current_schema_value = dsn[
+            (current_schema_start + len(ODBC_CURRENTSCHEMA_KEYWORD))
+            :current_schema_end
+        ]
+
+    return current_schema_value
+
+
 def _server_connect(dsn, user='', password='', host=''):
     """This method create connection with server
     """
@@ -595,13 +614,14 @@ def connect(dsn, user='', password='', host='', database='', conn_options=None):
         dsn = dsn + "UID=" + user + ";"
     if password != '' and dsn.find('PWD=') == -1:
         dsn = dsn + "PWD=" + password + ";"
+
     try:
         conn = ibm_db.connect(dsn, '', '', conn_options)
-        ibm_db.set_option(conn, {SQL_ATTR_CURRENT_SCHEMA : user}, 1)
+        conn_object = Connection(conn)
+        conn_object.set_current_schema(_retrieve_current_schema(dsn) or user)
+        return conn_object
     except Exception as inst:
         raise _get_exception(inst)
-
-    return Connection(conn)
 
 def pconnect(dsn, user='', password='', host='', database='', conn_options=None):
     """This method creates persistent connection to the database. It returns
@@ -647,11 +667,11 @@ def pconnect(dsn, user='', password='', host='', database='', conn_options=None)
         dsn = dsn + "PWD=" + password + ";"
     try:
         conn = ibm_db.pconnect(dsn, '', '', conn_options)
-        ibm_db.set_option(conn, {SQL_ATTR_CURRENT_SCHEMA : user}, 1)
+        conn_object = Connection(conn)
+        conn_object.set_current_schema(_retrieve_current_schema(dsn) or user)
+        return conn_object
     except Exception as inst:
         raise _get_exception(inst)
-
-    return Connection(conn)
 
 class Connection(object):
     """This class object represents a connection between the database
