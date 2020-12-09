@@ -13,6 +13,10 @@ import config
 
 class IbmDbTestCase(unittest.TestCase):
 
+    def test_currentschema(self):
+        self.run_default_current_schema()
+        self.run_setup_schema()
+
     def _assert_current_schema(self, conn, schema_name):
         query = "SELECT CURRENT_SCHEMA FROM SYSIBM.SYSDUMMY1"
         try:
@@ -22,7 +26,7 @@ class IbmDbTestCase(unittest.TestCase):
         except:
             self.assertIsNone(sys.exc_info()[0], "Query failed")
 
-    def test_default_current_schema(self):
+    def run_default_current_schema(self):
         conn = ibm_db.connect(config.database, config.user, config.password)
 
         if conn:
@@ -32,7 +36,7 @@ class IbmDbTestCase(unittest.TestCase):
             print ("Connection failed.")
 
 
-    def test_setup_current_schema(self):
+    def run_setup_schema(self):
         conn = ibm_db_dbi.connect(
             'CURRENTSCHEMA=SYSIBM;PORT=%d;PROTOCOL=TCPIP;' % config.port,
             config.user, config.password, config.hostname, config.database
