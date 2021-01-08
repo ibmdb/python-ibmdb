@@ -13,7 +13,7 @@ import config
 from testfunctions import IbmDbTestFunctions
 
 class IbmDbTestCase(unittest.TestCase):
-    @unittest.skipIf(os.environ.get("CI", False), "Test fails in CI")
+    @unittest.skipIf(((os.environ.get("CI", False)) or (sys.platform == 'zos')), "Test fails in CI")
     def test_execute_many(self):
         obj = IbmDbTestFunctions()
         obj.assert_expect(self.run_test_execute_many)
@@ -86,6 +86,8 @@ class IbmDbTestCase(unittest.TestCase):
 #Error 2: Value parameters array 3 is not homogeneous with previous parameters array 
 #Error 3: Value parameter tuple: 4 has less no of param 
 #2
+#__SYSTEMI_EXPECTED__
+#NA
 #__IDS_EXPECTED__
 #4
 #10, Sanders, 1

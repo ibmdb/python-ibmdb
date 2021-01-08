@@ -34,3 +34,5 @@ class IbmDbTestCase(unittest.TestCase):
 #[IBM][CLI Driver] SQL30082N  Security processing failed with reason "24" ("USERNAME AND/OR PASSWORD INVALID").  SQLSTATE=08001 SQLCODE=-30082
 #__IDS_EXPECTED__
 #[IBM][CLI Driver] SQL30082N  Security processing failed with reason "24" ("USERNAME AND/OR PASSWORD INVALID").  SQLSTATE=08001 SQLCODE=-30082
+#__ZOS_ODBC_EXPECTED__
+#??? No way.

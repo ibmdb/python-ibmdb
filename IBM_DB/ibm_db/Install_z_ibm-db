@@ -1,0 +1,27 @@
+#!/bin/sh
+
+#commented variables are pre-requisite and should be set at system level before running this script. Preferably you can put them in .profile as mentioned in install.md
+#export PATH=$HOME/bin:/rsusr/pyz/bin:$PATH #Set the Python path
+#export LIBPATH=$HOME/lib:/rsusr/pyz/lib:$PATH #Set the python lib path
+#export STEPLIB=RSREE.DSN.VC10.SDSNLOAD #Setup ODBC
+#export STEPLIB=RSREE.DSN.VC10.SDSNLOD2:$STEPLIB #Setup ODBC
+#export STEPLIB=XXXX.SDSNEXIT:$STEPLIB #Setup ODBC
+#export IBM_DB_HOME=RSREE.DSN.VC10 #Setup IBM_DB_HOME
+#export DSNAOINI=$HOME/odbc_XXXX.ini #Setup INI file
+mkdir -p $HOME/ibm\_python\_venv
+python3 -m venv $HOME/ibm\_python\_venv --system-site-packages
+export _BPXK_AUTOCVT='ON'
+export _CEE_RUNOPTS='FILETAG(AUTOCVT,AUTOTAG) POSIX(ON) XPLINK(ON)'
+export _CC_ASUFFIX=so
+export _C89_ASUFFIX=so
+export _CXX_ASUFFIX=so
+export _CC_CCMODE=1
+export _C89_CCMODE=1
+export _CXX_CCMODE=1
+export _TAG_REDIR_ERR=txt
+export _TAG_REDIR_IN=txt
+export _TAG_REDIR_OUT=txt
+export TMPDIR=$HOME/tmp
+export PYTHONPATH=$HOME/ibm\_python\_venv/lib/python
+python3 setup.py -v -v -v install --home $HOME/ibm\_python\_venv/
+chtag -r $HOME/ibm\_python\_venv/lib/python/ibm_db-3.0.2-py3.8-os390-26.00-8561.egg/ibm_db.so

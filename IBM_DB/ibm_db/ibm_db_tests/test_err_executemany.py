@@ -9,10 +9,11 @@ import sys
 import unittest
 import ibm_db
 import config
+import os
 from testfunctions import IbmDbTestFunctions
 
 class IbmDbTestCase(unittest.TestCase):
-
+    @unittest.skipIf(((os.environ.get("CI", False)) or (sys.platform == 'zos')), "Test fails in CI")
     def test_err_executemany(self):
         obj = IbmDbTestFunctions()
         obj.assert_expect(self.run_test_err_executemany)

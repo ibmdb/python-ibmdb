@@ -10,6 +10,7 @@ import sys
 import unittest
 import ibm_db
 import config
+import getpass
 from testfunctions import IbmDbTestFunctions
 
 class IbmDbTestCase(unittest.TestCase):
@@ -22,7 +23,10 @@ class IbmDbTestCase(unittest.TestCase):
 
     def run_test_080(self):
         try:
-            conn = ibm_db.connect("x", config.user, config.password)
+            if sys.platform == 'zos':
+                conn =  ibm_db.connect("x", getpass.getuser(), config.password)
+            else:
+                conn = ibm_db.connect("x", config.user, config.password)
             print("??? No way.")
         except:
             print(ibm_db.conn_error())
@@ -41,3 +45,5 @@ class IbmDbTestCase(unittest.TestCase):
 #08001
 #__IDS_EXPECTED__
 #08001
+#__ZOS_ODBC_EXPECTED__
+#42505

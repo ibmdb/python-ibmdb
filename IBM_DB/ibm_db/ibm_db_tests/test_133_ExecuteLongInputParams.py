@@ -101,3 +101,12 @@ class IbmDbTestCase(unittest.TestCase):
 #SQLSTATE: 02000
 #Message: [IBM][CLI Driver][IDS%s] SQL0100W  No row was found for FETCH, UPDATE or DELETE; or the result of a query is an empty table.  SQLSTATE=02000 SQLCODE=100
 #Done
+#__ZOS_ODBC_EXPECTED__
+#Starting test ...
+#
+#SQLSTATE: 22001
+#Message: {DB2 FOR OS/390}{ODBC DRIVER}  SQLSTATE=22001  ERRLOC=12:9:1 SQLCODE=-99999
+#True
+#SQLSTATE: 
+#Message: 
+#Done

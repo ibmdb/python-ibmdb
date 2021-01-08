@@ -1,5 +1,7 @@
 import os
 import sys
+import os.path
+import sys
 import ssl
 import struct
 import warnings
@@ -7,6 +9,7 @@ import tarfile
 import zipfile
 import shutil
 import glob
+import subprocess
 
 if sys.version_info >= (3, ):
     from urllib import request
@@ -15,8 +18,7 @@ else:
     import urllib2 as request
     from cStringIO import StringIO as BytesIO
 
-from setuptools import setup, find_packages
-from distutils.core import setup, Extension
+from setuptools import setup, find_packages, Extension
 from distutils.sysconfig import get_python_lib
 from setuptools.command.build_ext import build_ext
 from setuptools.command.install import install
@@ -25,8 +27,9 @@ PACKAGE = 'ibm_db'
 VERSION = '3.0.2'
 LICENSE = 'Apache License 2.0'
 
-context = ssl.create_default_context()
-context.load_verify_locations('certs/ibm_certs.pem')
+if 'zos' != sys.platform:
+    context = ssl.create_default_context()
+    context.load_verify_locations('certs/ibm_certs.pem')
 
 machine_bits =  8 * struct.calcsize("P")
 is64Bit = True
@@ -75,9 +78,11 @@ if('darwin' in sys.platform):
 # defining extension
 def _ext_modules(include_dir, library, lib_dir, runtime_dir=None):
     ext_args = dict(include_dirs = [include_dir],
-                    libraries = library,
-                    library_dirs = [lib_dir],
+                    libraries = library if library else [],
+                    library_dirs = [lib_dir] if lib_dir else [],
                     sources = ['ibm_db.c'])
+    if sys.platform == 'zos':
+        ext_args['extra_objects'] = [os.path.join(os.getcwd(), "libdsnao64c.x")]
     if runtime_dir:
         ext_args['runtime_library_dirs'] = [runtime_dir]
     ibm_db = Extension('ibm_db', **ext_args)
@@ -125,7 +130,11 @@ if('win32' in sys.platform):
         prebuildIbmdbPYD = True
 
 if (('IBM_DB_HOME' not in os.environ) and ('IBM_DB_DIR' not in os.environ) and ('IBM_DB_LIB' not in os.environ)):
-    if ('aix' in sys.platform):
+    if ('zos' == sys.platform):
+        sys.stdout.write("You must set the environment variable IBM_DB_HOME to the HLQ of a DB2 installation\n")
+        sys.stdout.flush()
+        sys.exit()
+    elif ('aix' in sys.platform):
         os_ = 'aix'
         arch_ = '*'
         if is64Bit:
@@ -244,7 +253,7 @@ if ibm_db_dir == '':
             sys.stdout.write("Environment variable IBM_DB_HOME is not set. Set it to your DB2/IBM_Data_Server_Driver installation directory and retry ibm_db module install.\n")
             sys.exit()
 
-if not os.path.isdir(ibm_db_lib):
+if not os.path.isdir(ibm_db_lib) and 'zos' != sys.platform:
     ibm_db_lib = os.path.join(ibm_db_dir, 'lib')
     if not os.path.isdir(ibm_db_lib):
         sys.stdout.write("Cannot find %s directory. Check if you have set the IBM_DB_HOME environment variable's value correctly\n " %(ibm_db_lib))
@@ -257,19 +266,50 @@ if not os.path.isdir(ibm_db_lib):
     notifyString = notifyString + "of IBM_Data_Server_Driver and retry the ibm_db module install\n "
     warnings.warn(notifyString)
 ibm_db_include = os.path.join(ibm_db_dir, 'include')
-if not prebuildIbmdbPYD and not os.path.isdir(ibm_db_include):
+if not prebuildIbmdbPYD and not os.path.isdir(ibm_db_include) and 'zos' != sys.platform:
     sys.stdout.write(" %s/include folder not found. Check if you have set the IBM_DB_HOME environment variable's value correctly\n " %(ibm_db_dir))
     sys.exit()
 
-library = ['db2']
-package_data = { 'ibm_db_tests': [ '*.png', '*.jpg']}
+if 'zos' == sys.platform:
+    #ibm_db_include = "//'%s.SDSNC.H'" % ibm_db_home
+    dataset_include = "//'%s.SDSNC.H'" % ibm_db_home
+    include_dir = 'sdsnc.h'
+    #library = ['dsnao64c'] 
+    library = []
+    library_x = "libdsnao64c.x"
+    library_so = "libdsnao64c.so" # fake, but helpful for gen_lib_options in cpython/Lib/distutils/ccompiler.py
+    ibm_db_lib = '.'
+    if not os.path.isfile(library_x):
+        #with open("//'%s.SDSNMACS(DSNAO64C)'" % ibm_db_home, "rt", encoding='cp1047_oe') as x_in:
+            #with open(library_x, "wt", encoding='cp1047_oe') as x_out:
+                #x_out.write(''.join(["%-80s" % x for x in x_in.read().split('\n')]))
+        #command = ['tso', "oput '{}.SDSNMACS(DSNAO64C)' '{}'".format(ibm_db_home, os.path.join(os.getcwd(), library_x))]
+        subprocess.run(['tso', "oput '{}.SDSNMACS(DSNAO64C)' '{}'".format(ibm_db_home, os.path.join(os.getcwd(), library_x))])
+    if not os.path.isdir(include_dir):
+        os.mkdir(include_dir)
+        subprocess.run(['cp', dataset_include, include_dir])
+        for f in glob.glob(os.path.join(include_dir, '*')):
+            subprocess.run(['chtag', '-tc', '1047', f])
+            os.rename(f, '{}.h'.format(f))
+    if not os.path.isfile(library_so):
+        with open(library_so, "wb") as x_out:
+            pass
+else:
+    library = ['db2']
+    
+package_data = { 'ibm_db_tests': [ 'run_individual_tests', '*.png', '*.jpg', 'config.py.sample']}
+
 data_files = [ (get_python_lib(), ['./README.md']),
                (get_python_lib(), ['./CHANGES']),
                (get_python_lib(), ['./LICENSE']),
                (get_python_lib(), ['./config.py.sample'])]
 
 modules = ['ibm_db_dbi', 'testfunctions', 'tests']
-ext_modules = _ext_modules(ibm_db_include, library, ibm_db_lib, ibm_db_lib_runtime)
+
+if 'zos' == sys.platform:
+    ext_modules = _ext_modules(os.path.join(os.getcwd(), include_dir), library, ibm_db_lib, ibm_db_lib_runtime)
+else:
+    ext_modules = _ext_modules(ibm_db_include, library, ibm_db_lib, ibm_db_lib_runtime)
 
 if (sys.platform[0:3] == 'win'):
     library = ['db2cli64']

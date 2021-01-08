@@ -76,7 +76,10 @@ class IbmDbTestCase(unittest.TestCase):
             except:
                 pass
             ibm_db.exec_immediate(conn, procedure)
-            stmt = ibm_db.exec_immediate(conn, 'CALL multiResults()')
+            if sys.platform == 'zos':
+                stmt = ibm_db.exec_immediate(conn, 'CALL MULTIRESULTS()')
+            else:
+                stmt = ibm_db.exec_immediate(conn, 'CALL multiresults()')
             #print(stmt)
             print("Fetching first result set")
             row = ibm_db.fetch_tuple(stmt)

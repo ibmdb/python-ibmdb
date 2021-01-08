@@ -36,7 +36,10 @@ class IbmDbTestCase(unittest.TestCase):
             stmt = ibm_db.prepare(conn, "INSERT INTO pictures VALUES (0, ?)")
 
             picture = os.path.dirname(os.path.abspath(__file__)) + "/pic1.jpg"
-            rc = ibm_db.bind_param(stmt, 1, picture, ibm_db.SQL_PARAM_INPUT, ibm_db.SQL_BINARY)
+            if sys.platform == 'zos':
+                rc = ibm_db.bind_param(stmt, 1, picture, ibm_db.SQL_PARAM_INPUT, ibm_db.SQL_BLOB)
+            else:
+                rc = ibm_db.bind_param(stmt, 1, picture, ibm_db.SQL_PARAM_INPUT, ibm_db.SQL_BINARY)
 
             rc = ibm_db.execute(stmt)
 

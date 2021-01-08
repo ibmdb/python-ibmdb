@@ -44,6 +44,8 @@ class IbmDbTestCase(unittest.TestCase):
 
             if (server.DBMS_NAME[0:3] == 'IDS'):
                 stmt = ibm_db.primary_keys(conn, None, config.user, 'test_primary_keys')
+            elif ( 'zos' in sys.platform):
+                stmt = ibm_db.primary_keys(conn, None, config.user, 'TEST_PRIMARY_KEYS')
             else:
                 stmt = ibm_db.primary_keys(conn, None, None, 'TEST_PRIMARY_KEYS')
             row = ibm_db.fetch_tuple(stmt)

@@ -19,16 +19,18 @@ class IbmDbTestCase(unittest.TestCase):
 
     def run_test_045(self):
         conn = ibm_db.connect(config.database, config.user, config.password)
-        fp = open("ibm_db_tests/pic1_out.jpg", "wb")
-        result = ibm_db.exec_immediate(conn, "SELECT picture FROM animal_pics WHERE name = 'Helmut'")
-        row = ibm_db.fetch_tuple(result)
-        if row:
-            fp.write(row[0])
-        else:
-            print(ibm_db.stmt_errormsg())
-        fp.close()
-        with open('ibm_db_tests/pic1_out.jpg', 'rb') as fp1, open('ibm_db_tests/pic1.jpg', 'rb') as fp2:
-            cmp = (fp1.read() == fp2.read())
+        with open("ibm_db_tests/pic1_out.jpg", "wb") as fp:
+            result = ibm_db.exec_immediate(conn, "SELECT picture FROM animal_pics WHERE name = 'Helmut'")
+            row = ibm_db.fetch_tuple(result)
+            if row:
+                fp.write(row[0])
+            else:
+                print(ibm_db.stmt_errormsg())
+        with open('ibm_db_tests/pic1_out.jpg', 'rb') as fp:
+            pic_out = fp.read()
+        with open('ibm_db_tests/pic1.jpg', 'rb') as fp:
+            pic_in = fp.read()
+        cmp = pic_in == pic_out
         print('Are the files the same:', cmp)
 
 

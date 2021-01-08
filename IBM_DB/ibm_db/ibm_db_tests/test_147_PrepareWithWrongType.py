@@ -39,6 +39,8 @@ class IbmDbTestCase(unittest.TestCase):
                 excp = sys.exc_info()
                 # slot 1 contains error message
                 print(excp[1])
+            finally:
+                ibm_db.close(conn)
         else:
             print("Connection failed.")
 
@@ -51,3 +53,5 @@ class IbmDbTestCase(unittest.TestCase):
 #Statement Execute Failed: [IBM][CLI Driver] CLI0112E  Error in assignment. SQLSTATE=22005 SQLCODE=-99999
 #__IDS_EXPECTED__
 #Statement Execute Failed: [IBM][CLI Driver] CLI0112E  Error in assignment. SQLSTATE=22005 SQLCODE=-99999
+#__ZOS_ODBC_EXPECTED__
+#Statement Execute Failed: {DB2 FOR OS/390}{ODBC DRIVER}  SQLSTATE=22005  ERRLOC=4:3:2 SQLCODE=-99999

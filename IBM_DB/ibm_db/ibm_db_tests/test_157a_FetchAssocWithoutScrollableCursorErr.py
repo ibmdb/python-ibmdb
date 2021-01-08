@@ -63,3 +63,8 @@ class IbmDbTestCase(unittest.TestCase):
 #SQLSTATE: HY106
 #Message: [IBM][CLI Driver] CLI0145E  Fetch type out of range. SQLSTATE=HY106 SQLCODE=-99999
 #DONE
+#__ZOS_ODBC_EXPECTED__
+#Starting...
+#SQLSTATE: HY106
+#Message: {DB2 FOR OS/390}{ODBC DRIVER}  SQLSTATE=HY106  ERRLOC=7:31:6 SQLCODE=-99999
+#DONE
