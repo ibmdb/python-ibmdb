@@ -2,7 +2,7 @@
 
 We are assuming that you have Python already installed. In Linux you may need the python-dev package (you can install python-dev package through "$yum install python-devel" if yum doesn't work then you can also install it through "$apt-get install python-dev")
 
-Note:The minimum python version supported by driver is python 2.7 and the latest version supported is python 3.7 except version 3.3 as it has reached end-of-life.
+Note:The minimum python version supported by driver is python 2.7 and the latest version supported is python 3.9 except version 3.3 as it has reached end-of-life.
 
 
 ## Installation

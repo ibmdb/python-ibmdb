@@ -2,7 +2,7 @@
 
 # You will need to edit these two lines:
 export IBM_DB_HOME='DSN.VC10'
-export SUBSYSTEM=LC1A # RS25
+export SUBSYSTEM=<SSID> # SSID if the zos machine
 
 export _BPXK_AUTOCVT=ON
 

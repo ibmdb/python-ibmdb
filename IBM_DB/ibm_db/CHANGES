@@ -234,4 +234,8 @@ only optimize for N rows issue #2 (defect #154260)
 - Simplify by defining "long" in Python 3. PR397
 - ibm_db.callproc returns None if OUT parameter is SMALLINT and the value is zero. PR489
 
+2021/02/01 (ibm_db-3.0.3)
+- Support for python 3.9
+- Support of Z/OS as platform
+
 With thanks to the contributors : kevin Adler, Christian Clauss,  David Mooney, Jorge Sierra, Théophile Chevalier, killuazhu, Andrew Sheridan, 

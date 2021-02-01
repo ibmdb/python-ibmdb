@@ -24,7 +24,7 @@ from setuptools.command.build_ext import build_ext
 from setuptools.command.install import install
 
 PACKAGE = 'ibm_db'
-VERSION = '3.0.2'
+VERSION = '3.0.3'
 LICENSE = 'Apache License 2.0'
 
 if 'zos' != sys.platform:
@@ -73,6 +73,30 @@ if('darwin' in sys.platform):
             for so in glob.glob(self.build_lib+r'/ibm_db*.so'):
                 os.system("install_name_tool -change libdb2.dylib {}/lib/libdb2.dylib {}".format(clipath, so))
 
+    cmd_class = dict(install = PostInstall, build_ext = PostBuildExt)
+
+# define post-build-ext and post-install operation for ZOS platform   
+if('zos' in sys.platform):
+    class PostInstall(install):
+        def run(self):
+            install.run(self)
+            for so in glob.glob(get_python_lib()+r'/ibm_db*.egg/ibm_db*.so'):
+                os.system("chtag -r " + get_python_lib() + r"/ibm_db*.egg/ibm_db*.so")
+            for so in glob.glob(get_python_lib()+r'/ibm_db*.so'):
+                try:
+                    os.system("chtag -r " + get_python_lib() + r"/ibm_db*.so")
+                except:
+                    print("Could not change file tag information")
+            
+    class PostBuildExt(build_ext):
+        def run(self):
+            build_ext.run(self)
+            for so in glob.glob(self.build_lib+r'/ibm_db*.so'):
+                try:
+                    os.system("chtag -r " + self.build_lib + r"/ibm_db*.so")
+                except:
+                    print("Could not change file tag information")
+                    
     cmd_class = dict(install = PostInstall, build_ext = PostBuildExt)
 
 # defining extension
@@ -235,6 +259,19 @@ if (('IBM_DB_HOME' not in os.environ) and ('IBM_DB_DIR' not in os.environ) and (
             _setDllPath()
 
     license_agreement = '''\n****************************************\nYou are downloading a package which includes the Python module for IBM DB2/Informix.  The module is licensed under the Apache License 2.0. The package also includes IBM ODBC and CLI Driver from IBM, which is automatically downloaded as the python module is installed on your system/device. The license agreement to the IBM ODBC and CLI Driver is available in %s or %s.   Check for additional dependencies, which may come with their own license agreement(s). Your use of the components of the package and dependencies constitutes your acceptance of their respective license agreements. If you do not accept the terms of any license agreement(s), then delete the relevant component(s) from your device.\n****************************************\n''' % (pip_cli_path, easy_cli_path)
+else:
+    if ('zos' == sys.platform):
+        os.environ['_BPXK_AUTOCVT']='ON'
+        os.environ['_CEE_RUNOPTS']='FILETAG(AUTOCVT,AUTOTAG) POSIX(ON) XPLINK(ON)'
+        os.environ['_CC_ASUFFIX']='so'
+        os.environ['_C89_ASUFFIX']='so'
+        os.environ['_CXX_ASUFFIX']='so'
+        os.environ['_CC_CCMODE']='1'
+        os.environ['_C89_CCMODE']='1'
+        os.environ['_CXX_CCMODE']='1'
+        os.environ['_TAG_REDIR_ERR']='txt'
+        os.environ['_TAG_REDIR_IN']='txt'
+        os.environ['_TAG_REDIR_OUT']='txt'
 
 if ('win32' not in sys.platform):
     if os.path.isfile('ibm_db.py'):
@@ -345,12 +382,13 @@ setup( name    = PACKAGE,
                       'Programming Language :: Python :: 3.6',
                       'Programming Language :: Python :: 3.7',
                       'Programming Language :: Python :: 3.8',
+                      'Programming Language :: Python :: 3.9',
                       'Topic :: Database :: Front-Ends'],
 
        long_description = '''
                       This extension is the implementation of Python Database API Specification v2.0
                       The extension supports DB2 (LUW, zOS, i5) and IDS (Informix Dynamic Server)''',
-       platforms = 'Linux32/64, Win32/64, aix32/64, ppc32/64, sunamd32/64, sun32/64, ppc64le',
+       platforms = 'Linux32/64, Win32/64, aix32/64, ppc32/64, sunamd32/64, sun32/64, ppc64le, Z/OS',
        ext_modules  = ext_modules,
        py_modules   = modules,
        packages     = find_packages(),

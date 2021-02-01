@@ -36,7 +36,7 @@ Provides Python interface for connecting to IBM DB2 and Informix
    Checkout the [README](https://github.com/ibmdb/python-ibmdb/tree/master/IBM_DB/ibm_db) for getting started with ibm_db and ibm_db_dbi
 
 ## <a name="prereq"></a> Pre-requisites
-Install Python 2.7 or Python 3 <= 3.8. The minimum python version supported by driver is python 2.7 and the latest version supported is python 3.8 except version 3.3 as it has reached end-of-life.
+Install Python 2.7 or Python 3 <= 3.9. The minimum python version supported by driver is python 2.7 and the latest version supported is python 3.9 except version 3.3 as it has reached end-of-life.
 
 The pre-built 32-bit and 64-bit binaries on windows are available for the following versions:
 ```
@@ -46,6 +46,7 @@ python 3.5
 python 3.6
 python 3.7
 python 3.8
+python 3.9
 ```
 
 You might need zlib, openssl, pip installations if not already available in your setup.
@@ -76,7 +77,7 @@ pip install ibm_db
 ```
 This will install ibm_db and ibm_db_dbi module.
 
-If you are using python 3.8 on windows and building the source manually, you will need to set dll path of dependent library of clidriver before importing the module as:
+If you are using python 3.8 or 3.9 on windows and building the source manually, you will need to set dll path of dependent library of clidriver before importing the module as:
 ```
 import os
 os.add_dll_directory('path to clidriver installation until bin')
@@ -208,6 +209,26 @@ False
 True
 >>> ibm_db.close(ibm_db_conn)
 True
+```
+
+## Example of SSL Connection String
+ 
+```
+Using SSLServerCertificate keyword
+ 
+conn = ibm_db.connect("DATABASE=<DATABASE_NAME>;HOSTNAME=<HOSTNAME>;PORT=<SSL_PORT>;SECURITY=SSL;SSLServerCertificate=<FULL_PATH_TO_SERVER_CERTIFICATE>;UID=<USER_ID>;PWD=<PASSWORD>",'','')
+```
+ 
+```
+Using SSLClientKeyStoreDB and SSLClientKeyStoreDBPassword keyword
+ 
+conn = ibm_db.connect("DATABASE=<DATABASE_NAME>;HOSTNAME=<HOSTNAME>;PORT=<SSL_PORT>;SECURITY=SSL;SSLClientKeyStoreDB=<FULL_PATH_TO_CLIENT_KEY_STORE_DB>;SSLClientKeyStoreDBPassword=<KEYSTORE_PASSWORD>;UID=<USER_ID>;PWD=<PASSWORD>",'','')
+```
+ 
+```
+Using SSLClientKeyStoreDB and SSLClientKeyStash keyword
+ 
+conn = ibm_db.connect("DATABASE=<DATABASE_NAME>;HOSTNAME=<HOSTNAME>;PORT=<SSL_PORT>;SECURITY=SSL;SSLClientKeyStoreDB=<FULL_PATH_TO_CLIENT_KEY_STORE_DB>;SSLClientKeyStash=<FULL_PATH_TO_CLIENT_KEY_STASH>;UID=<USER_ID>;PWD=<PASSWORD>",'','')
 ```
 More examples can be found under ['tests'](https://github.com/ibmdb/python-ibmdb/tree/master/IBM_DB/ibm_db/tests) folder.
 

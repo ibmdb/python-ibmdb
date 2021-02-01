@@ -17,8 +17,8 @@ e.g.
 ```
 export _BPXK_AUTOCVT='ON'
 export _CEE_RUNOPTS='FILETAG(AUTOCVT,AUTOTAG) POSIX(ON) XPLINK(ON)
-export PATH=$HOME/bin:/rsusr/pyz/bin:$PATH
-export LIBPATH=$HOME/lib:/rsusr/pyz/lib:$PATH
+export PATH=$HOME/bin:/user/python_install/bin:$PATH
+export LIBPATH=$HOME/lib:/user/python_install/lib:$PATH
 export STEPLIB=RSREE.DSN.VC10.SDSNLOAD
 export STEPLIB=RSREE.DSN.VC10.SDSNLOD2:$STEPLIB
 export STEPLIB=XXXX.SDSNEXIT:$STEPLIB
