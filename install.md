@@ -7,7 +7,9 @@ Below steps were followed for the same:
 
 -- zODBC(64 bit) installed with z/OS 2.3
 -- IBM Python 3.8.3 64 bit
--- Install the ++APAR PH27502(If not installed)
+-- Install the below PTFs(If not installed):
+    -- UI72588 (v11)
+    -- UI72589 (v12)
 ```
 
 2. Configure below environment variables or create a shell profile (i.e. &quot;. profile&quot; file in your home environment) which includes environment variables, needed for Python and DB2 for z/OS ODBC(make sure all the below paths are changed based on your system and DB setting and all the variables are configured with none missed).
