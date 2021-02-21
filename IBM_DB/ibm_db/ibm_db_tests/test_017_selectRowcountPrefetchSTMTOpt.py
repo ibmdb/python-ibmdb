@@ -20,25 +20,37 @@ class IbmDbTestCase(unittest.TestCase):
     def run_test_017(self):
         conn = ibm_db.connect(config.database, config.user, config.password)
         if conn:
-            result = ibm_db.exec_immediate(conn,"SELECT * from animals WHERE weight < 10.0", { ibm_db.SQL_ATTR_CURSOR_TYPE : ibm_db.SQL_CURSOR_KEYSET_DRIVEN})
+            if ('zos' in sys.platform):
+                result = ibm_db.exec_immediate(conn,"SELECT * from animals WHERE weight < 10.0")
+            else:
+                result = ibm_db.exec_immediate(conn,"SELECT * from animals WHERE weight < 10.0", { ibm_db.SQL_ATTR_CURSOR_TYPE : ibm_db.SQL_CURSOR_KEYSET_DRIVEN})
             if result:
                 rows = ibm_db.num_rows(result)
                 print("affected row:", rows)
             else:
                 print(ibm_db.stmt_errormsg())
-            result = ibm_db.exec_immediate(conn,"SELECT * from animals WHERE weight < 10.0", {ibm_db.SQL_ATTR_CURSOR_TYPE : ibm_db.SQL_CURSOR_FORWARD_ONLY})
+            if('zos' in sys.platform):
+                result = ibm_db.exec_immediate(conn,"SELECT * from animals WHERE weight < 10.0")
+            else:
+                result = ibm_db.exec_immediate(conn,"SELECT * from animals WHERE weight < 10.0", {ibm_db.SQL_ATTR_CURSOR_TYPE : ibm_db.SQL_CURSOR_FORWARD_ONLY})
             if result:
                 rows = ibm_db.num_rows(result)
                 print("affected row:", rows)
             else:
                 print(ibm_db.stmt_errormsg())
-            result = ibm_db.exec_immediate(conn,"SELECT * from animals WHERE weight < 10.0", {ibm_db.SQL_ATTR_ROWCOUNT_PREFETCH : ibm_db.SQL_ROWCOUNT_PREFETCH_ON})
+            if ('zos' in sys.platform):
+                result = ibm_db.exec_immediate(conn,"SELECT * from animals WHERE weight < 10.0")
+            else:
+                result = ibm_db.exec_immediate(conn,"SELECT * from animals WHERE weight < 10.0", {ibm_db.SQL_ATTR_ROWCOUNT_PREFETCH : ibm_db.SQL_ROWCOUNT_PREFETCH_ON})
             if result:
                 rows = ibm_db.num_rows(result)
                 print("affected row:", rows)
             else:
                 print(ibm_db.stmt_errormsg())
-            result = ibm_db.exec_immediate(conn,"SELECT * from animals WHERE weight < 10.0", {ibm_db.SQL_ATTR_ROWCOUNT_PREFETCH : ibm_db.SQL_ROWCOUNT_PREFETCH_OFF})
+            if('zos' in sys.platform):
+                result = ibm_db.exec_immediate(conn,"SELECT * from animals WHERE weight < 10.0")
+            else:
+                result = ibm_db.exec_immediate(conn,"SELECT * from animals WHERE weight < 10.0", {ibm_db.SQL_ATTR_ROWCOUNT_PREFETCH : ibm_db.SQL_ROWCOUNT_PREFETCH_OFF})
             if result:
                 rows = ibm_db.num_rows(result)
                 print("affected row:", rows)
@@ -70,4 +82,9 @@ class IbmDbTestCase(unittest.TestCase):
 #affected row: 4
 #affected row: -1
 #affected row: 4
+#affected row: -1
+#__ZOS_ODBC_EXPECTED__
+#affected row: -1
+#affected row: -1
+#affected row: -1
 #affected row: -1

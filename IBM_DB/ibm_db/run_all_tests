@@ -1,0 +1,91 @@
+#!/bin/sh
+
+# You will need to edit these two lines:
+export IBM_DB_HOME='DSN.VC10'
+export SUBSYSTEM=<SSID> # SSID if the zos machine
+
+export _BPXK_AUTOCVT=ON
+
+stty -echo
+printf "Password: "
+read PASSWORD
+stty echo
+printf "\n"
+touch ~/.password
+chtag -t -c 819 ~/.password
+chmod 600 ~/.password
+echo "$PASSWORD" > ~/.password
+
+export STEPLIB=$SUBSYSTEM.SDSNEXIT:$IBM_DB_HOME.SDSNLOD2:$IBM_DB_HOME.SDSNLOAD
+export HOSTNAME=`uname -n`
+
+export WORK=`pwd`
+export APPLTRACE="0"
+export DIAGTRACE="0"
+export APPTRACEFILENAME=$WORK/odbc_appl_trace
+export DIAGTRACEFILENAME=$WORK/odbc_diag_trace
+touch $APPTRACEFILENAME $DIAGTRACEFILENAME
+chtag -b $APPTRACEFILENAME $DIAGTRACEFILENAME
+cp "//'$IBM_DB_HOME.SDSNLOD2(DSNAO64T)'" $WORK/odbc_trace_control
+chmod 755 $WORK/odbc_trace_control
+
+for ENCODING in "UNICODE" "ASCII"; do
+    for ATTACH in "CAF" "RRSAF"; do
+	for MULTICONTEXT in "0" "1"; do
+	    if [[ "$ATTACH" == "CAF" && "$MULTICONTEXT" == "1" ]]; then
+		continue
+	    fi
+	    export DSNAOINI="$HOME/ODBC_${HOSTNAME}_${SUBSYSTEM}_${ENCODING}_${ATTACH}_${MULTICONTEXT}"
+	    touch $DSNAOINI
+	    chtag -t -c 1047 $DSNAOINI
+	    cat <<EOF >$DSNAOINI
+[COMMON]
+MVSDEFAULTSSID=$SUBSYSTEM
+CURRENTAPPENSCH=$ENCODING
+FLOAT=IEEE
+APPLTRACE=$APPLTRACE
+APPLTRACEFILENAME=./odbc_appl_trace
+DIAGTRACE=$DIAGTRACE
+DIAGTRACE_NO_WRAP=0
+DIAGTRACE_BUFFER_SIZE=60000000
+[$SUBSYSTEM]
+MVSATTACHTYPE=$ATTACH
+MULTICONTEXT=$MULTICONTEXT
+PLANNAME=DSNACLI
+[$HOSTNAME$SUBSYSTEM]
+AUTOCOMMIT=1
+EOF
+	    chtag -b $DSNAOINI
+	    out="${ENCODING}_${ATTACH}_${MULTICONTEXT}"
+	    python tests.py > $out.out 2>&1
+	    ./run_individual_tests $out >> $out.out 2>&1
+	    fgrep -e ' ... ' $out.out | sed -e 's/ .* \.\.\. / /' -e 's/ skipped .*/ skipped/' > $out.summary 
+	done
+    done
+done
+
+rm ~/.password
+
+for f in *.summary; do
+    sort $f > $f.sorted
+done
+
+cat ASCII_CAF_0.summary.sorted | \
+join - ASCII_RRSAF_0.summary.sorted | \
+join - ASCII_RRSAF_1.summary.sorted | \
+join - UNICODE_CAF_0.summary.sorted | \
+join - UNICODE_RRSAF_0.summary.sorted | \
+join - UNICODE_RRSAF_1.summary.sorted > \
+summary.out
+
+rm *.sorted
+
+# export _BPX_SHAREAS=YES
+# ./odbc_trace_control ON -I 8000000
+# python tests.py
+# ./odbc_trace_control DMP $DIAGTRACEFILENAME
+# ./odbc_trace_control FMT $DIAGTRACEFILENAME $DIAGTRACEFILENAME.out
+# export _BPX_SHAREAS=NO
+# 
+autotag -s *
+

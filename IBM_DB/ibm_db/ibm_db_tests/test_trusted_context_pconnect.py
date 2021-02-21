@@ -13,7 +13,7 @@ import config
 from testfunctions import IbmDbTestFunctions
 
 class IbmDbTestCase(unittest.TestCase):
-    @unittest.skipIf(os.environ.get("CI", False), "Test fails in CI")
+    @unittest.skipIf((os.environ.get("CI", False)) or (sys.platform == 'zos'), "Test fails in CI")
     # Throws exception:
     # Exception: [IBM][CLI Driver] SQL30082N  Security processing failed
     # with reason "24" ("USERNAME AND/OR PASSWORD INVALID").  SQLSTATE=08001

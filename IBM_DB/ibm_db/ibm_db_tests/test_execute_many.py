@@ -13,6 +13,7 @@ import config
 from testfunctions import IbmDbTestFunctions
 
 class IbmDbTestCase(unittest.TestCase):
+    @unittest.skipIf((sys.platform == 'zos'), "Test fails in zOS")
     def test_execute_many(self):
         obj = IbmDbTestFunctions()
         obj.assert_expect(self.run_test_execute_many)
@@ -87,6 +88,8 @@ class IbmDbTestCase(unittest.TestCase):
 #Error 3: Value parameter tuple 4 has fewer parameters than previous tuple
 #Error 4: Value parameter 6 is not a tuple
 #2
+#__SYSTEMI_EXPECTED__
+#NA
 #__IDS_EXPECTED__
 #4
 #10, Sanders, True

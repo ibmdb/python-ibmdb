@@ -17,7 +17,10 @@ class IbmDbTestCase(unittest.TestCase):
         obj.assert_expect(self.run_test_cursortype)
 
     def run_test_cursortype(self):
-        options = { ibm_db.SQL_ATTR_INFO_PROGRAMNAME : 'TestProgram'}
+        if sys.platform == 'zos':
+            options = {}
+        else:
+            options = { ibm_db.SQL_ATTR_INFO_PROGRAMNAME : 'TestProgram'}
         conn = ibm_db.connect(config.database, config.user, config.password, options)
 
         if conn:
@@ -119,3 +122,16 @@ class IbmDbTestCase(unittest.TestCase):
 #Setting cursor type to SQL_CURSOR_DYNAMIC - zOS only
 #statement cursor type = 1
 #3
+#__ZOS_ODBC_EXPECTED__
+#Setting cursor type to SQL_CURSOR_FORWARD_ONLY
+#statement cursor type = 0
+#0
+#Setting cursor type to SQL_CURSOR_KEYSET_DRIVEN
+#statement cursor type = 1
+#3
+#Setting cursor type to SQL_CURSOR_STATIC
+#statement cursor type = 1
+#3
+#Setting cursor type to SQL_CURSOR_DYNAMIC - zOS only
+#statement cursor type = 1
+#2

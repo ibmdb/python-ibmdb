@@ -53,8 +53,10 @@ class IbmDbTestCase(unittest.TestCase):
             statement = "INSERT INTO test_foreign_keys VALUES ('vince', 1)"
             result = ibm_db.exec_immediate(conn, statement)
 
-            if (server.DBMS_NAME[0:3] == 'IDS'):
+            if (server.DBMS_NAME[0:3] == 'IDS' ):
                 stmt = ibm_db.foreign_keys(conn, None, config.user, 'test_primary_keys')
+            elif ('zos' in sys.platform):
+                stmt = ibm_db.foreign_keys(conn, None, config.user, 'TEST_PRIMARY_KEYS')
             else:
                 stmt = ibm_db.foreign_keys(conn, None, None, 'TEST_PRIMARY_KEYS')
             row = ibm_db.fetch_tuple(stmt)
@@ -65,6 +67,8 @@ class IbmDbTestCase(unittest.TestCase):
 
             if (server.DBMS_NAME[0:3] == 'IDS'):
                 stmt = ibm_db.foreign_keys(conn, None, None, None, None, config.user, 'test_keys')
+            elif ( 'zos' in sys.platform):
+                stmt = ibm_db.foreign_keys(conn, None, None, None, None, config.user,'TEST_KEYS')
             else:
                 stmt = ibm_db.foreign_keys(conn, None, None, None, None, None, 'TEST_KEYS')
             row = ibm_db.fetch_tuple(stmt)
@@ -75,6 +79,8 @@ class IbmDbTestCase(unittest.TestCase):
 
             if (server.DBMS_NAME[0:3] == 'IDS'):
                 stmt = ibm_db.foreign_keys(conn, None, config.user, 'test_keys', None, None, None)
+            elif ( 'zos' in sys.platform):
+                stmt = ibm_db.foreign_keys(conn, None, config.user, 'TEST_KEYS', None, None, None)
             else:
                 stmt = ibm_db.foreign_keys(conn, None, None, 'TEST_KEYS', None, None, None)
             row = ibm_db.fetch_tuple(stmt)
@@ -85,6 +91,8 @@ class IbmDbTestCase(unittest.TestCase):
 
             if (server.DBMS_NAME[0:3] == 'IDS'):
                 stmt = ibm_db.foreign_keys(conn, None, config.user, 'test_keys', None, config.user, 'test_foreign_keys')
+            elif ( 'zos' in sys.platform):
+                stmt = ibm_db.foreign_keys(conn, None, config.user, 'TEST_KEYS', None, config.user, 'TEST_FOREIGN_KEYS')
             else:
                 stmt = ibm_db.foreign_keys(conn, None, None, 'TEST_KEYS', None, None, 'TEST_FOREIGN_KEYS')
             row = ibm_db.fetch_tuple(stmt)
@@ -102,6 +110,8 @@ class IbmDbTestCase(unittest.TestCase):
 
             if (server.DBMS_NAME[0:3] == 'IDS'):
                 stmt = ibm_db.foreign_keys(conn, None, config.user, 'test_keys', None, 'dummy_schema')
+            elif ( 'zos' in sys.platform):
+                stmt = ibm_db.foreign_keys(conn, None, config.user, 'TEST_KEYS', None, 'dummy_schema')
             else:
                 stmt = ibm_db.foreign_keys(conn, None, None, 'TEST_KEYS', None, 'dummy_schema')
             row = ibm_db.fetch_tuple(stmt)
@@ -151,7 +161,7 @@ class IbmDbTestCase(unittest.TestCase):
 #NAME
 #TEST_FOREIGN_KEYS
 #NAMEF
-#[IBM][CLI Driver] CLI0124E  Invalid argument value. SQLSTATE=HY009 SQLCODE=-99999
+#{DB2 FOR OS/390}{ODBC DRIVER}  SQLSTATE=HY009  ERRLOC=10:17:6 SQLCODE=-99999
 #No Data Found
 #__SYSTEMI_EXPECTED__
 #TEST_PRIMARY_KEYS

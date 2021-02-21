@@ -39,3 +39,5 @@ class IbmDbTestCase(unittest.TestCase):
 #08001
 #__IDS_EXPECTED__
 #08001
+#__ZOS_ODBC_EXPECTED__
+#??? No way.

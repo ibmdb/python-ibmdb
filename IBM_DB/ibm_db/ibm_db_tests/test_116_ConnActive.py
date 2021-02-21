@@ -9,10 +9,12 @@ import sys
 import unittest
 import ibm_db
 import config
+import platform
+
 from testfunctions import IbmDbTestFunctions
 
 class IbmDbTestCase(unittest.TestCase):
-
+    @unittest.skipIf(platform.system() == 'z/OS',"Test fails with z/OS ODBC driver")
     def test_116_ConnActive(self):
         obj = IbmDbTestFunctions()
         obj.assert_expect(self.run_test_116)

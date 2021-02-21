@@ -18,7 +18,10 @@ class IbmDbTestCase(unittest.TestCase):
         obj.assert_expect(self.run_test_220)
 
     def run_test_220(self):
-        conn = ibm_db.pconnect(config.database, config.user, config.password)
+        if sys.platform == 'zos':
+            conn = ibm_db.pconnect(config.database,'','')
+        else:
+            conn = ibm_db.pconnect(config.database, config.user, config.password)
 
         if conn:
             ibm_db.autocommit(conn, ibm_db.SQL_AUTOCOMMIT_OFF)

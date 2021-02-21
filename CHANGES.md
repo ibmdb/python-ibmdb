@@ -1,0 +1,496 @@
+2021-02-03, Version 3.0.3
+=========================
+
+ * deleting Install_z_ibm_db file (amukherjee)
+
+ * Changes for Z/os support along with python 3.9 (amukherjee)
+
+ * Readme and install file releated changes (Arnab Mukherjee)
+
+ * Z odbc support (#579) (Binit Kumar)
+
+ * Update README.md (Saba Kauser)
+
+ * Update README.md (#544) (Saba Kauser)
+
+ * add v11.1 support for win32 and mac (Saba Kauser)
+
+ * add v11.1 support for win32 and Mac (Saba Kauser)
+
+ * Add dependent libraries for docker linux in README (Saba Kauser)
+
+ * new test canse for bool (#527) (Saba Kauser)
+
+ * Update CHANGES (Saba Kauser)
+
+
+2020-06-17, Version 3.0.2
+=========================
+
+ * Update README.md (Saba Kauser)
+
+ * Update CHANGES (Saba Kauser)
+
+ * add add_dll_directory for python 3.8 (#523) (Saba Kauser)
+
+ * Use v2.7-compatible syntax instead of super(). (#522) (davidmmooney)
+
+ * Bool (#519) (Saba Kauser)
+
+ * Update image files in ibm_db_tests/ (#514) (davidmmooney)
+
+ * Fix Segfault in case of NULL value returned by getSQLWCharAsPyUnicodeObject (#479) (Théophile Chevalier)
+
+ * Release (#509) (Saba Kauser)
+
+ * honor IBM_DB_HOME setting while running install_name_tool (#508) (Saba Kauser)
+
+ * Support bdist for MacOS (#466) (killuazhu)
+
+ * docs: Fix Travis status badge in README (#493) (Kevin Adler)
+
+ * ci: Fix Docker setup for Travis CI (#492) (Kevin Adler)
+
+ * change copyright (Saba Kauser)
+
+ * added new testcase #489 (Saba Kauser)
+
+ * addresses #489 (#490) (Saba Kauser)
+
+ * Fix Python 3 syntax errors in ibm_db_dbi.py (#448) (Christian Clauss)
+
+ * Release GIL during SQLEndTran (#482) (Zach Hoggard)
+
+ * Avoid binary install in MacOS pip install (#463) (killuazhu)
+
+ * Context Management (#437) (Andrew Sheridan)
+
+ * stmt_errormsg() to handle non-ascii and hours mod 24 for Db2 LUW (#430) (Saba Kauser)
+
+ * 421 and 429 (Saba Kauser)
+
+ * ibm_db on Docker linux  (#425) (Saba Kauser)
+
+ * fix for Blob data not inserted from ibm_db_sa orm (#408) (abhi7436)
+
+ * Add Trove classifiers for supported Python versions. (#395) (Jannis Leidel)
+
+ * Simplify by defining "long" in Python 3 (#397) (cclauss)
+
+ * Doc changes (#393) (Saba Kauser)
+
+ * Fix issue #388 and update README (#391) (Saba Kauser)
+
+
+2019-03-14, Version 3.0.1
+=========================
+
+ * Release 3.0.1 (#385) (Saba Kauser)
+
+ * New test cases and copying README, LICENSE and CHANGES to ibm_db install location (#384) (Saba Kauser)
+
+ * Fix whitespace issues (#344) (Kevin Adler)
+
+ * Ensure generated tarballs include IBM certificates (#382) (Kevin Adler)
+
+ * Remove ibm_db_django directory (#375) (Kevin Adler)
+
+ * Run install_name_tool post installation on mac_os (#377) (Saba Kauser)
+
+ * Remove unused tests_1 directory (#376) (Kevin Adler)
+
+ * Fix unpredictable returning bytes instead string for multiple result sets (#374) (Kevin Adler)
+
+ * Add certificates needed to verify downloads from IBM FTP site (#367) (Kevin Adler)
+
+ * Update ibm_db.c (#364) (Saba Kauser)
+
+ * Update ibm_db.h (Saba Kauser)
+
+ * "Merge bug_fixes" (#360) (Saba Kauser)
+
+ * fix UnicodeDecodeError with ibm_db.get_option (#357) (Saba Kauser)
+
+ * Update README.md (Saba Kauser)
+
+ * fixed typo in error message (#347) (Henrik Loeser)
+
+ * Add Appveyor support for Windows CI (#346) (Kevin Adler)
+
+ * add email address (Saba Kauser)
+
+ * Update .travis.yml (Saba Kauser)
+
+ * Changing email to true for travis (Bimal Kumar Jha)
+
+ * Update CHANGES (Saba Kauser)
+
+ * Add support for Travis CI (#343) (Kevin Adler)
+
+ * MANIFEST.in should reference renamed README.md not README (#342) (Kevin Adler)
+
+
+2018-08-08, Version 2.0.9
+=========================
+
+ * Update README.md (Saba Kauser)
+
+ * Update README.md (#331) (Saba Kauser)
+
+ * Fix bug in setup.py where wrong cli file could be downloaded (#325) (Kevin McKenzie)
+
+ * Fix the broken links (#324) (Kevin McKenzie)
+
+ * add correct length to TIMESTAMP bindin (SabaKauser)
+
+ * process unique persistent connections (#278) (Robert Redburn)
+
+ * added support for ppc64le (#311) (vibkulkarni)
+
+ * Remove reused = 1 outside connection check (#316) (David Poggi)
+
+ * Support for DBCLOB (#307) (hemlatabhatt)
+
+ * Update setup.py (SabaKauser)
+
+ * new release 2.0.8 for ibm_db (SabaKauser)
+
+ * Update README.md (SabaKauser)
+
+ * New contribution guidelines for python ibm_db (#275) (SabaKauser)
+
+
+2017-09-07, Version 2.0.8
+=========================
+
+ * Python 2.8  changes merge request (#274) (hemlatabhatt)
+
+ * Python3 Support for ibm-db-django readme file Updated (#258) (hemlatabhatt)
+
+ * Py3 Support for ibm_db_django (#257) (hemlatabhatt)
+
+ * schema editor changes (hemlatabhatt)
+
+ * changes in schemaeditor (hemlatabhatt)
+
+ * change in schemaeditor file (hemlatabhatt)
+
+ * change in schemaeditor (hemlatabhatt)
+
+ * rel.through fixes in 1.0.0.0 release (hemlatabhatt)
+
+ * fixes in 1.1.0.0 release (hemlatabhatt)
+
+ * Updated release number to 1.1.0.0 (hemlatabhatt)
+
+ * changed a error file (hemlatabhatt)
+
+ * Django 1.1.0 release (hemlatabhatt)
+
+ * use correct metadata views for z/OS for inspectdb (SabaKauser)
+
+ * Update ibm_db_dbi.py (SabaKauser)
+
+ * added new test case test_spinout_timestamp.py (SabaKauser)
+
+ * added missing variables for use_wchar (SabaKauser)
+
+ * correct handling of TIMESTAMP OUTPUT paramters of SP call in ibm_db.callproc API (SabaKauser)
+
+ * Update Contributions.md (SabaKauser)
+
+ * Adding the CLA documents that need to be signed for contributions (SabaKauser)
+
+ * Adding the CLA documents that need to be signed for making contributions to the repository (SabaKauser)
+
+ * CLA Docs (SabaKauser)
+
+ * Update README.md (SabaKauser)
+
+ * Update ibm_db.c (SabaKauser)
+
+ * add zlinux support (SabaKauser)
+
+ * Performance Improvements (SabaKauser)
+
+ * Update test_264_InsertRetrieveBIGINTTypeColumn.py (SabaKauser)
+
+ * Update CHANGES for ibm_db_django 1.0.9 (Kevin Adler)
+
+ * Update pybase.py (SabaKauser)
+
+ * Update base.py (SabaKauser)
+
+ * Fix typo in caching bound parameters test (Kevin Adler)
+
+ * Add test for caching bound parameters (Kevin Adler)
+
+ * inc/dec bound Python objects and ensure cache is cleared properly (Kevin Adler)
+
+ * Update schemaEditor.py (SabaKauser)
+
+ * ATTACH keyword is not supported. (IBMAmar)
+
+ * ATTACH property is not supported for non_luw. (IBMAmar)
+
+ * Update test_warn.py (SabaKauser)
+
+ * Update setup.py (SabaKauser)
+
+
+2016-03-23, Version 2.0.7
+=========================
+
+ * Update ibm_db.c (SabaKauser)
+
+ * Update CHANGES (SabaKauser)
+
+ * Update README.md (SabaKauser)
+
+ * Update setup.py (IBMAmar)
+
+ * Update __init__.py (jospaul1)
+
+ * Update README.md (jospaul1)
+
+ * IBM_DB/ibm_db/tests/test_warn.py (hemlatabhatt)
+
+ * IBM_DB/ibm_db/ibm_db.c (hemlatabhatt)
+
+ * Version check (jospaul1)
+
+ * In Django 1.8 convert_binaryfield_value method expect 5 arguments.Added Version check. (jospaul1)
+
+ * added condition djangoVersion[0:2] >= ( 1, 8 ) (jospaul1)
+
+ * if getattr(self.connection.connection, dbms_name) != 'DB2': edited .dbms_name may be DB2/NT ,to include this scenario ,the above line is changed to if 'DB2' not in getattr(self.connection.connection, dbms_name): (jospaul1)
+
+ * Deprecated methods are replaced (jospaul1)
+
+ * Added a condition for 1.8 check (jospaul1)
+
+ * impleented unimplemented method format_for_duration_arithmetic (jospaul1)
+
+ * This change is done to support changed method signature in DJango 1.8 date_interval_sql signature got changed . Also if we are substracting hours ,days etc minus sign should be applied to all values . (jospaul1)
+
+ * Update README.md (ibmdb)
+
+ * 'Latest2.6changes28oct' (hemlatabhatt)
+
+ * changes2.6updated (hemlatabhatt)
+
+ * from django.db.backends.util renamed (jospaul1)
+
+ * from django.db.backends.util  renamed (jospaul1)
+
+ * value='blob( %s'  %value + ')' to handle hex data as blob (jospaul1)
+
+ * convert_empty_values commented (jospaul1)
+
+ * Default value of '' is not allowed in DB2 ,changed to EMPTY_BLOB() (jospaul1)
+
+ * Added self.data_type_check_constraints=self.creation.data_type_check_constraints (jospaul1)
+
+ * New data type added 'UUIDField':                 'VARCHAR(255)', (jospaul1)
+
+ * Revert "added UUIDField':                    'VARCHAR(255)'," (jospaul1)
+
+ * added UUIDField':                    'VARCHAR(255)', (jospaul1)
+
+ * removed tests (jospaul1)
+
+ * initialized data_types (jospaul1)
+
+ * in class BigD() set max_digit to 31 and decimal_places to 28 (jospaul1)
+
+ * get_table_list method changed (jospaul1)
+
+ * Added keepdb=False and serialize=False to suit the change in Django latest (jospaul1)
+
+ * deleted (jospaul1)
+
+ * Updated as per log file (jospaul1)
+
+ * Signed-off-by: jospaul1 <jospaul1@in.ibm.com> (jospaul1)
+
+ * Updated with change log (jospaul1)
+
+
+2015-10-21, Version 2.0.6
+=========================
+
+ * 'UpdatedChangesFor2.6' (HEMLATA)
+
+ * 'Updatedchanges' (HEMLATA)
+
+ * 'TestingChanges' (HEMLATA)
+
+ * Update Contributions.md (SabaKauser)
+
+ * Create Contributions.md (SabaKauser)
+
+ * Update README.md (SabaKauser)
+
+ * Update README.md (jospaul1)
+
+ * Update README (jospaul1)
+
+ * Update and rename README to README.md (SabaKauser)
+
+ * deleting ibm_db_sa directory form ibm_db (anandakshay44)
+
+ * header to ## from == (mariobriggs)
+
+ * Update README (mariobriggs)
+
+ * main Reade from https://code.google.com/p/ibm-db/ (mariobriggs)
+
+ * user facing ibm_db_sa doc from https://code.google.com/p/ibm-db/wiki/README (mariobriggs)
+
+ * user face doc from https://code.google.com/p/ibm-db/wiki/ibm_db_django_README (mariobriggs)
+
+ * Updated read me from https://code.google.com/p/ibm-db/wiki/ibm_db_README (mariobriggs)
+
+ * Django 1.8 compatibility fixes (webuser)
+
+ * Django 1.8 support (mizi)
+
+ * Rename config.py to config.py.sample (Kevin Adler)
+
+ * Update .gitignore (Kevin Adler)
+
+ * Add .gitignore (Kevin Adler)
+
+ * issue:167, ibm_db should return relevant error message in case of closed connection. (Rahul Priyadarshi)
+
+ * ibm_db-2.0.5.1 Release (Rahul Priyadarshi)
+
+
+2015-01-01, Version 2.0.5.1
+===========================
+
+ * ibm_db-2.0.5.1 Release (Rahul Priyadarshi)
+
+ * ibm_db_django-1.0.7 release (Rahul Priyadarshi)
+
+ * persistent connection usability check (Rahul Priyadarshi)
+
+ * ibm_db_django-1.0.6 release (Rahul Priyadarshi)
+
+
+2014-02-05, Version 2.0.5
+=========================
+
+ * ibm_db-2.0.5 release (Rahul Priyadarshi)
+
+ * LOB performance fix memory leak (Rahul Priyadarshi)
+
+ * LOB performance issue (Rahul Priyadarshi)
+
+
+2013-09-25, Version 2.0.4.1
+===========================
+
+ * ibm_db-2.0.4.1 release (Rahul Priyadarshi)
+
+ * Fix ISO8601 datetime with 'T' delimiter for unicode datetime (Rahul Priyadarshi)
+
+
+2013-09-11, Version 2.0.4
+=========================
+
+ * ibm_db-2.0.4 release (Rahul Priyadarshi)
+
+ * Fix for ISO8601 datetime with 'T' delimiter (Rahul Priyadarshi)
+
+
+2013-06-17, Version 2.0.3
+=========================
+
+ * ibm_db-2.0.3 release (Rahul Priyadarshi)
+
+ * ibm_db_django-1.0.5 release (Rahul Priyadarshi)
+
+
+2013-03-04, Version 2.0.2
+=========================
+
+ * ibm_db-2.0.2 release (Rahul Priyadarshi)
+
+ * memory leak in LONGVARCHAR (Rahul Priyadarshi)
+
+
+2013-02-05, Version 2.0.1
+=========================
+
+ * ibm_ibm-2.0.1 release (Rahul Priyadarshi)
+
+
+2012-09-21, Version 2.0.0
+=========================
+
+ * ibm_db-2.0.0 release (rahul.priyadarshi@in.ibm.com)
+
+
+2012-05-24, Version 1.0.6
+=========================
+
+ * git-svn-id: https://ibm-db.googlecode.com/svn/trunk@160 1b047d87-d943-0410-8e89-5b5f2422cd04 (rahul.priyadarshi@in.ibm.com)
+
+ * git-svn-id: https://ibm-db.googlecode.com/svn/trunk@159 1b047d87-d943-0410-8e89-5b5f2422cd04 (rahul.priyadarshi@in.ibm.com)
+
+ * git-svn-id: https://ibm-db.googlecode.com/svn/trunk@158 1b047d87-d943-0410-8e89-5b5f2422cd04 (rahul.priyadarshi@in.ibm.com)
+
+ * git-svn-id: https://ibm-db.googlecode.com/svn/trunk@135 1b047d87-d943-0410-8e89-5b5f2422cd04 (rahul.priyadarshi@in.ibm.com)
+
+
+2011-09-06, Version 1.0.5
+=========================
+
+ * git-svn-id: https://ibm-db.googlecode.com/svn/trunk@134 1b047d87-d943-0410-8e89-5b5f2422cd04 (rahul.priyadarshi@in.ibm.com)
+
+
+2011-05-17, Version 1.0.4
+=========================
+
+ * git-svn-id: https://ibm-db.googlecode.com/svn/trunk@121 1b047d87-d943-0410-8e89-5b5f2422cd04 (rahul.priyadarshi@in.ibm.com)
+
+ * git-svn-id: https://ibm-db.googlecode.com/svn/trunk@120 1b047d87-d943-0410-8e89-5b5f2422cd04 (rahul.priyadarshi@in.ibm.com)
+
+ * git-svn-id: https://ibm-db.googlecode.com/svn/trunk@114 1b047d87-d943-0410-8e89-5b5f2422cd04 (rahul.priyadarshi@in.ibm.com)
+
+
+2010-08-06, Version 1.0.3
+=========================
+
+ * git-svn-id: https://ibm-db.googlecode.com/svn/trunk@113 1b047d87-d943-0410-8e89-5b5f2422cd04 (rahul.priyadarshi@in.ibm.com)
+
+ * git-svn-id: https://ibm-db.googlecode.com/svn/trunk@108 1b047d87-d943-0410-8e89-5b5f2422cd04 (rahul.priyadarshi@in.ibm.com)
+
+ * git-svn-id: https://ibm-db.googlecode.com/svn/trunk@107 1b047d87-d943-0410-8e89-5b5f2422cd04 (rahul.priyadarshi@in.ibm.com)
+
+
+2010-04-29, Version 1.0.2
+=========================
+
+ * for ibm_db-1.0.2 release (rahul.priyadarshi@in.ibm.com)
+
+ * git-svn-id: https://ibm-db.googlecode.com/svn/trunk@102 1b047d87-d943-0410-8e89-5b5f2422cd04 (rahul.priyadarshi@in.ibm.com)
+
+ * git-svn-id: https://ibm-db.googlecode.com/svn/trunk@99 1b047d87-d943-0410-8e89-5b5f2422cd04 (rahul.priyadarshi@in.ibm.com)
+
+ * git-svn-id: https://ibm-db.googlecode.com/svn/trunk@98 1b047d87-d943-0410-8e89-5b5f2422cd04 (rahul.priyadarshi@in.ibm.com)
+
+ * git-svn-id: https://ibm-db.googlecode.com/svn/trunk@97 1b047d87-d943-0410-8e89-5b5f2422cd04 (rahul.priyadarshi@in.ibm.com)
+
+
+2010-03-26, Version 1.0.1
+=========================
+
+ * git-svn-id: https://ibm-db.googlecode.com/svn/trunk@96 1b047d87-d943-0410-8e89-5b5f2422cd04 (rahul.priyadarshi@in.ibm.com)
+
+
+2009-10-27, Version 1.0
+=======================
+
+ * First release!
