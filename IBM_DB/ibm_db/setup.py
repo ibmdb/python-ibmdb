@@ -309,7 +309,8 @@ if not prebuildIbmdbPYD and not os.path.isdir(ibm_db_include) and 'zos' != sys.p
 
 if 'zos' == sys.platform:
     #ibm_db_include = "//'%s.SDSNC.H'" % ibm_db_home
-    dataset_include = "//'%s.SDSNC.H'" % ibm_db_home
+    #dataset_include = "//'%s.SDSNC.H'" % ibm_db_home
+    dataset_include = "//'%s'" % os.environ['DB2_INC']
     include_dir = 'sdsnc.h'
     #library = ['dsnao64c'] 
     library = []
