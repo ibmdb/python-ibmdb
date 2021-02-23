@@ -10454,6 +10454,7 @@ static int _ibm_db_chaining_flag(stmt_handle *stmt_res, SQLINTEGER flag, error_m
             SQLINTEGER err_cnt = 0;
             PyObject *err_msg = NULL, *err_fmtObj = NULL;
             char *err_fmt = NULL;
+            size_t err_fmt_offset = 0;
             if ( rc != SQL_SUCCESS ) {
 #ifdef __MVS__
 	        /* MVS only seems to have SQLGetDiagRec */
@@ -10463,17 +10464,18 @@ static int _ibm_db_chaining_flag(stmt_handle *stmt_res, SQLINTEGER flag, error_m
 #endif
             }
             errTuple = PyTuple_New(err_cnt + client_err_cnt);
-            err_fmt = (char *)PyMem_Malloc(strlen("%s\nError %d :%s \n ") * (err_cnt + client_err_cnt));
+            /* Allocate enough space for largest possible int value. */
+            err_fmt = (char *)PyMem_Malloc(strlen("Error 2147483647: %s\n") * (err_cnt + client_err_cnt) + 1);
             err_fmt[0] = '\0';
             errNo = 1;
             while( error_list != NULL ) {
-                sprintf(err_fmt,"%s\nError %d: %s", err_fmt, (int)errNo, "%s \n");
+                err_fmt_offset += sprintf(err_fmt+err_fmt_offset, "Error %d: %s\n", (int)errNo, "%s");
                 PyTuple_SetItem(errTuple, errNo - 1, StringOBJ_FromASCII(error_list->err_msg));
                 error_list = error_list->next;
                 errNo++;
             }
             for ( errNo = client_err_cnt + 1; errNo <= (err_cnt + client_err_cnt); errNo++ ) {
-                sprintf(err_fmt,"%s\nError %d: %s", err_fmt, (int)errNo, "%s \n");
+                err_fmt_offset += sprintf(err_fmt+err_fmt_offset, "Error %d: %s\n", (int)errNo, "%s");
                 _python_ibm_db_check_sql_errors((SQLHSTMT)stmt_res->hstmt, SQL_HANDLE_STMT, SQL_ERROR, 1, NULL, -1, (errNo - client_err_cnt));
                 PyTuple_SetItem(errTuple, errNo - 1, StringOBJ_FromASCII(IBM_DB_G(__python_stmt_err_msg)));
             }
@@ -10610,7 +10612,7 @@ static PyObject* ibm_db_execute_many (PyObject *self, PyObject *args) {
                 PyObject *param = PyTuple_GET_ITEM(params, i);
                 error[0] = '\0';
                 if ( !PyTuple_Check(param) ) {
-                    sprintf(error, "Value parameter: %d is not a tuple", i + 1);
+                    sprintf(error, "Value parameter %d is not a tuple", i + 1);
                     _build_client_err_list(head_error_list, error);
                     err_count++;
                     continue;
@@ -10619,7 +10621,7 @@ static PyObject* ibm_db_execute_many (PyObject *self, PyObject *args) {
                 numOfParam = PyTuple_Size(param);
                 if ( numOpts < numOfParam ) {
                     /* More are passed in -- Warning - Use the max number present */
-                    sprintf(error, "Value parameter tuple: %d has more no of param", i + 1);
+                    sprintf(error, "Value parameter tuple %d has more parameters than previous tuple", i + 1);
                     _build_client_err_list(head_error_list, error);
                     err_count++;
                     continue;
@@ -10627,7 +10629,7 @@ static PyObject* ibm_db_execute_many (PyObject *self, PyObject *args) {
                     /* If there are less params passed in, than are present
                     * -- Error
                     */
-                    sprintf(error, "Value parameter tuple: %d has less no of param", i + 1);
+                    sprintf(error, "Value parameter tuple %d has fewer parameters than previous tuple", i + 1);
                     _build_client_err_list(head_error_list, error);
                     err_count++;
                     continue;
@@ -10648,7 +10650,7 @@ static PyObject* ibm_db_execute_many (PyObject *self, PyObject *args) {
                     if ( chaining_start ) {
                         // This check is not required for python boolean values True and False as both True and False are homogeneous for boolean.
                         if ( ( TYPE(data) != PYTHON_NIL ) && (TYPE(data) != PYTHON_TRUE) && (TYPE(data) != PYTHON_FALSE) && ( ref_data_type[curr->param_num - 1] != TYPE(data) ) ) {
-                            sprintf(error, "Value parameters array %d is not homogeneous with previous parameters array", i + 1);
+                            sprintf(error, "Value parameter tuple %d has types that are not homogeneous with previous tuple", i + 1);
                             _build_client_err_list(head_error_list, error);
                             err_count++;
                             break;

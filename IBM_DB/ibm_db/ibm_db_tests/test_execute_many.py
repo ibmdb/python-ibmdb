@@ -13,7 +13,7 @@ import config
 from testfunctions import IbmDbTestFunctions
 
 class IbmDbTestCase(unittest.TestCase):
-    @unittest.skipIf(((os.environ.get("CI", False)) or (sys.platform == 'zos')), "Test fails in CI")
+    @unittest.skipIf((sys.platform == 'zos'), "Test fails in zOS")
     def test_execute_many(self):
         obj = IbmDbTestFunctions()
         obj.assert_expect(self.run_test_execute_many)
@@ -42,7 +42,7 @@ class IbmDbTestCase(unittest.TestCase):
             row_count = ibm_db.num_rows(stmt_insert)
             print(row_count)
 
-            # chaeck the inserted columns
+            # check the inserted columns
             select = "SELECT * FROM TABMANY"
             stmt_select = ibm_db.exec_immediate(conn, select)
             cols = ibm_db.fetch_tuple( stmt_select )
@@ -51,7 +51,7 @@ class IbmDbTestCase(unittest.TestCase):
                 cols = ibm_db.fetch_tuple( stmt_select )
 
             #populate the tabmany table
-            params = ((50, 'Hanes', False), (55, 'Mike'), (55.5, 'invalid row','not a bool'), (60, 'Quigley'), (70, None, None) )
+            params = ((50, 'Hanes', False), (55, 'Mike', False, 'Extra'), (55.5, 'invalid row','not a bool'), (60, 'Quigley'), (70, None, None), [75, 'List', True] )
             try:
                 ibm_db.execute_many(stmt_insert, params)
             except Exception as inst:
@@ -68,33 +68,36 @@ class IbmDbTestCase(unittest.TestCase):
 #__END__
 #__LUW_EXPECTED__
 #4
-#10, Sanders, 1
-#20, Pernal, 0
-#30, Marenghi, 1
-#40, OBrien, 0
-#Error 1: Value parameter tuple: 2 has less no of param 
-#Error 2: Value parameters array 3 is not homogeneous with previous parameters array 
-#Error 3: Value parameter tuple: 4 has less no of param 
+#10, Sanders, True
+#20, Pernal, False
+#30, Marenghi, True
+#40, OBrien, False
+#Error 1: Value parameter tuple 2 has more parameters than previous tuple
+#Error 2: Value parameter tuple 3 has types that are not homogeneous with previous tuple
+#Error 3: Value parameter tuple 4 has fewer parameters than previous tuple
+#Error 4: Value parameter 6 is not a tuple
 #2
 #__ZOS_EXPECTED__
 #4
-#10, Sanders, 1
-#20, Pernal, 0
-#30, Marenghi, 1
-#40, OBrien, 0
-#Error 1: Value parameter tuple: 2 has less no of param 
-#Error 2: Value parameters array 3 is not homogeneous with previous parameters array 
-#Error 3: Value parameter tuple: 4 has less no of param 
+#10, Sanders, True
+#20, Pernal, False
+#30, Marenghi, True
+#40, OBrien, False
+#Error 1: Value parameter tuple 2 has more parameters than previous tuple
+#Error 2: Value parameter tuple 3 has types that are not homogeneous with previous tuple
+#Error 3: Value parameter tuple 4 has fewer parameters than previous tuple
+#Error 4: Value parameter 6 is not a tuple
 #2
 #__SYSTEMI_EXPECTED__
 #NA
 #__IDS_EXPECTED__
 #4
-#10, Sanders, 1
-#20, Pernal, 0
-#30, Marenghi, 1
-#40, OBrien, 0
-#Error 1: Value parameter tuple: 2 has less no of param 
-#Error 2: Value parameters array 3 is not homogeneous with previous parameters array 
-#Error 3: Value parameter tuple: 4 has less no of param 
+#10, Sanders, True
+#20, Pernal, False
+#30, Marenghi, True
+#40, OBrien, False
+#Error 1: Value parameter tuple 2 has more parameters than previous tuple
+#Error 2: Value parameter tuple 3 has types that are not homogeneous with previous tuple
+#Error 3: Value parameter tuple 4 has fewer parameters than previous tuple
+#Error 4: Value parameter 6 is not a tuple
 #2
