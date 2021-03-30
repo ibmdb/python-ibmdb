@@ -310,7 +310,11 @@ if not prebuildIbmdbPYD and not os.path.isdir(ibm_db_include) and 'zos' != sys.p
 if 'zos' == sys.platform:
     #ibm_db_include = "//'%s.SDSNC.H'" % ibm_db_home
     #dataset_include = "//'%s.SDSNC.H'" % ibm_db_home
-    dataset_include = "//'%s'" % os.environ['DB2_INC']
+    if(('DB2_INC' not in os.environ)):
+        dataset_include = "//'%s.SDSNC.H'" % ibm_db_home
+    else:
+        sdsnc_h = os.environ['DB2_INC']
+        dataset_include = "//'%s'" % sdsnc_h
     include_dir = 'sdsnc.h'
     #library = ['dsnao64c'] 
     library = []
@@ -322,7 +326,11 @@ if 'zos' == sys.platform:
             #with open(library_x, "wt", encoding='cp1047_oe') as x_out:
                 #x_out.write(''.join(["%-80s" % x for x in x_in.read().split('\n')]))
         #command = ['tso', "oput '{}.SDSNMACS(DSNAO64C)' '{}'".format(ibm_db_home, os.path.join(os.getcwd(), library_x))]
-        subprocess.run(['tso', "oput '{}.SDSNMACS(DSNAO64C)' '{}'".format(ibm_db_home, os.path.join(os.getcwd(), library_x))])
+        if (('DB2_MACS' not in os.environ)):
+            subprocess.run(['tso', "oput '{}.SDSNMACS(DSNAO64C)' '{}'".format(ibm_db_home, os.path.join(os.getcwd(), library_x))])
+        else:
+            sdsn_macs = os.environ['DB2_MACS']
+            subprocess.run(['tso', "oput '{}(DSNAO64C)' '{}'".format(sdsn_macs, os.path.join(os.getcwd(), library_x))])
     if not os.path.isdir(include_dir):
         os.mkdir(include_dir)
         subprocess.run(['cp', dataset_include, include_dir])
