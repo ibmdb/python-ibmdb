@@ -1046,6 +1046,7 @@ static int _python_ibm_db_bind_column_helper(stmt_handle *stmt_res)
                 break;
 
             case SQL_SMALLINT:
+            case SQL_BOOLEAN:
 
                 Py_BEGIN_ALLOW_THREADS;
                 rc = SQLBindCol((SQLHSTMT)stmt_res->hstmt, (SQLUSMALLINT)(i+1),
@@ -7632,6 +7633,8 @@ static PyObject *ibm_db_field_type(PyObject *self, PyObject *args)
         case SQL_TYPE_TIMESTAMP:
             str_val = "timestamp";
             break;
+        case SQL_BOOLEAN:
+            str_val = "boolean";
         default:
             str_val = "string";
             break;
@@ -8136,6 +8139,7 @@ static PyObject *ibm_db_result(PyObject *self, PyObject *args)
 
         case SQL_SMALLINT:
         case SQL_INTEGER:
+        case SQL_BOOLEAN:
             rc = _python_ibm_db_get_data(stmt_res, col_num+1, SQL_C_LONG,
                          &long_val, sizeof(long_val),
                          &out_length);
@@ -8535,6 +8539,7 @@ static PyObject *_python_ibm_db_bind_fetch_helper(PyObject *args, int op)
                     break;
 
                 case SQL_SMALLINT:
+                case SQL_BOOLEAN:
                     value = PyInt_FromLong(row_data->s_val);
                     break;
 
@@ -10979,6 +10984,7 @@ static PyObject* ibm_db_callproc(PyObject *self, PyObject *args){
                         switch (tmp_curr->data_type) {
                             case SQL_SMALLINT:
                             case SQL_INTEGER:
+                            case SQL_BOOLEAN:
                                 PyTuple_SetItem(outTuple, paramCount,
                                     PyInt_FromLong(tmp_curr->ivalue));
                                 paramCount++;
