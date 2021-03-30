@@ -34,7 +34,11 @@
 #include <dlfcn.h>
 #endif
 #ifdef _LP64
+#ifdef __MVS__
 #define BIGINT_IS_SHORTER_THAN_LONG 0
+#else
+#define BIGINT_IS_SHORTER_THAN_LONG 1
+#endif
 #else
 #define BIGINT_IS_SHORTER_THAN_LONG 1
 #endif
