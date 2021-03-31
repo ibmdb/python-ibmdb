@@ -7639,6 +7639,7 @@ static PyObject *ibm_db_field_type(PyObject *self, PyObject *args)
             break;
         case SQL_BOOLEAN:
             str_val = "boolean";
+            break;
         default:
             str_val = "string";
             break;
