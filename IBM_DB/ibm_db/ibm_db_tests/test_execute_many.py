@@ -68,10 +68,10 @@ class IbmDbTestCase(unittest.TestCase):
 #__END__
 #__LUW_EXPECTED__
 #4
-#10, Sanders, True
-#20, Pernal, False
-#30, Marenghi, True
-#40, OBrien, False
+#10, Sanders, 1
+#20, Pernal, 0
+#30, Marenghi, 1
+#40, OBrien, 0
 #Error 1: Value parameter tuple 2 has more parameters than previous tuple
 #Error 2: Value parameter tuple 3 has types that are not homogeneous with previous tuple
 #Error 3: Value parameter tuple 4 has fewer parameters than previous tuple

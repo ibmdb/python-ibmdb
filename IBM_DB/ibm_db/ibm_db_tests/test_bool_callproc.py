@@ -90,9 +90,9 @@ class IbmDbTestCase(unittest.TestCase):
 #__END__
 #__LUW_EXPECTED__
 #Fetching first result set
-#True
+#1
 #bindparam true
-#False
+#0
 #bindparam false
 #None
 #bindparam None
