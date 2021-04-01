@@ -13,11 +13,11 @@ from testfunctions import IbmDbTestFunctions
 
 class IbmDbTestCase(unittest.TestCase):
 
-    def test_booleanInsertSelect(self):
+    def test_checkBooleanType(self):
         obj = IbmDbTestFunctions()
-        obj.assert_expect(self.run_test_booleanInsertSelect)
+        obj.assert_expect(self.run_test_checkBooleanType)
 
-    def run_test_booleanInsertSelect(self):
+    def run_test_checkBooleanType(self):
         conn = ibm_db.connect(config.database, config.user, config.password)
         if (not conn):
             print("Could not make a connection.")
