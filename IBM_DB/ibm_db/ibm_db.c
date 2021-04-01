@@ -1049,8 +1049,12 @@ static int _python_ibm_db_bind_column_helper(stmt_handle *stmt_res)
                 }
                 break;
 
+#ifdef __MVS__
+            case SQL_SMALLINT:
+#else
             case SQL_SMALLINT:
             case SQL_BOOLEAN:
+#endif
 
                 Py_BEGIN_ALLOW_THREADS;
                 rc = SQLBindCol((SQLHSTMT)stmt_res->hstmt, (SQLUSMALLINT)(i+1),
@@ -7637,9 +7641,11 @@ static PyObject *ibm_db_field_type(PyObject *self, PyObject *args)
         case SQL_TYPE_TIMESTAMP:
             str_val = "timestamp";
             break;
+#ifndef __MVS__
         case SQL_BOOLEAN:
             str_val = "boolean";
             break;
+#endif
         default:
             str_val = "string";
             break;
@@ -8142,9 +8148,14 @@ static PyObject *ibm_db_result(PyObject *self, PyObject *args)
             }
             break;
 
+#ifdef __MVS__
+        case SQL_SMALLINT:
+        case SQL_INTEGER:
+#else
         case SQL_SMALLINT:
         case SQL_INTEGER:
         case SQL_BOOLEAN:
+#endif
             rc = _python_ibm_db_get_data(stmt_res, col_num+1, SQL_C_LONG,
                          &long_val, sizeof(long_val),
                          &out_length);
@@ -8543,8 +8554,12 @@ static PyObject *_python_ibm_db_bind_fetch_helper(PyObject *args, int op)
                     value = PyLong_FromString((char *)row_data->str_val, NULL, 10);
                     break;
 
+#ifdef __MVS__
+                case SQL_SMALLINT:
+#else
                 case SQL_SMALLINT:
                 case SQL_BOOLEAN:
+#endif
                     value = PyInt_FromLong(row_data->s_val);
                     break;
 
@@ -10987,9 +11002,14 @@ static PyObject* ibm_db_callproc(PyObject *self, PyObject *args){
                 while(tmp_curr != NULL && (paramCount <= numOfParam)) {
                     if ( (tmp_curr->bind_indicator != SQL_NULL_DATA && tmp_curr->bind_indicator != SQL_NO_TOTAL )) {
                         switch (tmp_curr->data_type) {
+#ifdef __MVS__
+                            case SQL_SMALLINT:
+                            case SQL_INTEGER:
+#else
                             case SQL_SMALLINT:
                             case SQL_INTEGER:
                             case SQL_BOOLEAN:
+#endif
                                 PyTuple_SetItem(outTuple, paramCount,
                                     PyInt_FromLong(tmp_curr->ivalue));
                                 paramCount++;
@@ -11430,6 +11450,9 @@ INIT_ibm_db(void) {
     PyModule_AddIntConstant(m, "SQL_BINARY", SQL_BINARY);
     PyModule_AddIntConstant(m, "SQL_BLOB", SQL_BLOB);
     PyModule_AddIntConstant(m, "SQL_BLOB_LOCATOR", SQL_BLOB_LOCATOR);
+#ifndef __MVS__
+    PyModule_AddIntConstant(m, "SQL_BOOLEAN", SQL_BOOLEAN);
+#endif
     PyModule_AddIntConstant(m, "SQL_CHAR", SQL_CHAR);
     PyModule_AddIntConstant(m, "SQL_TINYINT", SQL_TINYINT);
     PyModule_AddIntConstant(m, "SQL_BINARY", SQL_BINARY);
