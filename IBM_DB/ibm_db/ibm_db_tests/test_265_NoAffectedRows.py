@@ -154,7 +154,7 @@ class IbmDbTestCase(unittest.TestCase):
 #Number of affected rows: 0
 #Number of affected rows: -1
 #Number of affected rows: -1
-#Number of affected rows: -2
+#Number of affected rows: -1
 #Number of affected rows: 3
 #1, some, here is a clob value, <?xml version="1.0" encoding="UTF-16" ?><test attribute="value"/>
 #2, value, clob data, None
