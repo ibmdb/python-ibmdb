@@ -21,6 +21,12 @@ class IbmDbTestCase(unittest.TestCase):
     def run_test_execute_many(self):
         conn = ibm_db.connect(config.database, config.user, config.password)
 
+        server = ibm_db.server_info( conn )
+
+        if( not server.DBMS_NAME.startswith('DB2/')):
+            print("Boolean is not supported")
+            return 0
+
         if conn:
             # Drop the tabmany table, in case it exists
             drop = "DROP TABLE TABMANY"
@@ -78,16 +84,7 @@ class IbmDbTestCase(unittest.TestCase):
 #Error 4: Value parameter 6 is not a tuple
 #2
 #__ZOS_EXPECTED__
-#4
-#10, Sanders, True
-#20, Pernal, False
-#30, Marenghi, True
-#40, OBrien, False
-#Error 1: Value parameter tuple 2 has more parameters than previous tuple
-#Error 2: Value parameter tuple 3 has types that are not homogeneous with previous tuple
-#Error 3: Value parameter tuple 4 has fewer parameters than previous tuple
-#Error 4: Value parameter 6 is not a tuple
-#2
+#Boolean is not supported
 #__SYSTEMI_EXPECTED__
 #NA
 #__IDS_EXPECTED__
