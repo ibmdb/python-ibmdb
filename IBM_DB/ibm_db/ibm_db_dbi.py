@@ -368,13 +368,9 @@ def _get_exception(inst):
     # return the generic Error exception.
     if inst is not None:
         message = repr(inst)
-        if message.startswith("Exception('"):
-            if message.endswith("',)"):  # python 2
-                message = message[11:]
-                message = message[:len(message)-3]
-            elif message.endswith("')"): # python 3
-                message = message[11:]
-                message = message[:len(message)-2]
+        if message.startswith("Exception('") and message.endswith("',)"):
+            message = message[11:]
+            message = message[:len(message)-3]
 
         index = message.find('SQLSTATE=')
         if( message != '') & (index != -1):
@@ -1182,12 +1178,8 @@ class Cursor(object):
         """
         messages = []
         if self.conn_handler is None:
-            '''
-            Fix for the Django Issue
-            '''
-            #self.messages.append(ProgrammingError("Cursor cannot be closed; connection is no longer active."))
-            #raise self.messages[len(self.messages) - 1]
-            return None
+            self.messages.append(ProgrammingError("Cursor cannot be closed; connection is no longer active."))
+            raise self.messages[len(self.messages) - 1]
         try:
             return_value = ibm_db.free_stmt(self.stmt_handler)
         except Exception as inst:
