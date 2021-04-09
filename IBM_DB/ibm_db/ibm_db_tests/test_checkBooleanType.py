@@ -13,11 +13,11 @@ from testfunctions import IbmDbTestFunctions
 
 class IbmDbTestCase(unittest.TestCase):
 
-    def test_booleanInsertSelect(self):
+    def test_checkBooleanType(self):
         obj = IbmDbTestFunctions()
-        obj.assert_expect(self.run_test_booleanInsertSelect)
+        obj.assert_expect(self.run_test_checkBooleanType)
 
-    def run_test_booleanInsertSelect(self):
+    def run_test_checkBooleanType(self):
         conn = ibm_db.connect(config.database, config.user, config.password)
         if (not conn):
             print("Could not make a connection.")
@@ -34,35 +34,17 @@ class IbmDbTestCase(unittest.TestCase):
             pass
 
         try:
-            ibm_db.exec_immediate(conn, "CREATE TABLE bool_test(col1 BOOLEAN, description varchar(50))")
+            ibm_db.exec_immediate(conn, "CREATE TABLE bool_test(col1 INTEGER, col2 BOOLEAN, col3 BOOLEAN)")
         except Exception as e:
             print("Error : {}\n".format(str(e)))
             exit(-1)
 
         try:
-            insert_sql = "INSERT INTO bool_test values(?, ?)"
-            stmt = ibm_db.prepare(conn, insert_sql)
-
-            rows = (
-                (True, 'bindparam true'),
-                (False, 'bindparam false'),
-                (None, 'bindparam None')
-            )
-
-            for row in rows:
-                ibm_db.bind_param(stmt, 1, row[0])
-                ibm_db.bind_param(stmt, 2, row[1])
-                ibm_db.execute(stmt)
-            stmt = None
-
             select_sql = 'SELECT * FROM bool_test'
             stmt = ibm_db.exec_immediate(conn, select_sql)
-            result = ibm_db.fetch_tuple(stmt)
 
-            while result:
-                for col in result:
-                    print(col)
-                result = ibm_db.fetch_tuple(stmt)
+            for i in range(0,ibm_db.num_fields(stmt)):
+                print(str(ibm_db.field_type(stmt,i)))
 
             ibm_db.close(conn)
         except Exception as e:
@@ -71,12 +53,9 @@ class IbmDbTestCase(unittest.TestCase):
 
 #__END__
 #__LUW_EXPECTED__
-#1
-#bindparam true
-#0
-#bindparam false
-#None
-#bindparam None
+#int
+#boolean
+#boolean
 #__ZOS_EXPECTED__
 #Boolean is not supported
 #__SYSTEMI_EXPECTED__

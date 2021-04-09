@@ -26,7 +26,7 @@ class IbmDbTestCase(unittest.TestCase):
             if (server.DBMS_NAME[0:3] == 'IDS'):
                 result = ibm_db.columns(conn,None,config.user,"employee")
             else:
-                result = ibm_db.columns(conn,None,None,"EMPLOYEE")
+                result = ibm_db.columns(conn,None,(config.user).upper(),"EMPLOYEE")
 
             row = ibm_db.fetch_tuple(result)
             while ( row ):
