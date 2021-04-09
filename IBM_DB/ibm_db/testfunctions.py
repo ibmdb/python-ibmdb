@@ -38,6 +38,7 @@ class IbmDbTestFunctions(unittest.TestCase):
 		fileName.startswith('ibm_db_tests/test_005') or \
                 fileName.startswith('ibm_db_tests/test_018') or \
                 fileName.startswith('ibm_db_tests/test_019') or \
+                fileName.startswith('ibm_db_tests/test_024') or \
                 fileName.startswith('ibm_db_tests/test_053') or \
                 fileName.startswith('ibm_db_tests/test_054') or \
                 fileName.startswith('ibm_db_tests/test_080') or \
