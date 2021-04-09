@@ -24,7 +24,7 @@ from setuptools.command.build_ext import build_ext
 from setuptools.command.install import install
 
 PACKAGE = 'ibm_db'
-VERSION = '3.0.3'
+VERSION = '3.0.4'
 LICENSE = 'Apache License 2.0'
 
 if 'zos' != sys.platform:
