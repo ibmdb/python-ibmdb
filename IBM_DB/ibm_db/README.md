@@ -188,7 +188,7 @@ fail on version 8.x of DB2.
 
 ## Known Limitations for the Python driver
 
-If trusted context is not set up, there will be two failures related to trusted context. When thick client has been used than additional three failures related to create, recreate DB.
+If trusted context is not set up, there will be two failures related to trusted context. When thick client has been used then additional three failures related to create, recreate DB.
 
 
 ## Known Limitations for the Python wrapper
