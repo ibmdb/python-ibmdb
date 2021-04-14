@@ -291,7 +291,7 @@ git clone git@github.com:ibmdb/python-ibmdb.git
 ## Latest Updates
 
 ### *Updated ibm_db*
-  Feb 02, 2021: A new release 3.0.3 of ibm_db and ibm_db_dbi available.
+  Apr 12, 2021: A new release 3.0.4 of ibm_db and ibm_db_dbi available.
 
 
 <a name='support'></a>
