@@ -1,3 +1,55 @@
+2021-04-12, Version 3.0.4
+=========================
+
+ * Update README with new release version (Bimal Kumar Jha)
+
+ * typo correction in README.md (Bimal Kumar Jha)
+
+ * testcase change for ZOS platform and zos server (Arnab Mukherjee)
+
+ * changing the release tag (Arnab Mukherjee)
+
+ * Add comments (kotofos)
+
+ * Fix error message formatting on python3 (kotofos)
+
+ * Dev release304 (#621) (arnab mukherjee)
+
+ * Update README.md (#617) (Alexander Manley)
+
+ * Code fix in SQL_BOOLEAN (Arnab Mukherjee)
+
+ * update install.md file with the latest information on ZOS platform documentation (Arnab Mukherjee)
+
+ * Fix for #612 (Arnab Mukherjee)
+
+ * Boolean support for django issue (Arnab Mukherjee)
+
+ * Adding changes to handle env variable DB2_IBC and DB2_MACS in case user wants to define their own dataset names (Arnab Mukherjee)
+
+ * Support ODBC keyword CURRENTSCHEMA (#581) (Ke Zhu)
+
+ * Update Install.md (#605) (kparihar7)
+
+ * Update setup.py file (#606) (kparihar7)
+
+ * Get execute_many test running clean in CI (#524) (davidmmooney)
+
+ * Update README.md (Bimal Kumar Jha)
+
+ * Update file name in setup.py (Bimal Kumar Jha)
+
+ * Update MANIFEST.in (arnab mukherjee)
+
+ * Update notifications and add python 3.9 test (Bimal Kumar Jha)
+
+ * Change in install.md as per input from IBM as the ++APAR is now available as PTF. (#597) (Binit Kumar)
+
+ * fix: correct changes file (Bimal Jha)
+
+ * upd: CHANGES (Bimal Jha)
+
+
 2021-02-03, Version 3.0.3
 =========================
 

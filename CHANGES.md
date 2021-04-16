@@ -1,4 +1,4 @@
-2021-04-16, Version 3.0.4
+2021-04-12, Version 3.0.4
 =========================
 
  * Update README with new release version (Bimal Kumar Jha)
@@ -48,6 +48,10 @@
  * fix: correct changes file (Bimal Jha)
 
  * upd: CHANGES (Bimal Jha)
+
+
+2021-02-03, Version 3.0.3
+=========================
 
  * deleting Install_z_ibm_db file (amukherjee)
 
