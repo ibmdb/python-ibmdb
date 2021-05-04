@@ -86,3 +86,5 @@ chtag -b $DSNAOINI # we have to tag as binary, so that ODBC can read it, since p
 |API NAME      |Architecture    |Supported     |
 | :---:        |  :---:         |  :---:       |
 |execute_many  |  zos           |  No          |
+|SQL_ATTR_CHANNING_BEING| ZOS   |  No          |
+|SQL_ATTR_CHANNING_END  | ZOS   |  No          |
