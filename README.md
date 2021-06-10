@@ -27,6 +27,8 @@ Provides Python interface for connecting to IBM DB2 and Informix
 
 [Contributing to the ibm_db python project](#contributing-to-the-ibm_db-python-project)
 
+[Some common issues](#KnownIssues)
+
 <a name='components'></a>
 ## Components
 
@@ -35,7 +37,8 @@ Provides Python interface for connecting to IBM DB2 and Informix
    * **ibm_db_dbi**: Python driver for IBM DB2 and IBM Informix databases that complies to the DB-API 2.0 specification.
    Checkout the [README](https://github.com/ibmdb/python-ibmdb/tree/master/IBM_DB/ibm_db) for getting started with ibm_db and ibm_db_dbi
 
-## <a name="prereq"></a> Pre-requisites
+<a name="prereq"></a>
+## Pre-requisites
 Install Python 2.7 or Python 3 <= 3.9. The minimum python version supported by driver is python 2.7 and the latest version supported is python 3.9 except version 3.3 as it has reached end-of-life.
 
 The pre-built 32-bit and 64-bit binaries on windows are available for the following versions:
@@ -68,7 +71,8 @@ You might need zlib, openssl, pip installations if not already available in your
 
 * For installing ibm_db on **Docker Linux container**, you may need to install **gcc, python, pip, python-devel, libxml2 and pam** if not already installed. Refer to [Installation](#docker) for more details.
 
-## <a name="inst"></a> Installation
+<a name="inst"></a> 
+## Installation
 
 You can install the driver using pip as:
 
@@ -310,3 +314,23 @@ See [CONTRIBUTING](https://github.com/ibmdb/python-ibmdb/blob/master/contributin
 The developer sign-off should include the reference to the DCO in remarks(example below):
 DCO 1.1 Signed-off-by: Random J Developer <random@developer.org>
 ```
+
+<a name='KnownIssues'></a>
+## Some common issues
+
+## 1. Installation Issues for missing python.h file
+
+### Always use the latest pip
+```python3 -m pip install --upgrade pip```
+
+### Install the package python3-dev that delivers the python.h header file
+```
+For RHEL use
+yum install python3-dev
+```
+```
+For Ubuntu use
+apt-get install python3-dev
+```
+
+### Once the above steps goes through fine, try re-installing ibm_db.
