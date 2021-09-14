@@ -1,0 +1,4 @@
+[build-system]
+# pin to Setuptools prior to 58 for use_2to3 support
+requires = ["setuptools<58"]
+build-backend = "setuptools.build_meta"
