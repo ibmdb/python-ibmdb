@@ -24,20 +24,23 @@ This module implements the Python DB API Specification v2.0 for DB2 database.
 import types, string, time, datetime, decimal, sys
 import weakref
 
-if sys.version_info >= (3, ):
+PY2 = sys.version_info < (3, )
+
+if not PY2:
     buffer = memoryview
-if sys.version_info < (3, ):
+if PY2:
     import exceptions
     exception = exceptions.Exception
 else:
     exception = Exception
 
-try:
-    str  # Python 2
-    int
-except NameError:
-    str = str  # Python 3
-    long = int
+if PY2:
+    import __builtin__
+    string_types = __builtin__.unicode, bytes
+    int_types = __builtin__.long, int
+else:
+    string_types = str
+    int_types = int
 
 import ibm_db
 __version__ = ibm_db.__version__
@@ -453,10 +456,10 @@ def _server_connect(dsn, user='', password='', host=''):
     if dsn is None:
         raise InterfaceError("dsn value should not be None")
 
-    if (not isinstance(dsn, str)) | \
-       (not isinstance(user, str)) | \
-       (not isinstance(password, str)) | \
-       (not isinstance(host, str)):
+    if (not isinstance(dsn, string_types)) | \
+       (not isinstance(user, string_types)) | \
+       (not isinstance(password, string_types)) | \
+       (not isinstance(host, string_types)):
         raise InterfaceError("Arguments should be of type string or unicode")
 
     # If the dsn does not contain port and protocal adding database
@@ -491,9 +494,9 @@ def createdb(database, dsn, user='', password='', host='', codeset='', mode=''):
 
     if database is None:
         raise InterfaceError("createdb expects a not None database name value")
-    if (not isinstance(database, str)) | \
-       (not isinstance(codeset, str)) | \
-       (not isinstance(mode, str)):
+    if (not isinstance(database, string_types)) | \
+       (not isinstance(codeset, string_types)) | \
+       (not isinstance(mode, string_types)):
         raise InterfaceError("Arguments sould be string or unicode")
 
     conn = _server_connect(dsn, user=user, password=password, host=host)
@@ -515,7 +518,7 @@ def dropdb(database, dsn, user='', password='', host=''):
 
     if database is None:
         raise InterfaceError("dropdb expects a not None database name value")
-    if (not isinstance(database, str)):
+    if (not isinstance(database, string_types)):
         raise InterfaceError("Arguments sould be string or unicode")
 
     conn = _server_connect(dsn, user=user, password=password, host=host)
@@ -537,9 +540,9 @@ def recreatedb(database, dsn, user='', password='', host='', codeset='', mode=''
 
     if database is None:
         raise InterfaceError("recreatedb expects a not None database name value")
-    if (not isinstance(database, str)) | \
-       (not isinstance(codeset, str)) | \
-       (not isinstance(mode, str)):
+    if (not isinstance(database, string_types)) | \
+       (not isinstance(codeset, string_types)) | \
+       (not isinstance(mode, string_types)):
         raise InterfaceError("Arguments sould be string or unicode")
 
     conn = _server_connect(dsn, user=user, password=password, host=host)
@@ -561,9 +564,9 @@ def createdbNX(database, dsn, user='', password='', host='', codeset='', mode=''
 
     if database is None:
         raise InterfaceError("createdbNX expects a not None database name value")
-    if (not isinstance(database, str)) | \
-       (not isinstance(codeset, str)) | \
-       (not isinstance(mode, str)):
+    if (not isinstance(database, string_types)) | \
+       (not isinstance(codeset, string_types)) | \
+       (not isinstance(mode, string_types)):
         raise InterfaceError("Arguments sould be string or unicode")
 
     conn = _server_connect(dsn, user=user, password=password, host=host)
@@ -587,11 +590,11 @@ def connect(dsn, user='', password='', host='', database='', conn_options=None):
     if dsn is None:
         raise InterfaceError("connect expects a not None dsn value")
 
-    if (not isinstance(dsn, str)) | \
-       (not isinstance(user, str)) | \
-       (not isinstance(password, str)) | \
-       (not isinstance(host, str)) | \
-       (not isinstance(database, str)):
+    if (not isinstance(dsn, string_types)) | \
+       (not isinstance(user, string_types)) | \
+       (not isinstance(password, string_types)) | \
+       (not isinstance(host, string_types)) | \
+       (not isinstance(database, string_types)):
         raise InterfaceError("connect expects the first five arguments to"
                                                       " be of type string or unicode")
     if conn_options is not None:
@@ -638,11 +641,11 @@ def pconnect(dsn, user='', password='', host='', database='', conn_options=None)
     if dsn is None:
         raise InterfaceError("connect expects a not None dsn value")
 
-    if (not isinstance(dsn, str)) | \
-       (not isinstance(user, str)) | \
-       (not isinstance(password, str)) | \
-       (not isinstance(host, str)) | \
-       (not isinstance(database, str)):
+    if (not isinstance(dsn, string_types)) | \
+       (not isinstance(user, string_types)) | \
+       (not isinstance(password, string_types)) | \
+       (not isinstance(host, string_types)) | \
+       (not isinstance(database, string_types)):
         raise InterfaceError("connect expects the first five arguments to"
                                                       " be of type string or unicode")
     if conn_options is not None:
@@ -1143,6 +1146,9 @@ class Cursor(object):
             raise StopIteration
         return row
 
+    if PY2:
+        next = __next__
+
     # This attribute specifies the number of rows the last executeXXX()
     # produced or affected.  It is a read only attribute.
     rowcount = property(__get_rowcount, None, None, "")
@@ -1238,7 +1244,7 @@ class Cursor(object):
 
         """
         self.messages = []
-        if not isinstance(procname, str):
+        if not isinstance(procname, string_types):
             self.messages.append(InterfaceError("callproc expects the first argument to be of type String or Unicode."))
             raise self.messages[len(self.messages) - 1]
         if parameters is not None:
@@ -1390,7 +1396,7 @@ class Cursor(object):
         the SQL statement as arguments.
         """
         self.messages = []
-        if not isinstance(operation, str):
+        if not isinstance(operation, string_types):
             self.messages.append(InterfaceError("execute expects the first argument [%s] to be of type String or Unicode." % operation ))
             raise self.messages[len(self.messages) - 1]
         if parameters is not None:
@@ -1412,7 +1418,7 @@ class Cursor(object):
         parameter markers in the SQL statement as its argument.
         """
         self.messages = []
-        if not isinstance(operation, str):
+        if not isinstance(operation, string_types):
             self.messages.append(InterfaceError("executemany expects the first argument to be of type String or Unicode."))
             raise self.messages[len(self.messages) - 1]
         if seq_parameters is None:
@@ -1517,7 +1523,7 @@ class Cursor(object):
         It takes the number of rows to fetch as an argument.  If this
         is not provided it fetches self.arraysize number of rows.
         """
-        if not isinstance(size, int):
+        if not isinstance(size, int_types):
             self.messages.append(InterfaceError( "fetchmany expects argument type int or long."))
             raise self.messages[len(self.messages) - 1]
         if size == 0:
