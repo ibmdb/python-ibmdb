@@ -16,7 +16,7 @@ if sys.version_info >= (3, ):
     from io import BytesIO
 else:
     import urllib2 as request
-    from cStringIO import StringIO as BytesIO
+    from io import StringIO as BytesIO
 
 from setuptools import setup, find_packages, Extension
 from distutils.sysconfig import get_python_lib
