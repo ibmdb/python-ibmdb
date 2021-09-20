@@ -365,10 +365,6 @@ if (sys.platform[0:3] == 'win'):
     else:
         ext_modules = _ext_modules(ibm_db_include, library, ibm_db_lib)
 
-extra = {}
-if sys.version_info >= (3, ):
-    extra['use_2to3'] = True
-
 setup( name    = PACKAGE,
        version = VERSION,
        license = LICENSE,
@@ -405,7 +401,6 @@ setup( name    = PACKAGE,
        data_files   = data_files,
        include_package_data = True,
        cmdclass = cmd_class,
-       **extra
      )
 
 if license_agreement:
