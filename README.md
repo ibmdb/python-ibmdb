@@ -166,14 +166,14 @@ Type "help", "copyright", "credits" or "license" for more information.
 >>> # Connect using ibm_db_dbi
 >>> import ibm_db_dbi
 >>> conn = ibm_db_dbi.Connection(ibm_db_conn)
->>> # Execute tables API
->>> conn.tables('DB2ADMIN', '%')
-[{'TABLE_CAT': None, 'TABLE_SCHEM': 'DB2ADMIN', 'TABLE_NAME': 'MYTABLE', 'TABLE_TYPE': 'TABLE', 'REMARKS': None}]
->>>
 >>> # create table using ibm_db
 >>> create="create table mytable(id int, name varchar(50))"
 >>> ibm_db.exec_immediate(ibm_db_conn, create)
 <ibm_db.IBM_DBStatement object at 0x7fcc5f44f650>
+>>>
+>>> # Execute tables API
+>>> conn.tables('DB2INST1', '%')
+[{'TABLE_CAT': None, 'TABLE_SCHEM': 'DB2ADMIN', 'TABLE_NAME': 'MYTABLE', 'TABLE_TYPE': 'TABLE', 'REMARKS': None}]
 >>>
 >>> # Insert 3 rows into the table
 >>> insert = "insert into mytable values(?,?)"
@@ -211,6 +211,12 @@ False
 >>> # Close connections
 >>> cur.close()
 True
+>>> # Dropping the table created
+>>> drop = "drop table mytable"
+>>> stmt_delete = ibm_db.exec_immediate(ibm_db_conn,drop)
+>>> conn1.tables('DB2INST1','MY%')
+[]
+>>>
 >>> ibm_db.close(ibm_db_conn)
 True
 ```
