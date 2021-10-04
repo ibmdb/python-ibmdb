@@ -380,8 +380,6 @@ setup( name    = PACKAGE,
                       'Operating System :: Microsoft :: Windows :: Windows 10',
                       'Operating System :: Unix',
                       'Programming Language :: Python',
-                      'Programming Language :: Python :: 2',
-                      'Programming Language :: Python :: 2.7',
                       'Programming Language :: Python :: 3',
                       'Programming Language :: Python :: 3.5',
                       'Programming Language :: Python :: 3.6',
@@ -401,6 +399,7 @@ setup( name    = PACKAGE,
        data_files   = data_files,
        include_package_data = True,
        cmdclass = cmd_class,
+       python_requires = ">=3.0",
      )
 
 if license_agreement:
