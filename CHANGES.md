@@ -1,4 +1,24 @@
-2021-04-12, Version 3.0.4
+2021-10-21, Version 3.1.0
+=========================
+
+ * Remove dependency on 2to3 and unpin Setuptools. (Jason R. Coombs)
+
+ * Restore Python 2 compatibility. (Jason R. Coombs)
+
+ * Apply lib2to3 to the python code (Jason R. Coombs)
+
+ * fix for #641 (Arnab Mukherjee)
+
+ * Pin to Setuptools < 58 to support builds until use_2to3 can be removed. (Jason R. Coombs)
+
+ * update readme.md for known installation issues (Arnab Mukherjee)
+
+ * updating: NOTES.md for more api (Arnab Mukherjee)
+
+ * Update: documentation update in NOTES.md (Arnab Mukherjee)
+
+
+2021-04-16, Version 3.0.4
 =========================
 
  * Update README with new release version (Bimal Kumar Jha)
