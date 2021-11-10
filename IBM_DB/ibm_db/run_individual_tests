@@ -1,0 +1,45 @@
+#!/bin/sh
+
+export _BPXK_JOBLOG=STDERR
+export FILEPREFIX=${1:-}
+
+show_file() {
+    name=$1
+    echo "--- $name ---"
+    autotag $name
+    if [[ -s $name && -T $name ]]; then
+	cat $name
+    elif [[ -B $name || -s $name ]]; then
+	chtag -r $name
+	autotag -v $name
+	chtag -t -c 1047 $name
+	strings $name
+	chtag -t -c 819 $name
+	strings $name
+    fi
+    rm $name
+}
+
+run_test() {
+    name=$1
+    echo "====================="
+    echo $name
+    base=${name%.py}
+    export SINGLE_PYTHON_TEST=$name
+    touch $FILEPREFIX$base.out $FILEPREFIX$base.err
+    chtag -t -c 819 $FILEPREFIX$base.out $FILEPREFIX$base.err
+    python tests.py 1> $FILEPREFIX$base.out 2> $FILEPREFIX$base.err <&-
+    show_file $FILEPREFIX$base.out
+    show_file $FILEPREFIX$base.err
+}
+
+run_test test_002_ConnDbUncatalogedConn.py
+run_test test_007_pConnPassingOpts.py
+run_test test_053_AttrThruConn.py
+run_test test_080_ConnWrongDbAlias.py
+run_test test_090_ConnmsgWrongDbAlias.py
+run_test test_196_InsertRetrieveXMLData_02.py
+run_test test_220_PersistentConn.py
+run_test test_221_100PersistentConns.py
+run_test test_264_InsertRetrieveBIGINTTypeColumn.py
+run_test test_6792_FieldTypeRetStrDatetimeTimestamp.py

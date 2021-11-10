@@ -24,13 +24,23 @@ This module implements the Python DB API Specification v2.0 for DB2 database.
 import types, string, time, datetime, decimal, sys
 import weakref
 
-if sys.version_info >= (3, ):
+PY2 = sys.version_info < (3, )
+
+if not PY2:
     buffer = memoryview
-if sys.version_info < (3, ):
+if PY2:
     import exceptions
-    exception = exceptions.StandardError
+    exception = exceptions.Exception
 else:
     exception = Exception
+
+if PY2:
+    import __builtin__
+    string_types = __builtin__.unicode, bytes
+    int_types = __builtin__.long, int
+else:
+    string_types = str
+    int_types = int
 
 import ibm_db
 __version__ = ibm_db.__version__
@@ -203,7 +213,7 @@ def Binary(string):
     inserting it into a binary type column in the database.
 
     """
-    if not isinstance( string, (types.StringType, types.BufferType) ):
+    if not isinstance( string, (bytes, memoryview) ):
         raise InterfaceError("Binary function expects type string argument.")
     return buffer(string)
 
@@ -283,6 +293,8 @@ DATETIME = DBAPITypeObject(("TIMESTAMP",))
 
 ROWID = DBAPITypeObject(())
 
+BOOLEAN = DBAPITypeObject(("BOOLEAN",))
+
 # This method is used to determine the type of error that was
 # generated.  It takes an exception instance as an argument, and
 # returns exception object of the appropriate type.
@@ -359,9 +371,14 @@ def _get_exception(inst):
     # return the generic Error exception.
     if inst is not None:
         message = repr(inst)
-        if message.startswith("Exception('") and message.endswith("',)"):
-            message = message[11:]
-            message = message[:len(message)-3]
+        if message.startswith("Exception('"):
+            if message.endswith("',)"):  # python 2
+                message = message[11:]
+                message = message[:len(message)-3]
+            elif message.endswith("')"): # python 3
+                message = message[11:]
+                message = message[:len(message)-2]
+
 
         index = message.find('SQLSTATE=')
         if( message != '') & (index != -1):
@@ -413,6 +430,25 @@ def _get_exception(inst):
         return NotSupportedError(message)
     return DatabaseError(message)
 
+
+def _retrieve_current_schema(dsn):
+    """This method retrieve the value of ODBC keyword CURRENTSCHEMA from DSN
+    """
+
+    ODBC_CURRENTSCHEMA_KEYWORD = 'CURRENTSCHEMA='
+    current_schema_value = None
+    current_schema_start = dsn.find(ODBC_CURRENTSCHEMA_KEYWORD)
+
+    if current_schema_start > -1:
+        current_schema_end = dsn.find(';', current_schema_start)
+        current_schema_value = dsn[
+            (current_schema_start + len(ODBC_CURRENTSCHEMA_KEYWORD))
+            :current_schema_end
+        ]
+
+    return current_schema_value
+
+
 def _server_connect(dsn, user='', password='', host=''):
     """This method create connection with server
     """
@@ -420,10 +456,10 @@ def _server_connect(dsn, user='', password='', host=''):
     if dsn is None:
         raise InterfaceError("dsn value should not be None")
 
-    if (not isinstance(dsn, basestring)) | \
-       (not isinstance(user, basestring)) | \
-       (not isinstance(password, basestring)) | \
-       (not isinstance(host, basestring)):
+    if (not isinstance(dsn, string_types)) | \
+       (not isinstance(user, string_types)) | \
+       (not isinstance(password, string_types)) | \
+       (not isinstance(host, string_types)):
         raise InterfaceError("Arguments should be of type string or unicode")
 
     # If the dsn does not contain port and protocal adding database
@@ -447,7 +483,7 @@ def _server_connect(dsn, user='', password='', host=''):
         dsn = dsn + "PWD=" + password + ";"
     try:
         conn = ibm_db.connect(dsn, '', '')
-    except Exception, inst:
+    except Exception as inst:
         raise _get_exception(inst)
 
     return conn
@@ -458,20 +494,20 @@ def createdb(database, dsn, user='', password='', host='', codeset='', mode=''):
 
     if database is None:
         raise InterfaceError("createdb expects a not None database name value")
-    if (not isinstance(database, basestring)) | \
-       (not isinstance(codeset, basestring)) | \
-       (not isinstance(mode, basestring)):
+    if (not isinstance(database, string_types)) | \
+       (not isinstance(codeset, string_types)) | \
+       (not isinstance(mode, string_types)):
         raise InterfaceError("Arguments sould be string or unicode")
 
     conn = _server_connect(dsn, user=user, password=password, host=host)
     try:
         return_value = ibm_db.createdb(conn, database, codeset, mode)
-    except Exception, inst:
+    except Exception as inst:
         raise _get_exception(inst)
     finally:
         try:
             ibm_db.close(conn)
-        except Exception, inst:
+        except Exception as inst:
             raise _get_exception(inst)
 
     return return_value
@@ -482,18 +518,18 @@ def dropdb(database, dsn, user='', password='', host=''):
 
     if database is None:
         raise InterfaceError("dropdb expects a not None database name value")
-    if (not isinstance(database, basestring)):
+    if (not isinstance(database, string_types)):
         raise InterfaceError("Arguments sould be string or unicode")
 
     conn = _server_connect(dsn, user=user, password=password, host=host)
     try:
         return_value = ibm_db.dropdb(conn, database)
-    except Exception, inst:
+    except Exception as inst:
         raise _get_exception(inst)
     finally:
         try:
             ibm_db.close(conn)
-        except Exception, inst:
+        except Exception as inst:
             raise _get_exception(inst)
 
     return return_value
@@ -504,20 +540,20 @@ def recreatedb(database, dsn, user='', password='', host='', codeset='', mode=''
 
     if database is None:
         raise InterfaceError("recreatedb expects a not None database name value")
-    if (not isinstance(database, basestring)) | \
-       (not isinstance(codeset, basestring)) | \
-       (not isinstance(mode, basestring)):
+    if (not isinstance(database, string_types)) | \
+       (not isinstance(codeset, string_types)) | \
+       (not isinstance(mode, string_types)):
         raise InterfaceError("Arguments sould be string or unicode")
 
     conn = _server_connect(dsn, user=user, password=password, host=host)
     try:
         return_value = ibm_db.recreatedb(conn, database, codeset, mode)
-    except Exception, inst:
+    except Exception as inst:
         raise _get_exception(inst)
     finally:
         try:
             ibm_db.close(conn)
-        except Exception, inst:
+        except Exception as inst:
             raise _get_exception(inst)
 
     return return_value
@@ -528,20 +564,20 @@ def createdbNX(database, dsn, user='', password='', host='', codeset='', mode=''
 
     if database is None:
         raise InterfaceError("createdbNX expects a not None database name value")
-    if (not isinstance(database, basestring)) | \
-       (not isinstance(codeset, basestring)) | \
-       (not isinstance(mode, basestring)):
+    if (not isinstance(database, string_types)) | \
+       (not isinstance(codeset, string_types)) | \
+       (not isinstance(mode, string_types)):
         raise InterfaceError("Arguments sould be string or unicode")
 
     conn = _server_connect(dsn, user=user, password=password, host=host)
     try:
         return_value = ibm_db.createdbNX(conn, database, codeset, mode)
-    except Exception, inst:
+    except Exception as inst:
         raise _get_exception(inst)
     finally:
         try:
             ibm_db.close(conn)
-        except Exception, inst:
+        except Exception as inst:
             raise _get_exception(inst)
 
     return return_value
@@ -554,11 +590,11 @@ def connect(dsn, user='', password='', host='', database='', conn_options=None):
     if dsn is None:
         raise InterfaceError("connect expects a not None dsn value")
 
-    if (not isinstance(dsn, basestring)) | \
-       (not isinstance(user, basestring)) | \
-       (not isinstance(password, basestring)) | \
-       (not isinstance(host, basestring)) | \
-       (not isinstance(database, basestring)):
+    if (not isinstance(dsn, string_types)) | \
+       (not isinstance(user, string_types)) | \
+       (not isinstance(password, string_types)) | \
+       (not isinstance(host, string_types)) | \
+       (not isinstance(database, string_types)):
         raise InterfaceError("connect expects the first five arguments to"
                                                       " be of type string or unicode")
     if conn_options is not None:
@@ -588,13 +624,14 @@ def connect(dsn, user='', password='', host='', database='', conn_options=None):
         dsn = dsn + "UID=" + user + ";"
     if password != '' and dsn.find('PWD=') == -1:
         dsn = dsn + "PWD=" + password + ";"
+
     try:
         conn = ibm_db.connect(dsn, '', '', conn_options)
-        ibm_db.set_option(conn, {SQL_ATTR_CURRENT_SCHEMA : user}, 1)
-    except Exception, inst:
+        conn_object = Connection(conn)
+        conn_object.set_current_schema(_retrieve_current_schema(dsn) or user)
+        return conn_object
+    except Exception as inst:
         raise _get_exception(inst)
-
-    return Connection(conn)
 
 def pconnect(dsn, user='', password='', host='', database='', conn_options=None):
     """This method creates persistent connection to the database. It returns
@@ -604,11 +641,11 @@ def pconnect(dsn, user='', password='', host='', database='', conn_options=None)
     if dsn is None:
         raise InterfaceError("connect expects a not None dsn value")
 
-    if (not isinstance(dsn, basestring)) | \
-       (not isinstance(user, basestring)) | \
-       (not isinstance(password, basestring)) | \
-       (not isinstance(host, basestring)) | \
-       (not isinstance(database, basestring)):
+    if (not isinstance(dsn, string_types)) | \
+       (not isinstance(user, string_types)) | \
+       (not isinstance(password, string_types)) | \
+       (not isinstance(host, string_types)) | \
+       (not isinstance(database, string_types)):
         raise InterfaceError("connect expects the first five arguments to"
                                                       " be of type string or unicode")
     if conn_options is not None:
@@ -640,11 +677,11 @@ def pconnect(dsn, user='', password='', host='', database='', conn_options=None)
         dsn = dsn + "PWD=" + password + ";"
     try:
         conn = ibm_db.pconnect(dsn, '', '', conn_options)
-        ibm_db.set_option(conn, {SQL_ATTR_CURRENT_SCHEMA : user}, 1)
-    except Exception, inst:
+        conn_object = Connection(conn)
+        conn_object.set_current_schema(_retrieve_current_schema(dsn) or user)
+        return conn_object
+    except Exception as inst:
         raise _get_exception(inst)
-
-    return Connection(conn)
 
 class Connection(object):
     """This class object represents a connection between the database
@@ -693,7 +730,7 @@ class Connection(object):
                                      "connection is no longer active.")
             else:
                 return_value = ibm_db.close(self.conn_handler)
-        except Exception, inst:
+        except Exception as inst:
             raise _get_exception(inst)
         self.conn_handler = None
         for index in range(len(self._cursor_list)):
@@ -712,7 +749,7 @@ class Connection(object):
         """
         try:
             return_value = ibm_db.commit(self.conn_handler)
-        except Exception, inst:
+        except Exception as inst:
             raise _get_exception(inst)
         return return_value
 
@@ -723,7 +760,7 @@ class Connection(object):
         """
         try:
             return_value = ibm_db.rollback(self.conn_handler)
-        except Exception, inst:
+        except Exception as inst:
             raise _get_exception(inst)
         return return_value
 
@@ -760,7 +797,7 @@ class Connection(object):
                 self.FIX_RETURN_TYPE = 1
             else:
                 self.FIX_RETURN_TYPE = 0
-        except Exception, inst:
+        except Exception as inst:
             raise _get_exception(inst)
         return self.FIX_RETURN_TYPE
 
@@ -774,7 +811,7 @@ class Connection(object):
                 is_set = ibm_db.set_option(self.conn_handler, {SQL_ATTR_AUTOCOMMIT : SQL_AUTOCOMMIT_ON}, 1)
             else:
                 is_set = ibm_db.set_option(self.conn_handler, {SQL_ATTR_AUTOCOMMIT : SQL_AUTOCOMMIT_OFF}, 1)
-        except Exception, inst:
+        except Exception as inst:
             raise _get_exception(inst)
         return is_set
 
@@ -786,7 +823,7 @@ class Connection(object):
         self.current_schema = schema_name
         try:
             is_set = ibm_db.set_option(self.conn_handler, {SQL_ATTR_CURRENT_SCHEMA : schema_name}, 1)
-        except Exception, inst:
+        except Exception as inst:
             raise _get_exception(inst)
         return is_set
 
@@ -798,7 +835,7 @@ class Connection(object):
             conn_schema = ibm_db.get_option(self.conn_handler, SQL_ATTR_CURRENT_SCHEMA, 1)
             if conn_schema is not None and conn_schema != '':
                 self.current_schema = conn_schema
-        except Exception, inst:
+        except Exception as inst:
             raise _get_exception(inst)
         return self.current_schema
 
@@ -810,7 +847,7 @@ class Connection(object):
             server_info = []
             server_info.append(self.dbms_name)
             server_info.append(self.dbms_ver)
-        except Exception, inst:
+        except Exception as inst:
             raise _get_exception(inst)
         return tuple(server_info)
 
@@ -838,7 +875,7 @@ class Connection(object):
                 i += 1
                 row = ibm_db.fetch_assoc(stmt)
             ibm_db.free_result(stmt)
-        except Exception, inst:
+        except Exception as inst:
             raise _get_exception(inst)
 
         return result
@@ -876,7 +913,7 @@ class Connection(object):
                 i += 1
                 row = ibm_db.fetch_assoc(stmt)
             ibm_db.free_result(stmt)
-        except Exception, inst:
+        except Exception as inst:
             raise _get_exception(inst)
 
         return result
@@ -910,7 +947,7 @@ class Connection(object):
                 i += 1
                 row = ibm_db.fetch_assoc(stmt)
             ibm_db.free_result(stmt)
-        except Exception, inst:
+        except Exception as inst:
             raise _get_exception(inst)
 
         return result
@@ -948,7 +985,7 @@ class Connection(object):
                 i += 1
                 row = ibm_db.fetch_assoc(stmt)
             ibm_db.free_result(stmt)
-        except Exception, inst:
+        except Exception as inst:
             raise _get_exception(inst)
 
         return result
@@ -999,10 +1036,16 @@ class Connection(object):
                             column['COLUMN_NAME'] = column['COLUMN_NAME'].lower()
                             include_columns.append(column)
                     result = include_columns
-        except Exception, inst:
+        except Exception as inst:
             raise _get_exception(inst)
 
         return result
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        return self.close()
 
 
 # Defines a cursor for the driver connection
@@ -1060,6 +1103,8 @@ class Cursor(object):
                     column_desc.append(DATETIME)
                 elif ROWID == type:
                     column_desc.append(ROWID)
+                elif BOOLEAN == type:
+                    column_desc.append(BOOLEAN)
 
                 column_desc.append(ibm_db.field_display_size(
                                              self.stmt_handler, column_index))
@@ -1077,7 +1122,7 @@ class Cursor(object):
                                              self.stmt_handler, column_index))
 
                 self.__description.append(column_desc)
-        except Exception, inst:
+        except Exception as inst:
             self.messages.append(_get_exception(inst))
             raise self.messages[len(self.messages) - 1]
 
@@ -1095,11 +1140,14 @@ class Cursor(object):
     def __iter__( self ):
         return self
 
-    def next( self ):
+    def __next__( self ):
         row = self.fetchone()
         if row == None:
             raise StopIteration
         return row
+
+    if PY2:
+        next = __next__
 
     # This attribute specifies the number of rows the last executeXXX()
     # produced or affected.  It is a read only attribute.
@@ -1141,11 +1189,15 @@ class Cursor(object):
         """
         messages = []
         if self.conn_handler is None:
-            self.messages.append(ProgrammingError("Cursor cannot be closed; connection is no longer active."))
-            raise self.messages[len(self.messages) - 1]
+            '''
+            Changes for django
+            '''
+            #self.messages.append(ProgrammingError("Cursor cannot be closed; connection is no longer active."))
+            #raise self.messages[len(self.messages) - 1]
+            return None
         try:
             return_value = ibm_db.free_stmt(self.stmt_handler)
-        except Exception, inst:
+        except Exception as inst:
             self.messages.append(_get_exception(inst))
             raise self.messages[len(self.messages) - 1]
         self.stmt_handler = None
@@ -1173,13 +1225,13 @@ class Cursor(object):
 
             try:
                 result = ibm_db.callproc(self.conn_handler, procname,parameters)
-            except Exception, inst:
+            except Exception as inst:
                 self.messages.append(_get_exception(inst))
                 raise self.messages[len(self.messages) - 1]
         else:
             try:
                 result = ibm_db.callproc(self.conn_handler, procname)
-            except Exception, inst:
+            except Exception as inst:
                 self.messages.append(_get_exception(inst))
                 raise self.messages[len(self.messages) - 1]
         return result
@@ -1192,18 +1244,18 @@ class Cursor(object):
 
         """
         self.messages = []
-        if not isinstance(procname, basestring):
+        if not isinstance(procname, string_types):
             self.messages.append(InterfaceError("callproc expects the first argument to be of type String or Unicode."))
             raise self.messages[len(self.messages) - 1]
         if parameters is not None:
-            if not isinstance(parameters, (types.ListType, types.TupleType)):
+            if not isinstance(parameters, (list, tuple)):
                 self.messages.append(InterfaceError("callproc expects the second argument to be of type list or tuple."))
                 raise self.messages[len(self.messages) - 1]
         result = self._callproc_helper(procname, parameters)
         return_value = None
         self.__description = None
         self._all_stmt_handlers = []
-        if isinstance(result, types.TupleType):
+        if isinstance(result, tuple):
             self.stmt_handler = result[0]
             return_value = result[1:]
         else:
@@ -1220,7 +1272,7 @@ class Cursor(object):
 
         try:
             self.stmt_handler = ibm_db.prepare(self.conn_handler, operation)
-        except Exception, inst:
+        except Exception as inst:
             self.messages.append(_get_exception(inst))
             raise self.messages[len(self.messages) - 1]
 
@@ -1233,7 +1285,7 @@ class Cursor(object):
         self._result_set_produced = False
         try:
             num_columns = ibm_db.num_fields(self.stmt_handler)
-        except Exception, inst:
+        except Exception as inst:
             self.messages.append(_get_exception(inst))
             raise self.messages[len(self.messages) - 1]
         if not num_columns:
@@ -1250,7 +1302,9 @@ class Cursor(object):
             # Convert date/time and binary objects to string for
             # inserting into the database.
             for param in parameters:
-                if isinstance(param, CONVERT_STR):
+                if isinstance(param, memoryview):
+                    param = param.tobytes()
+                elif isinstance(param, CONVERT_STR):
                     param = str(param)
                 buff.append(param)
             parameters = tuple(buff)
@@ -1263,7 +1317,7 @@ class Cursor(object):
                     if ibm_db.stmt_errormsg() is not None:
                         self.messages.append(Error(str(ibm_db.stmt_errormsg())))
                         raise self.messages[len(self.messages) - 1]
-            except Exception, inst:
+            except Exception as inst:
                 self.messages.append(_get_exception(inst))
                 raise self.messages[len(self.messages) - 1]
         else:
@@ -1276,7 +1330,7 @@ class Cursor(object):
                     if ibm_db.stmt_errormsg() is not None:
                         self.messages.append(Error(str(ibm_db.stmt_errormsg())))
                         raise self.messages[len(self.messages) - 1]
-            except Exception, inst:
+            except Exception as inst:
                 self.messages.append(_get_exception(inst))
                 raise self.messages[len(self.messages) - 1]
         return return_value
@@ -1288,14 +1342,14 @@ class Cursor(object):
         if not self._result_set_produced:
             try:
                 counter = ibm_db.num_rows(self.stmt_handler)
-            except Exception, inst:
+            except Exception as inst:
                 self.messages.append(_get_exception(inst))
                 raise self.messages[len(self.messages) - 1]
             self.__rowcount = counter
         elif self._is_scrollable_cursor:
             try:
                 counter = ibm_db.get_num_result(self.stmt_handler)
-            except Exception, inst:
+            except Exception as inst:
                 self.messages.append(_get_exception(inst))
                 raise self.messages[len(self.messages) - 1]
             if counter >= 0:
@@ -1328,7 +1382,7 @@ class Cursor(object):
                 if ibm_db.stmt_errormsg() is not None:
                     self.messages.append(Error(str(ibm_db.stmt_errormsg())))
                     raise self.messages[len(self.messages) - 1]
-        except Exception, inst:
+        except Exception as inst:
             self.messages.append(_get_exception(inst))
             raise self.messages[len(self.messages) - 1]
         return identity_val
@@ -1342,11 +1396,11 @@ class Cursor(object):
         the SQL statement as arguments.
         """
         self.messages = []
-        if not isinstance(operation, basestring):
+        if not isinstance(operation, string_types):
             self.messages.append(InterfaceError("execute expects the first argument [%s] to be of type String or Unicode." % operation ))
             raise self.messages[len(self.messages) - 1]
         if parameters is not None:
-            if not isinstance(parameters, (types.ListType, types.TupleType, types.DictType)):
+            if not isinstance(parameters, (list, tuple, dict)):
                 self.messages.append(InterfaceError("execute parameters argument should be sequence."))
                 raise self.messages[len(self.messages) - 1]
         self.__description = None
@@ -1364,14 +1418,14 @@ class Cursor(object):
         parameter markers in the SQL statement as its argument.
         """
         self.messages = []
-        if not isinstance(operation, basestring):
+        if not isinstance(operation, string_types):
             self.messages.append(InterfaceError("executemany expects the first argument to be of type String or Unicode."))
             raise self.messages[len(self.messages) - 1]
         if seq_parameters is None:
             self.messages.append(InterfaceError("executemany expects a not None seq_parameters value"))
             raise self.messages[len(self.messages) - 1]
 
-        if not isinstance(seq_parameters, (types.ListType, types.TupleType)):
+        if not isinstance(seq_parameters, (list, tuple)):
             self.messages.append(InterfaceError("executemany expects the second argument to be of type list or tuple of sequence."))
             raise self.messages[len(self.messages) - 1]
 
@@ -1407,7 +1461,7 @@ class Cursor(object):
                 if ibm_db.stmt_errormsg() is not None:
                     self.messages.append(Error(str(ibm_db.stmt_errormsg())))
                     raise self.messages[len(self.messages) - 1]
-        except Exception, inst:
+        except Exception as inst:
             self._set_rowcount()
             self.messages.append(Error(inst))
             raise self.messages[len(self.messages) - 1]
@@ -1432,7 +1486,7 @@ class Cursor(object):
               (fetch_size != -1 and rows_fetched < fetch_size):
             try:
                 row = ibm_db.fetch_tuple(self.stmt_handler)
-            except Exception, inst:
+            except Exception as inst:
                 if ibm_db.stmt_errormsg() is not None:
                     self.messages.append(Error(str(ibm_db.stmt_errormsg())))
                 else:
@@ -1469,7 +1523,7 @@ class Cursor(object):
         It takes the number of rows to fetch as an argument.  If this
         is not provided it fetches self.arraysize number of rows.
         """
-        if not isinstance(size, (int, long)):
+        if not isinstance(size, int_types):
             self.messages.append(InterfaceError( "fetchmany expects argument type int or long."))
             raise self.messages[len(self.messages) - 1]
         if size == 0:
@@ -1504,7 +1558,7 @@ class Cursor(object):
             self.__description = None
             self._all_stmt_handlers.append(self.stmt_handler)
             self.stmt_handler = ibm_db.next_result(self._all_stmt_handlers[0])
-        except Exception, inst:
+        except Exception as inst:
             self.messages.append(_get_exception(inst))
             raise self.messages[len(self.messages) - 1]
 
@@ -1543,10 +1597,16 @@ class Cursor(object):
                             row_list = list(row)
                         row_list[index] = decimal.Decimal(str(row[index]).replace(",", "."))
 
-                except Exception, inst:
+                except Exception as inst:
                     self.messages.append(DataError("Data type format error: "+ str(inst)))
                     raise self.messages[len(self.messages) - 1]
         if row_list is None:
             return row
         else:
             return tuple(row_list)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        return self.close()

@@ -1,29 +1,22 @@
+os: linux
+dist: bionic
 language: python
+python:
+  - 2.7
+  - 3.5
+  - 3.6
+  - 3.7
+  - 3.8
+  - 3.9
+services:
+  - docker
 
-matrix:
-    include:
-        - python: 2.7
-          dist: trusty
-          sudo: false
-        - python: 3.4
-          dist: trusty
-          sudo: false
-        - python: 3.5
-          dist: trusty
-          sudo: false
-        - python: 3.6
-          dist: trusty
-          sudo: false
-        - python: 3.7
-          dist: xenial
-          sudo: true
-
+before_install:
+- pip install --upgrade pip
+- pip install flake8  # find Python syntax errors and undefined names
+- flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
 install:
-- docker pull ibmcom/db2express-c
-- docker run --name db2  -p 50000:50000 -e DB2INST1_PASSWORD=password -e LICENSE=accept -d ibmcom/db2express-c db2start
-- docker ps -as
-- docker exec -it db2 useradd -ms /bin/bash auth_user -p auth_pass
-- docker exec -it db2 su - db2inst1 -c "db2 create db sample"
+- scripts/setup-docker.sh
 
 script:
 - cd IBM_DB/ibm_db
@@ -31,11 +24,6 @@ script:
 #
 # set up tests
 - cp config.py.sample config.py
-#
-# These were deleted from git, but required by the tests
-# we just create dummy files of the size expected
-- truncate -s 10291 tests/spook.png
-- truncate -s 15398 tests/pic1.jpg
 #
 # Create db2cli.ini
 - echo -e '[sample]\nHostname=localhost\nProtocol=TCPIP\nDatabase=sample' > db2cli.ini
@@ -45,5 +33,7 @@ script:
 - python tests.py
 
 notifications:
-  email: 
-    - skauser@rocketsoftware.com
+  email:
+    - bkumar@rocketsoftware.com
+    - amukherjee@rocketsoftware.com
+    - bjha@rocketsoftware.com

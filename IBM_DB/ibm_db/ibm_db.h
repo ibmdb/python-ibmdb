@@ -19,11 +19,13 @@
 /*
  * Combability changes for Python 3
  */
-
+#define LONG_BIT 64
 /* defining string methods */
 #if  PY_MAJOR_VERSION < 3
 #define PyBytes_Check               PyString_Check
 #define StringOBJ_FromASCII(str)    PyString_FromString(str)
+#define StringOBJ_FromASCIIAndSize  PyString_FromStringAndSize
+#define StringOBJ_FromStr(str)      PyString_FromString(str)
 #define PyBytes_AsString            PyString_AsString
 #define PyBytes_FromStringAndSize   PyString_FromStringAndSize
 #define StringObj_Format            PyString_Format
@@ -41,6 +43,8 @@
 #define PyInt_AsLong                PyLong_AsLong
 #define PyInt_AS_LONG               PyLong_AsLong
 #define StringOBJ_FromASCII(str)    PyUnicode_DecodeASCII(str, strlen(str), NULL)
+#define StringOBJ_FromASCIIAndSize  PyUnicode_FromStringAndSize
+#define StringOBJ_FromStr(str)      PyUnicode_DecodeLocale(str, NULL)
 #define PyString_Check              PyUnicode_Check
 #define StringObj_Format            PyUnicode_Format
 #define StringObj_Size              PyUnicode_GET_SIZE
@@ -144,6 +148,10 @@
 #define SQL_IS_INTEGER 0
 #define SQL_BEST_ROWID 0
 #define SQLLEN long
+#define SQLFLOAT double
+#endif
+
+#ifndef SQLFLOAT
 #define SQLFLOAT double
 #endif
 
@@ -382,3 +390,7 @@ typedef int Py_ssize_t;
 #define PY_SSIZE_T_MIN INT_MIN
 #endif
 
+#ifdef __MVS__
+#define SQL_ATTR_CHAINING_BEGIN 0
+#define SQL_ATTR_CHAINING_END 1
+#endif
