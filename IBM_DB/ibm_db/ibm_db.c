@@ -10675,9 +10675,9 @@ static PyObject* ibm_db_execute_many (PyObject *self, PyObject *args) {
                     if ( chaining_start ) {
                         // This check is not required for python boolean values True and False as both True and False are homogeneous for boolean.
                         if ( (TYPE(data) != PYTHON_NIL) \
-                            && (ref_data_type[curr->param_num - 1] != PYTHON_NIL) \
                             && (TYPE(data) != PYTHON_TRUE) \
                             && (TYPE(data) != PYTHON_FALSE) \
+                            && (ref_data_type[curr->param_num - 1] != PYTHON_NIL) \
                             && (ref_data_type[curr->param_num - 1] != TYPE(data)) ) {
                             sprintf(error, "Value parameter tuple %d has types that are not homogeneous with previous tuple", i + 1);
                             _build_client_err_list(head_error_list, error);
