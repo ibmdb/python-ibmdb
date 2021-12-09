@@ -98,6 +98,9 @@ typedef struct _param_cache_node {
     DATE_STRUCT *date_value;         /* Temp storage value */
     TIME_STRUCT *time_value;         /* Temp storage value */
     TIMESTAMP_STRUCT *ts_value;      /* Temp storage value */
+    SQLINTEGER  *ivalueArray;        /* Temp storage array of values */
+    double      *fvalueArray;        /* Temp storage array of values */
+    SQLINTEGER  *bind_indicator_array; /* Temp storage array of values */
     struct _param_cache_node *next;  /* Pointer to next node */
 } param_node;
 
@@ -356,6 +359,9 @@ static void _python_ibm_db_clear_param_cache( stmt_handle *stmt_res )
         PyMem_Free(curr_ptr->date_value);
         PyMem_Free(curr_ptr->time_value);
         PyMem_Free(curr_ptr->ts_value);
+        PyMem_Free(curr_ptr->ivalueArray);
+        PyMem_Free(curr_ptr->fvalueArray);
+        PyMem_Free(curr_ptr->bind_indicator_array);
 
         temp_ptr = curr_ptr;
         curr_ptr = curr_ptr->next;
@@ -5428,6 +5434,8 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
     Py_ssize_t buffer_len = 0;
 #endif
     int param_length;
+    int type = PYTHON_NIL;
+    PyObject* item;
 
     /* Have to use SQLBindFileToParam if PARAM is type PARAM_FILE */
     /*** Need to fix this***/
@@ -5475,31 +5483,72 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
         return rc;
     }
 
-    switch(TYPE(bind_data)) {
+    type = TYPE(bind_data);
+    if(type == PYTHON_LIST)
+    {
+    	item = PyList_GetItem(bind_data, 0);
+        type = TYPE(item);
+    }
+
+    switch(type) {
         case PYTHON_FIXNUM:
 	  /* BIGINT_IS_SHORTER_THAN_LONG: Avoid SQLCODE=22005: In xlc with -q64, the size of BIGINT is the same as the size of long */
 	  if(BIGINT_IS_SHORTER_THAN_LONG && (curr->data_type == SQL_BIGINT || curr->data_type == SQL_DECIMAL )){
+#if  PY_MAJOR_VERSION >= 3
+                PyObject *tempobj2 = NULL;
+#endif
                 PyObject *tempobj = NULL;
+                if(TYPE(bind_data) == PYTHON_LIST)
+                {
+                    char *svalue = NULL;
+                    Py_ssize_t n = PyList_Size(bind_data);
+                    curr->svalue = (char *)ALLOC_N(char, (MAX_PRECISION) * (n));
+                    memset(curr->svalue , 0, MAX_PRECISION * n);
+                    for (int i = 0; i < n; i++)
+                    {
+                        item = PyList_GetItem(bind_data, i);
+                        item = PyObject_Str(item);
+#if  PY_MAJOR_VERSION >= 3
+                        tempobj2 = PyUnicode_AsASCIIString(item);
+                        Py_XDECREF(item);
+                        item = tempobj2;
+#endif
+                        svalue = PyBytes_AsString(item);
+                        curr->ivalue = strlen(svalue);
+                        memcpy(curr->svalue + (i * MAX_PRECISION), svalue, curr->ivalue);
+                        svalue = NULL;
+                    }
+
+                    Py_BEGIN_ALLOW_THREADS;
+                    rc = SQLBindParameter(stmt_res->hstmt, curr->param_num,
+                                curr->param_type, SQL_C_CHAR, curr->data_type,
+                                MAX_PRECISION, curr->scale, curr->svalue, MAX_PRECISION, NULL);
+                    Py_END_ALLOW_THREADS;
+
+                }
+                else
+                {
 #if  PY_MAJOR_VERSION >= 3
                        PyObject *tempobj2 = NULL;
 #endif
-                tempobj = PyObject_Str(bind_data);
+                    tempobj = PyObject_Str(bind_data);
 #if  PY_MAJOR_VERSION >= 3
-                tempobj2 = PyUnicode_AsASCIIString(tempobj);
-                Py_XDECREF(tempobj);
-                tempobj = tempobj2;
+                    tempobj2 = PyUnicode_AsASCIIString(tempobj);
+                    Py_XDECREF(tempobj);
+                    tempobj = tempobj2;
 #endif
-                curr->svalue = PyBytes_AsString(tempobj);
-                curr->ivalue = strlen(curr->svalue);
-                curr->svalue = memcpy(PyMem_Malloc((sizeof(char))*(curr->ivalue+1)), curr->svalue, curr->ivalue);
-                curr->svalue[curr->ivalue] = '\0';
-                curr->bind_indicator = curr->ivalue;
+                    curr->svalue = PyBytes_AsString(tempobj);
+                    curr->ivalue = strlen(curr->svalue);
+                    curr->svalue = memcpy(PyMem_Malloc((sizeof(char))*(curr->ivalue+1)), curr->svalue, curr->ivalue);
+                    curr->svalue[curr->ivalue] = '\0';
+                    curr->bind_indicator = curr->ivalue;
 
-                Py_BEGIN_ALLOW_THREADS;
-                rc = SQLBindParameter(stmt_res->hstmt, curr->param_num,
-                    curr->param_type, SQL_C_CHAR, curr->data_type,
-                    curr->param_size, curr->scale, curr->svalue, curr->param_size, NULL);
-                Py_END_ALLOW_THREADS;
+                    Py_BEGIN_ALLOW_THREADS;
+                    rc = SQLBindParameter(stmt_res->hstmt, curr->param_num,
+                                curr->param_type, SQL_C_CHAR, curr->data_type,
+                                curr->param_size, curr->scale, curr->svalue, curr->param_size, NULL);
+                    Py_END_ALLOW_THREADS;
+                }
 
                 if ( rc == SQL_ERROR || rc == SQL_SUCCESS_WITH_INFO ){
                     _python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT,
@@ -5508,13 +5557,32 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
                 Py_XDECREF(tempobj);
             }
             else{
-                curr->ivalue = (SQLINTEGER) PyLong_AsLong(bind_data);
+                if(TYPE(bind_data) == PYTHON_LIST)
+                {
+                    Py_ssize_t n = PyList_Size(bind_data);
+                    curr->ivalueArray = (SQLINTEGER *)ALLOC_N(SQLINTEGER, n);
+                    for (int i = 0; i < n; i++)
+                    {
+                        item = PyList_GetItem(bind_data, i);
+                        curr->ivalueArray[i] = PyLong_AsLong(item);
+                    }
 
-                Py_BEGIN_ALLOW_THREADS;
-                rc = SQLBindParameter(stmt_res->hstmt, curr->param_num,
-                            curr->param_type, SQL_C_LONG, curr->data_type,
-                            curr->param_size, curr->scale, &curr->ivalue, 0, NULL);
-                Py_END_ALLOW_THREADS;
+                    Py_BEGIN_ALLOW_THREADS;
+                    rc = SQLBindParameter(stmt_res->hstmt, curr->param_num,
+                                curr->param_type, SQL_C_LONG, curr->data_type,
+                                curr->param_size, curr->scale, curr->ivalueArray, 0, NULL);
+                    Py_END_ALLOW_THREADS;
+                }                
+                else
+                {
+                    curr->ivalue = (SQLINTEGER) PyLong_AsLong(bind_data);
+
+                    Py_BEGIN_ALLOW_THREADS;
+                    rc = SQLBindParameter(stmt_res->hstmt, curr->param_num,
+                                curr->param_type, SQL_C_LONG, curr->data_type,
+                                curr->param_size, curr->scale, &curr->ivalue, 0, NULL);
+                    Py_END_ALLOW_THREADS;
+                }
 
                 if ( rc == SQL_ERROR || rc == SQL_SUCCESS_WITH_INFO ) {
                     _python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT,
@@ -5526,29 +5594,68 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
 
         /* Convert BOOLEAN types to LONG for DB2 / Cloudscape */
         case PYTHON_FALSE:
-            curr->ivalue = 0;
+            if(TYPE(bind_data) == PYTHON_LIST)
+            {
+                Py_ssize_t n = PyList_Size(bind_data);
+                curr->ivalueArray = (SQLINTEGER *)ALLOC_N(SQLINTEGER, n);
+                for (int i = 0; i < n; i++)
+                {
+                    item = PyList_GetItem(bind_data, i);
+                    curr->ivalueArray[i] = PyLong_AsLong(item);
+                }
 
-            Py_BEGIN_ALLOW_THREADS;
-            rc = SQLBindParameter(stmt_res->hstmt, curr->param_num,
-                        curr->param_type, SQL_C_LONG, curr->data_type, curr->param_size,
-                        curr->scale, &curr->ivalue, 0, NULL);
-            Py_END_ALLOW_THREADS;
+                Py_BEGIN_ALLOW_THREADS;
+                rc = SQLBindParameter(stmt_res->hstmt, curr->param_num,
+                        curr->param_type, SQL_C_LONG, curr->data_type,
+                        curr->param_size, curr->scale, curr->ivalueArray, 0, NULL);
+                Py_END_ALLOW_THREADS;
+            }
+            else
+            {
+                curr->ivalue = 0;
+
+                Py_BEGIN_ALLOW_THREADS;
+                rc = SQLBindParameter(stmt_res->hstmt, curr->param_num,
+                            curr->param_type, SQL_C_LONG, curr->data_type, curr->param_size,
+                            curr->scale, &curr->ivalue, 0, NULL);
+                Py_END_ALLOW_THREADS;
+            }
 
             if ( rc == SQL_ERROR || rc == SQL_SUCCESS_WITH_INFO ) {
                 _python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT,
                                                     rc, 1, NULL, -1, 1);
             }
+            
             curr->data_type = SQL_C_LONG;
             break;
 
         case PYTHON_TRUE:
-            curr->ivalue = 1;
+            if(TYPE(bind_data) == PYTHON_LIST)
+            {
+                Py_ssize_t n = PyList_Size(bind_data);
+                curr->ivalueArray = (SQLINTEGER *)ALLOC_N(SQLINTEGER, n);
+                for (int i = 0; i < n; i++)
+                {
+                    item = PyList_GetItem(bind_data, i);
+                    curr->ivalueArray[i] = PyLong_AsLong(item);
+                }
 
-            Py_BEGIN_ALLOW_THREADS;
-            rc = SQLBindParameter(stmt_res->hstmt, curr->param_num,
-            curr->param_type, SQL_C_LONG, curr->data_type, curr->param_size,
-                        curr->scale, &curr->ivalue, 0, NULL);
-            Py_END_ALLOW_THREADS;
+                Py_BEGIN_ALLOW_THREADS;
+                rc = SQLBindParameter(stmt_res->hstmt, curr->param_num,
+                            curr->param_type, SQL_C_LONG, curr->data_type,
+                            curr->param_size, curr->scale, curr->ivalueArray, 0, NULL);
+                Py_END_ALLOW_THREADS;
+            }            
+            else
+            {
+                curr->ivalue = 1;
+
+                Py_BEGIN_ALLOW_THREADS;
+                rc = SQLBindParameter(stmt_res->hstmt, curr->param_num,
+                            curr->param_type, SQL_C_LONG, curr->data_type, curr->param_size,
+                            curr->scale, &curr->ivalue, 0, NULL);
+                Py_END_ALLOW_THREADS;
+            }
 
             if ( rc == SQL_ERROR || rc == SQL_SUCCESS_WITH_INFO ) {
                 _python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT,
@@ -5558,13 +5665,32 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
             break;
 
         case PYTHON_FLOAT:
-            curr->fvalue = PyFloat_AsDouble(bind_data);
+            if(TYPE(bind_data) == PYTHON_LIST)
+            {
+                Py_ssize_t n = PyList_Size(bind_data);
+                curr->fvalueArray = (double *)ALLOC_N(double, n);
+                for (int i = 0; i < n; i++)
+                {
+                    item = PyList_GetItem(bind_data, i);
+                    curr->fvalueArray[i] = PyFloat_AsDouble(item);
+                }
 
-            Py_BEGIN_ALLOW_THREADS;
-            rc = SQLBindParameter(stmt_res->hstmt, curr->param_num,
-                    curr->param_type, SQL_C_DOUBLE, curr->data_type, curr->param_size,
-                    curr->scale, &curr->fvalue, 0, NULL);
-            Py_END_ALLOW_THREADS;
+                Py_BEGIN_ALLOW_THREADS;
+                rc = SQLBindParameter(stmt_res->hstmt, curr->param_num,
+                        curr->param_type, SQL_C_DOUBLE, curr->data_type,
+                        curr->param_size, curr->scale, curr->fvalueArray, 0, NULL);
+                Py_END_ALLOW_THREADS;
+            }
+            else
+            {
+                curr->fvalue = PyFloat_AsDouble(bind_data);
+
+                Py_BEGIN_ALLOW_THREADS;
+                rc = SQLBindParameter(stmt_res->hstmt, curr->param_num,
+                            curr->param_type, SQL_C_DOUBLE, curr->data_type, curr->param_size,
+                            curr->scale, &curr->fvalue, 0, NULL);
+                Py_END_ALLOW_THREADS;
+            }
 
             if ( rc == SQL_ERROR || rc == SQL_SUCCESS_WITH_INFO ) {
                 _python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT,
@@ -5575,362 +5701,876 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
 
         case PYTHON_UNICODE:
             {
-                int isNewBuffer;
-                if(PyObject_CheckBuffer(bind_data) && (curr->data_type == SQL_BLOB || curr->data_type == SQL_BINARY || curr->data_type == SQL_VARBINARY)) {
+                /* To Bind array of values */
+                if(TYPE(bind_data) == PYTHON_LIST)
+                {
+                    int isNewBuffer, param_size = 0;
+                    Py_ssize_t n = PyList_Size(bind_data);
+                    curr->uvalue = (SQLWCHAR *)ALLOC_N(SQLWCHAR, curr->param_size * (n));
+                    curr->bind_indicator_array = (SQLINTEGER *) ALLOC_N(SQLINTEGER, n);         
+                    memset(curr->uvalue , 0, sizeof(SQLWCHAR) * curr->param_size * n);
+
+                    for (int i = 0; i < n; i++)
+                    {
+                        item = PyList_GetItem(bind_data, i);
+
+                        SQLWCHAR *tmp_uvalue = NULL;
+                        SQLWCHAR *dest_uvalue = NULL;
+
+                        if(PyObject_CheckBuffer(item) && (curr->data_type == SQL_BLOB   || 
+                                                          curr->data_type == SQL_BINARY || 
+                                                          curr->data_type == SQL_VARBINARY) )
+                        {
 #if  PY_MAJOR_VERSION >= 3
-                    Py_buffer tmp_buffer;
-                    PyObject_GetBuffer(bind_data, &tmp_buffer, PyBUF_SIMPLE);
-                    curr->uvalue = tmp_buffer.buf;
-                    curr->ivalue = tmp_buffer.len;
+                            Py_buffer tmp_buffer;
+                            PyObject_GetBuffer(item, &tmp_buffer, PyBUF_SIMPLE);
+                            tmp_uvalue = tmp_buffer.buf;
+                            curr->ivalue = tmp_buffer.len;
 #else
-                    PyObject_AsReadBuffer(bind_data, (const void **) &(curr->uvalue), &buffer_len);
-                    curr->ivalue = buffer_len;
+                            PyObject_AsReadBuffer(item, (const void **) &tmp_uvalue, &buffer_len);
+                            curr->ivalue = buffer_len;
 #endif
-                } else {
-                    if(curr->uvalue != NULL) {
+                        }
+                        else 
+                        {
+                            if(tmp_uvalue != NULL)
+                            {
+                                PyMem_Del(tmp_uvalue);
+                                tmp_uvalue = NULL;
+                            }
+                            tmp_uvalue = getUnicodeDataAsSQLWCHAR(item, &isNewBuffer);
+                            curr->ivalue = PyUnicode_GetSize(item);
+                            curr->ivalue = curr->ivalue * sizeof(SQLWCHAR);
+                        }
+                        param_length = curr->ivalue;
+                        if (curr->size != 0)
+                        {
+                            curr->ivalue = (curr->size + 1) * sizeof(SQLWCHAR);
+                        }
+
+                        if (curr->param_type == SQL_PARAM_OUTPUT || curr->param_type == SQL_PARAM_INPUT_OUTPUT)
+                        {
+                            if (curr->size == 0)
+                            {
+                                if ((curr->data_type == SQL_BLOB) || (curr->data_type == SQL_CLOB) || (curr->data_type == SQL_BINARY)
+#ifndef PASE /* i5/OS SQL_LONGVARBINARY is SQL_VARBINARY */
+                                        || (curr->data_type == SQL_LONGVARBINARY)
+#endif /* PASE */
+                                        || (curr->data_type == SQL_VARBINARY) || (curr->data_type == SQL_XML)) 
+                                {
+                                    if (curr->ivalue <= curr->param_size)
+                                    {
+                                        curr->ivalue = curr->param_size + sizeof(SQLWCHAR);
+                                    }
+                                }
+                                else
+                                {
+                                    if (curr->ivalue <= (curr->param_size * sizeof(SQLWCHAR)))
+                                    {
+                                        curr->ivalue = (curr->param_size + 1) * sizeof(SQLWCHAR);
+                                    }
+                                }
+                            }
+                        }
+
+                        if (isNewBuffer == 0 )
+                        {
+                            dest_uvalue = (char *)&curr->uvalue[0] + (curr->param_size * i);
+                            dest_uvalue = memcpy(dest_uvalue, tmp_uvalue, (param_length + sizeof(SQLWCHAR)));
+                            param_size = curr->param_size;
+                        }
+                        else if (param_length <= curr->param_size) 
+                        {
+                            dest_uvalue = (char *)&curr->uvalue[0] + (curr->param_size * i);
+                            dest_uvalue = memcpy(dest_uvalue, tmp_uvalue, (param_length + sizeof(SQLWCHAR)));
+                            PyMem_Del(tmp_uvalue);                  
+                            param_size = curr->param_size;
+                        }
+                        else if(curr->data_type == SQL_TYPE_TIMESTAMP)
+                        {
+                            dest_uvalue = (char *)&curr->uvalue[0] + (param_length * i);
+                            dest_uvalue = memcpy(dest_uvalue, tmp_uvalue, param_length);
+                            PyMem_Del(tmp_uvalue);
+                            param_size = param_length;
+                        }
+
+                        switch( curr->data_type )
+                        {
+                            case SQL_CLOB:
+                            case SQL_DBCLOB:
+                                if(curr->param_type == SQL_PARAM_OUTPUT || curr->param_type == SQL_PARAM_INPUT_OUTPUT)
+                                {
+                                    curr->bind_indicator_array[i] =  param_length;
+                                    paramValuePtr = (SQLPOINTER)curr->uvalue;
+                                }
+                                else
+                                {
+                                    curr->bind_indicator_array[i] = curr->ivalue;
+#ifndef PASE
+                                    paramValuePtr = (SQLPOINTER)(curr->uvalue);
+#else
+                                    paramValuePtr = (SQLPOINTER)&(curr->uvalue);
+#endif
+                                }
+                                valueType = SQL_C_WCHAR;
+                                break;
+
+                            case SQL_BLOB:
+                                if (curr->param_type == SQL_PARAM_OUTPUT ||curr->param_type == SQL_PARAM_INPUT_OUTPUT)
+                                {
+                                    curr->bind_indicator_array[i] = param_length;
+                                    paramValuePtr = (SQLPOINTER)curr->uvalue;
+                                }
+                                else
+                                {
+                                    curr->bind_indicator_array[i] = curr->ivalue;
+#ifndef PASE
+                                    paramValuePtr = (SQLPOINTER)(curr->uvalue);
+#else
+                                    paramValuePtr = (SQLPOINTER)&(curr->uvalue);
+#endif
+                                }
+                                valueType = SQL_C_BINARY;
+                                break;
+
+                            case SQL_BINARY:
+#ifndef PASE /* i5/OS SQL_LONGVARBINARY is SQL_VARBINARY */
+                            case SQL_LONGVARBINARY:
+#endif /* PASE */
+                            case SQL_VARBINARY:
+                                /* account for bin_mode settings as well */
+                                curr->bind_indicator_array[i] = param_length;
+                                valueType = SQL_C_BINARY;
+                                paramValuePtr = (SQLPOINTER)curr->uvalue;
+                                break;
+
+                            case SQL_XML:
+                                curr->bind_indicator_array[i] = param_length;
+                                paramValuePtr = (SQLPOINTER)curr->uvalue;
+                                valueType = SQL_C_WCHAR;
+                                break;
+
+                            case SQL_TYPE_TIMESTAMP:
+                                valueType = SQL_C_WCHAR;
+                                if( param_length == 0)
+                                {
+                                    curr->bind_indicator_array[i] = SQL_NULL_DATA;
+                                }
+                                else
+                                {
+                                    curr->bind_indicator_array[i] = param_length;
+                                }
+                                if(dest_uvalue[20] == 'T')
+                                {
+                                    dest_uvalue[20] = ' ';
+                                }
+                                paramValuePtr = (SQLPOINTER)(curr->uvalue);
+                                break;
+
+                            default:
+                                valueType = SQL_C_WCHAR;
+                                curr->bind_indicator_array[i] = param_length;
+                                paramValuePtr = (SQLPOINTER)(curr->uvalue);
+                        }
+                    }
+
+                    Py_BEGIN_ALLOW_THREADS;
+                    rc = SQLBindParameter(stmt_res->hstmt, curr->param_num, curr->param_type, valueType, 
+                            curr->data_type, curr->param_size, curr->scale, paramValuePtr, 
+                            param_size, &curr->bind_indicator_array[0]);
+                    Py_END_ALLOW_THREADS;
+
+                    if ( rc == SQL_ERROR || rc == SQL_SUCCESS_WITH_INFO )
+                    {
+                        _python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
+                    }
+                    curr->data_type = valueType;
+                }
+                else /* To bind scalar values */
+                {
+                    int isNewBuffer;
+                    if(PyObject_CheckBuffer(bind_data) && (curr->data_type == SQL_BLOB || curr->data_type == SQL_BINARY || curr->data_type == SQL_VARBINARY)) {
+#if  PY_MAJOR_VERSION >= 3
+                        Py_buffer tmp_buffer;
+                        PyObject_GetBuffer(bind_data, &tmp_buffer, PyBUF_SIMPLE);
+                        curr->uvalue = tmp_buffer.buf;
+                        curr->ivalue = tmp_buffer.len;
+#else
+                        PyObject_AsReadBuffer(bind_data, (const void **) &(curr->uvalue), &buffer_len);
+                        curr->ivalue = buffer_len;
+#endif
+                    } else {
+                        if(curr->uvalue != NULL) {
+                            PyMem_Del(curr->uvalue);
+                            curr->uvalue = NULL;
+                        }
+                        curr->uvalue = getUnicodeDataAsSQLWCHAR(bind_data, &isNewBuffer);
+                        curr->ivalue = PyUnicode_GetSize(bind_data);
+                        curr->ivalue = curr->ivalue * sizeof(SQLWCHAR);
+                    }
+                    param_length = curr->ivalue;
+                    if (curr->size != 0) {
+                        curr->ivalue = (curr->size + 1) * sizeof(SQLWCHAR);
+                    }
+
+                    if (curr->param_type == SQL_PARAM_OUTPUT || curr->param_type == SQL_PARAM_INPUT_OUTPUT) {
+                        if (curr->size == 0) {
+                            if ((curr->data_type == SQL_BLOB) || (curr->data_type == SQL_CLOB) || (curr->data_type == SQL_BINARY)
+#ifndef PASE /* i5/OS SQL_LONGVARBINARY is SQL_VARBINARY */
+                                    || (curr->data_type == SQL_LONGVARBINARY)
+#endif /* PASE */
+                                    || (curr->data_type == SQL_VARBINARY) || (curr->data_type == SQL_XML)) {
+                                if (curr->ivalue <= curr->param_size) {
+                                    curr->ivalue = curr->param_size + sizeof(SQLWCHAR);
+                                }
+                            } else {
+                                if (curr->ivalue <= (curr->param_size * sizeof(SQLWCHAR))) {
+                                    curr->ivalue = (curr->param_size + 1) * sizeof(SQLWCHAR);
+                                }
+                            }
+                        }
+                    }
+
+                    if (isNewBuffer == 0 ){
+                        /* actually make a copy, since this will uvalue will be freed explicitly */
+                        SQLWCHAR* tmp = (SQLWCHAR*)ALLOC_N(SQLWCHAR, curr->ivalue + 1);
+                        memcpy(tmp, curr->uvalue, (param_length + sizeof(SQLWCHAR)));
+                        curr->uvalue = tmp;
+                    } else if (param_length <= curr->param_size) {
+                        SQLWCHAR* tmp = (SQLWCHAR*)ALLOC_N(SQLWCHAR, curr->ivalue + 1);
+                        memcpy(tmp, curr->uvalue, (param_length + sizeof(SQLWCHAR)));
                         PyMem_Del(curr->uvalue);
-                        curr->uvalue = NULL;
+                        curr->uvalue = tmp;
                     }
-                    curr->uvalue = getUnicodeDataAsSQLWCHAR(bind_data, &isNewBuffer);
-                    curr->ivalue = PyUnicode_GetSize(bind_data);
-                    curr->ivalue = curr->ivalue * sizeof(SQLWCHAR);
-                }
-                param_length = curr->ivalue;
-                if (curr->size != 0) {
-                    curr->ivalue = (curr->size + 1) * sizeof(SQLWCHAR);
-                }
 
-                if (curr->param_type == SQL_PARAM_OUTPUT || curr->param_type == SQL_PARAM_INPUT_OUTPUT) {
-                    if (curr->size == 0) {
-                        if ((curr->data_type == SQL_BLOB) || (curr->data_type == SQL_CLOB) || (curr->data_type == SQL_BINARY)
+                    switch( curr->data_type){
+                        case SQL_CLOB:
+                        case SQL_DBCLOB:
+                            if(curr->param_type == SQL_PARAM_OUTPUT || curr->param_type == SQL_PARAM_INPUT_OUTPUT){
+                                curr->bind_indicator =  param_length;
+                                paramValuePtr = (SQLPOINTER)curr->uvalue;
+                            } else {
+                                curr->bind_indicator = SQL_DATA_AT_EXEC;
+#ifndef PASE
+                                paramValuePtr = (SQLPOINTER)(curr);
+#else
+                                paramValuePtr = (SQLPOINTER)&(curr);
+#endif
+                            }
+                            valueType = SQL_C_WCHAR;
+                            break;
+
+                        case SQL_BLOB:
+                            if (curr->param_type == SQL_PARAM_OUTPUT ||curr->param_type == SQL_PARAM_INPUT_OUTPUT) {
+                                curr->bind_indicator = param_length;
+                                paramValuePtr = (SQLPOINTER)curr;
+                            } else {
+                                curr->bind_indicator = SQL_DATA_AT_EXEC;
+#ifndef PASE
+                                paramValuePtr = (SQLPOINTER)(curr);
+#else
+                                paramValuePtr = (SQLPOINTER)&(curr);
+#endif
+                            }
+                            valueType = SQL_C_BINARY;
+                            break;
+
+                        case SQL_BINARY:
 #ifndef PASE /* i5/OS SQL_LONGVARBINARY is SQL_VARBINARY */
-                                || (curr->data_type == SQL_LONGVARBINARY)
+                        case SQL_LONGVARBINARY:
 #endif /* PASE */
-                                || (curr->data_type == SQL_VARBINARY) || (curr->data_type == SQL_XML)) {
-                            if (curr->ivalue <= curr->param_size) {
-                                curr->ivalue = curr->param_size + sizeof(SQLWCHAR);
-                            }
-                        } else {
-                            if (curr->ivalue <= (curr->param_size * sizeof(SQLWCHAR))) {
-                                curr->ivalue = (curr->param_size + 1) * sizeof(SQLWCHAR);
-                            }
-                        }
-                    }
-                }
-
-                if (isNewBuffer == 0 ){
-                    /* actually make a copy, since this will uvalue will be freed explicitly */
-                    SQLWCHAR* tmp = (SQLWCHAR*)ALLOC_N(SQLWCHAR, curr->ivalue + 1);
-                    memcpy(tmp, curr->uvalue, (param_length + sizeof(SQLWCHAR)));
-                    curr->uvalue = tmp;
-                } else if (param_length <= curr->param_size) {
-                    SQLWCHAR* tmp = (SQLWCHAR*)ALLOC_N(SQLWCHAR, curr->ivalue + 1);
-                    memcpy(tmp, curr->uvalue, (param_length + sizeof(SQLWCHAR)));
-                    PyMem_Del(curr->uvalue);
-                    curr->uvalue = tmp;
-                }
-
-                switch( curr->data_type){
-                    case SQL_CLOB:
-                    case SQL_DBCLOB:
-                        if(curr->param_type == SQL_PARAM_OUTPUT || curr->param_type == SQL_PARAM_INPUT_OUTPUT){
-                            curr->bind_indicator =  param_length;
+                        case SQL_VARBINARY:
+                            /* account for bin_mode settings as well */
+                            curr->bind_indicator = param_length;
+                            valueType = SQL_C_BINARY;
                             paramValuePtr = (SQLPOINTER)curr->uvalue;
-                        } else {
-                            curr->bind_indicator = SQL_DATA_AT_EXEC;
-#ifndef PASE
-                            paramValuePtr = (SQLPOINTER)(curr);
-#else
-                            paramValuePtr = (SQLPOINTER)&(curr);
-#endif
-                        }
-                        valueType = SQL_C_WCHAR;
-                        break;
+                            break;
 
-                    case SQL_BLOB:
-                        if (curr->param_type == SQL_PARAM_OUTPUT ||curr->param_type == SQL_PARAM_INPUT_OUTPUT) {
+                        case SQL_XML:
                             curr->bind_indicator = param_length;
-                            paramValuePtr = (SQLPOINTER)curr;
-                        } else {
-                            curr->bind_indicator = SQL_DATA_AT_EXEC;
-#ifndef PASE
-                            paramValuePtr = (SQLPOINTER)(curr);
-#else
-                            paramValuePtr = (SQLPOINTER)&(curr);
-#endif
-                        }
-                        valueType = SQL_C_BINARY;
-                        break;
-
-                    case SQL_BINARY:
-#ifndef PASE /* i5/OS SQL_LONGVARBINARY is SQL_VARBINARY */
-                    case SQL_LONGVARBINARY:
-#endif /* PASE */
-                    case SQL_VARBINARY:
-                        /* account for bin_mode settings as well */
-                        curr->bind_indicator = param_length;
-                        valueType = SQL_C_BINARY;
-                        paramValuePtr = (SQLPOINTER)curr->uvalue;
-                        break;
-
-                    case SQL_XML:
-                        curr->bind_indicator = param_length;
-                        paramValuePtr = (SQLPOINTER)curr->uvalue;
-                        valueType = SQL_C_WCHAR;
-                        break;
-                    case SQL_TYPE_TIMESTAMP:
-                        valueType = SQL_C_WCHAR;
-                        if( param_length == 0)
-                        {
-                            curr->bind_indicator = SQL_NULL_DATA;
-                        }
-                        else
-                        {
-                            curr->bind_indicator = param_length;
-                        }
-                        if(curr->uvalue[10] == 'T'){
-                            curr->uvalue[10] = ' ';
-                        }
-                        paramValuePtr = (SQLPOINTER)(curr->uvalue);
-                        break;
-                    default:
-                        valueType = SQL_C_WCHAR;
-                        curr->bind_indicator = param_length;
-                        paramValuePtr = (SQLPOINTER)(curr->uvalue);
-                }
-
-                Py_BEGIN_ALLOW_THREADS;
-                rc = SQLBindParameter(stmt_res->hstmt, curr->param_num, curr->param_type, valueType, curr->data_type, curr->param_size, curr->scale, paramValuePtr, curr->ivalue, &(curr->bind_indicator));
-                Py_END_ALLOW_THREADS;
-
-                if ( rc == SQL_ERROR || rc == SQL_SUCCESS_WITH_INFO ) {
-                    _python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
-                }
-                curr->data_type = valueType;
-            }
-            break;
-
-        case PYTHON_STRING:
-            {
-                char* tmp;
-                if (PyObject_CheckBuffer(bind_data) && (curr->data_type == SQL_BLOB || curr->data_type == SQL_BINARY
-                                         || curr->data_type == SQL_VARBINARY) ) {
-#if  PY_MAJOR_VERSION >= 3
-                    Py_buffer tmp_buffer;
-                    PyObject_GetBuffer(bind_data, &tmp_buffer, PyBUF_SIMPLE);
-                    curr->svalue = tmp_buffer.buf;
-                    curr->ivalue = tmp_buffer.len;
-#else
-                    PyObject_AsReadBuffer(bind_data, (const void **) &(curr->svalue), &buffer_len);
-                    curr->ivalue = buffer_len;
-#endif
-                } else {
-                    if(curr->svalue != NULL) {
-                        PyMem_Del(curr->svalue);
-                        curr->svalue = NULL;
-                    }
-                    curr->svalue = PyBytes_AsString(bind_data);   /** It is PyString_AsString() in PY_MAJOR_VERSION<3, and code execution will not come here in PY_MAJOR_VERSION>=3 **/
-                    curr->ivalue = strlen(curr->svalue);
-                }
-                param_length = curr->ivalue;
-                /*
-                * An extra parameter is given by the client to pick the size of the
-                * string returned. The string is then truncate past that size.
-                * If no size is given then use BUFSIZ to return the string.
-                */
-                if (curr->size != 0) {
-                    curr->ivalue = curr->size;
-                }
-
-                if (curr->param_type == SQL_PARAM_OUTPUT || curr->param_type == SQL_PARAM_INPUT_OUTPUT) {
-                    if (curr->size == 0) {
-                        if (curr->ivalue <= curr->param_size) {
-                            curr->ivalue = curr->param_size + 1;
-                        }
-                    }
-                }
-                tmp = ALLOC_N(char, curr->ivalue+1);
-                memset(tmp, 0, curr->ivalue+1);
-                curr->svalue = memcpy(tmp, curr->svalue, param_length);
-                curr->svalue[param_length] = '\0';
-
-                switch ( curr->data_type ) {
-                    case SQL_CLOB:
-                    case SQL_DBCLOB:
-                        if (curr->param_type == SQL_PARAM_OUTPUT ||
-                            curr->param_type == SQL_PARAM_INPUT_OUTPUT) {
-                            curr->bind_indicator = param_length;
-                            paramValuePtr = (SQLPOINTER)curr->svalue;
-                        } else {
-                            curr->bind_indicator = SQL_DATA_AT_EXEC;
-                            /* The correct dataPtr will be set during SQLPutData with
-                            * the len from this struct
-                            */
-#ifndef PASE
-                            paramValuePtr = (SQLPOINTER)(curr);
-#else
-                            paramValuePtr = (SQLPOINTER)&(curr);
-#endif
-                        }
-                        valueType = SQL_C_CHAR;
-                        break;
-
-                    case SQL_BLOB:
-                        if (curr->param_type == SQL_PARAM_OUTPUT ||
-                            curr->param_type == SQL_PARAM_INPUT_OUTPUT) {
-                            curr->ivalue = curr->ivalue -1;
-                            curr->bind_indicator = param_length;
-                            paramValuePtr = (SQLPOINTER)curr->svalue;
-                        } else {
-                            curr->bind_indicator = SQL_DATA_AT_EXEC;
-#ifndef PASE
-                            paramValuePtr = (SQLPOINTER)(curr);
-#else
-                            paramValuePtr = (SQLPOINTER)&(curr);
-#endif
-                        }
-                        valueType = SQL_C_BINARY;
-                        break;
-
-                    case SQL_BINARY:
-#ifndef PASE /* i5/OS SQL_LONGVARBINARY is SQL_VARBINARY */
-                    case SQL_LONGVARBINARY:
-#endif /* PASE */
-                    case SQL_VARBINARY:
-                    case SQL_XML:
-                        /* account for bin_mode settings as well */
-                        curr->bind_indicator = curr->ivalue;
-                        if (curr->param_type == SQL_PARAM_OUTPUT || curr->param_type == SQL_PARAM_INPUT_OUTPUT) {
-                            curr->ivalue = curr->ivalue - 1;
-                            curr->bind_indicator = param_length;
-                        }
-
-                        valueType = SQL_C_BINARY;
-                        paramValuePtr = (SQLPOINTER)curr->svalue;
-                        break;
-
-                        /* This option should handle most other types such as DATE,
-                        * VARCHAR etc
-                        */
-                    case SQL_TYPE_TIMESTAMP:
-                        valueType = SQL_C_CHAR;
-                        curr->bind_indicator = curr->ivalue;
-                        if (curr->param_type == SQL_PARAM_OUTPUT || curr->param_type == SQL_PARAM_INPUT_OUTPUT) {
+                            paramValuePtr = (SQLPOINTER)curr->uvalue;
+                            valueType = SQL_C_WCHAR;
+                            break;
+                        case SQL_TYPE_TIMESTAMP:
+                            valueType = SQL_C_WCHAR;
                             if( param_length == 0)
                             {
                                 curr->bind_indicator = SQL_NULL_DATA;
                             }
                             else
                             {
-                                curr->bind_indicator = SQL_NTS;
+                                curr->bind_indicator = param_length;
+                            }
+                            if(curr->uvalue[10] == 'T'){
+                                curr->uvalue[10] = ' ';
+                            }
+                            paramValuePtr = (SQLPOINTER)(curr->uvalue);
+                            break;
+                        default:
+                            valueType = SQL_C_WCHAR;
+                            curr->bind_indicator = param_length;
+                            paramValuePtr = (SQLPOINTER)(curr->uvalue);
+                   }
+
+                    Py_BEGIN_ALLOW_THREADS;
+                    rc = SQLBindParameter(stmt_res->hstmt, curr->param_num, curr->param_type, valueType, curr->data_type, curr->param_size, curr->scale, paramValuePtr, curr->ivalue, &(curr->bind_indicator));
+                    Py_END_ALLOW_THREADS;
+
+                    if ( rc == SQL_ERROR || rc == SQL_SUCCESS_WITH_INFO ) {
+                        _python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
+                    }
+                    curr->data_type = valueType;
+                }
+            }
+            break;
+
+        case PYTHON_STRING:
+            {
+                /* To Bind array of values */
+                if(TYPE(bind_data) == PYTHON_LIST)
+                {
+                    Py_ssize_t n = PyList_Size(bind_data);
+                    curr->svalue = (char *)ALLOC_N(char, curr->param_size * (n));
+                    curr->bind_indicator_array = (SQLINTEGER *) ALLOC_N(SQLINTEGER, n);
+                    memset(curr->svalue , 0, curr->param_size * n);
+
+                    for (int i = 0; i < n; i++)
+                    {
+                        item = PyList_GetItem(bind_data, i);
+
+                        char *tmp_svalue = NULL;
+                        char *dest_svalue = NULL;
+                        if (PyObject_CheckBuffer(item) && (curr->data_type == SQL_BLOB      || 
+                                                           curr->data_type == SQL_BINARY   ||
+                                                           curr->data_type == SQL_VARBINARY) )
+                        {
+#if  PY_MAJOR_VERSION >= 3
+                            Py_buffer tmp_buffer;
+                            PyObject_GetBuffer(item, &tmp_buffer, PyBUF_SIMPLE);
+                            tmp_svalue = tmp_buffer.buf;
+                            curr->ivalue = tmp_buffer.len;
+#else
+                            PyObject_AsReadBuffer(item, (const void **) &tmp_svalue, &buffer_len);
+                            curr->ivalue = buffer_len;
+#endif
+                        }
+                        else
+                        {
+                            if(tmp_svalue != NULL)
+                            {
+                                PyMem_Del(tmp_svalue);
+                                tmp_svalue = NULL;
+                            }
+                            tmp_svalue = PyBytes_AsString(item);   /** It is PyString_AsString() in PY_MAJOR_VERSION<3, and code execution will not come here in PY_MAJOR_VERSION>=3 **/
+                            curr->ivalue = strlen(tmp_svalue);
+                        }
+                        param_length = curr->ivalue;
+                        /*
+                         * * An extra parameter is given by the client to pick the size of the
+                         * * string returned. The string is then truncate past that size.
+                         * * If no size is given then use BUFSIZ to return the string.
+                         * */
+                        if (curr->size != 0)
+                        {
+                            curr->ivalue = curr->size;
+                        }
+
+                        if (curr->param_type == SQL_PARAM_OUTPUT || curr->param_type == SQL_PARAM_INPUT_OUTPUT)
+                        {
+                            if (curr->size == 0)
+                            {
+                                if (curr->ivalue <= curr->param_size)
+                                {
+                                    curr->ivalue = curr->param_size + 1;
+                                }
                             }
                         }
-                        if(curr->svalue[10] == 'T'){
-                            curr->svalue[10] = ' ';
-                        }
-                        paramValuePtr = (SQLPOINTER)(curr->svalue);
-                        break;
-                    default:
-                        valueType = SQL_C_CHAR;
-                        curr->bind_indicator = curr->ivalue;
-                        if (curr->param_type == SQL_PARAM_OUTPUT || curr->param_type == SQL_PARAM_INPUT_OUTPUT) {
-                            curr->bind_indicator = SQL_NTS;
-                        }
-                        paramValuePtr = (SQLPOINTER)(curr->svalue);
-                }
 
-                Py_BEGIN_ALLOW_THREADS;
-                rc = SQLBindParameter(stmt_res->hstmt, curr->param_num,
-                    curr->param_type, valueType, curr->data_type, curr->param_size,
-                    curr->scale, paramValuePtr, curr->ivalue, &(curr->bind_indicator));
-                Py_END_ALLOW_THREADS;
+                        dest_svalue = &curr->svalue[0] + (curr->param_size * i);
+                        dest_svalue = memcpy(dest_svalue, tmp_svalue, param_length);
 
-                if ( rc == SQL_ERROR || rc == SQL_SUCCESS_WITH_INFO ) {
-                    _python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT,
-                                                rc, 1, NULL, -1, 1);
+                        switch ( curr->data_type )
+                        {
+                            case SQL_CLOB:
+                            case SQL_DBCLOB:
+                                if (curr->param_type == SQL_PARAM_OUTPUT || curr->param_type == SQL_PARAM_INPUT_OUTPUT)
+                                {
+                                    curr->bind_indicator_array[i] = param_length;
+                                    paramValuePtr = (SQLPOINTER)curr->svalue;
+                                }
+                                else
+                                {
+                                    curr->bind_indicator_array[i] = curr->ivalue;
+                                    /* The correct dataPtr will be set during SQLPutData with
+                                     * * the len from this struct
+                                     * */
+#ifndef PASE
+                                    paramValuePtr = (SQLPOINTER)(curr->svalue);
+#else
+                                    paramValuePtr = (SQLPOINTER)&(curr->svalue);
+#endif
+                                }
+                                valueType = SQL_C_CHAR;
+                                break;
+
+                            case SQL_BLOB:
+                                if (curr->param_type == SQL_PARAM_OUTPUT || curr->param_type == SQL_PARAM_INPUT_OUTPUT) 
+                                {
+                                    curr->ivalue = curr->ivalue - 1;
+                                    curr->bind_indicator_array[i] = param_length;
+                                    paramValuePtr = (SQLPOINTER)curr->svalue;
+                                } 
+                                else 
+                                {
+                                    curr->bind_indicator_array[i] = curr->ivalue;
+#ifndef PASE
+                                    paramValuePtr = (SQLPOINTER)(curr->svalue);
+#else
+                                    paramValuePtr = (SQLPOINTER)&(curr->svalue);
+#endif
+                                }
+                                valueType = SQL_C_BINARY;
+                                break;
+
+                            case SQL_BINARY:
+#ifndef PASE /* i5/OS SQL_LONGVARBINARY is SQL_VARBINARY */
+                            case SQL_LONGVARBINARY:
+#endif /* PASE */
+                            case SQL_VARBINARY:
+                            case SQL_XML:
+                                /* account for bin_mode settings as well */
+                                curr->bind_indicator_array[i] = curr->ivalue;
+                                if (curr->param_type == SQL_PARAM_OUTPUT || curr->param_type == SQL_PARAM_INPUT_OUTPUT) 
+                                {
+                                    curr->ivalue = curr->ivalue - 1;
+                                    curr->bind_indicator_array[i] = param_length;
+                                }
+
+                                valueType = SQL_C_BINARY;
+                                paramValuePtr = (SQLPOINTER)curr->svalue;
+                                break;
+
+                                /* This option should handle most other types such as DATE,
+                                 * * VARCHAR etc
+                                 * */
+                            case SQL_TYPE_TIMESTAMP:
+                                valueType = SQL_C_CHAR;
+                                curr->bind_indicator_array[i] = curr->ivalue;
+                                if (curr->param_type == SQL_PARAM_OUTPUT || curr->param_type == SQL_PARAM_INPUT_OUTPUT) 
+                                {
+                                    if( param_length == 0)
+                                    {
+                                        curr->bind_indicator_array[i] = SQL_NULL_DATA;
+                                    }
+                                    else
+                                    {
+                                        curr->bind_indicator_array[i] = SQL_NTS;
+                                    }
+                                }
+                                if(dest_svalue[10] == 'T')
+                                {
+                                    dest_svalue[10] = ' ';
+                                }
+                                paramValuePtr = (SQLPOINTER)(curr->svalue);
+                                break;
+
+                            default:
+                                valueType = SQL_C_CHAR;
+                                curr->bind_indicator_array[i] = curr->ivalue;
+                                if (curr->param_type == SQL_PARAM_OUTPUT || curr->param_type == SQL_PARAM_INPUT_OUTPUT) 
+                                {
+                                    curr->bind_indicator_array[i] = SQL_NTS;
+                                }
+                                paramValuePtr = (SQLPOINTER)(curr->svalue);
+                        }
+                    }
+
+                    Py_BEGIN_ALLOW_THREADS;
+                    rc = SQLBindParameter(stmt_res->hstmt, curr->param_num,
+                            curr->param_type, valueType, curr->data_type, curr->param_size,
+                            curr->scale, paramValuePtr, curr->param_size, &curr->bind_indicator_array[0]);
+                    Py_END_ALLOW_THREADS;
+
+                    if ( rc == SQL_ERROR || rc == SQL_SUCCESS_WITH_INFO ) {
+                        _python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT,
+                                rc, 1, NULL, -1, 1);
+                    }
+                    curr->data_type = valueType;
                 }
-                curr->data_type = valueType;
+                else /* To bind scalar values */
+                {
+                    char* tmp;
+                    if (PyObject_CheckBuffer(bind_data) && (curr->data_type == SQL_BLOB   || 
+                                                            curr->data_type == SQL_BINARY ||
+                                                            curr->data_type == SQL_VARBINARY) )
+                    {
+#if  PY_MAJOR_VERSION >= 3
+                        Py_buffer tmp_buffer;
+                        PyObject_GetBuffer(bind_data, &tmp_buffer, PyBUF_SIMPLE);
+                        curr->svalue = tmp_buffer.buf;
+                        curr->ivalue = tmp_buffer.len;
+#else
+                       PyObject_AsReadBuffer(bind_data, (const void **) &(curr->svalue), &buffer_len);
+                        curr->ivalue = buffer_len;
+#endif
+                    }
+                    else
+                    {
+                        if(curr->svalue != NULL)
+                        {
+                            PyMem_Del(curr->svalue);
+                            curr->svalue = NULL;
+                        }
+                        curr->svalue = PyBytes_AsString(bind_data);   /** It is PyString_AsString() in PY_MAJOR_VERSION<3, and code execution will not come here in PY_MAJOR_VERSION>=3 **/
+                        curr->ivalue = strlen(curr->svalue);
+                    }
+                    param_length = curr->ivalue;
+                    /*
+                    * An extra parameter is given by the client to pick the size of the
+                    * string returned. The string is then truncate past that size.
+                    * If no size is given then use BUFSIZ to return the string.
+                    */
+                    if (curr->size != 0) 
+                    {
+                        curr->ivalue = curr->size;
+                    }
+
+                    if (curr->param_type == SQL_PARAM_OUTPUT || curr->param_type == SQL_PARAM_INPUT_OUTPUT) 
+                    {
+                        if (curr->size == 0)
+                        {
+                            if (curr->ivalue <= curr->param_size)
+                            {
+                                curr->ivalue = curr->param_size + 1;
+                            }
+                        }
+                    }
+
+                    tmp = ALLOC_N(char, curr->ivalue+1);
+                    memset(tmp, 0, curr->ivalue+1);
+                    curr->svalue = memcpy(tmp, curr->svalue, param_length);
+                    curr->svalue[param_length] = '\0';
+
+                    switch ( curr->data_type )
+                    {
+                        case SQL_CLOB:
+                        case SQL_DBCLOB:
+                            if (curr->param_type == SQL_PARAM_OUTPUT ||
+                                curr->param_type == SQL_PARAM_INPUT_OUTPUT)
+                            {
+                                curr->bind_indicator = param_length;
+                                paramValuePtr = (SQLPOINTER)curr->svalue;
+                            } 
+                            else
+                            {
+                                curr->bind_indicator = SQL_DATA_AT_EXEC;
+                                /* The correct dataPtr will be set during SQLPutData with
+                                * the len from this struct
+                                */
+#ifndef PASE
+                                paramValuePtr = (SQLPOINTER)(curr);
+#else
+                                paramValuePtr = (SQLPOINTER)&(curr);
+#endif
+                            }
+                            valueType = SQL_C_CHAR;
+                            break;
+
+                        case SQL_BLOB:
+                            if (curr->param_type == SQL_PARAM_OUTPUT ||
+                                curr->param_type == SQL_PARAM_INPUT_OUTPUT)
+                            {
+                                curr->ivalue = curr->ivalue -1;
+                                curr->bind_indicator = param_length;
+                                paramValuePtr = (SQLPOINTER)curr->svalue;
+                            }
+                            else
+                            {
+                                curr->bind_indicator = SQL_DATA_AT_EXEC;
+#ifndef PASE
+                                paramValuePtr = (SQLPOINTER)(curr);
+#else
+                                paramValuePtr = (SQLPOINTER)&(curr);
+#endif
+                            }
+                            valueType = SQL_C_BINARY;
+                            break;
+
+                        case SQL_BINARY:
+#ifndef PASE /* i5/OS SQL_LONGVARBINARY is SQL_VARBINARY */
+                        case SQL_LONGVARBINARY:
+#endif /* PASE */
+                        case SQL_VARBINARY:
+                        case SQL_XML:
+                            /* account for bin_mode settings as well */
+                            curr->bind_indicator = curr->ivalue;
+                            if (curr->param_type == SQL_PARAM_OUTPUT || curr->param_type == SQL_PARAM_INPUT_OUTPUT)
+                            {
+                                curr->ivalue = curr->ivalue - 1;
+                                curr->bind_indicator = param_length;
+                            }
+
+                            valueType = SQL_C_BINARY;
+                            paramValuePtr = (SQLPOINTER)curr->svalue;
+                            break;
+
+                            /* This option should handle most other types such as DATE,
+                            * VARCHAR etc
+                            */
+                        case SQL_TYPE_TIMESTAMP:
+                            valueType = SQL_C_CHAR;
+                            curr->bind_indicator = curr->ivalue;
+                            if (curr->param_type == SQL_PARAM_OUTPUT || curr->param_type == SQL_PARAM_INPUT_OUTPUT)
+                            {
+                                if( param_length == 0)
+                                {
+                                    curr->bind_indicator = SQL_NULL_DATA;
+                                }
+                                else
+                                {
+                                    curr->bind_indicator = SQL_NTS;
+                                }
+                            }
+                            if(curr->svalue[10] == 'T')
+                            {
+                                curr->svalue[10] = ' ';
+                            }
+                            paramValuePtr = (SQLPOINTER)(curr->svalue);
+                            break;
+                        default:
+                            valueType = SQL_C_CHAR;
+                            curr->bind_indicator = curr->ivalue;
+                            if (curr->param_type == SQL_PARAM_OUTPUT || curr->param_type == SQL_PARAM_INPUT_OUTPUT)
+                            {
+                                curr->bind_indicator = SQL_NTS;
+                            }
+                            paramValuePtr = (SQLPOINTER)(curr->svalue);
+                    }
+
+                    Py_BEGIN_ALLOW_THREADS;
+                    rc = SQLBindParameter(stmt_res->hstmt, curr->param_num,
+                        curr->param_type, valueType, curr->data_type, curr->param_size,
+                        curr->scale, paramValuePtr, curr->ivalue, &(curr->bind_indicator));
+                    Py_END_ALLOW_THREADS;
+
+                    if ( rc == SQL_ERROR || rc == SQL_SUCCESS_WITH_INFO ) {
+                        _python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT,
+                                                    rc, 1, NULL, -1, 1);
+                    }
+                    curr->data_type = valueType;
+                }
             }
             break;
 
         case PYTHON_DECIMAL:
-            if (curr->data_type == SQL_DECIMAL || curr->data_type == SQL_DECFLOAT) {
-                PyObject *tempobj = NULL;
+            if (curr->data_type == SQL_DECIMAL || curr->data_type == SQL_DECFLOAT)
+            {
+                if(TYPE(bind_data) == PYTHON_LIST)
+                {   
+                    char *svalue = NULL;
+                    Py_ssize_t n = PyList_Size(bind_data);
+                    int max_precn = 0;
+
+                    if(curr->data_type == SQL_DECIMAL)
+                        max_precn = MAX_PRECISION;
+                    else // SQL_DECFLOAT
+                        max_precn = curr->param_size;
+
+                    if(curr->svalue != NULL)
+                    {
+                        PyMem_Del(curr->svalue);
+                        curr->svalue = NULL;
+                    }
+
+                    curr->svalue = (char *)ALLOC_N(char, max_precn * n);
+                    curr->bind_indicator_array = (SQLINTEGER *) ALLOC_N(SQLINTEGER, n);
+                    memset(curr->svalue , 0, max_precn * n);
+
+                    for (int i = 0; i < n; i++)
+                    {
+                        PyObject *tempobj = NULL;
+#if  PY_MAJOR_VERSION >= 3
+                        PyObject *tempobj2 = NULL;
+#endif
+                        item = PyList_GetItem(bind_data, i);
+                        tempobj = PyObject_Str(item);
+#if PY_MAJOR_VERSION >= 3
+                        tempobj2 = PyUnicode_AsASCIIString(tempobj);
+                        Py_XDECREF(tempobj);
+                        tempobj = tempobj2;
+#endif
+                        svalue = PyBytes_AsString(tempobj);
+                        curr->ivalue = strlen(svalue);
+                        memcpy(curr->svalue + (i * max_precn), svalue, curr->ivalue);           
+                        valueType = SQL_C_CHAR;
+                        paramValuePtr = (SQLPOINTER)(curr->svalue);
+                        curr->bind_indicator_array[i] = curr->ivalue;
+                        Py_XDECREF(tempobj);
+                    }
+
+                    Py_BEGIN_ALLOW_THREADS;
+                    rc = SQLBindParameter(stmt_res->hstmt, curr->param_num, curr->param_type, valueType, 
+                            curr->data_type, curr->param_size, curr->scale, 
+                            paramValuePtr, max_precn, curr->bind_indicator_array);
+                    Py_END_ALLOW_THREADS;
+
+                    if ( rc == SQL_ERROR || rc == SQL_SUCCESS_WITH_INFO )
+                    {
+                        _python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT,rc, 1, NULL, -1, 1);
+                    }
+                    curr->data_type = valueType;
+                }
+                else /* To bind scalar values */
+                {
+                    PyObject *tempobj = NULL;
 #if  PY_MAJOR_VERSION >= 3
                     PyObject *tempobj2 = NULL;
 #endif
-                if(curr->svalue != NULL) {
-                    PyMem_Del(curr->svalue);
-                    curr->svalue = NULL;
-                }
-                tempobj = PyObject_Str(bind_data);
+                    if(curr->svalue != NULL) {
+                        PyMem_Del(curr->svalue);
+                        curr->svalue = NULL;
+                    }
+                    tempobj = PyObject_Str(bind_data);
 #if PY_MAJOR_VERSION >= 3
-                tempobj2 = PyUnicode_AsASCIIString(tempobj);
-                Py_XDECREF(tempobj);
-                tempobj = tempobj2;
+                    tempobj2 = PyUnicode_AsASCIIString(tempobj);
+                    Py_XDECREF(tempobj);
+                    tempobj = tempobj2;
 #endif
-                curr->svalue = PyBytes_AsString(tempobj);
-                curr->ivalue = strlen(curr->svalue);
-                curr->svalue = estrdup(curr->svalue);
-                curr->svalue[curr->ivalue] = '\0';
-                valueType = SQL_C_CHAR;
-                paramValuePtr = (SQLPOINTER)(curr->svalue);
-                curr->bind_indicator = curr->ivalue;
+                    curr->svalue = PyBytes_AsString(tempobj);
+                    curr->ivalue = strlen(curr->svalue);
+                    curr->svalue = estrdup(curr->svalue);
+                    curr->svalue[curr->ivalue] = '\0';
+                    valueType = SQL_C_CHAR;
+                    paramValuePtr = (SQLPOINTER)(curr->svalue);
+                    curr->bind_indicator = curr->ivalue;
 
-                Py_BEGIN_ALLOW_THREADS;
-                rc = SQLBindParameter(stmt_res->hstmt, curr->param_num, curr->param_type, valueType, curr->data_type, curr->param_size, curr->scale, paramValuePtr, curr->ivalue, &(curr->bind_indicator));
-                Py_END_ALLOW_THREADS;
+                    Py_BEGIN_ALLOW_THREADS;
+                    rc = SQLBindParameter(stmt_res->hstmt, curr->param_num, curr->param_type, valueType, 
+                            curr->data_type, curr->param_size, curr->scale, 
+                            paramValuePtr, curr->ivalue, &(curr->bind_indicator));
+                    Py_END_ALLOW_THREADS;
 
-                if ( rc == SQL_ERROR || rc == SQL_SUCCESS_WITH_INFO ) {
-                    _python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT,rc, 1, NULL, -1, 1);
+                    if ( rc == SQL_ERROR || rc == SQL_SUCCESS_WITH_INFO ) {
+                        _python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT,rc, 1, NULL, -1, 1);
+                    }
+                    curr->data_type = valueType;
+                    Py_XDECREF(tempobj);
                 }
-                curr->data_type = valueType;
-                Py_XDECREF(tempobj);
                 break;
             }
 
 
         case PYTHON_DATE:
-            curr->date_value = ALLOC(DATE_STRUCT);
-            curr->date_value->year = PyDateTime_GET_YEAR(bind_data);
-            curr->date_value->month = PyDateTime_GET_MONTH(bind_data);
-            curr->date_value->day = PyDateTime_GET_DAY(bind_data);
+            if(TYPE(bind_data) == PYTHON_LIST)
+            {   
+                Py_ssize_t n = PyList_Size(bind_data);
+                curr->date_value = ALLOC_N(DATE_STRUCT, n);
 
-            Py_BEGIN_ALLOW_THREADS;
-            rc = SQLBindParameter(stmt_res->hstmt, curr->param_num,
-                curr->param_type, SQL_C_TYPE_DATE, curr->data_type, curr->param_size,
-                curr->scale, curr->date_value, curr->ivalue, &(curr->bind_indicator));
-            Py_END_ALLOW_THREADS;
+                for (int i = 0; i < n; i++)
+                {
+                    item = PyList_GetItem(bind_data, i);
+                    (curr->date_value + i)->year = PyDateTime_GET_YEAR(item);
+                    (curr->date_value + i)->month = PyDateTime_GET_MONTH(item);
+                    (curr->date_value + i)->day = PyDateTime_GET_DAY(item);
+                }
+
+                Py_BEGIN_ALLOW_THREADS;
+                rc = SQLBindParameter(stmt_res->hstmt, curr->param_num,
+                        curr->param_type, SQL_C_TYPE_DATE, curr->data_type, curr->param_size,
+                        curr->scale, curr->date_value, curr->ivalue, curr->bind_indicator_array);
+                Py_END_ALLOW_THREADS;
+            }
+            else
+            {
+                curr->date_value = ALLOC(DATE_STRUCT);
+                curr->date_value->year = PyDateTime_GET_YEAR(bind_data);
+                curr->date_value->month = PyDateTime_GET_MONTH(bind_data);
+                curr->date_value->day = PyDateTime_GET_DAY(bind_data);
+
+                Py_BEGIN_ALLOW_THREADS;
+                rc = SQLBindParameter(stmt_res->hstmt, curr->param_num,
+                    curr->param_type, SQL_C_TYPE_DATE, curr->data_type, curr->param_size,
+                    curr->scale, curr->date_value, curr->ivalue, &(curr->bind_indicator));
+                Py_END_ALLOW_THREADS;
+            }
             break;
 
         case PYTHON_TIME:
-            curr->time_value = ALLOC(TIME_STRUCT);
-            curr->time_value->hour = PyDateTime_TIME_GET_HOUR(bind_data);
-            curr->time_value->minute = PyDateTime_TIME_GET_MINUTE(bind_data);
-            curr->time_value->second = PyDateTime_TIME_GET_SECOND(bind_data);
+            if(TYPE(bind_data) == PYTHON_LIST)
+            {
+                Py_ssize_t n = PyList_Size(bind_data);
+                curr->time_value = ALLOC_N(TIME_STRUCT, n);
 
-            Py_BEGIN_ALLOW_THREADS;
-            rc = SQLBindParameter(stmt_res->hstmt, curr->param_num,
-                curr->param_type, SQL_C_TYPE_TIME, curr->data_type, curr->param_size,
-                curr->scale, curr->time_value, curr->ivalue, &(curr->bind_indicator));
-            Py_END_ALLOW_THREADS;
+                for (int i = 0; i < n; i++)
+                {
+                    item = PyList_GetItem(bind_data, i);
+                    (curr->time_value + i)->hour = PyDateTime_TIME_GET_HOUR(item);
+                    (curr->time_value + i)->minute = PyDateTime_TIME_GET_MINUTE(item);
+                    (curr->time_value + i)->second = PyDateTime_TIME_GET_SECOND(item);
+                }
+
+                Py_BEGIN_ALLOW_THREADS;
+                rc = SQLBindParameter(stmt_res->hstmt, curr->param_num,
+                        curr->param_type, SQL_C_TYPE_TIME, curr->data_type, curr->param_size,
+                        curr->scale, curr->time_value, curr->ivalue, curr->bind_indicator_array);
+                Py_END_ALLOW_THREADS;
+            }
+            else
+            {
+                curr->time_value = ALLOC(TIME_STRUCT);
+                curr->time_value->hour = PyDateTime_TIME_GET_HOUR(bind_data);
+                curr->time_value->minute = PyDateTime_TIME_GET_MINUTE(bind_data);
+                curr->time_value->second = PyDateTime_TIME_GET_SECOND(bind_data);
+
+                Py_BEGIN_ALLOW_THREADS;
+                rc = SQLBindParameter(stmt_res->hstmt, curr->param_num,
+                    curr->param_type, SQL_C_TYPE_TIME, curr->data_type, curr->param_size,
+                    curr->scale, curr->time_value, curr->ivalue, &(curr->bind_indicator));
+                Py_END_ALLOW_THREADS;
+            }
             break;
 
         case PYTHON_TIMESTAMP:
-            curr->ts_value = ALLOC(TIMESTAMP_STRUCT);
-            curr->ts_value->year = PyDateTime_GET_YEAR(bind_data);
-            curr->ts_value->month = PyDateTime_GET_MONTH(bind_data);
-            curr->ts_value->day = PyDateTime_GET_DAY(bind_data);
-            curr->ts_value->hour = PyDateTime_DATE_GET_HOUR(bind_data);
-            curr->ts_value->minute = PyDateTime_DATE_GET_MINUTE(bind_data);
-            curr->ts_value->second = PyDateTime_DATE_GET_SECOND(bind_data);
-            curr->ts_value->fraction = PyDateTime_DATE_GET_MICROSECOND(bind_data) * 1000;
+            if(TYPE(bind_data) == PYTHON_LIST)
+            {   
+                Py_ssize_t n = PyList_Size(bind_data);
+                curr->ts_value = ALLOC_N(TIMESTAMP_STRUCT, n);
 
-            Py_BEGIN_ALLOW_THREADS;
-            rc = SQLBindParameter(stmt_res->hstmt, curr->param_num,
-                curr->param_type, SQL_C_TYPE_TIMESTAMP, curr->data_type, curr->param_size,
-                curr->scale, curr->ts_value, curr->ivalue, &(curr->bind_indicator));
-            Py_END_ALLOW_THREADS;
+                for (int i = 0; i < n; i++)
+                {       
+                    item = PyList_GetItem(bind_data, i);
+                    (curr->ts_value + i)->year = PyDateTime_GET_YEAR(item);
+                    (curr->ts_value + i)->month = PyDateTime_GET_MONTH(item);
+                    (curr->ts_value + i)->day = PyDateTime_GET_DAY(item);
+                    (curr->ts_value + i)->hour = PyDateTime_DATE_GET_HOUR(item);
+                    (curr->ts_value + i)->minute = PyDateTime_DATE_GET_MINUTE(item);
+                    (curr->ts_value + i)->second = PyDateTime_DATE_GET_SECOND(item);
+                    (curr->ts_value + i)->fraction = PyDateTime_DATE_GET_MICROSECOND(item) * 1000;
+                }
+
+                Py_BEGIN_ALLOW_THREADS;
+                rc = SQLBindParameter(stmt_res->hstmt, curr->param_num,
+                        curr->param_type, SQL_C_TYPE_TIMESTAMP, curr->data_type, curr->param_size,
+                        curr->scale, curr->ts_value, curr->ivalue, curr->bind_indicator_array);
+                Py_END_ALLOW_THREADS;
+            }
+            else
+            {
+                curr->ts_value = ALLOC(TIMESTAMP_STRUCT);
+                curr->ts_value->year = PyDateTime_GET_YEAR(bind_data);
+                curr->ts_value->month = PyDateTime_GET_MONTH(bind_data);
+                curr->ts_value->day = PyDateTime_GET_DAY(bind_data);
+                curr->ts_value->hour = PyDateTime_DATE_GET_HOUR(bind_data);
+                curr->ts_value->minute = PyDateTime_DATE_GET_MINUTE(bind_data);
+                curr->ts_value->second = PyDateTime_DATE_GET_SECOND(bind_data);
+                curr->ts_value->fraction = PyDateTime_DATE_GET_MICROSECOND(bind_data) * 1000;
+
+                Py_BEGIN_ALLOW_THREADS;
+                rc = SQLBindParameter(stmt_res->hstmt, curr->param_num,
+                    curr->param_type, SQL_C_TYPE_TIMESTAMP, curr->data_type, curr->param_size,
+                    curr->scale, curr->ts_value, curr->ivalue, &(curr->bind_indicator));
+                Py_END_ALLOW_THREADS;
+            }
             break;
 
         case PYTHON_NIL:
@@ -11301,6 +11941,9 @@ static int _python_get_variable_type(PyObject *variable_value)
     else if (PyNumber_Check(variable_value)){
         return PYTHON_DECIMAL;
     }
+    else if (PyList_Check(variable_value)){
+            return PYTHON_LIST;
+        }
     else if (variable_value == Py_None){
         return PYTHON_NIL;
     }
@@ -11519,5 +12162,8 @@ INIT_ibm_db(void) {
     Py_INCREF(&server_infoType);
     PyModule_AddObject(m, "IBM_DBServerInfo", (PyObject *)&server_infoType);
     PyModule_AddIntConstant(m, "SQL_ATTR_QUERY_TIMEOUT", SQL_ATTR_QUERY_TIMEOUT);
+    PyModule_AddIntConstant(m, "SQL_ATTR_PARAMSET_SIZE", SQL_ATTR_PARAMSET_SIZE);
+    PyModule_AddIntConstant(m, "SQL_ATTR_PARAM_BIND_TYPE", SQL_ATTR_PARAM_BIND_TYPE);
+    PyModule_AddIntConstant(m, "SQL_PARAM_BIND_BY_COLUMN", SQL_PARAM_BIND_BY_COLUMN);
     return MOD_RETURN_VAL(m);
 }
