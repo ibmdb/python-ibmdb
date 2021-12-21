@@ -18,7 +18,7 @@ class IbmDbTestCase(unittest.TestCase):
         obj.assert_expect(self.run_test_checkBooleanType)
 
     def run_test_checkBooleanType(self):
-        conn = ibm_db.connect(config.database, config.user, config.password)
+        conn = ibm_db.connect("DATABASE=" + config.database + ";HOSTNAME=" + config.hostname + ";PORT=" + str(config.port) + ";UID=" + config.user + ";PWD=" + config.password + ";PROTOCOL=TCPIP;PATCH2=88", config.user, config.password)
         if (not conn):
             print("Could not make a connection.")
             return 0

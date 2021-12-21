@@ -66,14 +66,14 @@ class IbmDbTestCase(unittest.TestCase):
 
             ibm_db.close(conn)
         except Exception as e:
-            print("Error:{}".format(str(e))) 
-            
+            print("Error:{}".format(str(e)))
+
 
 #__END__
 #__LUW_EXPECTED__
-#1
+#True
 #bindparam true
-#0
+#False
 #bindparam false
 #None
 #bindparam None

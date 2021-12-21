@@ -7,6 +7,14 @@ import glob
 import config
 import importlib
 
+_HTML_RUNNER = False
+
+try:
+    import HtmlTestRunner
+    _HTML_RUNNER = True
+except ImportError as e:
+    print("HtmlTestRunner Package not found .. Running with normal unit test runs")
+
 # Test runner for ibm_db. Normally one could use something like:
 #
 # Run all in the tests directory:
@@ -57,4 +65,7 @@ def load_tests(loader, tests, pattern):
 
 if __name__ == '__main__':
     sys.path.insert(0, config.test_dir)
-    unittest.main(verbosity=3)
+    if(_HTML_RUNNER):
+        unittest.main(testRunner=HtmlTestRunner.HTMLTestRunner(report_name='result',combine_reports=True))
+    else:
+        unittest.main(verbosity=3)
