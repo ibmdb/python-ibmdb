@@ -35,12 +35,17 @@ class IbmDbTestCase(unittest.TestCase):
             # Create the table of all data types
             if (serverinfo.DBMS_NAME[0:3] == 'IDS'):
                 create = "CREATE TABLE TESTTYPES(C1 BIGINT, C2 BOOLEAN, C3 BOOLEAN, C4 DATE, C5 DECIMAL(16), C6 DECIMAL(34), C7 DECIMAL(16,2), C8 DECIMAL(16,2), C9 DECIMAL(16,2), C10 INTEGER, C11 BINARY(30), C12 BLOB(30), C13 Char(30), C14 CLOB(30), C15 DBCLOB(30), C16 TIMESTAMP, C17 VARBINARY(30), C18 VARChar(30), C19 TIME, C20 TIMESTAMP, C21 BINARY(40), C22 BLOB(40), C23 Char(40), C24 CLOB(40), C25 DBCLOB(40), C26 TIMESTAMP, C27 VARBINARY(40), C28 VARChar(40))"
+            elif (serverinfo.DBMS_NAME =="DB2"):
+                create = "CREATE TABLE TESTTYPES(C1 BIGINT, C2 DATE, C3 DECFLOAT(16), C4 DECFLOAT(34), C5 DECIMAL(16,2), C6 DECIMAL(16,2), C7 DECIMAL(16,2), C8 INTEGER, C9 BINARY(30), C10 BLOB(30), C11 Char(30), C12 CLOB(30), C13 TIMESTAMP, C14 VARChar(30), C15 TIME, C16 TIMESTAMP, C17 BINARY(40), C18 BLOB(40), C19 Char(40), C20 CLOB(40), C21 TIMESTAMP, C22 VARBINARY(40), C23 VARChar(40))"
             else:                
                 create = "CREATE TABLE TESTTYPES(C1 BIGINT, C2 BOOLEAN, C3 BOOLEAN, C4 DATE, C5 DECFLOAT(16), C6 DECFLOAT(34), C7 DECIMAL(16,2), C8 DECIMAL(16,2), C9 DECIMAL(16,2), C10 INTEGER, C11 BINARY(30), C12 BLOB(30), C13 Char(30), C14 CLOB(30), C15 DBCLOB(30), C16 TIMESTAMP, C17 VARBINARY(30), C18 VARChar(30), C19 TIME, C20 TIMESTAMP, C21 BINARY(40), C22 BLOB(40), C23 Char(40), C24 CLOB(40), C25 DBCLOB(40), C26 TIMESTAMP, C27 VARBINARY(40), C28 VARChar(40))"
 
             result = ibm_db.exec_immediate(conn, create)
 
-            insert = "insert into TESTTYPES values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+            if(not serverinfo.DBMS_NAME.startswith("DB2/")):
+                insert = "insert into TESTTYPES values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+            else:
+                insert = "insert into TESTTYPES values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
             stmt = ibm_db.prepare(conn,insert)
 
             rc = ibm_db.set_option(stmt, {ibm_db.SQL_ATTR_PARAM_BIND_TYPE : ibm_db.SQL_PARAM_BIND_BY_COLUMN}, 0)
@@ -77,34 +82,59 @@ class IbmDbTestCase(unittest.TestCase):
             arr28 = ['To Test VARChar1', 'To Test VARChar2', 'To Test VARChar3', 'To Test VARChar4', 'To Test VARChar5', 'To Test VARChar6', 'To Test VARChar7', 'To Test VARChar8', 'To Test VARChar9', 'To Test VARChar10']
 
             try:
-                ibm_db.bind_param(stmt, 1,  arr1, ibm_db.SQL_PARAM_INPUT)
-                ibm_db.bind_param(stmt, 2,  arr2, ibm_db.SQL_PARAM_INPUT)
-                ibm_db.bind_param(stmt, 3,  arr3, ibm_db.SQL_PARAM_INPUT)
-                ibm_db.bind_param(stmt, 4,  arr4, ibm_db.SQL_PARAM_INPUT)
-                ibm_db.bind_param(stmt, 5,  arr5, ibm_db.SQL_PARAM_INPUT)
-                ibm_db.bind_param(stmt, 6,  arr6, ibm_db.SQL_PARAM_INPUT)
-                ibm_db.bind_param(stmt, 7,  arr7, ibm_db.SQL_PARAM_INPUT)
-                ibm_db.bind_param(stmt, 8,  arr8, ibm_db.SQL_PARAM_INPUT)
-                ibm_db.bind_param(stmt, 9,  arr9, ibm_db.SQL_PARAM_INPUT)
-                ibm_db.bind_param(stmt, 10, arr10,ibm_db.SQL_PARAM_INPUT)
-                ibm_db.bind_param(stmt, 11, arr11,ibm_db.SQL_PARAM_INPUT)
-                ibm_db.bind_param(stmt, 12, arr12,ibm_db.SQL_PARAM_INPUT)
-                ibm_db.bind_param(stmt, 13, arr13,ibm_db.SQL_PARAM_INPUT)
-                ibm_db.bind_param(stmt, 14, arr14,ibm_db.SQL_PARAM_INPUT)
-                ibm_db.bind_param(stmt, 15, arr15,ibm_db.SQL_PARAM_INPUT)
-                ibm_db.bind_param(stmt, 16, arr16,ibm_db.SQL_PARAM_INPUT)		#String Timestamp
-                ibm_db.bind_param(stmt, 17, arr17,ibm_db.SQL_PARAM_INPUT)
-                ibm_db.bind_param(stmt, 18, arr18,ibm_db.SQL_PARAM_INPUT)
-                ibm_db.bind_param(stmt, 19, arr19,ibm_db.SQL_PARAM_INPUT)
-                ibm_db.bind_param(stmt, 20, arr20,ibm_db.SQL_PARAM_INPUT)
-                ibm_db.bind_param(stmt, 21, arr21,ibm_db.SQL_PARAM_INPUT)
-                ibm_db.bind_param(stmt, 22, arr22,ibm_db.SQL_PARAM_INPUT)
-                ibm_db.bind_param(stmt, 23, arr23,ibm_db.SQL_PARAM_INPUT)
-                ibm_db.bind_param(stmt, 24, arr24,ibm_db.SQL_PARAM_INPUT)
-                ibm_db.bind_param(stmt, 25, arr25,ibm_db.SQL_PARAM_INPUT)
-                ibm_db.bind_param(stmt, 26, arr26,ibm_db.SQL_PARAM_INPUT)		#Unicode Timestamp
-                ibm_db.bind_param(stmt, 27, arr27,ibm_db.SQL_PARAM_INPUT)
-                ibm_db.bind_param(stmt, 28, arr28,ibm_db.SQL_PARAM_INPUT)
+                if(not serverinfo.DBMS_NAME.startswith("DB2/")):
+                    ibm_db.bind_param(stmt, 1,  arr1, ibm_db.SQL_PARAM_INPUT)
+                    ibm_db.bind_param(stmt, 2,  arr4, ibm_db.SQL_PARAM_INPUT)
+                    ibm_db.bind_param(stmt, 3,  arr5, ibm_db.SQL_PARAM_INPUT)
+                    ibm_db.bind_param(stmt, 4,  arr6, ibm_db.SQL_PARAM_INPUT)
+                    ibm_db.bind_param(stmt, 5,  arr7, ibm_db.SQL_PARAM_INPUT)
+                    ibm_db.bind_param(stmt, 6,  arr8, ibm_db.SQL_PARAM_INPUT)
+                    ibm_db.bind_param(stmt, 7,  arr9, ibm_db.SQL_PARAM_INPUT)
+                    ibm_db.bind_param(stmt, 8, arr10,ibm_db.SQL_PARAM_INPUT)
+                    ibm_db.bind_param(stmt, 9, arr11,ibm_db.SQL_PARAM_INPUT)
+                    ibm_db.bind_param(stmt, 10, arr12,ibm_db.SQL_PARAM_INPUT)
+                    ibm_db.bind_param(stmt, 11, arr13,ibm_db.SQL_PARAM_INPUT)
+                    ibm_db.bind_param(stmt, 12, arr14,ibm_db.SQL_PARAM_INPUT)
+                    ibm_db.bind_param(stmt, 13, arr16,ibm_db.SQL_PARAM_INPUT)		#String Timestamp
+                    ibm_db.bind_param(stmt, 14, arr18,ibm_db.SQL_PARAM_INPUT)
+                    ibm_db.bind_param(stmt, 15, arr19,ibm_db.SQL_PARAM_INPUT)
+                    ibm_db.bind_param(stmt, 16, arr20,ibm_db.SQL_PARAM_INPUT)
+                    ibm_db.bind_param(stmt, 17, arr21,ibm_db.SQL_PARAM_INPUT)
+                    ibm_db.bind_param(stmt, 18, arr22,ibm_db.SQL_PARAM_INPUT)
+                    ibm_db.bind_param(stmt, 19, arr23,ibm_db.SQL_PARAM_INPUT)
+                    ibm_db.bind_param(stmt, 20, arr24,ibm_db.SQL_PARAM_INPUT)
+                    ibm_db.bind_param(stmt, 21, arr26,ibm_db.SQL_PARAM_INPUT)		#Unicode Timestamp
+                    ibm_db.bind_param(stmt, 22, arr27,ibm_db.SQL_PARAM_INPUT)
+                    ibm_db.bind_param(stmt, 23, arr28,ibm_db.SQL_PARAM_INPUT)
+                else:
+                    ibm_db.bind_param(stmt, 1,  arr1, ibm_db.SQL_PARAM_INPUT)
+                    ibm_db.bind_param(stmt, 2,  arr2, ibm_db.SQL_PARAM_INPUT)
+                    ibm_db.bind_param(stmt, 3,  arr3, ibm_db.SQL_PARAM_INPUT)
+                    ibm_db.bind_param(stmt, 4,  arr4, ibm_db.SQL_PARAM_INPUT)
+                    ibm_db.bind_param(stmt, 5,  arr5, ibm_db.SQL_PARAM_INPUT)
+                    ibm_db.bind_param(stmt, 6,  arr6, ibm_db.SQL_PARAM_INPUT)
+                    ibm_db.bind_param(stmt, 7,  arr7, ibm_db.SQL_PARAM_INPUT)
+                    ibm_db.bind_param(stmt, 8,  arr8, ibm_db.SQL_PARAM_INPUT)
+                    ibm_db.bind_param(stmt, 9,  arr9, ibm_db.SQL_PARAM_INPUT)
+                    ibm_db.bind_param(stmt, 10, arr10,ibm_db.SQL_PARAM_INPUT)
+                    ibm_db.bind_param(stmt, 11, arr11,ibm_db.SQL_PARAM_INPUT)
+                    ibm_db.bind_param(stmt, 12, arr12,ibm_db.SQL_PARAM_INPUT)
+                    ibm_db.bind_param(stmt, 13, arr13,ibm_db.SQL_PARAM_INPUT)
+                    ibm_db.bind_param(stmt, 14, arr14,ibm_db.SQL_PARAM_INPUT)
+                    ibm_db.bind_param(stmt, 15, arr15,ibm_db.SQL_PARAM_INPUT)
+                    ibm_db.bind_param(stmt, 16, arr16,ibm_db.SQL_PARAM_INPUT)		#String Timestamp
+                    ibm_db.bind_param(stmt, 17, arr17,ibm_db.SQL_PARAM_INPUT)
+                    ibm_db.bind_param(stmt, 18, arr18,ibm_db.SQL_PARAM_INPUT)
+                    ibm_db.bind_param(stmt, 19, arr19,ibm_db.SQL_PARAM_INPUT)
+                    ibm_db.bind_param(stmt, 20, arr20,ibm_db.SQL_PARAM_INPUT)
+                    ibm_db.bind_param(stmt, 21, arr21,ibm_db.SQL_PARAM_INPUT)
+                    ibm_db.bind_param(stmt, 22, arr22,ibm_db.SQL_PARAM_INPUT)
+                    ibm_db.bind_param(stmt, 23, arr23,ibm_db.SQL_PARAM_INPUT)
+                    ibm_db.bind_param(stmt, 24, arr24,ibm_db.SQL_PARAM_INPUT)
+                    ibm_db.bind_param(stmt, 25, arr25,ibm_db.SQL_PARAM_INPUT)
+                    ibm_db.bind_param(stmt, 26, arr26,ibm_db.SQL_PARAM_INPUT)		#Unicode Timestamp
+                    ibm_db.bind_param(stmt, 27, arr27,ibm_db.SQL_PARAM_INPUT)
+                    ibm_db.bind_param(stmt, 28, arr28,ibm_db.SQL_PARAM_INPUT)
                 error = ibm_db.execute(stmt)
             except:
                 excp = sys.exc_info()
@@ -432,4 +462,255 @@ class IbmDbTestCase(unittest.TestCase):
 #Column:26 1990-07-08 10:42:34.000010
 #Column:27 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00V\x00a\x00r\x00B\x00i\x00n\x00a\x00r\x00y\x001\x000\x00'
 #Column:28 To Test VARChar10
+#-------------------
+#__ZOS_EXPECTED__
+#ROW:1
+#Column:1 1000000
+#Column:2 1981-02-12
+#Column:3 1000000
+#Column:4 1000000
+#Column:5 1000000.00
+#Column:6 123.23
+#Column:7 1000000.00
+#Column:8 10
+#Column:9 b'To Test Binary1\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+#Column:10 b'To Test Blob1'
+#Column:11 To Test Char1                 
+#Column:12 To Test Clob1
+#Column:13 1981-07-08 10:42:34.000010
+#Column:14 To Test VARChar1
+#Column:15 12:20:30
+#Column:16 1981-02-12 23:55:59.342380
+#Column:17 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00B\x00i\x00n\x00a\x00r\x00y\x001\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+#Column:18 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00B\x00l\x00o\x00b\x001\x00'
+#Column:19 To Test Char1                           
+#Column:20 To Test Clob1
+#Column:21 1981-07-08 10:42:34.000010
+#Column:22 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00V\x00a\x00r\x00B\x00i\x00n\x00a\x00r\x00y\x001\x00'
+#Column:23 To Test VARChar1
+#-------------------
+#ROW:2
+#Column:1 2000000
+#Column:2 1982-02-12
+#Column:3 2000000
+#Column:4 2000000
+#Column:5 2000000.00
+#Column:6 234.34
+#Column:7 2000000.00
+#Column:8 20
+#Column:9 b'To Test Binary2\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+#Column:10 b'To Test Blob2'
+#Column:11 To Test Char2                 
+#Column:12 To Test Clob2
+#Column:13 1982-07-08 10:42:34.000010
+#Column:14 To Test VARChar2
+#Column:15 13:30:45
+#Column:16 1982-02-12 23:55:59.342380
+#Column:17 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00B\x00i\x00n\x00a\x00r\x00y\x002\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+#Column:18 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00B\x00l\x00o\x00b\x002\x00'
+#Column:19 To Test Char2                           
+#Column:20 To Test Clob2
+#Column:21 1982-07-08 10:42:34.000010
+#Column:22 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00V\x00a\x00r\x00B\x00i\x00n\x00a\x00r\x00y\x002\x00'
+#Column:23 To Test VARChar2
+#-------------------
+#ROW:3
+#Column:1 3000000
+#Column:2 1983-02-12
+#Column:3 3000000
+#Column:4 3000000
+#Column:5 3000000.00
+#Column:6 345.45
+#Column:7 3000000.00
+#Column:8 30
+#Column:9 b'To Test Binary3\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+#Column:10 b'To Test Blob3'
+#Column:11 To Test Char3                 
+#Column:12 To Test Clob3
+#Column:13 1983-07-08 10:42:34.000010
+#Column:14 To Test VARChar3
+#Column:15 14:02:12
+#Column:16 1983-02-12 23:55:59.342380
+#Column:17 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00B\x00i\x00n\x00a\x00r\x00y\x003\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+#Column:18 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00B\x00l\x00o\x00b\x003\x00'
+#Column:19 To Test Char3                           
+#Column:20 To Test Clob3
+#Column:21 1983-07-08 10:42:34.000010
+#Column:22 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00V\x00a\x00r\x00B\x00i\x00n\x00a\x00r\x00y\x003\x00'
+#Column:23 To Test VARChar3
+#-------------------
+#ROW:4
+#Column:1 4000000
+#Column:2 1984-02-12
+#Column:3 4000000
+#Column:4 4000000
+#Column:5 4000000.00
+#Column:6 456.56
+#Column:7 4000000.00
+#Column:8 40
+#Column:9 b'To Test Binary4\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+#Column:10 b'To Test Blob4'
+#Column:11 To Test Char4                 
+#Column:12 To Test Clob4
+#Column:13 1984-07-08 10:42:34.000010
+#Column:14 To Test VARChar4
+#Column:15 15:42:33
+#Column:16 1984-02-12 23:55:59.342380
+#Column:17 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00B\x00i\x00n\x00a\x00r\x00y\x004\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+#Column:18 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00B\x00l\x00o\x00b\x004\x00'
+#Column:19 To Test Char4                           
+#Column:20 To Test Clob4
+#Column:21 1984-07-08 10:42:34.000010
+#Column:22 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00V\x00a\x00r\x00B\x00i\x00n\x00a\x00r\x00y\x004\x00'
+#Column:23 To Test VARChar4
+#-------------------
+#ROW:5
+#Column:1 5000000
+#Column:2 1985-02-12
+#Column:3 5000000
+#Column:4 5000000
+#Column:5 5000000.00
+#Column:6 567.67
+#Column:7 5000000.00
+#Column:8 50
+#Column:9 b'To Test Binary5\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+#Column:10 b'To Test Blob5'
+#Column:11 To Test Char5                 
+#Column:12 To Test Clob5
+#Column:13 1985-07-08 10:42:34.000010
+#Column:14 To Test VARChar5
+#Column:15 05:29:59
+#Column:16 1985-02-12 23:55:59.342380
+#Column:17 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00B\x00i\x00n\x00a\x00r\x00y\x005\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+#Column:18 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00B\x00l\x00o\x00b\x005\x00'
+#Column:19 To Test Char5                           
+#Column:20 To Test Clob5
+#Column:21 1985-07-08 10:42:34.000010
+#Column:22 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00V\x00a\x00r\x00B\x00i\x00n\x00a\x00r\x00y\x005\x00'
+#Column:23 To Test VARChar5
+#-------------------
+#ROW:6
+#Column:1 6000000
+#Column:2 1986-02-12
+#Column:3 6000000
+#Column:4 6000000
+#Column:5 6000000.00
+#Column:6 578.78
+#Column:7 6000000.00
+#Column:8 60
+#Column:9 b'To Test Binary6\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+#Column:10 b'To Test Blob6'
+#Column:11 To Test Char6                 
+#Column:12 To Test Clob6
+#Column:13 1986-07-08 10:42:34.000010
+#Column:14 To Test VARChar6
+#Column:15 08:02:12
+#Column:16 1986-02-12 23:55:59.342380
+#Column:17 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00B\x00i\x00n\x00a\x00r\x00y\x006\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+#Column:18 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00B\x00l\x00o\x00b\x006\x00'
+#Column:19 To Test Char6                           
+#Column:20 To Test Clob6
+#Column:21 1986-07-08 10:42:34.000010
+#Column:22 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00V\x00a\x00r\x00B\x00i\x00n\x00a\x00r\x00y\x006\x00'
+#Column:23 To Test VARChar6
+#-------------------
+#ROW:7
+#Column:1 7000000
+#Column:2 1987-02-12
+#Column:3 7000000
+#Column:4 7000000
+#Column:5 7000000.00
+#Column:6 789.89
+#Column:7 7000000.00
+#Column:8 70
+#Column:9 b'To Test Binary7\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+#Column:10 b'To Test Blob7'
+#Column:11 To Test Char7                 
+#Column:12 To Test Clob7
+#Column:13 1987-07-08 10:42:34.000010
+#Column:14 To Test VARChar7
+#Column:15 09:52:12
+#Column:16 1987-02-12 23:55:59.342380
+#Column:17 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00B\x00i\x00n\x00a\x00r\x00y\x007\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+#Column:18 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00B\x00l\x00o\x00b\x007\x00'
+#Column:19 To Test Char7                           
+#Column:20 To Test Clob7
+#Column:21 1987-07-08 10:42:34.000010
+#Column:22 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00V\x00a\x00r\x00B\x00i\x00n\x00a\x00r\x00y\x007\x00'
+#Column:23 To Test VARChar7
+#-------------------
+#ROW:8
+#Column:1 80000000
+#Column:2 1988-02-12
+#Column:3 8000000
+#Column:4 8000000
+#Column:5 8000000.00
+#Column:6 890.90
+#Column:7 8000000.00
+#Column:8 80
+#Column:9 b'To Test Binary8\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+#Column:10 b'To Test Blob8'
+#Column:11 To Test Char8                 
+#Column:12 To Test Clob8
+#Column:13 1988-07-08 10:42:34.000010
+#Column:14 To Test VARChar8
+#Column:15 07:02:12
+#Column:16 1988-02-12 23:55:59.342380
+#Column:17 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00B\x00i\x00n\x00a\x00r\x00y\x008\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+#Column:18 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00B\x00l\x00o\x00b\x008\x00'
+#Column:19 To Test Char8                           
+#Column:20 To Test Clob8
+#Column:21 1988-07-08 10:42:34.000010
+#Column:22 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00V\x00a\x00r\x00B\x00i\x00n\x00a\x00r\x00y\x008\x00'
+#Column:23 To Test VARChar8
+#-------------------
+#ROW:9
+#Column:1 9000000
+#Column:2 1989-02-12
+#Column:3 9000000
+#Column:4 9000000
+#Column:5 9000000.00
+#Column:6 901.01
+#Column:7 9000000.00
+#Column:8 90
+#Column:9 b'To Test Binary9\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+#Column:10 b'To Test Blob9'
+#Column:11 To Test Char9                 
+#Column:12 To Test Clob9
+#Column:13 1989-07-08 10:42:34.000010
+#Column:14 To Test VARChar9
+#Column:15 23:02:12
+#Column:16 1989-02-12 23:55:59.342380
+#Column:17 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00B\x00i\x00n\x00a\x00r\x00y\x009\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+#Column:18 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00B\x00l\x00o\x00b\x009\x00'
+#Column:19 To Test Char9                           
+#Column:20 To Test Clob9
+#Column:21 1989-07-08 10:42:34.000010
+#Column:22 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00V\x00a\x00r\x00B\x00i\x00n\x00a\x00r\x00y\x009\x00'
+#Column:23 To Test VARChar9
+#-------------------
+#ROW:10
+#Column:1 1000000
+#Column:2 1990-02-12
+#Column:3 1000000
+#Column:4 1000000
+#Column:5 1000000.00
+#Column:6 1234.23
+#Column:7 1000000.00
+#Column:8 100
+#Column:9 b'To Test Binary10\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+#Column:10 b'To Test Blob10'
+#Column:11 To Test Char10                
+#Column:12 To Test Clob10
+#Column:13 1990-07-08 10:42:34.000010
+#Column:14 To Test VARChar10
+#Column:15 19:59:59
+#Column:16 1990-02-12 23:55:59.342380
+#Column:17 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00B\x00i\x00n\x00a\x00r\x00y\x001\x000\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+#Column:18 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00B\x00l\x00o\x00b\x001\x000\x00'
+#Column:19 To Test Char10                          
+#Column:20 To Test Clob10
+#Column:21 1990-07-08 10:42:34.000010
+#Column:22 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00V\x00a\x00r\x00B\x00i\x00n\x00a\x00r\x00y\x001\x000\x00'
+#Column:23 To Test VARChar10
 #-------------------
