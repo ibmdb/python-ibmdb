@@ -7778,7 +7778,7 @@ static PyObject *ibm_db_field_name(PyObject *self, PyObject *args)
         Py_INCREF(Py_False);
         return Py_False;
     }
-    return StringOBJ_FromASCII((char*)stmt_res->column_info[col].name);
+    return PyUnicode_FromString((char*)stmt_res->column_info[col].name);
 }
 
 /*!# ibm_db.field_display_size
@@ -9327,7 +9327,7 @@ static PyObject *_python_ibm_db_bind_fetch_helper(PyObject *args, int op)
                 }
         }
         if (op & FETCH_ASSOC) {
-            key = StringOBJ_FromASCII((char*)stmt_res->column_info[column_number].name);
+            key = PyUnicode_FromString((char*)stmt_res->column_info[column_number].name);
             if (value == NULL) {
                 Py_XDECREF(key);
                 Py_XDECREF(value);
