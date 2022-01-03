@@ -9332,9 +9332,9 @@ static PyObject *_python_ibm_db_bind_fetch_helper(PyObject *args, int op)
         }
         if (op & FETCH_ASSOC) {
 #ifdef _WIN32
-            return PyUnicode_DecodeLocale((char*)stmt_res->column_info[col].name,"surrogateescape");
+            key = PyUnicode_DecodeLocale((char*)stmt_res->column_info[column_number].name,"surrogateescape");
 #else
-	        return PyUnicode_FromString((char*)stmt_res->column_info[col].name);
+			key = PyUnicode_FromString((char*)stmt_res->column_info[column_number].name);
 #endif
             if (value == NULL) {
                 Py_XDECREF(key);
