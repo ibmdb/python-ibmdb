@@ -467,6 +467,28 @@ class IbmDbTestCase(unittest.TestCase):
             for sale in sales:
                 result = ibm_db.execute(stmt, sale)
 
+        #Creating the procedure out_blob
+        drop = "DROP PROCEDURE out_blob"
+        try:
+            result = ibm_db.exec_immediate(conn, drop)
+        except:
+            pass
+
+        if (server.DBMS_NAME[0:3] == 'IDS'):
+            result = ibm_db.exec_immediate(conn, """
+            CREATE PROCEDURE out_blob(OUT P1 BLOB(100))
+                LET P1 = BLOB('1234567801234567890');
+            END PROCEDURE;""")
+        else:
+            result = ibm_db.exec_immediate(conn, """
+            CREATE PROCEDURE out_blob(OUT P1 BLOB(100))
+            LANGUAGE SQL
+            DYNAMIC RESULT SETS 0 
+            BEGIN
+                SET P1 = BLOB('1234567801234567890');
+            END""")
+        result = None
+
         # Drop the stored procedure, in case it exists
         drop = 'DROP PROCEDURE match_animal'
         try:
