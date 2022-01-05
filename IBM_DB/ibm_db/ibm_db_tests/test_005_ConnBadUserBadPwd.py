@@ -37,3 +37,5 @@ class IbmDbTestCase(unittest.TestCase):
 #Ooops
 #__IDS_EXPECTED__
 #Ooops
+#__ZOS_ODBC_EXPECTED__
+#Ooops
