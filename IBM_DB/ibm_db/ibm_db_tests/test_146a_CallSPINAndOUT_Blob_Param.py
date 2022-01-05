@@ -21,6 +21,10 @@ class IbmDbTestCase(unittest.TestCase):
         conn = ibm_db.connect(config.database, config.user, config.password)
         server = ibm_db.server_info( conn )
 
+        if(not server.DBMS_NAME.startswith('DB2/')):
+            print("SKIPPED")
+            return 0
+
         if conn:
             p1 = bytes('1234', 'utf8')
 
@@ -40,26 +44,11 @@ class IbmDbTestCase(unittest.TestCase):
 #  1: 1234
 #
 #Values of bound parameters _after_ CALL:
-#  1: 1234567801234567890
+#  1: 1234567801234567890 
 #
 #__ZOS_EXPECTED__
-#Values of bound parameters _before_ CALL:
-#  1: 1234
-#
-#Values of bound parameters _after_ CALL:
-#  1: 1234567801234567890
-#
+#SKIPPED
 #__SYSTEMI_EXPECTED__
-#Values of bound parameters _before_ CALL:
-#  1: 1234
-#
-#Values of bound parameters _after_ CALL:
-#  1: 1234567801234567890
-#
+#SKIPPED
 #__IDS_EXPECTED__
-#Values of bound parameters _before_ CALL:
-#  1: 1234
-#
-#Values of bound parameters _after_ CALL:
-#  1: 1234567801234567890
-#
+#SKIPPED
