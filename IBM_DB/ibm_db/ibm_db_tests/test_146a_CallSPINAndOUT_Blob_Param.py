@@ -13,7 +13,7 @@ from testfunctions import IbmDbTestFunctions
 
 class IbmDbTestCase(unittest.TestCase):
 
-    def test_146a_CallSPINAndOUTParams_Blob_Param(self):
+    def test_146a_CallSPINAndOUT_Blob_Param(self):
         obj = IbmDbTestFunctions()
         obj.assert_expect(self.run_test_146a)
 
