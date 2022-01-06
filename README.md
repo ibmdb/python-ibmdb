@@ -11,7 +11,7 @@ Provides Python interface for connecting to IBM DB2 and Informix
 
 [Components](#components)
 
-[Pre-requisites](#prereq)
+[Pre-requisites](#pre-requisites)
 
 [Installation](#inst)
 
@@ -28,6 +28,8 @@ Provides Python interface for connecting to IBM DB2 and Informix
 [Contributing to the ibm_db python project](#contributing-to-the-ibm_db-python-project)
 
 [Some common issues](#KnownIssues)
+
+[Testing](#testing)
 
 <a name='components'></a>
 ## Components
@@ -133,16 +135,16 @@ The ODBC and CLI Driver(clidriver) is automatically downloaded at the time of in
   e.g:
   ```
   Windows:
-  set LIB = %IBM_DB_HOME%/lib;%LIB%
+  set LIB=%IBM_DB_HOME%/lib;%LIB%
 
   AIX:
-  export LIBPATH = $IBM_DB_HOME/lib:$LIBPATH
+  export LIBPATH=$IBM_DB_HOME/lib:$LIBPATH
 
   MAC:
-  export DYLD_LIBRARY_PATH = $IBM_DB_HOME/lib:$DYLD_LIBRARY_PATH
+  export DYLD_LIBRARY_PATH=$IBM_DB_HOME/lib:$DYLD_LIBRARY_PATH
 
   Other platforms:
-  export LD_LIBRARY_PATH = $IBM_DB_HOME/lib:$LD_LIBRARY_PATH
+  export LD_LIBRARY_PATH=$IBM_DB_HOME/lib:$LD_LIBRARY_PATH
   ```
 
   The ODBC and CLI driver is available for download at [Db2 LUW ODBC and CLI Driver](https://public.dhe.ibm.com/ibmdl/export/pub/software/data/db2/drivers/odbc_cli/).
@@ -173,7 +175,7 @@ Type "help", "copyright", "credits" or "license" for more information.
 >>>
 >>> # Execute tables API
 >>> conn.tables('DB2INST1', '%')
-[{'TABLE_CAT': None, 'TABLE_SCHEM': 'DB2ADMIN', 'TABLE_NAME': 'MYTABLE', 'TABLE_TYPE': 'TABLE', 'REMARKS': None}]
+[{'TABLE_CAT': None, 'TABLE_SCHEM': 'DB2INST1', 'TABLE_NAME': 'MYTABLE', 'TABLE_TYPE': 'TABLE', 'REMARKS': None}]
 >>>
 >>> # Insert 3 rows into the table
 >>> insert = "insert into mytable values(?,?)"
@@ -340,3 +342,110 @@ apt-get install python3-dev
 ```
 
 ### Once the above steps goes through fine, try re-installing ibm_db.
+
+### Issues with MAC OS X
+* If you run into errors for libdb2.dylib as below:
+
+```python
+>>> import ibm_db
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+ImportError: dlopen(/usr/local/lib/python3.5/site-packages/ibm_db.cpython-35m-darwin.so, 2): Library not loaded: libdb2.dylib
+  Referenced from: /usr/local/lib/python3.5/site-packages/ibm_db.cpython-35m-darwin.so
+  Reason: image not found
+
+```
+
+You would need to set DYLD_LIBRARY_PATH to point to lib folder as per the installation location of clidriver in your environment. Assuming the driver is installed at /usr/local/lib/python3.5/site-packages/clidriver, you can set the path as:
+
+```
+export DYLD_LIBRARY_PATH=/usr/local/lib/python3.5/site-packages/clidriver/lib:$DYLD_LIBRARY_PATH
+
+```
+If the issue is not resolved even after setting DYLD_LIBRARY_PATH, you could refer:
+[MAC OS Hints and Tips](https://www.ibm.com/developerworks/community/blogs/96960515-2ea1-4391-8170-b0515d08e4da/entry/ibm_db_on_MAC_OS_Hints_and_Tips?lang=en)
+
+* Resolving SQL1042C error
+
+If you hit following error while attempting to connect to a database:
+
+```python
+>>> import ibm_db
+>>> ibm_db.connect("my_connection_string", "", "")
+ Traceback (most recent call last):
+   File "<stdin>", line 1, in <module>
+ Exception: [IBM][CLI Driver] SQL1042C An unexpected system error occurred. SQLSTATE=58004 SQLCODE=-1042
+```
+Set DYLD_LIBRARY_PATH to point to icc folder as per the installation location of clidriver in your environment.
+
+```
+export DYLD_LIBRARY_PATH=/usr/local/lib/python3.5/site-packages/clidriver/lib/icc:$DYLD_LIBRARY_PATH
+```
+
+In case of similar issue in windows platform
+
+```
+set PATH=<clidriver_folder_path>\bin\amd64.VC12.CRT;%PATH%
+```
+
+<a name='testing'></a>
+# Testing
+
+Tests displaying Python ibm_db driver code examples are located in the ibm_db_tests
+directory. A valid config.py will need to be created to configure your DB2
+settings. A config.py.sample exists that can be copied and modified for your
+environment.
+
+The config.py should look like this:
+
+```python
+test_dir =      'ibm_db_tests'         # Location of testsuite file (relative to current directory)
+
+database =      'test'          # Database to connect to
+user     =      'db2inst1'      # User ID to connect with
+password =      'password'      # Password for given User ID
+hostname =      'localhost'     # Hostname
+port     =      50000           # Port Number
+```
+
+Point the database to mydatabase as created by the following command.
+
+The tests that ibm_db driver uses depends on a UTF-8 database.  This can be
+created by running:
+```
+  CREATE DATABASE mydatabase USING CODESET UTF-8 TERRITORY US
+```
+Some of the tests utilize XML functionality only available in version 9 or
+later of DB2.  While DB2 v8.x is fully supported, two of the tests
+(test_195.py and test_52949.py) utilize XML functionality.  These tests will
+fail on version 8.x of DB2.
+
+## Running the driver testsuite on Linux
+  In order to run the entire python driver testsuite on Linux, run this
+  command at the command prompt:
+  ```
+    python tests.py
+  ```
+  To run a single test, set the environment variable, **SINGLE_PYTHON_TEST**, to
+  the test filename you would like to run, followed by the previous command.
+
+## Running the driver testsuite on Windows
+  In order to run the entire python driver testsuite on Windows, run this
+  command at the command prompt:
+  ```
+    tests.py
+  ```
+  To run a single test, set the environment variable, **SINGLE_PYTHON_TEST**, to
+  the test filename you would like to run, followed by the previous command.
+
+
+## Known Limitations for the Python driver
+
+If trusted context is not set up, there will be two failures related to trusted context. When thick client has been used then additional three failures related to create, recreate DB.
+
+
+## Known Limitations for the Python wrapper
+
+1. The rowcount for select statements can not be generated.
+2. Some warnings from the drivers are not caught by the wrapper.
+   As such these might go unnoticed.
