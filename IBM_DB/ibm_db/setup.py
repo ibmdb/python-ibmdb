@@ -26,6 +26,7 @@ from setuptools.command.install import install
 PACKAGE = 'ibm_db'
 VERSION = '3.0.4'
 LICENSE = 'Apache License 2.0'
+readme = os.path.join(os.path.dirname(__file__),'README.md')
 
 if 'zos' != sys.platform:
     context = ssl.create_default_context()
@@ -388,11 +389,10 @@ setup( name    = PACKAGE,
                       'Programming Language :: Python :: 3.7',
                       'Programming Language :: Python :: 3.8',
                       'Programming Language :: Python :: 3.9',
+                      'Programming Language :: Python :: 3.10'
                       'Topic :: Database :: Front-Ends'],
 
-       long_description = '''
-                      This extension is the implementation of Python Database API Specification v2.0
-                      The extension supports DB2 (LUW, zOS, i5) and IDS (Informix Dynamic Server)''',
+       long_description = open(readme).read(),
        platforms = 'Linux32/64, Win32/64, aix32/64, ppc32/64, sunamd32/64, sun32/64, ppc64le, Z/OS',
        ext_modules  = ext_modules,
        py_modules   = modules,
