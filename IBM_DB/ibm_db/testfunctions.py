@@ -8,7 +8,11 @@ import platform
 
 import ibm_db
 import config
-from io import StringIO
+if sys.version_info >= (3, ):
+    from io import StringIO
+else:
+    from cStringIO import StringIO
+
 
 class IbmDbTestFunctions(unittest.TestCase):
     prepconn = ibm_db.connect(config.database, config.user, config.password)
