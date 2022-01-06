@@ -52,6 +52,7 @@ python 3.6
 python 3.7
 python 3.8
 python 3.9
+python 3.10
 ```
 
 You might need zlib, openssl, pip installations if not already available in your setup.
@@ -73,7 +74,7 @@ You might need zlib, openssl, pip installations if not already available in your
 
 * For installing ibm_db on **Docker Linux container**, you may need to install **gcc, python, pip, python-devel, libxml2 and pam** if not already installed. Refer to [Installation](#docker) for more details.
 
-<a name="inst"></a> 
+<a name="installation"></a> 
 ## Installation
 
 You can install the driver using pip as:
@@ -118,10 +119,10 @@ pip uninstall ibm_db
 
 The ODBC and CLI Driver(clidriver) is automatically downloaded at the time of installation and it is recommended to use this driver. However, if you wish to use an existing installation of clidriver or install the clidriver manually and use it, you can set IBM_DB_HOME environment variable. For more information on how to set this variable, refer [Environment Variables](#envvar) section.
 
-* <a name="envvar"></a>Environment Variables:
+* <a name="environment variables"></a>Environment Variables:
   `IBM_DB_HOME :`
 
-  Set this environment variable to avoid automatic downloading of the clidriver during installation. You could set this to the installation path of ODBC and CLI driver in your environment.
+  Set this environment variable to avoid automatic downloading of the clidriver during installation. You could set this to the installation path of ODBC and CLI driver in your environment.<br>
   e.g:
   ```
   Windows :
@@ -131,7 +132,7 @@ The ODBC and CLI Driver(clidriver) is automatically downloaded at the time of in
   export IBM_DB_HOME=/home/skauser/clidriver
   ```
 
-  You are required to set the library path to the clidriver under IBM_DB_HOME to pick this version of the ODBC and CLI Driver.
+  You are required to set the library path to the clidriver under IBM_DB_HOME to pick this version of the ODBC and CLI Driver.<br>
   e.g:
   ```
   Windows:
@@ -150,8 +151,23 @@ The ODBC and CLI Driver(clidriver) is automatically downloaded at the time of in
   The ODBC and CLI driver is available for download at [Db2 LUW ODBC and CLI Driver](https://public.dhe.ibm.com/ibmdl/export/pub/software/data/db2/drivers/odbc_cli/).
 Refer to ([License requirements](#Licenserequirements)) for more details on the CLI driver for manual download and installation.
 
+* Installing using Anaconda distribution of python
+```
+conda install -c conda-forge ibm_db
+```
 
-## <a name="eg"></a> Quick Example
+* Supported Platform for Anaconda Installation
+
+|Platform      |Architecture    |Supported     |Version      |
+| :---:        |  :---:         |  :---:       | :--:
+|Linux         |  amd64 (x86_64)|  Yes         | Latest    |
+|Linux         |  ppc64le       |  Yes         | Latest    |
+|Darwin        |  Mac OS        |  Yes         | Latest    |
+|Windows       |  x64           |  Yes         | Latest    |
+|Windows       |  x32           |  Yes         | Latest    |
+
+
+## <a name="quick example"></a> Quick Example
 ```python
 $ python
 Python 3.6.5 (default, May 10 2018, 00:54:55)
@@ -269,18 +285,18 @@ If you intend to install the clidriver manually, Following are the details of th
 
 |Platform      |Architecture    |Cli Driver               |Supported     |Version      |
 | :---:        |  :---:         |  :---:                  |  :---:       | :--:
-|AIX           |  ppc           |aix32_odbc_cli.tar.gz    |  Yes         | V11.5.4     |
-|              |  others        |aix64_odbc_cli.tar.gz    |  Yes         | V11.5.4     |
-|Darwin        |  x64           |macos64_odbc_cli.tar.gz  |  Yes         | V11.5.4     |
-|Linux         |  x64           |linuxx64_odbc_cli.tar.gz |  Yes         | V11.5.4     |
-|              |  s390x         |s390x64_odbc_cli.tar.gz  |  Yes         | V11.5.4     |
+|AIX           |  ppc           |aix32_odbc_cli.tar.gz    |  Yes         | V11.5.5     |
+|              |  others        |aix64_odbc_cli.tar.gz    |  Yes         | V11.5.5     |
+|Darwin        |  x64           |macos64_odbc_cli.tar.gz  |  Yes         | V11.5.5     |
+|Linux         |  x64           |linuxx64_odbc_cli.tar.gz |  Yes         | V11.5.5     |
+|              |  s390x         |s390x64_odbc_cli.tar.gz  |  Yes         | V11.5.5     |
 |              |  s390          |s390_odbc_cli.tar.gz     |  Yes         | V11.1       |
-|              |  ppc64  (LE)   |ppc64le_odbc_cli.tar.gz  |  Yes         | V11.5.4     |
+|              |  ppc64  (LE)   |ppc64le_odbc_cli.tar.gz  |  Yes         | V11.5.5     |
 |              |  ppc64         |ppc64_odbc_cli.tar.gz    |  Yes         | V10.5       |
 |              |  ppc32         |ppc32_odbc_cli.tar.gz    |  Yes         | V10.5       |
-|              |  others        |linuxia32_odbc_cli.tar.gz|  Yes         | V11.5.4     |
-|Windows       |  x64           |ntx64_odbc_cli.zip       |  Yes         | V11.5.4     |
-|              |  x32           |nt32_odbc_cli.zip        |  Yes         | V11.5.4     |
+|              |  others        |linuxia32_odbc_cli.tar.gz|  Yes         | V11.5.5     |
+|Windows       |  x64           |ntx64_odbc_cli.zip       |  Yes         | V11.5.5     |
+|              |  x32           |nt32_odbc_cli.zip        |  Yes         | V11.5.5     |
 |Sun           | i86pc          |sunamd64_odbc_cli.tar.gz |  Yes         | V10.5       |
 |              |                |sunamd32_odbc_cli.tar.gz |  Yes         | V10.5       |
 |              | sparc          |sun64_odbc_cli.tar.gz    |  Yes         | V11.1       |
