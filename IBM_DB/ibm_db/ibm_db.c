@@ -5718,8 +5718,8 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
                     {
                         item = PyList_GetItem(bind_data, i);
 
-                        //SQLWCHAR *tmp_uvalue = NULL;
-                        //SQLWCHAR *dest_uvalue = NULL;
+                        tmp_uvalue = NULL;
+                        dest_uvalue = NULL;
 
                         if(PyObject_CheckBuffer(item) && (curr->data_type == SQL_BLOB   || 
                                                           curr->data_type == SQL_BINARY || 
@@ -6042,8 +6042,8 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
                     {
                         item = PyList_GetItem(bind_data, i);
 
-                        //char *tmp_svalue = NULL;
-                        //char *dest_svalue = NULL;
+                        tmp_svalue = NULL;
+                        dest_svalue = NULL;
                         if (PyObject_CheckBuffer(item) && (curr->data_type == SQL_BLOB      || 
                                                            curr->data_type == SQL_BINARY   ||
                                                            curr->data_type == SQL_VARBINARY) )
