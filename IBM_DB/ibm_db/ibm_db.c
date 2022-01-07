@@ -5427,9 +5427,13 @@ static param_node* build_list( stmt_handle *stmt_res, int param_no, SQLSMALLINT 
 */
 static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, PyObject *bind_data)
 {
-    int rc;
+    int rc,i;
     SQLSMALLINT valueType = 0;
     SQLPOINTER    paramValuePtr;
+    SQLWCHAR *tmp_uvalue = NULL;
+    SQLWCHAR *dest_uvalue = NULL;
+    char *tmp_svalue = NULL;
+    char *dest_svalue = NULL;
 #if  PY_MAJOR_VERSION < 3
     Py_ssize_t buffer_len = 0;
 #endif
@@ -5504,7 +5508,7 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
                     Py_ssize_t n = PyList_Size(bind_data);
                     curr->svalue = (char *)ALLOC_N(char, (MAX_PRECISION) * (n));
                     memset(curr->svalue , 0, MAX_PRECISION * n);
-                    for (int i = 0; i < n; i++)
+                    for (i = 0; i < n; i++)
                     {
                         item = PyList_GetItem(bind_data, i);
                         item = PyObject_Str(item);
@@ -5561,7 +5565,7 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
                 {
                     Py_ssize_t n = PyList_Size(bind_data);
                     curr->ivalueArray = (SQLINTEGER *)ALLOC_N(SQLINTEGER, n);
-                    for (int i = 0; i < n; i++)
+                    for (i = 0; i < n; i++)
                     {
                         item = PyList_GetItem(bind_data, i);
                         curr->ivalueArray[i] = PyLong_AsLong(item);
@@ -5598,7 +5602,7 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
             {
                 Py_ssize_t n = PyList_Size(bind_data);
                 curr->ivalueArray = (SQLINTEGER *)ALLOC_N(SQLINTEGER, n);
-                for (int i = 0; i < n; i++)
+                for (i = 0; i < n; i++)
                 {
                     item = PyList_GetItem(bind_data, i);
                     curr->ivalueArray[i] = PyLong_AsLong(item);
@@ -5634,7 +5638,7 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
             {
                 Py_ssize_t n = PyList_Size(bind_data);
                 curr->ivalueArray = (SQLINTEGER *)ALLOC_N(SQLINTEGER, n);
-                for (int i = 0; i < n; i++)
+                for (i = 0; i < n; i++)
                 {
                     item = PyList_GetItem(bind_data, i);
                     curr->ivalueArray[i] = PyLong_AsLong(item);
@@ -5669,7 +5673,7 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
             {
                 Py_ssize_t n = PyList_Size(bind_data);
                 curr->fvalueArray = (double *)ALLOC_N(double, n);
-                for (int i = 0; i < n; i++)
+                for (i = 0; i < n; i++)
                 {
                     item = PyList_GetItem(bind_data, i);
                     curr->fvalueArray[i] = PyFloat_AsDouble(item);
@@ -5710,12 +5714,12 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
                     curr->bind_indicator_array = (SQLINTEGER *) ALLOC_N(SQLINTEGER, n);         
                     memset(curr->uvalue , 0, sizeof(SQLWCHAR) * curr->param_size * n);
 
-                    for (int i = 0; i < n; i++)
+                    for (i = 0; i < n; i++)
                     {
                         item = PyList_GetItem(bind_data, i);
 
-                        SQLWCHAR *tmp_uvalue = NULL;
-                        SQLWCHAR *dest_uvalue = NULL;
+                        //SQLWCHAR *tmp_uvalue = NULL;
+                        //SQLWCHAR *dest_uvalue = NULL;
 
                         if(PyObject_CheckBuffer(item) && (curr->data_type == SQL_BLOB   || 
                                                           curr->data_type == SQL_BINARY || 
@@ -6034,12 +6038,12 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
                     curr->bind_indicator_array = (SQLINTEGER *) ALLOC_N(SQLINTEGER, n);
                     memset(curr->svalue , 0, curr->param_size * n);
 
-                    for (int i = 0; i < n; i++)
+                    for (i = 0; i < n; i++)
                     {
                         item = PyList_GetItem(bind_data, i);
 
-                        char *tmp_svalue = NULL;
-                        char *dest_svalue = NULL;
+                        //char *tmp_svalue = NULL;
+                        //char *dest_svalue = NULL;
                         if (PyObject_CheckBuffer(item) && (curr->data_type == SQL_BLOB      || 
                                                            curr->data_type == SQL_BINARY   ||
                                                            curr->data_type == SQL_VARBINARY) )
@@ -6386,7 +6390,7 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
                     curr->bind_indicator_array = (SQLINTEGER *) ALLOC_N(SQLINTEGER, n);
                     memset(curr->svalue , 0, max_precn * n);
 
-                    for (int i = 0; i < n; i++)
+                    for (i = 0; i < n; i++)
                     {
                         PyObject *tempobj = NULL;
 #if  PY_MAJOR_VERSION >= 3
@@ -6466,7 +6470,7 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
                 Py_ssize_t n = PyList_Size(bind_data);
                 curr->date_value = ALLOC_N(DATE_STRUCT, n);
 
-                for (int i = 0; i < n; i++)
+                for (i = 0; i < n; i++)
                 {
                     item = PyList_GetItem(bind_data, i);
                     (curr->date_value + i)->year = PyDateTime_GET_YEAR(item);
@@ -6501,7 +6505,7 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
                 Py_ssize_t n = PyList_Size(bind_data);
                 curr->time_value = ALLOC_N(TIME_STRUCT, n);
 
-                for (int i = 0; i < n; i++)
+                for (i = 0; i < n; i++)
                 {
                     item = PyList_GetItem(bind_data, i);
                     (curr->time_value + i)->hour = PyDateTime_TIME_GET_HOUR(item);
@@ -6536,7 +6540,7 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
                 Py_ssize_t n = PyList_Size(bind_data);
                 curr->ts_value = ALLOC_N(TIMESTAMP_STRUCT, n);
 
-                for (int i = 0; i < n; i++)
+                for (i = 0; i < n; i++)
                 {       
                     item = PyList_GetItem(bind_data, i);
                     (curr->ts_value + i)->year = PyDateTime_GET_YEAR(item);
