@@ -24,7 +24,7 @@ from setuptools.command.build_ext import build_ext
 from setuptools.command.install import install
 
 PACKAGE = 'ibm_db'
-VERSION = '3.0.4'
+VERSION = '3.1.1'
 LICENSE = 'Apache License 2.0'
 readme = os.path.join(os.path.dirname(__file__),'README.md')
 
@@ -393,6 +393,7 @@ setup( name    = PACKAGE,
                       'Topic :: Database :: Front-Ends'],
 
        long_description = open(readme).read(),
+       long_description_content_type = 'text/markdown',
        platforms = 'Linux32/64, Win32/64, aix32/64, ppc32/64, sunamd32/64, sun32/64, ppc64le, Z/OS',
        ext_modules  = ext_modules,
        py_modules   = modules,

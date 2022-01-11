@@ -41,7 +41,7 @@ Provides Python interface for connecting to IBM DB2 and Informix
 
 <a name="prereq"></a>
 ## Pre-requisites
-Install Python 2.7 or Python 3 <= 3.9. The minimum python version supported by driver is python 2.7 and the latest version supported is python 3.9 except version 3.3 as it has reached end-of-life.
+Install Python 2.7 or Python 3 <= 3.10. The minimum python version supported by driver is python 2.7 and the latest version supported is python 3.10 except version 3.3 as it has reached end-of-life.
 
 The pre-built 32-bit and 64-bit binaries on windows are available for the following versions:
 ```
