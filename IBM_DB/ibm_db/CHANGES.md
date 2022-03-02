@@ -1,5 +1,51 @@
+
+
+2022-01-11, Version 3.1.1
+=========================
+
+ * Post release correction (Arnab Mukherjee)
+
+ * fixing the NULL initialization (Arnab Mukherjee)
+
+ * Changes for build fix with visual studio 2010 for python 3.4 and 2.7 (Arnab Mukherjee)
+
+ * fix for #427 adding readme for pypi site (Arnab Mukherjee)
+
+ * fix for #671 and restore python2 support (Arnab Mukherjee)
+
+ * Changes in Documentation (Arnab Mukherjee)
+
+ * Modification in readme--1 (Arnab Mukherjee)
+
+ * test case changes for ZOS (Arnab Mukherjee)
+
+ * correction in expectation (Arnab Mukherjee)
+
+ * correction in test case 2 (Arnab Mukherjee)
+
+ * correction in test case (Arnab Mukherjee)
+
+ * adding test cases as part of the PR #418 (Arnab Mukherjee)
+
+ * Changes from PR #689 and #407 (Arnab Mukherjee)
+
+ * adding test case for unicode (Arnab Mukherjee)
+
+ * Fixing the issue for fetch assoc (Arnab Mukherjee)
+
+ * Adding the logic for fixing unicode values in windows (Arnab Mukherjee)
+
+ * Fix for Unicode character (Arnab Mukherjee)
+
+ * Test case modification (Arnab Mukherjee)
+
+ * Support for arrays in python ibm_db driver (#698) (Praveen Narayanappa)
+
+
 2021-10-21, Version 3.1.0
 =========================
+
+ * changes for new release 3.1.0 (Arnab Mukherjee)
 
  * Remove dependency on 2to3 and unpin Setuptools. (Jason R. Coombs)
 
