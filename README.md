@@ -84,6 +84,11 @@ pip install ibm_db
 ```
 This will install ibm_db and ibm_db_dbi module.
 
+If you have to use your own URL for clidriver please set environment variable
+```
+IBM_DB_INSTALLER_URL
+```
+
 If you are using python 3.8 or 3.9 on windows and building the source manually, you will need to set dll path of dependent library of clidriver before importing the module as:
 ```
 import os
