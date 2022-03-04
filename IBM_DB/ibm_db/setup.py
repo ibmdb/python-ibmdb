@@ -235,7 +235,10 @@ if (('IBM_DB_HOME' not in os.environ) and ('IBM_DB_DIR' not in os.environ) and (
     ibm_db_lib = os.path.join(ibm_db_dir, 'lib')
 
     if not os.path.isdir('clidriver'):
-        url = 'https://public.dhe.ibm.com/ibmdl/export/pub/software/data/db2/drivers/odbc_cli/' + cliFileName
+        if 'IBM_DB_INSTALLER_URL' in os.environ:
+            url = os.getenv('IBM_DB_INSTALLER_URL') + cliFileName
+        else:
+            url = 'https://public.dhe.ibm.com/ibmdl/export/pub/software/data/db2/drivers/odbc_cli/' + cliFileName
         sys.stdout.write("Downloading %s\n" % (url))
         sys.stdout.flush();
         file_stream = BytesIO(request.urlopen(url, context=context).read())
