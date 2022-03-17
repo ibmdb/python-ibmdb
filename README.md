@@ -43,6 +43,8 @@ Provides Python interface for connecting to IBM DB2 and Informix
 ## Pre-requisites
 Install Python 2.7 or Python 3 <= 3.10. The minimum python version supported by driver is python 2.7 and the latest version supported is python 3.10 except version 3.3 as it has reached end-of-life.
 
+For MacOS M1 chip system: Install x64 version of python for ibm_db as ibm_db do not work with arm64 version of python. Example, you may install [this version](https://www.python.org/ftp/python/3.9.11/python-3.9.11-macosx10.9.pkg) of python on M1 Chip system and then install ibm_db.
+
 The pre-built 32-bit and 64-bit binaries on windows are available for the following versions:
 ```
 python 2.7
@@ -167,10 +169,11 @@ conda install -c conda-forge ibm_db
 | :---:        |  :---:         |  :---:       | :--:
 |Linux         |  amd64 (x86_64)|  Yes         | Latest    |
 |Linux         |  ppc64le       |  Yes         | Latest    |
-|Darwin        |  Mac OS        |  Yes         | Latest    |
+|Darwin        |  Mac OS x64    |  Yes         | Latest    |
 |Windows       |  x64           |  Yes         | Latest    |
 |Windows       |  x32           |  Yes         | Latest    |
 
+Install x64 version of python on M1 Chip system.
 
 ## <a name="quick example"></a> Quick Example
 ```python
@@ -290,18 +293,18 @@ If you intend to install the clidriver manually, Following are the details of th
 
 |Platform      |Architecture    |Cli Driver               |Supported     |Version      |
 | :---:        |  :---:         |  :---:                  |  :---:       | :--:
-|AIX           |  ppc           |aix32_odbc_cli.tar.gz    |  Yes         | V11.5.5     |
-|              |  others        |aix64_odbc_cli.tar.gz    |  Yes         | V11.5.5     |
-|Darwin        |  x64           |macos64_odbc_cli.tar.gz  |  Yes         | V11.5.5     |
-|Linux         |  x64           |linuxx64_odbc_cli.tar.gz |  Yes         | V11.5.5     |
-|              |  s390x         |s390x64_odbc_cli.tar.gz  |  Yes         | V11.5.5     |
+|AIX           |  ppc           |aix32_odbc_cli.tar.gz    |  Yes         | V11.5.6     |
+|              |  others        |aix64_odbc_cli.tar.gz    |  Yes         | V11.5.6     |
+|Darwin        |  x64           |macos64_odbc_cli.tar.gz  |  Yes         | V11.5.6     |
+|Linux         |  x64           |linuxx64_odbc_cli.tar.gz |  Yes         | V11.5.6     |
+|              |  s390x         |s390x64_odbc_cli.tar.gz  |  Yes         | V11.5.6     |
 |              |  s390          |s390_odbc_cli.tar.gz     |  Yes         | V11.1       |
-|              |  ppc64  (LE)   |ppc64le_odbc_cli.tar.gz  |  Yes         | V11.5.5     |
+|              |  ppc64  (LE)   |ppc64le_odbc_cli.tar.gz  |  Yes         | V11.5.6     |
 |              |  ppc64         |ppc64_odbc_cli.tar.gz    |  Yes         | V10.5       |
 |              |  ppc32         |ppc32_odbc_cli.tar.gz    |  Yes         | V10.5       |
-|              |  others        |linuxia32_odbc_cli.tar.gz|  Yes         | V11.5.5     |
-|Windows       |  x64           |ntx64_odbc_cli.zip       |  Yes         | V11.5.5     |
-|              |  x32           |nt32_odbc_cli.zip        |  Yes         | V11.5.5     |
+|              |  others        |linuxia32_odbc_cli.tar.gz|  Yes         | V11.5.6     |
+|Windows       |  x64           |ntx64_odbc_cli.zip       |  Yes         | V11.5.6     |
+|              |  x32           |nt32_odbc_cli.zip        |  Yes         | V11.5.6     |
 |Sun           | i86pc          |sunamd64_odbc_cli.tar.gz |  Yes         | V10.5       |
 |              |                |sunamd32_odbc_cli.tar.gz |  Yes         | V10.5       |
 |              | sparc          |sun64_odbc_cli.tar.gz    |  Yes         | V11.1       |
@@ -463,6 +466,8 @@ fail on version 8.x of DB2.
 ## Known Limitations for the Python driver
 
 If trusted context is not set up, there will be two failures related to trusted context. When thick client has been used then additional three failures related to create, recreate DB.
+
+`ibm_db` do not work with arm64 version of python, use x64 version.
 
 
 ## Known Limitations for the Python wrapper
