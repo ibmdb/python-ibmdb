@@ -266,7 +266,7 @@ Using SSLClientKeyStoreDB and SSLClientKeyStash keyword
  
 conn = ibm_db.connect("DATABASE=<DATABASE_NAME>;HOSTNAME=<HOSTNAME>;PORT=<SSL_PORT>;SECURITY=SSL;SSLClientKeyStoreDB=<FULL_PATH_TO_CLIENT_KEY_STORE_DB>;SSLClientKeyStash=<FULL_PATH_TO_CLIENT_KEY_STASH>;UID=<USER_ID>;PWD=<PASSWORD>",'','')
 ```
-More examples can be found under ['tests'](https://github.com/ibmdb/python-ibmdb/tree/master/IBM_DB/ibm_db/tests) folder.
+More examples can be found under ['ibm_db_tests'](https://github.com/ibmdb/python-ibmdb/tree/master/IBM_DB/ibm_db/ibm_db_tests) folder.
 
 [API Documentation](https://github.com/ibmdb/python-ibmdb/wiki/APIs) has examples for each API.
 
