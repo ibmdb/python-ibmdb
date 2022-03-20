@@ -52,6 +52,13 @@ else:
     libDir = 'lib32'
     sys.stdout.write("Detected 32-bit Python\n")
 
+if ('IBM_DB_HOME' in os.environ):
+    ibm_db_home = os.getenv('IBM_DB_HOME')
+if ('IBM_DB_DIR' in os.environ):
+    ibm_db_dir = os.getenv('IBM_DB_DIR')
+if ('IBM_DB_LIB' in os.environ):
+    ibm_db_lib = os.getenv('IBM_DB_LIB')
+
 # define post-build-ext and post-install operation for mac OS
 if('darwin' in sys.platform):
     class PostInstall(install):
@@ -136,6 +143,15 @@ def _setDllPath():
         pyFile.write( add_dll_directory + "\n" + old )
     pyFile.close()
 
+# Print message on stdout and exit installation
+def _printAndExit(msg):
+        sys.stdout.write(msg + "\n")
+        sys.stdout.flush()
+        sys.exit()
+
+if ('arm64' in os.uname()[4]):
+    _printAndExit("Arm64 architecture is not supported. Please install x64 version of python and then install ibm_db.")
+
 if('win32' in sys.platform):
     prebuildPYDname = ''
     if is64Bit:
@@ -154,11 +170,10 @@ if('win32' in sys.platform):
         shutil.copy(prebuildPYDname, os.path.join(dllDir, 'ibm_db.dll'))
         prebuildIbmdbPYD = True
 
-if (('IBM_DB_HOME' not in os.environ) and ('IBM_DB_DIR' not in os.environ) and ('IBM_DB_LIB' not in os.environ)):
+if ((ibm_db_home == '') and (ibm_db_dir == '') and (ibm_db_lib == '')):
+    sys.stdout.write("Detected platform = " + sys.platform + ", uname = " + os.uname()[4] + "\n")
     if ('zos' == sys.platform):
-        sys.stdout.write("You must set the environment variable IBM_DB_HOME to the HLQ of a DB2 installation\n")
-        sys.stdout.flush()
-        sys.exit()
+        _printAndExit("You must set the environment variable IBM_DB_HOME to the HLQ of a DB2 installation.")
     elif ('aix' in sys.platform):
         os_ = 'aix'
         arch_ = '*'
@@ -223,9 +238,7 @@ if (('IBM_DB_HOME' not in os.environ) and ('IBM_DB_DIR' not in os.environ) and (
         cliFileName = 'macos64_odbc_cli.tar.gz'
         arch_ = 'x86_64'
     else:
-        sys.stdout.write("Not a known platform for python ibm_db.\n")
-        sys.stdout.flush()
-        sys.exit()
+        _printAndExit("Not a known platform for python ibm_db.")
 
     tmp_path = get_python_lib()
     easy_cli_path = os.path.join(tmp_path, 'ibm_db-%s.egg' % ("-".join([VERSION, "py"+sys.version.split(" ")[0][0:3]]) if('win32' in sys.platform) else "-".join([VERSION, "py"+sys.version.split(" ")[0][0:3], os_, arch_])), 'clidriver')
