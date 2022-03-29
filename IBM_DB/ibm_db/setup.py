@@ -127,8 +127,9 @@ def _setWinEnv(name, value):
     if name not in old:
         pyFile.seek(0)
         envVal = "import os\n" + \
-                '''if 'clidriver' not in os.environ['%(name)s']:\n    os.environ['%(name)s'] = os.environ['%(name)s']''' % {'name': name}
-        envVal = envVal + ''' + ";" + os.path.join(os.path.abspath(os.path.dirname(__file__)), '%(val)s', 'bin')''' % {'val': value}
+                '''if 'IBM_DB_HOME' in os.environ:\n    ibm_db_home = os.getenv('IBM_DB_HOME')\n''' + \
+                '''else:\n    ibm_db_home = os.path.join(os.path.abspath(os.path.dirname(__file__)), '%(val)s')\n'''  % {'val': value}
+        envVal = envVal + '''os.environ['%(name)s'] = os.environ['%(name)s'] + ";" + os.path.join(ibm_db_home, 'bin')''' % {'name': name}
         pyFile.write( envVal + "\n" + old )
     pyFile.close()
 
