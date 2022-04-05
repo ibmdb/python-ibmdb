@@ -506,6 +506,7 @@ static void _python_ibm_db_check_sql_errors( SQLHANDLE handle, SQLSMALLINT hType
     SQLSMALLINT length = 0;
     char *p= NULL;
     SQLINTEGER rc1 = SQL_SUCCESS;
+    int i = 0;
 
     memset(errMsg, '\0', DB2_MAX_ERR_MSG_LEN);
     memset(msg, '\0', SQL_MAX_MESSAGE_LENGTH + 1);
@@ -517,6 +518,15 @@ static void _python_ibm_db_check_sql_errors( SQLHANDLE handle, SQLSMALLINT hType
             *p = '\0';
         }
         sprintf((char*)errMsg, "%s SQLCODE=%d", (char*)msg, (int)sqlcode);
+#ifdef _WIN32
+        for(i = 0; i < strlen(errMsg); i++)
+        {
+            if(errMsg[i] == '\r')
+            {
+                errMsg[i] = ' ';
+            }
+        }
+#endif
         if (cpy_to_global != 0 && rc != 1 ) {
             PyErr_SetString(PyExc_Exception, (char *) errMsg);
         }
