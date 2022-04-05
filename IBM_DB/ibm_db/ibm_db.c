@@ -3293,6 +3293,7 @@ static PyObject *ibm_db_columns(PyObject *self, PyObject *args)
         Py_XDECREF(py_table_name);
         Py_XDECREF(py_column_name);
 
+        Py_INCREF(Py_None);
         return (PyObject *)stmt_res;
     } else {
         Py_XDECREF(py_qualifier);
