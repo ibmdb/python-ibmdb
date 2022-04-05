@@ -978,7 +978,7 @@ static int _python_ibm_db_bind_column_helper(stmt_handle *stmt_res)
 
             case SQL_BIGINT:
             case SQL_DECFLOAT:
-                in_length = stmt_res->column_info[i].size+2;
+                in_length = stmt_res->column_info[i].size+3;
                 row_data->str_val = (SQLCHAR *)ALLOC_N(char, in_length);
                 if ( row_data->str_val == NULL ) {
                     PyErr_SetString(PyExc_Exception, "Failed to Allocate Memory");
