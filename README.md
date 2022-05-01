@@ -43,7 +43,21 @@ Provides Python interface for connecting to IBM DB2 and Informix
 ## Pre-requisites
 Install Python 2.7 or Python 3 <= 3.10. The minimum python version supported by driver is python 2.7 and the latest version supported is python 3.10 except version 3.3 as it has reached end-of-life.
 
-For MacOS M1 chip system: Install x64 version of python for ibm_db as ibm_db do not work with arm64 version of python. Example, you may install [this version](https://www.python.org/ftp/python/3.9.11/python-3.9.11-macosx10.9.pkg) of python on M1 Chip system and then install ibm_db.
+> **For MacOS M1 / Apple Silicon chip system**
+> 
+> Several things might be necessary to get `ibm_db` working on the Apple Silicon architecture:
+> 1. Install x64 version of python for ibm_db as ibm_db do not work with arm64 version of python. Example, you may install [this version](https://www.python.org/ftp/python/3.9.11/python-3.9.11-macosx10.9.pkg) of python on M1 Chip system and then install ibm_db.
+>   When using pyenv to manage your Python installations, make sure you have pyenv installed as x86-compatible and run it in x86 mode (ie prepending all your command with `arch -x86_64`). If you are using Homebrew to install `pyenv`, Homebrew will itself also have to be installed as x86-compatible:
+>   ```bash
+>   # If you are using Homebrew to manage your pyenv installation, make sure Homebrew is installed as x86-compatible
+>   arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+>   # Make sure you are using Homebrew's x86-compatible version (especially important if you have installed Homebrew for Apple Silicon as well)
+>   eval "$(/usr/local/bin/brew shellenv)"
+>   arch -x86_64 brew install pyenv
+>   # Any time we want to use pyenv, we should first run `eval "$(/usr/local/bin/brew shellenv)"`
+>   arch -x86_64 pyenv install <YOUR_PYTHON_VERSION>
+>   ```
+> 2. When regular installation does not work, it might help to preface your installation command with `ARCHFLAGS="-arch x86_64"`. Be sure to have uninstalled `ibm_db` before installing again, otherwise this fix won't help.
 
 The pre-built 32-bit and 64-bit binaries on windows are available for the following versions:
 ```
