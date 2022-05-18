@@ -14,7 +14,7 @@ python setup.py install
 conda install ibm-db --channel ODSP-TEST/labels/test
 ```
 
-## Important environment variables to set before running Python Programs on Z/OS
+## Important environment variables to set before running Python Programs on z/OS
 ```
 export IBM_DB_HOME='DSN.VC10'
 export SUBSYSTEM=<SSID>
@@ -45,7 +45,7 @@ chtag -b $DSNAOINI # we have to tag as binary, so that ODBC can read it, since p
 
 ```
 
-## A simple test for connecting to DB2
+## A simple test for connecting to Db2
 
 Running the sample code to test basic connection.
 

@@ -21,10 +21,10 @@ Below steps were followed for the same:
     -- UI72589 (v12)
 ```
 
-2. Configure below environment variables for install/compilation or create a shell profile (i.e. &quot;. profile&quot; file in your home environment) which includes environment variables, needed for Python and DB2 for z/OS ODBC(make sure all the below paths are changed based on your system and DB setting and all the variables are configured with none missed).
+2. Configure below environment variables for install/compilation or create a shell profile (i.e. &quot;. profile&quot; file in your home environment) which includes environment variables, needed for Python and Db2 for z/OS ODBC(make sure all the below paths are changed based on your system and DB setting and all the variables are configured with none missed).
 
 - NOTE(Default behaviour): 
-	- IBM_DB_HOME is the HLQ for your DB2 libraries(SDSNMACS, SDSNC.H)
+	- IBM_DB_HOME is the HLQ for your Db2 libraries(SDSNMACS, SDSNC.H)
 
 e.g.
 
@@ -60,16 +60,16 @@ source $HOME/ibm_python_venv/bin/activate
 
 4. Make sure &quot;pip3&quot; is installed and enabled as part of Python installation and is working.
 
-5. ODBC installed connects and works with the DB2 for z/OS on the same subsytem or Sysplex with details configured in &quot;.ini&quot; file. No additional setting has to be done or credentials needs to be given during connection creation in python program. e.g.
+5. ODBC installed connects and works with the Db2 for z/OS on the same subsytem or Sysplex with details configured in &quot;.ini&quot; file. No additional setting has to be done or credentials needs to be given during connection creation in python program. e.g.
 
 ```python
 import ibm_db
 conn = ibm_db.connect('','','')
 ```
 
-**_Installing Python driver for DB2 i.e. ibm\_db &amp; Running a validation Program_**
+**_Installing Python driver for Db2 i.e. ibm\_db &amp; Running a validation Program_**
 
-Now that the Python and ODBC is ready, for connecting to DB2 you need a DB2 Python driver which we are going to install.
+Now that the Python and ODBC is ready, for connecting to Db2 you need a Db2 Python driver which we are going to install.
 
 Follow the standard steps for the same i.e. pip3 install ibm_db
 

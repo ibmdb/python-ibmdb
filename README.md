@@ -1,11 +1,11 @@
-Python support for IBM DB2 and IBM Informix
+Python support for IBM Db2 for LUW, IBM Informix and IBM Db2 for z/OS
 =========
 
 [![Build Status](https://travis-ci.com/ibmdb/python-ibmdb.svg?branch=master)](https://travis-ci.com/ibmdb/python-ibmdb)
 
-## Python, DB-API components for IBM DB2 and Informix
+## Python, DB-API components for IBM Db2 for LUW, IBM Informix and IBM Db2 for z/OS
 
-Provides Python interface for connecting to IBM DB2 and Informix
+Provides Python interface for connecting to IBM Db2 for LUW, IBM Informix and IBM Db2 for z/OS
 
 ### Table of contents
 
@@ -35,8 +35,8 @@ Provides Python interface for connecting to IBM DB2 and Informix
 ## Components
 
 1. The **ibm_db** contains:
-   * **ibm_db** driver: Python driver for IBM DB2 and IBM Informix databases. Uses the IBM Data Server Driver for ODBC and CLI APIs to connect to IBM DB2 and Informix.
-   * **ibm_db_dbi**: Python driver for IBM DB2 and IBM Informix databases that complies to the DB-API 2.0 specification.
+   * **ibm_db** driver: Python driver for IBM Db2 for LUW, IBM Informix and IBM Db2 for z/OS databases. Uses the IBM Data Server Driver for ODBC and CLI APIs to connect to IBM Db2 for LUW and Informix.
+   * **ibm_db_dbi**: Python driver for IBM Db2 for LUW and IBM Informix databases that complies to the DB-API 2.0 specification.
    Checkout the [README](https://github.com/ibmdb/python-ibmdb/tree/master/IBM_DB/ibm_db) for getting started with ibm_db and ibm_db_dbi
 
 <a name="prereq"></a>
@@ -73,8 +73,8 @@ python 3.10
 
 You might need zlib, openssl, pip installations if not already available in your setup.
 
-* Z/OS:
-  In case of any issues using Python on zO/S, refer to this [file](install.md) and also refer to this [doc](https://github.com/ibmdb/node-ibm_db#configure-odbc-driver-on-zos).
+* z/OS:
+  In case of any issues using Python on z/OS, refer to this [file](install.md) and also refer to this [doc](https://github.com/ibmdb/node-ibm_db#configure-odbc-driver-on-zos).
 
 * Linux/Unix:
   If you face problems due to missing python header files while installing the driver, you would need to install python developer package and retry install. e.g:
@@ -293,13 +293,13 @@ https://github.com/ibmdb/python-ibmdb/wiki/APIs
 
 ### <a name="Licenserequirements"></a> License requirements for connecting to databases
 
-Python ibm_db driver can connect to DB2 on Linux Unix and Windows without any additional license/s, however, connecting to databases on DB2 for z/OS or DB2 for i(AS400) Servers require either client side or server side license/s. The client side license would need to be copied under `license` folder of your `cidriver` installation directory and for activating server side license, you would need to purchase DB2 Connect Unlimited for System z® and DB2 Connect Unlimited Edition for System i®.
+Python ibm_db driver can connect to Db2 on Linux Unix and Windows without any additional license/s, however, connecting to databases on Db2 for z/OS or Db2 for i(AS400) Servers require either client side or server side license/s. The client side license would need to be copied under `license` folder of your `clidriver` installation directory and for activating server side license, you would need to purchase Db2 Connect Unlimited for System z® and Db2 Connect Unlimited Edition for System i®.
 
-To know more about license and purchasing cost, please contact [IBM Customer Support](http://www-05.ibm.com/support/operations/zz/en/selectcountrylang.html).
+To know more about license and purchasing cost, please contact [IBM Customer Support](https://www.ibm.com/mysupport/s/?language=en_US).
 
 To know more about server based licensing viz db2connectactivate, follow below links:
-* [Activating the license certificate file for DB2 Connect Unlimited Edition](https://www.ibm.com/developerworks/community/blogs/96960515-2ea1-4391-8170-b0515d08e4da/entry/unlimited_licensing_in_non_java_drivers_using_db2connectactivate_utlility1?lang=en).
-* [Unlimited licensing using db2connectactivate utility](https://www.ibm.com/developerworks/community/blogs/96960515-2ea1-4391-8170-b0515d08e4da/entry/unlimited_licensing_in_non_java_drivers_using_db2connectactivate_utlility1?lang=en.)
+* [Activating the license certificate file for Db2 Connect Unlimited Edition](https://www.ibm.com/docs/en/db2/11.5?topic=li-activating-license-certificate-file-db2-connect-unlimited-edition).
+* [Unlimited licensing using db2connectactivate utility](https://www.ibm.com/docs/en/db2/11.1?topic=edition-db2connectactivate-server-license-activation-utility).
 
 If you intend to install the clidriver manually, Following are the details of the client driver versions that you can download from [CLIDRIVER](https://public.dhe.ibm.com/ibmdl/export/pub/software/data/db2/drivers/odbc_cli/) to be able to connect to databases on non-LUW servers. You would need the client side license file as per Version for corresponding installation.:
 
@@ -341,7 +341,7 @@ git clone git@github.com:ibmdb/python-ibmdb.git
 ## Latest Updates
 
 ### *Updated ibm_db*
-  Apr 12, 2021: A new release 3.0.4 of ibm_db and ibm_db_dbi available.
+  Mar 2, 2022: A new release 3.1.1 of ibm_db and ibm_db_dbi available.
 
 
 <a name='support'></a>
@@ -401,7 +401,7 @@ export DYLD_LIBRARY_PATH=/usr/local/lib/python3.5/site-packages/clidriver/lib:$D
 
 ```
 If the issue is not resolved even after setting DYLD_LIBRARY_PATH, you could refer:
-[MAC OS Hints and Tips](https://www.ibm.com/developerworks/community/blogs/96960515-2ea1-4391-8170-b0515d08e4da/entry/ibm_db_on_MAC_OS_Hints_and_Tips?lang=en)
+[MAC OS Hints and Tips](https://medium.com/@sudhanvalp/overcome-ibm-db-import-error-image-not-found-on-macos-578f07b70762)
 
 * Resolving SQL1042C error
 
@@ -426,11 +426,23 @@ In case of similar issue in windows platform
 set PATH=<clidriver_folder_path>\bin\amd64.VC12.CRT;%PATH%
 ```
 
+* ERROR Failed building wheel for ibm_db
+
+In case of the error seen while building wheel use the following flag along with ibm_db for installation
+
+```
+To install the package ibm_db it is necessary at first to install the build dependency package - wheel:
+pip3 install wheel
+Install ibm_db with the pip flag --no-build-isolation:
+pip3 install ibm_db --no-build-isolation
+```
+
+
 <a name='testing'></a>
 # Testing
 
 Tests displaying Python ibm_db driver code examples are located in the ibm_db_tests
-directory. A valid config.py will need to be created to configure your DB2
+directory. A valid config.py will need to be created to configure your Db2
 settings. A config.py.sample exists that can be copied and modified for your
 environment.
 
@@ -454,9 +466,9 @@ created by running:
   CREATE DATABASE mydatabase USING CODESET UTF-8 TERRITORY US
 ```
 Some of the tests utilize XML functionality only available in version 9 or
-later of DB2.  While DB2 v8.x is fully supported, two of the tests
+later of Db2.  While Db2 v8.x is fully supported, two of the tests
 (test_195.py and test_52949.py) utilize XML functionality.  These tests will
-fail on version 8.x of DB2.
+fail on version 8.x of Db2.
 
 ## Running the driver testsuite on Linux
   In order to run the entire python driver testsuite on Linux, run this

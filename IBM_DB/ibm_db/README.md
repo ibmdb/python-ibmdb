@@ -51,13 +51,13 @@ More examples can be found under 'ibm_db_tests' folder.
 
 ### License requirements for connecting to databases
 
-Python ibm_db driver can connect to DB2 on Linux Unix and Windows without any additional license/s, however, connecting to databases on DB2 for z/OS or DB2 for i(AS400) Servers require either client side or server side license/s. The client side license would need to be copied under `license` folder of your `cidriver` installation directory and for activating server side license, you would need to purchase DB2 Connect Unlimited for System z® and DB2 Connect Unlimited Edition for System i®.
+Python ibm_db driver can connect to Db2 on Linux Unix and Windows without any additional license/s, however, connecting to databases on Db2 for z/OS or Db2 for i(AS400) Servers require either client side or server side license/s. The client side license would need to be copied under `license` folder of your `cidriver` installation directory and for activating server side license, you would need to purchase Db2 Connect Unlimited for System z® and Db2 Connect Unlimited Edition for System i®.
 
-To know more about license and purchasing cost, please contact [IBM Customer Support](http://www-05.ibm.com/support/operations/zz/en/selectcountrylang.html).
+To know more about license and purchasing cost, please contact [IBM Customer Support](https://www.ibm.com/mysupport/s/?language=en_US).
 
 To know more about server based licensing viz db2connectactivate, follow below links:
-* [Activating the license certificate file for DB2 Connect Unlimited Edition](https://www.ibm.com/developerworks/community/blogs/96960515-2ea1-4391-8170-b0515d08e4da/entry/unlimited_licensing_in_non_java_drivers_using_db2connectactivate_utlility1?lang=en).
-* [Unlimited licensing using db2connectactivate utility](https://www.ibm.com/developerworks/community/blogs/96960515-2ea1-4391-8170-b0515d08e4da/entry/unlimited_licensing_in_non_java_drivers_using_db2connectactivate_utlility1?lang=en.)
+* [Activating the license certificate file for Db2 Connect Unlimited Edition](https://www.ibm.com/docs/en/db2/11.5?topic=li-activating-license-certificate-file-db2-connect-unlimited-edition).
+* [Unlimited licensing using db2connectactivate utility](https://www.ibm.com/docs/en/db2/11.1?topic=edition-db2connectactivate-server-license-activation-utility).
 
 Following are the details of the client license versions that you need to be able to connect to databases on non-LUW servers:
 
@@ -124,10 +124,10 @@ export DYLD_LIBRARY_PATH=/usr/local/lib/python3.5/site-packages/clidriver/lib/ic
 ```
 
 ### Supported databases
- * **Minimum Supported version of IBM DB2 is V9fp2 for Linux, UNIX, and Windows**
+ * **Minimum Supported version of IBM Db2 is V9fp2 for Linux, UNIX, and Windows**
  * Informix 11.10 **(Cheetah)**
  * Remote connections to i5/OS (iSeries)
- * Remote connections to z/OS (DB2 for z/OS)
+ * Remote connections to z/OS (Db2 for z/OS)
 
 # Feedback
 
@@ -139,7 +139,7 @@ export DYLD_LIBRARY_PATH=/usr/local/lib/python3.5/site-packages/clidriver/lib/ic
 # Testing
 
 Tests displaying Python ibm_db driver code examples are located in the ibm_db_tests
-directory. A valid config.py will need to be created to configure your DB2
+directory. A valid config.py will need to be created to configure your Db2
 settings. A config.py.sample exists that can be copied and modified for your
 environment.
 
@@ -163,9 +163,9 @@ created by running:
   CREATE DATABASE mydatabase USING CODESET UTF-8 TERRITORY US
 ```
 Some of the tests utilize XML functionality only available in version 9 or
-later of DB2.  While DB2 v8.x is fully supported, two of the tests
+later of Db2.  While Db2 v8.x is fully supported, two of the tests
 (test_195.py and test_52949.py) utilize XML functionality.  These tests will
-fail on version 8.x of DB2.
+fail on version 8.x of Db2.
 
 ## Running the driver testsuite on Linux
   In order to run the entire python driver testsuite on Linux, run this
