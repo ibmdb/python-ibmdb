@@ -51,6 +51,71 @@ else:
     is64Bit = False
     libDir = 'lib32'
     sys.stdout.write("Detected 32-bit Python\n")
+    
+# Print message on stdout and exit installation
+def _printAndExit(msg):
+        sys.stdout.write(msg + "\n")
+        sys.stdout.flush()
+        sys.exit()
+      
+def _errormessage(option):
+    if(option == "downloadFailedWin"):
+        message = "\nPlease download the clidriver manually from the above link and unzip the contents into a particular location.\nSet the location of the directory to the system enviroment variable \"IBM_DB_HOME\"\nExample set IBM_DB_HOME=C:\downloads\db2driver\clidriver\nOnce the above settings are done please try installing ibm_db again."
+    if(option == "downloadFailed"):
+        message = "\nPlease download the clidriver manually from the above link and untar the contents into a particular directory.\nSet the location of the directory to the system enviroment variable \"IBM_DB_HOME\"\nExample export IBM_DB_HOME=/home/db2driver/clidriver\nOnce the above settings are done try installing ibm_db again."
+    if(option == "includeFolderMissing"):
+        message = "\nDb2 installation found but the installed Db2 directory does not contain include directory.\nFor IBM_DB installation it is important to have the include directory in the installed Db2 folder, as it is required for ibm_db compilation.\nProgessing with download of clidriver along with the installation."
+    if(option == "noGcc"):
+        message = "\nNo Gcc installation detected.\nPlease install gcc and continue with the installation of the ibm_db."
+    if(option == "noPythonDevel"):
+        message = "\nNo Python.h header file detected.\nPlease install python-devel or python3-devel as instructed in \"https://github.com/ibmdb/python-ibmdb/blob/master/README.md#KnownIssues\" and continue with the installation"
+    return message
+    
+def _printOnly(msg):
+    sys.stdout.write(msg + "\n")
+    sys.stdout.flush()
+    
+def _checkForIncludeFolder(db2path):
+    includePath = os.path.join(db2path,'include')
+    _includeFlag = False
+    if os.path.isdir(includePath):
+        _includeFlag = True
+        
+    return _includeFlag
+    
+def _getinstalledDb2Path():
+    status,output = subprocess.getstatusoutput('db2level')
+    if(status == 0):
+        _printOnly("Db2 installation detected ... ")
+        temp = output.split("Product is installed at")
+        path = temp[1].strip()
+        path = path[0:-1]
+        path = path.replace('"','')
+        _includeFlag = _checkForIncludeFolder(path)
+        if(_includeFlag):
+            _printOnly("Setting IBM_DB_HOME=" + path + " and skipping the clidriver download for the installation")
+            os.environ["IBM_DB_HOME"]=path
+        else:
+            _printOnly(_errormessage("includeFolderMissing"))
+            
+def _checkGcc():
+    status,output = subprocess.getstatusoutput('which gcc')
+    if(status == 0):
+        _printOnly("Pre-requisite check [gcc] : Passed")
+    else:
+        _printAndExit(_errormessage("noGcc"))
+        
+def _checkPythonHeaderFile():
+    from distutils import sysconfig as s
+    config = s.get_config_vars()
+    _include_dir = config['INCLUDEPY']
+    if (os.path.exists(os.path.join(_include_dir,'Python.h'))):
+        _printOnly("Pre-requisite check [Python.h] : Passed")
+    else:
+        _printAndExit(_errormessage("noPythonDevel"))     
+
+        
+_getinstalledDb2Path()
 
 if ('IBM_DB_HOME' in os.environ):
     ibm_db_home = os.getenv('IBM_DB_HOME')
@@ -94,7 +159,7 @@ if('zos' in sys.platform):
                 try:
                     os.system("chtag -r " + get_python_lib() + r"/ibm_db*.so")
                 except:
-                    print("Could not change file tag information")
+                    _printOnly("Could not change file tag information")
             
     class PostBuildExt(build_ext):
         def run(self):
@@ -103,22 +168,25 @@ if('zos' in sys.platform):
                 try:
                     os.system("chtag -r " + self.build_lib + r"/ibm_db*.so")
                 except:
-                    print("Could not change file tag information")
+                    _printOnly("Could not change file tag information")
                     
     cmd_class = dict(install = PostInstall, build_ext = PostBuildExt)
 
 # defining extension
 def _ext_modules(include_dir, library, lib_dir, runtime_dir=None):
-    ext_args = dict(include_dirs = [include_dir],
-                    libraries = library if library else [],
-                    library_dirs = [lib_dir] if lib_dir else [],
-                    sources = ['ibm_db.c'])
-    if sys.platform == 'zos':
-        ext_args['extra_objects'] = [os.path.join(os.getcwd(), "libdsnao64c.x")]
-    if runtime_dir:
-        ext_args['runtime_library_dirs'] = [runtime_dir]
-    ibm_db = Extension('ibm_db', **ext_args)
-    return [ibm_db]
+    try:
+        ext_args = dict(include_dirs = [include_dir],
+                        libraries = library if library else [],
+                        library_dirs = [lib_dir] if lib_dir else [],
+                        sources = ['ibm_db.c'])
+        if sys.platform == 'zos':
+            ext_args['extra_objects'] = [os.path.join(os.getcwd(), "libdsnao64c.x")]
+        if runtime_dir:
+            ext_args['runtime_library_dirs'] = [runtime_dir]
+        ibm_db = Extension('ibm_db', **ext_args)
+        return [ibm_db]
+    except Exception as e:
+        _printOnly("Compilation of IBM_DB failed : " + str(e))
 
 # set the win32 env, if not present
 def _setWinEnv(name, value):
@@ -140,18 +208,12 @@ def _setDllPath():
     if "add_dll_directory" not in old:
         pyFile.seek(0)
         add_dll_directory = "import os\n" + '''if 'IBM_DB_HOME' not in os.environ:\n    os.add_dll_directory(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'clidriver', 'bin'))\nelse:\n    ibm_db_home = os.environ['IBM_DB_HOME'].strip('"')\n    os.add_dll_directory(os.path.join(ibm_db_home, 'bin'))'''
-
         pyFile.write( add_dll_directory + "\n" + old )
     pyFile.close()
 
-# Print message on stdout and exit installation
-def _printAndExit(msg):
-        sys.stdout.write(msg + "\n")
-        sys.stdout.flush()
-        sys.exit()
-
-if ('arm64' in os.uname()[4]):
-    _printAndExit("Arm64 architecture is not supported. Please install x64 version of python and then install ibm_db.")
+if('win32' not in sys.platform):
+    if ('arm64' in os.uname()[4]):
+        _printAndExit("Arm64 architecture is not supported. Please install x64 version of python and then install ibm_db.")
 
 if('win32' in sys.platform):
     prebuildPYDname = ''
@@ -172,7 +234,10 @@ if('win32' in sys.platform):
         prebuildIbmdbPYD = True
 
 if ((ibm_db_home == '') and (ibm_db_dir == '') and (ibm_db_lib == '')):
-    sys.stdout.write("Detected platform = " + sys.platform + ", uname = " + os.uname()[4] + "\n")
+    if('win32' not in sys.platform):
+        sys.stdout.write("Detected platform = " + sys.platform + ", uname = " + os.uname()[4] + "\n")
+    else:
+        sys.stdout.write("Detected platform = " + sys.platform + "\n")
     if ('zos' == sys.platform):
         _printAndExit("You must set the environment variable IBM_DB_HOME to the HLQ of a DB2 installation.")
     elif ('aix' in sys.platform):
@@ -254,22 +319,28 @@ if ((ibm_db_home == '') and (ibm_db_dir == '') and (ibm_db_lib == '')):
         else:
             url = 'https://public.dhe.ibm.com/ibmdl/export/pub/software/data/db2/drivers/odbc_cli/' + cliFileName
         sys.stdout.write("Downloading %s\n" % (url))
-        sys.stdout.flush();
-        file_stream = BytesIO(request.urlopen(url, context=context).read())
-        if (os_ == 'win'):
-            if sys.version_info[0:2] <= (2, 5):
-                sys.stdout.write("Auto installation of clidriver for Python Version %i.%i on Window platform is currently not supported \n" % (sys.version_info[0:2]))
-                sys.stdout.write("Environment variable IBM_DB_HOME is not set. Set it to your DB2/IBM_Data_Server_Driver installation directory and retry ibm_db module install.\n")
-                sys.stdout.flush()
-                sys.exit()
-            cliDriver_zip =  zipfile.ZipFile(file_stream)
-            cliDriver_zip.extractall()
-        else:
-            cliDriver_tar = tarfile.open(fileobj=file_stream)
-            cliDriver_tar.extractall()
-        open(os.path.join(ibm_db_dir, '__init__.py'), 'w').close()
-        if os.path.isfile('ibm_db.dll'):
-            shutil.copy('ibm_db.dll', 'clidriver')
+        sys.stdout.flush()
+        try:
+            file_stream = BytesIO(request.urlopen(url, context=context).read())
+            if (os_ == 'win'):
+                if sys.version_info[0:2] <= (2, 5):
+                    sys.stdout.write("Auto installation of clidriver for Python Version %i.%i on Window platform is currently not supported \n" % (sys.version_info[0:2]))
+                    sys.stdout.write("Environment variable IBM_DB_HOME is not set. Set it to your DB2/IBM_Data_Server_Driver installation directory and retry ibm_db module install.\n")
+                    sys.stdout.flush()
+                    sys.exit()
+                cliDriver_zip =  zipfile.ZipFile(file_stream)
+                cliDriver_zip.extractall()
+            else:
+                cliDriver_tar = tarfile.open(fileobj=file_stream)
+                cliDriver_tar.extractall()
+            open(os.path.join(ibm_db_dir, '__init__.py'), 'w').close()
+            if os.path.isfile('ibm_db.dll'):
+                shutil.copy('ibm_db.dll', 'clidriver')
+        except Exception as e:
+            if(os_ == "win"):
+                _printAndExit("Error while downloading clidriver from the following URL : " + url + "\n" + str(e) + _errormessage("downloadFailedWin"))
+            else:
+                _printAndExit("Error while downloading clidriver from the following URL : " + url + "\n" + str(e) + _errormessage("downloadFailed"))
 
     if prebuildIbmdbPYD:
         _setWinEnv("PATH", "clidriver")
@@ -382,44 +453,48 @@ if (sys.platform[0:3] == 'win'):
         modules.append('ibm_db')
     else:
         ext_modules = _ext_modules(ibm_db_include, library, ibm_db_lib)
+        
+if('win32' not in sys.platform):        
+    _checkGcc()
+    _checkPythonHeaderFile()
 
 setup( name    = PACKAGE,
-       version = VERSION,
-       license = LICENSE,
-       description      = 'Python DBI driver for DB2 (LUW, zOS, i5) and IDS',
-       author           = 'IBM Application Development Team',
-       author_email     = 'opendev@us.ibm.com',
-       url              = 'http://pypi.python.org/pypi/ibm_db/',
-       download_url     = 'http://code.google.com/p/ibm-db/downloads/list',
-       keywords         = 'database DB-API interface IBM Data Servers DB2 Informix IDS',
-       classifiers  = [(sys.version_info >= (3, )) and 'Development Status :: 4 - Beta' or 'Development Status :: 5 - Production/Stable',
-                      'Intended Audience :: Developers',
-                      'License :: OSI Approved :: Apache Software License',
-                      'Operating System :: Microsoft :: Windows :: Windows 10',
-                      'Operating System :: Unix',
-                      'Programming Language :: Python',
-                      'Programming Language :: Python :: 2',
-                      'Programming Language :: Python :: 2.7',
-                      'Programming Language :: Python :: 3',
-                      'Programming Language :: Python :: 3.5',
-                      'Programming Language :: Python :: 3.6',
-                      'Programming Language :: Python :: 3.7',
-                      'Programming Language :: Python :: 3.8',
-                      'Programming Language :: Python :: 3.9',
-                      'Programming Language :: Python :: 3.10'
-                      'Topic :: Database :: Front-Ends'],
+    version = VERSION,
+    license = LICENSE,
+    description      = 'Python DBI driver for DB2 (LUW, zOS, i5) and IDS',
+    author           = 'IBM Application Development Team',
+    author_email     = 'opendev@us.ibm.com',
+    url              = 'http://pypi.python.org/pypi/ibm_db/',
+    download_url     = 'http://code.google.com/p/ibm-db/downloads/list',
+    keywords         = 'database DB-API interface IBM Data Servers DB2 Informix IDS',
+    classifiers  = [(sys.version_info >= (3, )) and 'Development Status :: 4 - Beta' or 'Development Status :: 5 - Production/Stable',
+                    'Intended Audience :: Developers',
+                    'License :: OSI Approved :: Apache Software License',
+                    'Operating System :: Microsoft :: Windows :: Windows 10',
+                    'Operating System :: Unix',
+                    'Programming Language :: Python',
+                    'Programming Language :: Python :: 2',
+                    'Programming Language :: Python :: 2.7',
+                    'Programming Language :: Python :: 3',
+                    'Programming Language :: Python :: 3.5',
+                    'Programming Language :: Python :: 3.6',
+                    'Programming Language :: Python :: 3.7',
+                    'Programming Language :: Python :: 3.8',
+                    'Programming Language :: Python :: 3.9',
+                    'Programming Language :: Python :: 3.10',
+                    'Topic :: Database :: Front-Ends'],
 
-       long_description = open(readme).read(),
-       long_description_content_type = 'text/markdown',
-       platforms = 'Linux32/64, Win32/64, aix32/64, ppc32/64, sunamd32/64, sun32/64, ppc64le, Z/OS',
-       ext_modules  = ext_modules,
-       py_modules   = modules,
-       packages     = find_packages(),
-       package_data = package_data,
-       data_files   = data_files,
-       include_package_data = True,
-       cmdclass = cmd_class,
-     )
+    long_description = open(readme).read(),
+    long_description_content_type = 'text/markdown',
+    platforms = 'Linux32/64, Win32/64, aix32/64, ppc32/64, sunamd32/64, sun32/64, ppc64le, z/OS',
+    ext_modules  = ext_modules,
+    py_modules   = modules,
+    packages     = find_packages(),
+    package_data = package_data,
+    data_files   = data_files,
+    include_package_data = True,
+    cmdclass = cmd_class,
+    )
 
 if license_agreement:
     sys.stdout.write(license_agreement)
