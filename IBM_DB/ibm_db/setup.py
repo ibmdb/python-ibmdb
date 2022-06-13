@@ -24,7 +24,7 @@ from setuptools.command.build_ext import build_ext
 from setuptools.command.install import install
 
 PACKAGE = 'ibm_db'
-VERSION = '3.1.1'
+VERSION = '3.1.2'
 LICENSE = 'Apache License 2.0'
 readme = os.path.join(os.path.dirname(__file__),'README.md')
 
@@ -114,8 +114,8 @@ def _checkPythonHeaderFile():
     else:
         _printAndExit(_errormessage("noPythonDevel"))     
 
-        
-_getinstalledDb2Path()
+if sys.version_info >= (3, ):      
+    _getinstalledDb2Path()
 
 if ('IBM_DB_HOME' in os.environ):
     ibm_db_home = os.getenv('IBM_DB_HOME')
@@ -454,9 +454,10 @@ if (sys.platform[0:3] == 'win'):
     else:
         ext_modules = _ext_modules(ibm_db_include, library, ibm_db_lib)
         
-if('win32' not in sys.platform):        
-    _checkGcc()
-    _checkPythonHeaderFile()
+if('win32' not in sys.platform):
+    if sys.version_info >= (3, ):        
+        _checkGcc()
+        _checkPythonHeaderFile()
 
 setup( name    = PACKAGE,
     version = VERSION,

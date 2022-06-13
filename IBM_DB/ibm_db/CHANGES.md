@@ -1,5 +1,33 @@
 
 
+2022-06-13, Version 3.1.2
+===========================
+
+ * setup.py upgrade : better error handling while installation (Arnab Mukherjee)
+
+ * Code fix for issue #413 (Arnab Mukherjee)
+
+ * Code fix for issue #468 (Arnab Mukherjee)
+
+ * Code change for issue #720 (Arnab Mukherjee)
+
+ * documentation updates (Arnab Mukherjee)
+
+ * add custom clidriver bin path to ibm_db.py file (Alexandre Duverger)
+
+ * doc: update for issue #733 (Bimal Jha)
+
+ * fix: for issue #708 (Bimal Jha)
+
+ * doc: update about MacOS M1 Chip system (Bimal Jha)
+
+ * Add issue template (Bimal Jha)
+
+ * Add support for installing clidriver using another URL or artifactory URL. (#727) (MarcinMaciaszek)
+
+ * updating the CHANGES.md file (Arnab Mukherjee)
+
+
 2022-01-11, Version 3.1.1
 =========================
 
