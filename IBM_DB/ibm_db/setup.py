@@ -89,7 +89,8 @@ def _getinstalledDb2Path():
         _printOnly("Db2 installation detected ... ")
         temp = output.split("Product is installed at")
         path = temp[1].strip()
-        path = path[0:-1]
+        path = path.split()
+        path = path[0]
         path = path.replace('"','')
         _includeFlag = _checkForIncludeFolder(path)
         if(_includeFlag):
@@ -211,6 +212,39 @@ def _setDllPath():
         pyFile.write( add_dll_directory + "\n" + old )
     pyFile.close()
 
+def _downloadClidriver(url):
+    print(' Downloading DSDriver from url = ',url)
+    file_stream = BytesIO(request.urlopen(url, context=context).read())
+    if (os_ == 'win'):
+        if sys.version_info[0:2] <= (2, 5):
+            sys.stdout.write("Auto installation of clidriver for Python Version %i.%i on Window platform is currently not supported \n" % (sys.version_info[0:2]))
+            sys.stdout.write("Environment variable IBM_DB_HOME is not set. Set it to your DB2/IBM_Data_Server_Driver installation directory and retry ibm_db module install.\n")
+            sys.stdout.flush()
+            sys.exit()
+        cliDriver_zip =  zipfile.ZipFile(file_stream)
+        cliDriver_zip.extractall()
+    else:
+        cliDriver_tar = tarfile.open(fileobj=file_stream)
+        cliDriver_tar.extractall()
+    open(os.path.join(ibm_db_dir, '__init__.py'), 'w').close()
+    if os.path.isfile('ibm_db.dll'):
+        shutil.copy('ibm_db.dll', 'clidriver')
+
+def print_exception( e, url):
+    if(os_ == "win"):
+        err = "Error while downloading clidriver from the following URL : " + url + "\n" + str(e)
+    else:
+        err = "Error while downloading clidriver from the following URL : " + url + "\n" + str(e)
+
+    if "github" in url:
+        if(os_ == "win"):
+            err = err + _errormessage("downloadFailedWin")
+        else:
+            err = err + _errormessage("downloadFailed")
+        _printAndExit(err )
+    else:
+        _printOnly(err)
+
 if('win32' not in sys.platform):
     if ('arm64' in os.uname()[4]):
         _printAndExit("Arm64 architecture is not supported. Please install x64 version of python and then install ibm_db.")
@@ -321,26 +355,14 @@ if ((ibm_db_home == '') and (ibm_db_dir == '') and (ibm_db_lib == '')):
         sys.stdout.write("Downloading %s\n" % (url))
         sys.stdout.flush()
         try:
-            file_stream = BytesIO(request.urlopen(url, context=context).read())
-            if (os_ == 'win'):
-                if sys.version_info[0:2] <= (2, 5):
-                    sys.stdout.write("Auto installation of clidriver for Python Version %i.%i on Window platform is currently not supported \n" % (sys.version_info[0:2]))
-                    sys.stdout.write("Environment variable IBM_DB_HOME is not set. Set it to your DB2/IBM_Data_Server_Driver installation directory and retry ibm_db module install.\n")
-                    sys.stdout.flush()
-                    sys.exit()
-                cliDriver_zip =  zipfile.ZipFile(file_stream)
-                cliDriver_zip.extractall()
-            else:
-                cliDriver_tar = tarfile.open(fileobj=file_stream)
-                cliDriver_tar.extractall()
-            open(os.path.join(ibm_db_dir, '__init__.py'), 'w').close()
-            if os.path.isfile('ibm_db.dll'):
-                shutil.copy('ibm_db.dll', 'clidriver')
+            _downloadClidriver(url)
         except Exception as e:
-            if(os_ == "win"):
-                _printAndExit("Error while downloading clidriver from the following URL : " + url + "\n" + str(e) + _errormessage("downloadFailedWin"))
-            else:
-                _printAndExit("Error while downloading clidriver from the following URL : " + url + "\n" + str(e) + _errormessage("downloadFailed"))
+            print_exception(e, url)
+            try:
+                git_url= 'https://github.com/ibmdb/db2drivers/raw/main/clidriver/' + cliFileName
+                _downloadClidriver(git_url)
+            except Exception as e:
+                print_exception(e, git_url)
 
     if prebuildIbmdbPYD:
         _setWinEnv("PATH", "clidriver")
