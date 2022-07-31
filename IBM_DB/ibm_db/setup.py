@@ -56,7 +56,7 @@ else:
 def _printAndExit(msg):
         sys.stdout.write(msg + "\n")
         sys.stdout.flush()
-        sys.exit()
+        os._exit(1)
       
 def _errormessage(option):
     if(option == "downloadFailedWin"):
@@ -100,10 +100,20 @@ def _getinstalledDb2Path():
             _printOnly(_errormessage("includeFolderMissing"))
             
 def _checkGcc():
+    gccFound = False
     status,output = subprocess.getstatusoutput('which gcc')
     if(status == 0):
+        gccFound = True
+    else:
+        if (os.path.exists('/bin/gcc')):
+            gccFound = True
+        if (os.path.exists('/usr/bin/gcc')):
+            gccFound = True
+
+    if(gccFound):
         _printOnly("Pre-requisite check [gcc] : Passed")
     else:
+        _printOnly("Pre-requisite check [which gcc] : Failed")
         _printAndExit(_errormessage("noGcc"))
         
 def _checkPythonHeaderFile():
@@ -247,7 +257,7 @@ def print_exception( e, url):
 
 if('win32' not in sys.platform):
     if ('arm64' in os.uname()[4]):
-        _printAndExit("Arm64 architecture is not supported. Please install x64 version of python and then install ibm_db.")
+        _printAndExit("Arm64 architecture is not supported. Please install intel-only (x64) version of python and then install ibm_db.")
 
 if('win32' in sys.platform):
     prebuildPYDname = ''
