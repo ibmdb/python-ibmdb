@@ -1,4 +1,12 @@
-
+2022-08-03, Version 3.1.3
+=========================
+ * setup.py upgrade : better error handling while installation 
+ 
+ * Code fix for #757 (Earamma Kanasavi)
+ 
+ * Code fix for #766 (Earamma Kanasavi)
+ 
+ * Fix installation failure issue when IBM site is down (Bimal)
 
 2022-06-13, Version 3.1.2
 ===========================
