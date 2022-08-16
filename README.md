@@ -45,6 +45,9 @@ Install Python 2.7 or Python 3 <= 3.10. The minimum python version supported by 
 
 > **For MacOS M1 / Apple Silicon chip system**
 > 
+> **Important: The driver for IBM DB2 is not compatible with Apple Silicon and will have to run in emulated mode.**
+> Please support [this request for an Apple Silicon version of the driver](https://ibm-data-and-ai.ideas.ibm.com/ideas/DB2CON-I-92) to show IBM that you are interested in a native solution.
+> 
 > Several things might be necessary to get `ibm_db` working on the Apple Silicon architecture:
 > 1. Install x64 version of python for ibm_db as ibm_db do not work with arm64 version of python. Example, you may install [this version](https://www.python.org/ftp/python/3.9.11/python-3.9.11-macosx10.9.pkg) of python on M1 Chip system and then install ibm_db.
 >   When using pyenv to manage your Python installations, make sure you have pyenv installed as x86-compatible and run it in x86 mode (ie prepending all your command with `arch -x86_64`). If you are using Homebrew to install `pyenv`, Homebrew will itself also have to be installed as x86-compatible:
