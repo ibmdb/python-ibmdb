@@ -689,10 +689,10 @@ static int _python_ibm_db_assign_options( void *handle, int type, long opt_key, 
         if (PyString_Check(data)|| PyUnicode_Check(data)) {
             data = PyUnicode_FromObject(data);
 #ifdef __MVS__
-	    option_str = getUnicodeDataAsSQLCHAR(data, &isNewBuffer);
-        Py_BEGIN_ALLOW_THREADS;
-        rc = SQLSetStmtAttr((SQLHSTMT)((stmt_handle *)handle)->hstmt, opt_key, (SQLPOINTER)option_str, SQL_IS_INTEGER );
-        Py_END_ALLOW_THREADS;
+            option_str = getUnicodeDataAsSQLCHAR(data, &isNewBuffer);
+            Py_BEGIN_ALLOW_THREADS;
+            rc = SQLSetStmtAttr((SQLHSTMT)((stmt_handle *)handle)->hstmt, opt_key, (SQLPOINTER)option_str, SQL_IS_INTEGER );
+            Py_END_ALLOW_THREADS;
 #else
             option_str = getUnicodeDataAsSQLWCHAR(data, &isNewBuffer);
             Py_BEGIN_ALLOW_THREADS;
@@ -712,7 +712,7 @@ static int _python_ibm_db_assign_options( void *handle, int type, long opt_key, 
             Py_BEGIN_ALLOW_THREADS;
             rc = SQLSetStmtAttr((SQLHSTMT)((stmt_handle *)handle)->hstmt, opt_key, (SQLPOINTER)option_num, SQL_IS_INTEGER );
             Py_END_ALLOW_THREADS;
-			if ( rc == SQL_ERROR ) {
+            if ( rc == SQL_ERROR ) {
                 _python_ibm_db_check_sql_errors((SQLHSTMT)((stmt_handle *)handle)->hstmt, SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
             }
             if (opt_key == SQL_ATTR_CURSOR_TYPE){
@@ -734,15 +734,15 @@ static int _python_ibm_db_assign_options( void *handle, int type, long opt_key, 
         if (PyString_Check(data)|| PyUnicode_Check(data)) {
             data = PyUnicode_FromObject(data);
 #ifdef __MVS__
-        option_str = getUnicodeDataAsSQLCHAR(data, &isNewBuffer);
-        Py_BEGIN_ALLOW_THREADS;
-        rc = SQLSetConnectAttr((SQLHSTMT)((conn_handle*)handle)->hdbc, opt_key, (SQLPOINTER)option_str, SQL_NTS);
-        Py_END_ALLOW_THREADS;
+            option_str = getUnicodeDataAsSQLCHAR(data, &isNewBuffer);
+            Py_BEGIN_ALLOW_THREADS;
+            rc = SQLSetConnectAttr((SQLHSTMT)((conn_handle*)handle)->hdbc, opt_key, (SQLPOINTER)option_str, SQL_NTS);
+            Py_END_ALLOW_THREADS;
 #else
-        option_str = getUnicodeDataAsSQLWCHAR(data, &isNewBuffer);
-        Py_BEGIN_ALLOW_THREADS;
-        rc = SQLSetConnectAttrW((SQLHSTMT)((conn_handle*)handle)->hdbc, opt_key, (SQLPOINTER)option_str, SQL_NTS);
-        Py_END_ALLOW_THREADS;
+            option_str = getUnicodeDataAsSQLWCHAR(data, &isNewBuffer);
+            Py_BEGIN_ALLOW_THREADS;
+            rc = SQLSetConnectAttrW((SQLHSTMT)((conn_handle*)handle)->hdbc, opt_key, (SQLPOINTER)option_str, SQL_NTS);
+            Py_END_ALLOW_THREADS;
 #endif
             if ( rc == SQL_ERROR ) {
                 _python_ibm_db_check_sql_errors((SQLHSTMT)((stmt_handle *)handle)->hstmt, SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
@@ -755,13 +755,13 @@ static int _python_ibm_db_assign_options( void *handle, int type, long opt_key, 
             if (opt_key == SQL_ATTR_AUTOCOMMIT && option_num == SQL_AUTOCOMMIT_OFF) ((conn_handle*)handle)->auto_commit = 0;
             else if (opt_key == SQL_ATTR_AUTOCOMMIT && option_num == SQL_AUTOCOMMIT_ON) ((conn_handle*)handle)->auto_commit = 1;
 #ifdef __MVS__
-        Py_BEGIN_ALLOW_THREADS;
-        rc = SQLSetConnectAttr((SQLHSTMT)((conn_handle*)handle)->hdbc, opt_key, (SQLPOINTER)option_num, SQL_IS_INTEGER);
-        Py_END_ALLOW_THREADS;
+            Py_BEGIN_ALLOW_THREADS;
+            rc = SQLSetConnectAttr((SQLHSTMT)((conn_handle*)handle)->hdbc, opt_key, (SQLPOINTER)option_num, SQL_IS_INTEGER);
+            Py_END_ALLOW_THREADS;
 #else
-        Py_BEGIN_ALLOW_THREADS;
-        rc = SQLSetConnectAttrW((SQLHSTMT)((conn_handle*)handle)->hdbc, opt_key, (SQLPOINTER)option_num, SQL_IS_INTEGER);
-        Py_END_ALLOW_THREADS;
+            Py_BEGIN_ALLOW_THREADS;
+            rc = SQLSetConnectAttrW((SQLHSTMT)((conn_handle*)handle)->hdbc, opt_key, (SQLPOINTER)option_num, SQL_IS_INTEGER);
+            Py_END_ALLOW_THREADS;
 #endif
             if ( rc == SQL_ERROR ) {
                 _python_ibm_db_check_sql_errors((SQLHSTMT)((stmt_handle *)handle)->hstmt, SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
@@ -2171,7 +2171,7 @@ static int _python_ibm_db_dropdb(conn_handle *conn_res, PyObject *dbNameObj, int
             _python_clear_local_var( dbNameObj, dbName, NULL, NULL, NULL, NULL, isNewBuffer );
             return -1;
         }
-		Py_BEGIN_ALLOW_THREADS;
+        Py_BEGIN_ALLOW_THREADS;
 #ifdef _WIN32
         sqldropdb = DLSYM( cliLib, "SQLDropDbW" );
 #else
