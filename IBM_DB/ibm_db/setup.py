@@ -84,14 +84,10 @@ def _checkForIncludeFolder(db2path):
     return _includeFlag
     
 def _getinstalledDb2Path():
-    status,output = subprocess.getstatusoutput('db2level')
+    status,output = subprocess.getstatusoutput('db2cli validate')
     if(status == 0):
         _printOnly("Db2 installation detected ... ")
-        temp = output.split("Product is installed at")
-        path = temp[1].strip()
-        path = path.split()
-        path = path[0]
-        path = path.replace('"','')
+        path = output.split("Install/Instance Path     : ")[1].split()[0]
         _includeFlag = _checkForIncludeFolder(path)
         if(_includeFlag):
             _printOnly("Setting IBM_DB_HOME=" + path + " and skipping the clidriver download for the installation")
@@ -488,8 +484,9 @@ if (sys.platform[0:3] == 'win'):
         
 if('win32' not in sys.platform):
     if sys.version_info >= (3, ):        
-        _checkGcc()
-        _checkPythonHeaderFile()
+        if (sys.platform != 'zos'):
+           _checkGcc()
+           _checkPythonHeaderFile()
 
 setup( name    = PACKAGE,
     version = VERSION,
