@@ -8784,7 +8784,7 @@ static PyObject *ibm_db_result(PyObject *self, PyObject *args)
         case SQL_DECIMAL:
         case SQL_NUMERIC:
         case SQL_DECFLOAT:
-            if (column_type == SQL_DECIMAL || column_type == SQL_NUMERIC){
+            if (column_type == SQL_DECIMAL || column_type == SQL_NUMERIC || column_type == SQL_BIGINT){
                 in_length = stmt_res->column_info[col_num].size +
                             stmt_res->column_info[col_num].scale + 2 + 1;
             }
