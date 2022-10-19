@@ -42,6 +42,7 @@
 #else
 #define BIGINT_IS_SHORTER_THAN_LONG 1
 #endif
+/* MAX length for DECFLOAT
 #define MAX_DECFLOAT_LENGTH 44
 
 /* True global resources - no need for thread safety here */
