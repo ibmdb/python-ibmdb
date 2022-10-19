@@ -42,6 +42,7 @@
 #else
 #define BIGINT_IS_SHORTER_THAN_LONG 1
 #endif
+#define MAX_DECFLOAT_LENGTH 44
 
 /* True global resources - no need for thread safety here */
 static struct _ibm_db_globals *ibm_db_globals;
@@ -8683,7 +8684,11 @@ static PyObject *ibm_db_result(PyObject *self, PyObject *args)
             else{
                 in_length = stmt_res->column_info[col_num].size+1;
             }
+            if (column_type == SQL_DECFLOAT){
+                in_length = MAX_DECFLOAT_LENGTH;
+            }
             out_ptr = (SQLPOINTER)ALLOC_N(Py_UNICODE, in_length);
+            memset(out_ptr,0,sizeof(Py_UNICODE)*in_length);
 
             if ( out_ptr == NULL ) {
                 PyErr_SetString(PyExc_Exception, "Failed to Allocate Memory");
