@@ -22,7 +22,7 @@
 +--------------------------------------------------------------------------+
 */
 
-#define MODULE_RELEASE "3.1.3"
+#define MODULE_RELEASE "3.1.4"
 
 #include <Python.h>
 #include <datetime.h>
@@ -12320,5 +12320,6 @@ INIT_ibm_db(void) {
     PyModule_AddIntConstant(m, "SQL_ATTR_PARAMSET_SIZE", SQL_ATTR_PARAMSET_SIZE);
     PyModule_AddIntConstant(m, "SQL_ATTR_PARAM_BIND_TYPE", SQL_ATTR_PARAM_BIND_TYPE);
     PyModule_AddIntConstant(m, "SQL_PARAM_BIND_BY_COLUMN", SQL_PARAM_BIND_BY_COLUMN);
+    PyModule_AddIntConstant(m, "SQL_ATTR_XML_DECLARATION", SQL_ATTR_XML_DECLARATION);
     return MOD_RETURN_VAL(m);
 }
