@@ -1,4 +1,32 @@
+2022-11-08, Version 3.1.4
+===========================
 
+ * Fix for issue #796 (Earamma kanasavi)
+
+ * Fix for issue #764 (Earamma Kanasavi)
+
+ * Fix for issue #795 (Earamma Kanasavi)
+
+ * Fix for issue #792 (Earamma Kanasavi)
+
+ * Fix for python issue #779 and #778 (Earamma Kanasavi)
+
+ * Added Py_BEGIN_ALLOW_THREADS and Py_END_ALLOW_THREADS for the API's [Fixed for issue #703] (Earamma Kanasavi)
+ 
+ * Update Python 3.11 support in README.md and setup.py (Earamma Kanasavi)
+
+ * Updating CHANGES.md and README.md file (Earamma Kanasavi)
+
+2022-08-03, Version 3.1.3
+=========================
+
+ * setup.py upgrade : better error handling while installation(Earamma Kanasavi)
+
+ * Code fix for #757 (Earamma Kanasavi)
+
+ * Code fix for #766 (Earamma Kanasavi)
+
+ * Fix installation failure issue when IBM site is down (Bimal)
 
 2022-06-13, Version 3.1.2
 ===========================

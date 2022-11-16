@@ -83,6 +83,10 @@
 
 #define ENABLE_NUMERIC_LITERALS 1 /* Enable CLI numeric literals */
 
+#ifndef SQL_ATTR_XML_DECLARATION
+#define SQL_ATTR_XML_DECLARATION 0
+#endif
+
 #ifndef SQL_XML
 #define SQL_XML -370
 #endif

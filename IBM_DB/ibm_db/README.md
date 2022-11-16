@@ -171,7 +171,7 @@ fail on version 8.x of Db2.
   In order to run the entire python driver testsuite on Linux, run this
   command at the command prompt:
   ```
-    python tests.py
+    python ibmdb_tests.py
   ```
   To run a single test, set the environment variable, **SINGLE_PYTHON_TEST**, to
   the test filename you would like to run, followed by the previous command.
@@ -180,7 +180,7 @@ fail on version 8.x of Db2.
   In order to run the entire python driver testsuite on Windows, run this
   command at the command prompt:
   ```
-    tests.py
+    ibmdb_tests.py
   ```
   To run a single test, set the environment variable, **SINGLE_PYTHON_TEST**, to
   the test filename you would like to run, followed by the previous command.
