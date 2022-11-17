@@ -56,7 +56,8 @@ class IbmDbTestCase(unittest.TestCase):
                 pass
 
     def run_test_52949(self):
-        conn = ibm_db.connect(config.database, config.user, config.password)
+        options = {ibm_db.SQL_ATTR_XML_DECLARATION : 0}
+        conn = ibm_db.connect(config.database, config.user, config.password, options)
 
         if conn:
             serverinfo = ibm_db.server_info(conn )
@@ -72,7 +73,7 @@ class IbmDbTestCase(unittest.TestCase):
                 st1 = "CREATE PROCEDURE processxml(OUT risorsa xml) LANGUAGE SQL BEGIN SELECT cv INTO risorsa FROM test_stored WHERE ID = 1; END"
                 result = ibm_db.exec_immediate(conn, st1)
 
-                #self.test_xml(conn)
+                self.test_xml(conn)
             except:
                 pass
 
@@ -106,6 +107,8 @@ class IbmDbTestCase(unittest.TestCase):
 
 #__END__
 #__LUW_EXPECTED__
+#__LUW_EXPECTED__
+#ProcessXML: <example>This is an example</example>
 #ProcessINT: 24
 #ProcessVAR: Kellen
 #__ZOS_EXPECTED__
