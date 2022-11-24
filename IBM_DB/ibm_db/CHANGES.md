@@ -1,35 +1,34 @@
-2022-11-08, Version 3.1.4
-===========================
+2022-11-24, Version 3.1.4
+=========================
 
- * Fix for issue #796 (Earamma kanasavi)
+ * Fix for issues #796, #764 and added python 3.11 support (#809) (Earammak)
 
- * Fix for issue #764 (Earamma Kanasavi)
+ * Fix for issue #795 (#798) (Earammak)
 
- * Fix for issue #795 (Earamma Kanasavi)
+ * Fix for issue #792 (#794) (Earammak)
 
- * Fix for issue #792 (Earamma Kanasavi)
+ * Fix for pyhon issue #779 and #778 (#788) (Earammak)
 
- * Fix for python issue #779 and #778 (Earamma Kanasavi)
+ * Add more explicit mention for Apple Silicon users (#780) (Jonathan Herdt)
 
- * Added Py_BEGIN_ALLOW_THREADS and Py_END_ALLOW_THREADS for the API's [Fixed for issue #703] (Earamma Kanasavi)
-
- * Update Python 3.11 support in readme and setup.py (Earamma Kanasavi)
- 
- * Updating CHNGES.md and README.md file (Earamma Kanasavi)
+ * Added Py_BEGIN_ALLOW_THREADS and Py_END_ALLOW_THREADS for the API's (#781) (Earammak)
 
 2022-08-03, Version 3.1.3
 =========================
- 
- * setup.py upgrade : better error handling while installation (Earamma Kanasavi)
 
- * Code fix for #757 (Earamma Kanasavi)
+ * Commit for version change 3.1.3 (#776) (Earammak)
 
- * Code fix for #766 (Earamma Kanasavi)
+ * fix for install UnicodeDecodeError #772 (Bimal Jha)
 
- * Fix installation failure issue when IBM site is down (Bimal)
- 
+ * fix install issue #761, #765, #770 (Bimal Jha)
+
+ * Fix for path update and installation failure issue when IBM site down (#771) (Earammak)
+
+
 2022-06-13, Version 3.1.2
-===========================
+=========================
+
+ * release changes for 3.1.2 (amukherjee)
 
  * setup.py upgrade : better error handling while installation (Arnab Mukherjee)
 
@@ -170,10 +169,6 @@
  * fix: correct changes file (Bimal Jha)
 
  * upd: CHANGES (Bimal Jha)
-
-
-2021-02-03, Version 3.0.3
-=========================
 
  * deleting Install_z_ibm_db file (amukherjee)
 
