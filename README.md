@@ -41,7 +41,7 @@ Provides Python interface for connecting to IBM Db2 for LUW, IBM Informix and IB
 
 <a name="prereq"></a>
 ## Pre-requisites
-Install Python 2.7 or Python 3 <= 3.10. The minimum python version supported by driver is python 2.7 and the latest version supported is python 3.11 except version 3.3 as it has reached end-of-life.
+Install Python 2.7 or Python 3 <= 3.11. The minimum python version supported by driver is python 2.7 and the latest version supported is python 3.11 except version 3.3 as it has reached end-of-life.
 
 > **For MacOS M1 / Apple Silicon chip system**
 > 
