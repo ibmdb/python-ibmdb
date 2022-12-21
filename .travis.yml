@@ -8,6 +8,8 @@ python:
   - 3.7
   - 3.8
   - 3.9
+  - 3.10
+  - 3.11
 services:
   - docker
 
@@ -20,7 +22,7 @@ install:
 
 script:
 - cd IBM_DB/ibm_db
-- pip install .
+- python setup.py install
 #
 # set up tests
 - cp config.py.sample config.py
@@ -30,7 +32,7 @@ script:
 - export DB2CLIINIPATH=$PWD
 #
 # Run tests
-- python tests.py
+- python ibmdb_tests.py
 
 notifications:
   email:
