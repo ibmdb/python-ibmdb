@@ -6474,7 +6474,7 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
             break;
 
         case PYTHON_DECIMAL:
-            if (curr->data_type == SQL_DECIMAL || curr->data_type == SQL_DECFLOAT)
+            if (curr->data_type == SQL_DECIMAL || curr->data_type == SQL_DECFLOAT || curr->data_type == SQL_BIGINT)
             {
                 if(TYPE(bind_data) == PYTHON_LIST)
                 {   
@@ -12321,5 +12321,7 @@ INIT_ibm_db(void) {
     PyModule_AddIntConstant(m, "SQL_ATTR_PARAM_BIND_TYPE", SQL_ATTR_PARAM_BIND_TYPE);
     PyModule_AddIntConstant(m, "SQL_PARAM_BIND_BY_COLUMN", SQL_PARAM_BIND_BY_COLUMN);
     PyModule_AddIntConstant(m, "SQL_ATTR_XML_DECLARATION", SQL_ATTR_XML_DECLARATION);
+    PyModule_AddIntConstant(m, "SQL_ATTR_CLIENT_APPLCOMPAT", SQL_ATTR_CLIENT_APPLCOMPAT);
+    PyModule_AddIntConstant(m, "SQL_ATTR_CURRENT_PACKAGE_SET", SQL_ATTR_CURRENT_PACKAGE_SET);
     return MOD_RETURN_VAL(m);
 }
