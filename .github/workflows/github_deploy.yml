@@ -33,7 +33,7 @@ jobs:
          CIBW_SKIP: "*-win32"
          #CIBW_ENVIRONMENT: DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:/usr/local/lib/gcc/8
           
-         #CIBW_BUILD: cp310-*
+         CIBW_BUILD: cp311-macosx_x86_64
          CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
          #CIBW_SKIP: "*-musllinux_* pp*"
          CIBW_REPAIR_WHEEL_COMMAND_LINUX:
