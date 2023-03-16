@@ -31,7 +31,7 @@ jobs:
             #DYLD_LIBRARY_PATH=/home/runner/work/python-ibmdb/python-ibmdb/clidirver/lib:/usr/local/lib
          #CIBW_ARCHS_WINDOWS: "AMD64 x86"
          CIBW_SKIP: "*-win32"
-         CIBW_ENVIRONMENT: DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:/usr/local/lib/gcc/8
+         #CIBW_ENVIRONMENT: DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:/usr/local/lib/gcc/8
           
          #CIBW_BUILD: cp310-*
          CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
