@@ -22,7 +22,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Check gcc
-        run: which gcc
+        run: gcc --version
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.12.0
         env:
