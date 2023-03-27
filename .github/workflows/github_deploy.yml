@@ -28,7 +28,7 @@ jobs:
             #PATH=$PATH:/home/runner/work/python-ibmdb/python-ibmdb/clidirver/bin:/home/runner/work/python-ibmdb/python-ibmdb/clidirver
             #DYLD_LIBRARY_PATH=/home/runner/work/python-ibmdb/python-ibmdb/clidirver/lib:/usr/local/lib
          #CIBW_ARCHS_WINDOWS: "AMD64 x86"
-         CIBW_SKIP: "*-win32"
+         #CIBW_SKIP: "*-win32"
          #CIBW_ENVIRONMENT: DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:/usr/local/lib/gcc/8
           
          #CIBW_BUILD: cp311-macosx_x86_64
