@@ -1,0 +1,29 @@
+name: Build and upload to PyPI
+
+# Build on every branch push, tag push, and pull request change:
+on: [push]
+# Alternatively, to publish when a (published) GitHub Release is created, use the following:
+# on:
+   #push:
+#   pull_request:
+#   release:
+#     types:
+#       - published
+
+jobs:
+  build_wheels:
+    name: Build wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        #os: [windows-latest]
+        #os: [ubuntu-latest, macos-latest]
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.12.0
+        
+      - uses: actions/upload-artifact@v3
+        with:
+          path: ./wheelhouse/*.whl
