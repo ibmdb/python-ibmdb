@@ -27,6 +27,7 @@ jobs:
           CIBW_BUILD: "*-win32"
       - name: install and test wheel
         run: |
+          pip install wheel
           pip list
           pip install ./wheelhouse/*.whl* 
       - uses: actions/upload-artifact@v3
