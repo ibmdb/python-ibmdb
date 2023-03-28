@@ -27,7 +27,7 @@ jobs:
           CIBW_BUILD: "*-win32"
       - name: install and test wheel
         run: |
-          pip install ./wheelhouse/ibm_db-3.1.4-cp310-cp310-win32.whl 
+          pip install ./wheelhouse/*.whl* 
       - uses: actions/upload-artifact@v3
         with:
           path: ./wheelhouse/*.whl
