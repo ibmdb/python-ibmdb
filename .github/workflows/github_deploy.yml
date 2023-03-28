@@ -24,7 +24,7 @@ jobs:
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.12.0
         env:
-         CIBW_BUILD: "*-win32"
+         #CIBW_BUILD: "*-win32"
          CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
          CIBW_SKIP: "*-musllinux_* pp*"
          CIBW_REPAIR_WHEEL_COMMAND_LINUX:
