@@ -25,7 +25,9 @@ jobs:
         uses: pypa/cibuildwheel@v2.12.0
         env: 
           CIBW_BUILD: "*-win32"
-        
+      - name: install and test wheel
+        run: |
+          pip install ibm_db 
       - uses: actions/upload-artifact@v3
         with:
           path: ./wheelhouse/*.whl
