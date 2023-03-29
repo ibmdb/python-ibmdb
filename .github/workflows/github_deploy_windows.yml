@@ -31,9 +31,7 @@ jobs:
           python --version 
           pip install wheel
           pip list
-          cd Microsoft.PowerShell.Core\FileSystem::D:\a\python-ibmdb\python-ibmdb\wheelhouse
-          ls 
-          pip install Microsoft.PowerShell.Core\FileSystem::D:\a\python-ibmdb\python-ibmdb\wheelhouse\ibm_db-3.1.4-cp39-cp39-win32.whl
+          pip install .\wheelhouse\ibm_db-3.1.4-cp39-cp39-win32.whl
       - uses: actions/upload-artifact@v3
         with:
           path: ./wheelhouse/*.whl
