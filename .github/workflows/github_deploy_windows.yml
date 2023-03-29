@@ -28,6 +28,7 @@ jobs:
       - name: install and test wheel
         run: |
           pwd
+          python --version 
           pip install wheel
           pip list
           cd Microsoft.PowerShell.Core\FileSystem::D:\a\python-ibmdb\python-ibmdb\wheelhouse
