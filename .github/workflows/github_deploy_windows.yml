@@ -27,8 +27,10 @@ jobs:
           CIBW_BUILD: "*-win32"
       - name: install and test wheel
         run: |
+          pwd
           pip install wheel
           pip list
+          ls 
           pip install ibm_db 
       - uses: actions/upload-artifact@v3
         with:
