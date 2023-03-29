@@ -32,7 +32,7 @@ jobs:
           pip list
           cd Microsoft.PowerShell.Core\FileSystem::D:\a\python-ibmdb\python-ibmdb\wheelhouse
           ls 
-          pip install ibm_db-3.1.4-cp311-cp311-win32.whl
+          pip install Microsoft.PowerShell.Core\FileSystem::D:\a\python-ibmdb\python-ibmdb\wheelhouse\ibm_db-3.1.4-cp311-cp311-win32.whl
       - uses: actions/upload-artifact@v3
         with:
           path: ./wheelhouse/*.whl
