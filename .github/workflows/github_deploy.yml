@@ -17,17 +17,18 @@ jobs:
     strategy:
       matrix:
         #os: [macos-latest]
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest,windows-latest]
 
     steps:
       - uses: actions/checkout@v3
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.12.0
         env:
-         #CIBW_BUILD: "*-win32"
-         CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
-         CIBW_SKIP: "*-musllinux_* pp*"
-         CIBW_REPAIR_WHEEL_COMMAND_LINUX:
+          with: windows-latest
+           CIBW_BUILD:"*-win32"
+          CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
+          CIBW_SKIP: "*-musllinux_* pp*"
+          CIBW_REPAIR_WHEEL_COMMAND_LINUX:
             auditwheel repair
               --exclude libdb2.so.1
               --exclude libDB2xml4c.so.58 
