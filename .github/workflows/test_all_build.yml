@@ -71,6 +71,7 @@ jobs:
 
       - uses: actions/upload-artifact@v3
         with:
+          name: sdist_${{ github.sha }}
           path: dist/*.tar.gz
 
   upload_pypi:
