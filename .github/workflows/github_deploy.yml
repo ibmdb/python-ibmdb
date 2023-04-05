@@ -11,7 +11,23 @@ on: [push]
 #       - published
 
 jobs:
-  build_wheels:
+ build_wheels_windows:
+    name: Build wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest]
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.12.0
+        env:
+          CIBW_ARCHS_WINDOWS: "AMD64 x86"
+      - uses: actions/upload-artifact@v3
+        with:
+          path: ./wheelhouse/*.whl
+ build_wheels:
     name: Build wheels on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -45,7 +61,7 @@ jobs:
         with:
           path: ./wheelhouse/*.whl
 
-  build_sdist:
+ build_sdist:
     name: Build source distribution
     runs-on: ubuntu-latest
     steps:
