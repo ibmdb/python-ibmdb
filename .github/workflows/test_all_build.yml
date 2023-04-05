@@ -77,7 +77,7 @@ jobs:
       - name: Upload sdist
         uses: actions/upload-artifact@v3
         with:
-          path: ./dist/*.gz
+          path: ./dist/*.tar.gz
   upload_pypi:
     needs: [build_sdist,build_wheels_macos_linux, build_wheels_windows_64,build_wheels_windows_32]
     runs-on: ${{ matrix.os }}
