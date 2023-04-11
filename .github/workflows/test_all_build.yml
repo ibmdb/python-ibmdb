@@ -1,10 +1,10 @@
 name: Build and upload to PyPI
 
 # Build on every branch push, tag push, and pull request change:
-on: [pull_request]
+on: [push]
 jobs:
   build_wheels_windows_64:
-    name: Build wheels on ${{ matrix.os }}
+    name: Build wheels on ${{ matrix.os }} 64-bit 
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -15,12 +15,13 @@ jobs:
         uses: pypa/cibuildwheel@v2.12.0
         env:
           CIBW_SKIP: "*-win32"
+          CIBW_BUILD: cp27-* cp35-*
       - uses: actions/upload-artifact@v3
         with:
           path: ./wheelhouse/*.whl   
   
   build_wheels_windows_32:
-    name: Build wheels on ${{ matrix.os }}
+    name: Build wheels on ${{ matrix.os }} 32-bit
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -48,6 +49,7 @@ jobs:
         env:
          CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
          CIBW_SKIP: "*-musllinux_* pp*"
+         CIBW_BUILD: cp27-* cp35-*
          CIBW_REPAIR_WHEEL_COMMAND_LINUX:
             auditwheel repair
               --exclude libdb2.so.1
