@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Build wheels
-        uses: pypa/cibuildwheel@1.11.1
+        uses: pypa/cibuildwheel@v1.11.1
         env:
           CIBW_SKIP: "*-win32"
           CIBW_BUILD: cp27-* cp35-*
@@ -45,7 +45,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Build wheels
-        uses: pypa/cibuildwheel@1.11.1
+        uses: pypa/cibuildwheel@v1.11.1
         env:
          CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
          CIBW_SKIP: "*-musllinux_* pp*"
