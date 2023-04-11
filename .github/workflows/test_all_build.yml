@@ -12,10 +12,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Build wheels
-        uses: pypa/cibuildwheel@v1.11.1
+        uses: pypa/cibuildwheel@v2.12.1
         env:
           CIBW_SKIP: "*-win32"
-          CIBW_BUILD: cp27-* cp35-*
       - uses: actions/upload-artifact@v3
         with:
           path: ./wheelhouse/*.whl   
@@ -29,7 +28,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Build wheels
-        uses: pypa/cibuildwheel@v1.11.1
+        uses: pypa/cibuildwheel@v2.12.1
         env:
           CIBW_BUILD: "*-win32"
       - uses: actions/upload-artifact@v3
@@ -45,11 +44,10 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Build wheels
-        uses: pypa/cibuildwheel@v1.11.1
+        uses: pypa/cibuildwheel@v2.12.1
         env:
          CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
          CIBW_SKIP: "*-musllinux_* pp*"
-         CIBW_BUILD: cp27-* cp35-*
          CIBW_REPAIR_WHEEL_COMMAND_LINUX:
             auditwheel repair
               --exclude libdb2.so.1
