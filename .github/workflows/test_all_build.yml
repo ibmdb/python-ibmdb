@@ -1,7 +1,7 @@
 name: Build and upload to PyPI
 
 # Build on every branch push, tag push, and pull request change:
-on: [push]
+on: [pull_request]
 jobs:
   build_wheels_windows_64:
     name: Build wheels on ${{ matrix.os }} 64-bit 
