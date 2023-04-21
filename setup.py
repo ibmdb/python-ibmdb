@@ -10,6 +10,7 @@ import zipfile
 import shutil
 import glob
 import subprocess
+import platform
 
 if sys.version_info >= (3, ):
     from urllib import request
@@ -23,8 +24,8 @@ from distutils.sysconfig import get_python_lib
 from setuptools.command.build_ext import build_ext
 from setuptools.command.install import install
 
-PACKAGE = 'ibm_db'
-VERSION = '3.1.4'
+PACKAGE = 'ibm_db_wheel'
+VERSION = '0.0.9'
 LICENSE = 'Apache License 2.0'
 readme = os.path.join(os.path.dirname(__file__),'README.md')
 
@@ -467,7 +468,7 @@ data_files = [ (get_python_lib(), ['./README.md']),
                (get_python_lib(), ['./LICENSE']),
                (get_python_lib(), ['./config.py.sample'])]
 
-modules = ['ibm_db_dbi', 'testfunctions', 'ibmdb_tests']
+modules = ['ibm_db','ibm_db_dbi', 'testfunctions', 'ibmdb_tests']
 
 if 'zos' == sys.platform:
     ext_modules = _ext_modules(os.path.join(os.getcwd(), include_dir), library, ibm_db_lib, ibm_db_lib_runtime)
@@ -475,7 +476,10 @@ else:
     ext_modules = _ext_modules(ibm_db_include, library, ibm_db_lib, ibm_db_lib_runtime)
 
 if (sys.platform[0:3] == 'win'):
-    library = ['db2cli64']
+    if (platform.architecture()[0] == '64bit'):
+      library = ['db2cli64']
+    else:
+      library = ['db2cli']
     if prebuildIbmdbPYD:
         ext_modules = None
         modules.append('ibm_db')

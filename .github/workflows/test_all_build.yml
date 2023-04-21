@@ -1,0 +1,102 @@
+name: Build and upload to PyPI
+
+# Build on every branch push, tag push, and pull request change:
+on: [pull_request]
+jobs:
+  build_wheels_windows_64:
+    name: Build wheels on ${{ matrix.os }} 64-bit 
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.12.1
+        env:
+          CIBW_SKIP: "*-win32"
+      - uses: actions/upload-artifact@v3
+        with:
+          path: ./wheelhouse/*.whl   
+  
+  build_wheels_windows_32:
+    name: Build wheels on ${{ matrix.os }} 32-bit
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.12.1
+        env:
+          CIBW_BUILD: "*-win32"
+      - uses: actions/upload-artifact@v3
+        with:
+          path: ./wheelhouse/*.whl       
+  build_wheels_macos_linux:
+    name: Build wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest,ubuntu-latest]
+        #os: [windows-latest, ubuntu-latest]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.12.1
+        env:
+         CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
+         CIBW_SKIP: "*-musllinux_* pp*"
+         CIBW_REPAIR_WHEEL_COMMAND_LINUX:
+            auditwheel repair
+              --exclude libdb2.so.1
+              --exclude libDB2xml4c.so.58 
+              --exclude libm.so.6
+              --exclude libcrypt.so.1
+              --exclude libpam.so.0
+              --exclude librt.so.1
+              --exclude libpthread.so.0
+              --exclude libc.so.6
+              --exclude libdl.so.2
+              --wheel-dir {dest_dir}
+              {wheel}
+      - uses: actions/upload-artifact@v3
+        with:
+          path: ./wheelhouse/*.whl
+  build_sdist:
+    name: Build source distribution
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip build
+      - name: Build sdist
+        run: python -m build --sdist --no-isolation
+      - name: Upload sdist
+        uses: actions/upload-artifact@v3
+        with:
+          path: ./dist/*.tar.gz
+  upload_pypi:
+    needs: [build_sdist,build_wheels_macos_linux, build_wheels_windows_64,build_wheels_windows_32]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+    # upload to PyPI on every tag starting with 'v'
+    #if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    # alternatively, to publish when a GitHub Release is created, use the following rule:
+    # if: github.event_name == 'release' && github.event.action == 'published'
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          # unpacks default artifact into dist/
+          # if `name: artifact` is omitted, the action will create extra parent dir
+          name: artifact
+          path: dist
+      - uses: pypa/gh-action-pypi-publish@v1.5.0
+        with:
+          user: testOS123id
+          password: IBMisl11
+          repository_url: https://test.pypi.org/legacy/

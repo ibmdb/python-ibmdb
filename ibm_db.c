@@ -22,7 +22,7 @@
 +--------------------------------------------------------------------------+
 */
 
-#define MODULE_RELEASE "3.1.4"
+#define MODULE_RELEASE "0.0.9"
 
 #include <Python.h>
 #include <datetime.h>
@@ -61,7 +61,6 @@ static int is_systemi, is_informix;      /* 1 == TRUE; 0 == FALSE; */
 #define DLOPEN LoadLibrary
 #define DLSYM GetProcAddress
 #define DLCLOSE FreeLibrary
-#define LIBDB2 "db2cli64.dll"
 #elif _AIX
 #define DLOPEN dlopen
 #define DLSYM dlsym
@@ -72,6 +71,11 @@ static int is_systemi, is_informix;      /* 1 == TRUE; 0 == FALSE; */
 #define DLSYM dlsym
 #define DLCLOSE dlclose
 #define LIBDB2 "libdb2.so.1"
+#endif
+#ifdef _WIN64
+#define LIBDB2 "db2cli64.dll"
+#else
+#define LIBDB2 "db2cli.dll"
 #endif
 
 /* Defines a linked list structure for error messages */
