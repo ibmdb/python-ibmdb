@@ -468,7 +468,7 @@ data_files = [ (get_python_lib(), ['./README.md']),
                (get_python_lib(), ['./LICENSE']),
                (get_python_lib(), ['./config.py.sample'])]
 
-modules = ['ibm_db_wheel','ibm_db_dbi', 'testfunctions', 'ibmdb_tests']
+modules = ['ibm_db','ibm_db_dbi', 'testfunctions', 'ibmdb_tests']
 
 if 'zos' == sys.platform:
     ext_modules = _ext_modules(os.path.join(os.getcwd(), include_dir), library, ibm_db_lib, ibm_db_lib_runtime)
