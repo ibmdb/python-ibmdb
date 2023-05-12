@@ -96,15 +96,8 @@ def _getinstalledDb2Path():
             _printOnly(_errormessage("includeFolderMissing"))
             
 def _checkGcc():
-    gccFound = False
     status,output = subprocess.getstatusoutput('which gcc')
-    if(status == 0):
-        gccFound = True
-    else:
-        if (os.path.exists('/bin/gcc')):
-            gccFound = True
-        if (os.path.exists('/usr/bin/gcc')):
-            gccFound = True
+    gccFound = (status == 0) or os.path.exists('/bin/gcc') or os.path.exists('/usr/bin/gcc')
 
     if(gccFound):
         _printOnly("Pre-requisite check [gcc] : Passed")
