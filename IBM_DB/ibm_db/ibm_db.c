@@ -6816,7 +6816,7 @@ static int _python_ibm_db_execute_helper2(stmt_handle *stmt_res, PyObject *data,
 static PyObject *_python_ibm_db_execute_helper1(stmt_handle *stmt_res, PyObject *parameters_tuple)
 {
     int rc, numOpts, i, bind_params = 0;
-    SQLSMALLINT num;
+    SQLSMALLINT num = 0;
     SQLPOINTER valuePtr;
     PyObject *data;
     char error[DB2_MAX_ERR_MSG_LEN];
