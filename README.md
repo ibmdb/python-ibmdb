@@ -176,6 +176,10 @@ The ODBC and CLI Driver(clidriver) is automatically downloaded at the time of in
   The ODBC and CLI driver is available for download at [Db2 LUW ODBC and CLI Driver](https://public.dhe.ibm.com/ibmdl/export/pub/software/data/db2/drivers/odbc_cli/).
 Refer to ([License requirements](#Licenserequirements)) for more details on the CLI driver for manual download and installation.
 
+[ Note : For Windows, if clidriver is already installed in the system. And user already set installed path to PATH environment variable, then user need to set IBM_DB_HOME path manaully to the installed path.
+If user has installed clidriver in F:\DSDRIVER. And if the "PATH" is set to F:\DSDRIVER\bin. Then user should set IBM_DB_HOME to F:\DSDRIVER. Below is example to set IBM_DB_HOME.
+  set IBM_DB_HOME=F:\DSDRIVER ]
+
 * Installing using Anaconda distribution of python
 ```
 conda install -c conda-forge ibm_db

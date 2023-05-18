@@ -29,6 +29,9 @@ e.g:
 
   Set this environment variable to avoid automatic downloading of the clidriver during installation. You could set this to the installation path of ODBC and CLI driver in your environment. The list of supported platforms and installation file names are listed in the table under License requirements.
 
+[ Note : For Windows, if clidriver is already installed in the system. And user already set installed path to PATH environment variable, then user need to set IBM_DB_HOME path manaully to the installed path.
+If user has installed clidriver in F:\DSDRIVER. And if the "PATH" is set to F:\DSDRIVER\bin. Then user should set IBM_DB_HOME to F:\DSDRIVER. Below is example to set IBM_DB_HOME.
+  set IBM_DB_HOME=F:\DSDRIVER ]
 
 ### IBM_DB and DB-API wrapper (ibm_db_dbi) sanity test
 
