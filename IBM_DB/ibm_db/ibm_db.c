@@ -6474,8 +6474,8 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
             break;
 
         case PYTHON_DECIMAL:
-            if (curr->data_type == SQL_DECIMAL || curr->data_type == SQL_DECFLOAT || curr->data_type == SQL_BIGINT)
-            {
+            if (curr->data_type == SQL_DECIMAL || curr->data_type == SQL_DECFLOAT || curr->data_type == SQL_BIGINT
+                || curr->data_type == SQL_FLOAT || curr->data_type == SQL_DOUBLE){
                 if(TYPE(bind_data) == PYTHON_LIST)
                 {   
                     char *svalue = NULL;
@@ -6567,9 +6567,8 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
                     curr->data_type = valueType;
                     Py_XDECREF(tempobj);
                 }
-                break;
             }
-
+            break;
 
         case PYTHON_DATE:
             if(TYPE(bind_data) == PYTHON_LIST)
