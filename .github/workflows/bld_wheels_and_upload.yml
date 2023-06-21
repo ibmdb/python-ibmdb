@@ -1,7 +1,10 @@
 name: Build and upload to PyPI
 
 # Build on every branch push, tag push, and pull request change:
-on: [pull_request]
+on:
+  push:
+    branches:
+      - WheelSupport
 jobs:
   build_wheels_windows_64:
     name: Build wheels on ${{ matrix.os }} 64-bit 
@@ -97,6 +100,6 @@ jobs:
           path: dist
       - uses: pypa/gh-action-pypi-publish@v1.5.0
         with:
-          user: testOS123id
+          user: __token__
           password: IBMisl11
           repository_url: https://test.pypi.org/legacy/
