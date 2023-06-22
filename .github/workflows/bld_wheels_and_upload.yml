@@ -100,6 +100,6 @@ jobs:
           path: dist
       - uses: pypa/gh-action-pypi-publish@v1.5.0
         with:
-          user: __token__
-          password: IBMisl11
+          user: {{secrets.TESTPYPI_USER}}
+          password: {{secrets.TESTPYPI_PASSWORD}}
           repository_url: https://test.pypi.org/legacy/
