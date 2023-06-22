@@ -97,7 +97,7 @@ jobs:
         with:
           # unpacks default artifact into dist/
           # if `name: artifact` is omitted, the action will create extra parent dir
-          name: artifact
+          name: Upload to testpypi 
           path: dist
       - uses: pypa/gh-action-pypi-publish@v1.5.0
         with:
@@ -105,7 +105,7 @@ jobs:
           password: ${{secrets.TESTPYPI_PASSWORD}}
           repository_url: https://test.pypi.org/legacy/
           
-      - name: Release to PYPI 
+      - name: Upload to PYPI 
         uses: pypa/gh-action-pypi-publish@master
         with:
           user: ${{secrets.TESTPYPI_USER}}
