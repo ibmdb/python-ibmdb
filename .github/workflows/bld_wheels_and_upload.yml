@@ -93,20 +93,15 @@ jobs:
     # alternatively, to publish when a GitHub Release is created, use the following rule:
     # if: github.event_name == 'release' && github.event.action == 'published'
     steps:
-      - uses: actions/download-artifact@v3
-        with:
-          # unpacks default artifact into dist/
-          # if `name: artifact` is omitted, the action will create extra parent dir
-          name: Upload to testpypi 
-          path: dist
-      - uses: pypa/gh-action-pypi-publish@v1.5.0
-        with:
-          user: ${{secrets.TESTPYPI_USER}}
-          password: ${{secrets.TESTPYPI_PASSWORD}}
-          repository_url: https://test.pypi.org/legacy/
-          
-      - name: Upload to PYPI 
-        uses: pypa/gh-action-pypi-publish@master
-        with:
-          user: ${{secrets.TESTPYPI_USER}}
-          password: ${{secrets.TESTPYPI_PASSWORD}}
+    - name: Publish distribution 📦 to Test PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        user: ${{secrets.TESTPYPI_USER}}
+        password: ${{ secrets.TESTPYPI_PASSWORD}}
+        repository-url: https://test.pypi.org/legacy/
+    - name: Publish distribution 📦 to PyPI
+      if: startsWith(github.ref, 'refs/tags')
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        user: ${{secrets.PYPI_USER}}
+        password: ${{ secrets.PYPI_PASSWORD}}
