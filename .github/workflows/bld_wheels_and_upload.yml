@@ -5,7 +5,7 @@ on:
   #workflow_dispatch:
   push:
     branches:
-      - wheelSupport
+      - test_wheel
 jobs:
   build_wheels_windows_64:
     name: Build wheels on ${{ matrix.os }} 64-bit 
