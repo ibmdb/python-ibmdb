@@ -2,6 +2,7 @@ name: Build and upload to PyPI
 
 # Build on every branch push, tag push, and pull request change:
 on:
+  workflow_dispatch:
   push:
     branches:
       - WheelSupport
