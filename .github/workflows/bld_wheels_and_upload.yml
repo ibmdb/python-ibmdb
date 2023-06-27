@@ -7,8 +7,8 @@ on:
   push:
     branches:
       - test_wheel
-  tags:
-      - 'v*
+  #tags:
+   #   - 'v*
   release:
     types:
       - published
