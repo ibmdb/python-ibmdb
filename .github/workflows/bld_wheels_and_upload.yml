@@ -9,9 +9,9 @@ on:
       - test_wheel
   tags:
       - 'v*
-  #release:
-    #types:
-      #- published
+  release:
+    types:
+      - published
       
   
 jobs:
