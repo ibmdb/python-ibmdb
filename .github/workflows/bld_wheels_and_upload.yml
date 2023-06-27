@@ -1,11 +1,16 @@
 name: Build and upload to PyPI
 
 # Build on every branch push, tag push, and pull request change:
-on: 
+on:
   workflow_dispatch:
+  pull_request:
   push:
     branches:
       - test_wheel
+  release:
+    types:
+      - published
+  
 jobs:
   build_wheels_windows_64:
     name: Build wheels on ${{ matrix.os }} 64-bit 
@@ -89,14 +94,14 @@ jobs:
       matrix:
         os: [ubuntu-latest]
      #upload to PyPI on every tag starting with 'v'
-    #if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     # alternatively, to publish when a GitHub Release is created, use the following rule:
-    # if: github.event_name == 'release' && github.event.action == 'published'
+    if: github.event_name == 'release' && github.event.action == 'published'
     steps:
     - uses: actions/download-artifact@v3
       with:
         # unpacks default artifact into dist/
-        # if `name: artifact` is omitted, the action will create extra parent dir
+        #if `name: artifact` is omitted, the action will create extra parent dir
         name: artifact
         path: dist
     - name: Publish distribution 📦 to Test PyPI
