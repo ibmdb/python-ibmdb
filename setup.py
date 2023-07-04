@@ -25,7 +25,7 @@ from setuptools.command.build_ext import build_ext
 from setuptools.command.install import install
 
 PACKAGE = 'ibm_db'
-VERSION = '3.1.4.1'
+VERSION = '3.1.5'
 LICENSE = 'Apache License 2.0'
 readme = os.path.join(os.path.dirname(__file__),'README.md')
 
