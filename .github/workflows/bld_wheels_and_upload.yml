@@ -105,6 +105,7 @@ jobs:
           user: ${{secrets.TESTPYPI_USER}}
           password: ${{secrets.TESTPYPI_PASSWORD}}
           repository_url: https://test.pypi.org/legacy/
+          skip_existing: true
           
       - name: Upload to PYPI 
         uses: pypa/gh-action-pypi-publish@master
