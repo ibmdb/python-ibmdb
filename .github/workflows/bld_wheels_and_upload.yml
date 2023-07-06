@@ -59,7 +59,8 @@ jobs:
         uses: pypa/cibuildwheel@v2.12.1
         env:
          CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
-         CIBW_SKIP: "*-musllinux_* pp*"
+         #CIBW_SKIP: "*-musllinux_* pp*"
+         CIBW_SKIP: "*-*linux_{aarch64,ppc64le}"
          CIBW_REPAIR_WHEEL_COMMAND_LINUX:
             auditwheel repair
               --exclude libdb2.so.1
@@ -89,7 +90,10 @@ jobs:
       - name: Upload sdist
         uses: actions/upload-artifact@v3
         with:
-          path: ./dist/*.tar.gz
+          path: |
+            ./dist/*.tar.gz
+            !./dist/clidriver/
+          
   upload_pypi:
     needs: [build_sdist,build_wheels_macos_linux, build_wheels_windows_64,build_wheels_windows_32]
     runs-on: ${{ matrix.os }}
