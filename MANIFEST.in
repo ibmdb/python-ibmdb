@@ -3,7 +3,7 @@ include CHANGES.md LICENSE README.md
 include config.py.sample
 recursive-include ibm_db_tests *.py *.png *.jpg
 include MANIFEST.in
-recursive-include clidriver *
+recursive-exclude clidriver *
 recursive-include ibm_db_dlls *
 recursive-include certs *
 exclude config.py
