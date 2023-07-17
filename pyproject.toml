@@ -3,3 +3,6 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 [tool.cibuildwheel.macos] 
 repair-wheel-command = "delocate-wheel --ignore-missing-dependencies --require-archs {delocate_archs} -w {dest_dir} -v {wheel}"
+
+
+environment = { PATH="$PATH:/usr/lib/python3/dist-packages/clidriver/bin:/usr/lib/python3/dist-packages/ibm_db-3.1.4.3-py3.1-linux-x86_64.egg/clidriver/bin" }
