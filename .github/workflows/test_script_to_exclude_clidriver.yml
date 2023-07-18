@@ -82,6 +82,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+        env:
+          CIBW_ENVIRONMENT:: PATH="$PATH:/usr/lib/python3/dist-packages/clidriver/bin:/usr/lib/python3/dist-packages/ibm_db-3.1.4.3-py3.1-linux-x86_64.egg/clidriver/bin"
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip build
