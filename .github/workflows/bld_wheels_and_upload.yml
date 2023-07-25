@@ -97,7 +97,7 @@ jobs:
       - name: remove clidriver directory 
         run: rm -rf ./ibm_db-3.1.4.5/clidriver/*
       - name: list file [ls] after removing clidriver
-        run: ls -la ./ibm_db-3.1.4.5/clidriver
+        run: ls -la ./ibm_db-3.1.4.5/
       - name: create tar file 
         run: tar -czvf ibm_db-3.1.4.5.tar.gz ./dist/
       - name: Upload sdist
