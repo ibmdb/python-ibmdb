@@ -24,7 +24,9 @@ jobs:
       - name: Build sdist
         run: python -m build --sdist --no-isolation
       - name: untar *.tar.gz file and delete clidriver 
-        run: tar -xzvf ./dist/*.tar.gz
+        run: |
+          cd ./dist
+          tar -xzvf ./dist/*.tar.gz
       - name: ls command
         run: ls dist
       - name: remove clidriver directory 
