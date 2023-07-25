@@ -32,7 +32,7 @@ jobs:
       #- name: list file [ls] after removing clidriver
        # run: ls clidriver 
       - name: create tar file 
-        run: tar -czvf ibm_db-3.1.4.5.tar.gz .
+        run: tar -czvf ibm_db-3.1.4.5.tar.gz ./dist/
       - name: Upload sdist
         uses: actions/upload-artifact@v3
         with:
