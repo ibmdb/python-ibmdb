@@ -93,8 +93,10 @@ jobs:
         run: |
           python -m build --sdist --no-isolation
           ls
-          cd dist
-          ls 
+      - name: run cd dist and ls 
+        run: |
+         cd dist
+         ls 
         
       - name: Upload sdist
         uses: actions/upload-artifact@v3
