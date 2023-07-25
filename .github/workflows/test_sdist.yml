@@ -30,10 +30,10 @@ jobs:
            tar -xzvf ./dist/*.tar.gz
       - name: cd ibm_db* and ls 
         run: |
-         cd ibm_db*
+         cd ./dist/ibm_db*
          ls
       - name: remove clidriver directory 
-        run: rm -rf clidriver*
+        run: rm -rf dist/ibm_db*/clidriver*
       - name: Upload sdist
         uses: actions/upload-artifact@v3
         with:
