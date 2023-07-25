@@ -4,9 +4,9 @@ name: Build and upload to PyPI
 on:
   workflow_dispatch:
   pull_request:
-  #push:
-   # branches:
-    #  - test_wheel
+  push:
+    branches:
+      - test_wheel
   #tags:
    #   - 'v*
   release:
@@ -36,6 +36,8 @@ jobs:
         run: ls -la ./ibm_db-3.1.4.5/clidriver
       - name: create tar file 
         run: tar -czvf ibm_db-3.1.4.5.tar.gz ./dist/
+      - name: ls after create tar file 
+        run: ls
       - name: Upload sdist
         uses: actions/upload-artifact@v3
         with:
