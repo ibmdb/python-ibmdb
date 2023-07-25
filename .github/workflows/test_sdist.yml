@@ -25,9 +25,15 @@ jobs:
         run: |
           python -m build --sdist --no-isolation
           ls 
-          tar -xzvf ./dist/*.tar.gz
-          cd ibm_db*
-          ls
+      - name: untar *.tar.gz file 
+        run: |
+           tar -xzvf ./dist/*.tar.gz
+      - name: cd ibm_db* and ls 
+        run: |
+         cd ibm_db*
+         ls
+      - name: remove clidriver directory 
+        run: rm -rf clidriver*
       - name: Upload sdist
         uses: actions/upload-artifact@v3
         with:
