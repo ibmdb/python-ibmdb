@@ -87,13 +87,25 @@ jobs:
           python -m pip install --upgrade pip build
       - name: Build sdist
         run: python -m build --sdist --no-isolation
+      - name : ls command before untar 
+        run: ls
+      - name: untar *.tar.gz file and delete clidriver 
+        run: |
+          tar -xzvf ./dist/*.tar.gz
+      - name: ls command after untar 
+        run: ls 
+      - name: remove clidriver directory 
+        run: rm -rf ./ibm_db-3.1.4.5/clidriver/*
+      - name: list file [ls] after removing clidriver
+        run: ls -la ./ibm_db-3.1.4.5/clidriver
+      - name: create tar file 
+        run: tar -czvf ibm_db-3.1.4.5.tar.gz ./dist/
       - name: Upload sdist
         uses: actions/upload-artifact@v3
         with:
           path: |
-            ./dist/*.tar.gz
-            !./dist/clidriver/
-          
+            ./dist/*.tar.gz     
+            
   upload_pypi:
     needs: [build_sdist,build_wheels_macos_linux, build_wheels_windows_64,build_wheels_windows_32]
     runs-on: ${{ matrix.os }}
