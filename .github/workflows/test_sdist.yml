@@ -21,16 +21,16 @@ jobs:
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip build
-      #- name: Build sdist
-       # run: python -m build --sdist --no-isolation
-      #- name: untar *.tar.gz file and delete clidriver 
-       # run: tar -xzvf ./dist/*.tar.gz
-      #- name: ls command
-       # run: ls dist
-      #- name: remove clidriver directory 
-        #run: rm -rf ./clidriver
-      #- name: list file [ls] after removing clidriver
-       # run: ls clidriver 
+      - name: Build sdist
+        run: python -m build --sdist --no-isolation
+      - name: untar *.tar.gz file and delete clidriver 
+        run: tar -xzvf ./dist/*.tar.gz
+      - name: ls command
+        run: ls dist
+      - name: remove clidriver directory 
+        run: rm -rf ./clidriver
+      - name: list file [ls] after removing clidriver
+        run: ls clidriver 
       - name: create tar file 
         run: tar -czvf ibm_db-3.1.4.5.tar.gz ./dist/
       - name: Upload sdist
