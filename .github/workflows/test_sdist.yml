@@ -40,7 +40,7 @@ jobs:
         run: |
           echo "here is files"
           ls
-          echo " "lsunder path dist"
+          echo "ls under path dist"
           ls
       - name: Upload sdist
         uses: actions/upload-artifact@v3
