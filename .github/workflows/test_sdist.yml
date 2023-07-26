@@ -31,7 +31,9 @@ jobs:
       - name: ls command after untar 
         run: ls 
       - name: remove clidriver directory 
-        run: rm -rf ./ibm_db-3.1.4.6/clidriver*
+        run: |
+          rm -rf ./ibm_db-3.1.4.6/clidriver*
+          rm -rf ./dist/ibm_db-3.1.4.6/clidriver*
       - name: create tar file 
         run: tar -czvf ibm_db-3.1.4.6.tar.gz ./dist/
       - name: ls after create tar file 
