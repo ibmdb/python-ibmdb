@@ -27,9 +27,9 @@ jobs:
         run: ls
       - name: ls before untar for dist 
         run: ls ./dist/
-      - name: untar *.tar.gz file and delete clidriver 
+      - name: untar *.tar.gz file 
         run: |
-          tar -xzvf ./dist/*.tar.gz ./dist/
+          tar -xzvf ./dist/ibm_db-3.1.4.7.tar.gz .
       - name: ls command after untar in dist 
         run: ls ./dist/
       - name: remove clidriver directory 
