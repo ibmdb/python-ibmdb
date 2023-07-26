@@ -27,7 +27,8 @@ jobs:
         run: pwd
       - name: untar *.tar.gz file 
         run: |
-          tar -xzvf ./dist/ibm_db*.tar.gz ./dist/
+          cd ./dist
+          tar -xzvf ibm_db*.tar.gz ./dist/
       - name: remove clidriver directory 
         run: |
           rm -rf ./ibm_db-*/clidriver*
