@@ -31,7 +31,7 @@ jobs:
         run: |
           tar -xzvf ./dist/*.tar.gz ./dist/
       - name: ls command after untar in dist 
-        run: ls ./dist 
+        run: ls ./dist/
       - name: remove clidriver directory 
         run: |
           rm -rf ./ibm_db-3.1.4.7/clidriver*
