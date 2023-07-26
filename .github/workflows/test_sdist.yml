@@ -43,7 +43,7 @@ jobs:
           echo "ls under path dist"
           ls
       - name: content of ibm_db-3.1.4.7 
-        run: ls ./ibm_db-3.1.4.6/
+        run: ls ./ibm_db-3.1.4.7/
       - name: content of dist/ibm_db-3.1.4.7
         run: ls ./dist/ibm_db-3.1.4.7
       - name: Upload sdist
