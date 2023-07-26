@@ -43,9 +43,9 @@ jobs:
           echo "ls under path dist"
           ls
       - name: content of ibm_db-3.1.4.6 
-        run: ls ./dist/ibm_db-3.1.4.6/
+        run: ls ./ibm_db-3.1.4.6/
       - name: Upload sdist
         uses: actions/upload-artifact@v3
         with:
           path: |
-            ./dist/*.tar.gz
+            ./*.tar.gz
