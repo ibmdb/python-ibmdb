@@ -37,7 +37,11 @@ jobs:
       - name: create tar file 
         run: tar -czvf ibm_db-3.1.4.5.tar.gz ./dist/
       - name: ls after create tar file 
-        run: ls
+        run: |
+          echo "here is files"
+          ls
+          echo " "lsunder path dist"
+          ls
       - name: Upload sdist
         uses: actions/upload-artifact@v3
         with:
