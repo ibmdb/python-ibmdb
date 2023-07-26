@@ -93,15 +93,15 @@ jobs:
         run: ls ./dist/
       - name: untar *.tar.gz file 
         run: |
-          tar -xzvf ./dist/ibm_db-3.1.4.7.tar.gz 
+          tar -xzvf ./dist/ibm_db-3.1.4.8.tar.gz 
       - name: ls command after untar in dist 
         run: ls ./dist/
       - name: remove clidriver directory 
         run: |
-          rm -rf ./ibm_db-3.1.4.7/clidriver*
-          rm -rf ./dist/ibm_db-3.1.4.7/clidriver*
+          rm -rf ./ibm_db-3.1.4.8/clidriver*
+          rm -rf ./dist/ibm_db-3.1.4.8/clidriver*
       - name: create tar file 
-        run: tar -czvf ./dist/ibm_db-3.1.4.7.tar.gz ./ibm_db-3.1.4.7/
+        run: tar -czvf ./dist/ibm_db-3.1.4.8.tar.gz ./ibm_db-3.1.4.8/
       - name: content of dist  after create tar file 
         run: ls ./dist
       - name: Upload sdist
