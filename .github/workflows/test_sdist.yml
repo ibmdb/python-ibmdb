@@ -25,6 +25,8 @@ jobs:
         run: python -m build --sdist --no-isolation
       - name : ls command before untar 
         run: ls
+      - name: ls before untar for dist 
+        run: ls
       - name: untar *.tar.gz file and delete clidriver 
         run: |
           tar -xzvf ./dist/*.tar.gz ./dist/
