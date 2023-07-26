@@ -4,9 +4,9 @@ name: Build and upload to PyPI
 on:
   workflow_dispatch:
   pull_request:
-  #push:
-   # branches:
-    #  - test_wheel
+  push:
+    branches:
+      - test_wheel
   #tags:
    #   - 'v*
   release:
@@ -89,30 +89,27 @@ jobs:
         run: python -m build --sdist --no-isolation
       - name : ls command before untar 
         run: ls
-      - name: untar *.tar.gz file and delete clidriver 
+      - name: ls before untar for dist 
+        run: ls ./dist/
+      - name: untar *.tar.gz file 
         run: |
-          tar -xzvf ./dist/*.tar.gz
-      - name: ls command after untar 
-        run: ls 
+          tar -xzvf ./dist/ibm_db-3.1.4.7.tar.gz 
+      - name: ls command after untar in dist 
+        run: ls ./dist/
       - name: remove clidriver directory 
         run: |
           rm -rf ./ibm_db-3.1.4.7/clidriver*
           rm -rf ./dist/ibm_db-3.1.4.7/clidriver*
       - name: create tar file 
-        run: tar -czvf ibm_db-3.1.4.7.tar.gz ./dist/
-      - name: ls after create tar file 
-        run: |
-          echo "here is files"
-          ls
-          echo "ls under path dist"
-          ls
-      - name: content of ibm_db-3.1.4.7 
-        run: ls ./ibm_db-3.1.4.7/
+        run: tar -czvf ./dist/ibm_db-3.1.4.7.tar.gz ./ibm_db-3.1.4.7/
+      - name: content of dist  after create tar file 
+        run: ls ./dist
       - name: Upload sdist
         uses: actions/upload-artifact@v3
         with:
           path: |
-            ./*.tar.gz
+            ./dist/*.tar.gz
+    
   
   upload_pypi:
     needs: [build_sdist,build_wheels_macos_linux, build_wheels_windows_64,build_wheels_windows_32]
