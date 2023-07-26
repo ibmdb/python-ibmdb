@@ -31,7 +31,7 @@ jobs:
           rm -rf ./ibm_db-*/clidriver*
           rm -rf ./dist/ibm_db-*/clidriver*
       - name: ls
-        run: ls ./dist
+        run: ls ./dist/ibm_db*
       - name: create tar file 
         run: tar -czvf ./dist/ibm_db-*.tar.gz 
 
