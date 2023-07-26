@@ -23,6 +23,8 @@ jobs:
           python -m pip install --upgrade pip build
       - name: Build sdist
         run: python -m build --sdist --no-isolation
+      - name: pwd
+        run: pwd
       - name: untar *.tar.gz file 
         run: |
           tar -xzvf ./dist/ibm_db*.tar.gz ./dist/
