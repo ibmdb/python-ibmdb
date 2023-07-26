@@ -4,9 +4,9 @@ name: Build and upload to PyPI
 on:
   workflow_dispatch:
   pull_request:
-  #push:
-   # branches:
-    #  - test_wheel
+  push:
+    branches:
+      - test_wheel
   #tags:
    #   - 'v*
   release:
@@ -32,20 +32,22 @@ jobs:
         run: ls 
       - name: remove clidriver directory 
         run: |
-          rm -rf ./ibm_db-3.1.4.6/clidriver*
-          rm -rf ./dist/ibm_db-3.1.4.6/clidriver*
+          rm -rf ./ibm_db-3.1.4.7/clidriver*
+          rm -rf ./dist/ibm_db-3.1.4.7/clidriver*
       - name: create tar file 
-        run: tar -czvf ibm_db-3.1.4.6.tar.gz ./dist/
+        run: tar -czvf ibm_db-3.1.4.7.tar.gz ./dist/
       - name: ls after create tar file 
         run: |
           echo "here is files"
           ls
           echo "ls under path dist"
           ls
-      - name: content of ibm_db-3.1.4.6 
+      - name: content of ibm_db-3.1.4.7 
         run: ls ./ibm_db-3.1.4.6/
+      - name: content of dist/ibm_db-3.1.4.7
+        run: ls ./dist/ibm_db-3.1.4.7
       - name: Upload sdist
         uses: actions/upload-artifact@v3
         with:
           path: |
-            ./*.tar.gz
+            ./dist/*.tar.gz
