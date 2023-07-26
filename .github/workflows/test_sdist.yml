@@ -31,11 +31,11 @@ jobs:
       - name: ls command after untar 
         run: ls 
       - name: remove clidriver directory 
-        run: rm -rf ./ibm_db-3.1.4.5/clidriver/*
+        run: rm -rf ./ibm_db-3.1.4.6/clidriver/*
       - name: list file [ls] after removing clidriver
-        run: ls -la ./ibm_db-3.1.4.5/clidriver
+        run: ls -la ./ibm_db-3.1.4.6/clidriver
       - name: create tar file 
-        run: tar -czvf ibm_db-3.1.4.5.tar.gz ./dist/
+        run: tar -czvf ibm_db-3.1.4.6.tar.gz ./dist/
       - name: ls after create tar file 
         run: |
           echo "here is files"
