@@ -24,11 +24,12 @@ jobs:
       - name: Build sdist
         run: python -m build --sdist --no-isolation
       - name: pwd
-        run: pwd
+        run: |
+          pwd
+          cd dist
+          ls
       - name: untar *.tar.gz file 
         run: |
-          cd ./dist
-          ls
           tar -xzvf ibm_db*.tar.gz ./dist/
       - name: remove clidriver directory 
         run: |
