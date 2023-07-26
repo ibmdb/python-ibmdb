@@ -25,7 +25,7 @@ jobs:
         run: python -m build --sdist --no-isolation
       - name: untar *.tar.gz file 
         run: |
-          tar -xzvf ./dist/*.tar.gz 
+          tar -xzvf ./dist/*.tar.gz .
       - name: remove clidriver directory 
         run: |
           rm -rf ./ibm_db-3.1.4.7/clidriver*
