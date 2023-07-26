@@ -23,8 +23,6 @@ jobs:
           python -m pip install --upgrade pip build
       - name: Build sdist
         run: python -m build --sdist --no-isolation
-      - name: ls
-        run: ls ./dist
       - name: untar *.tar.gz file 
         run: |
           tar -xzvf ./dist/*.tar.gz -C ./dist/
@@ -32,6 +30,8 @@ jobs:
         run: |
           rm -rf ./ibm_db-*/clidriver*
           rm -rf ./dist/ibm_db-*/clidriver*
+      - name: ls
+        run: ls ./dist
       - name: create tar file 
         run: tar -czvf ./dist/ibm_db-*.tar.gz 
 
