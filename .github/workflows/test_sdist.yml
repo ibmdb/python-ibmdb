@@ -34,7 +34,7 @@ jobs:
       - name: ls
         run: ls ./dist/
       - name: create tar file 
-        run: tar -czvf ./dist/ibm_db* ./dist/ibm_db*
+        run: tar -czvf ./dist/ibm_db-3.4.9.tar.gz ./dist/ibm_db*
       - name: ls
         run: ls ./dist/
       - name: Upload sdist
