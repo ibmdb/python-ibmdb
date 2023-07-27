@@ -89,23 +89,16 @@ jobs:
       - name: Build sdist
         run: python -m build --sdist --no-isolation
       - name: untar *.tar.gz file 
-        run: |
-          tar -xzvf ./dist/*.tar.gz -C ./dist/
-      - name: ls after untar
-        run: |
-          echo "ls"
-          ls
-          echo " ls ./dist/ "
-          ls ./dist/
+        run: tar -xzvf ./dist/*.tar.gz -C ./dist/
       - name: remove clidriver directory 
         run: |
           rm -rf ./ibm_db-*/clidriver*
           rm -rf ./dist/ibm_db-*/clidriver*
           rm -rf ./dist/ibm_db-*.tar.gz
-      - name: ls
-        run: ls ./dist
       - name: create tar file 
         run: tar -czvf ./dist/ibm_db-3.1.4.12.tar.gz ./dist/ibm_db-3.1.4.12/
+      - name: ls after tar 
+        run: ls ./dist
       - name: Upload sdist
         uses: actions/upload-artifact@v3
         with:
