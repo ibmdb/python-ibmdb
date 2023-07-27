@@ -130,7 +130,7 @@ jobs:
         user: ${{secrets.TESTPYPI_USER}}
         password: ${{ secrets.TESTPYPI_PASSWORD}}
         repository-url: https://test.pypi.org/legacy/
-        skip_existing: true
+        skip-existing: true
     - name: Publish distribution 📦 to PyPI
       if: startsWith(github.ref, 'refs/tags')
       uses: pypa/gh-action-pypi-publish@release/v1
