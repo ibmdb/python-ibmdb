@@ -95,7 +95,7 @@ jobs:
           rm -rf ./dist/ibm_db-*/clidriver*
           rm -rf ./dist/ibm_db-*.tar.gz
       - name: create tar file 
-        run: tar -czvf ./dist/ibm_db-3.1.4.12.tar.gz ./ibm_db-3.1.4.12/
+        run: tar -czvf ./dist/ibm_db-3.1.4.12.tar.gz 
       - name: ls after tar 
         run: ls ./dist
       - name: Upload sdist
