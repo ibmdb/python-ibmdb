@@ -27,7 +27,7 @@ jobs:
         uses: pypa/cibuildwheel@v2.12.1
         env:
           CIBW_BUILD: "*-win_amd64"
-          CIBW_SKIP: "*pp"
+          CIBW_SKIP: pp*
       - uses: actions/upload-artifact@v3
         with:
           path: ./wheelhouse/*.whl   
