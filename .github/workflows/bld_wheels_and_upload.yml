@@ -26,7 +26,8 @@ jobs:
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.12.1
         env:
-          CIBW_SKIP: "*-win32 *pp"
+          CIBW_BUILD: "*-win_amd64"
+          CIBW_SKIP: "*pp"
       - uses: actions/upload-artifact@v3
         with:
           path: ./wheelhouse/*.whl   
