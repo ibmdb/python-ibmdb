@@ -97,7 +97,7 @@ jobs:
       - name: create tar file 
         run: |
          cd dist
-         tar -czvf ./ibm_db-3.1.4.13.tar.gz ./ibm_db-3.1.4.13/
+         tar -czvf ./ibm_db-3.1.4.13.tar.gz ./ibm_db-*
       - name: ls after tar 
         run: ls ./dist
       - name: Upload sdist
