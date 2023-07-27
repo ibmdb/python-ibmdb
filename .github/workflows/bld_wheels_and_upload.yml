@@ -60,8 +60,7 @@ jobs:
         uses: pypa/cibuildwheel@v2.12.1
         env:
          CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
-         #CIBW_SKIP: "*-musllinux_* pp*"
-         CIBW_SKIP: "*-*linux_{aarch64,ppc64le}"
+         CIBW_SKIP: "*-musllinux_* pp* *-*linux_{aarch64,ppc64le}"
          CIBW_REPAIR_WHEEL_COMMAND_LINUX:
             auditwheel repair
               --exclude libdb2.so.1
