@@ -95,17 +95,16 @@ jobs:
         run: |
           rm -rf ./ibm_db-*/clidriver*
           rm -rf ./dist/ibm_db-*/clidriver*
-          rm -rf ./dist/ibm_db-*.tar.gz
       - name: create tar file 
-        run: tar -czvf ./dist/ibm_db-3.1.4.14.tar.gz ./ibm_db-3.1.4.14/
+        run: tar -czvf ./dist/$PACKAGE.tar.gz ./$PACKAGE
       - name: ls after tar 
         run: ls ./dist
       - name: Upload sdist
         uses: actions/upload-artifact@v3
         with:
           path: |
-            ./dist/*.tar.gz    
-  
+            ./dist/*.tar.gz  
+            
   upload_pypi:
     needs: [build_sdist,build_wheels_macos_linux, build_wheels_windows_64,build_wheels_windows_32]
     runs-on: ${{ matrix.os }}
