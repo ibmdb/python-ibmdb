@@ -12,7 +12,9 @@ on:
   release:
     types:
       - published
-      
+
+env:
+   PACKAGE: ibm_db-3.1.4.14     
   
 jobs:
   build_wheels_windows_64:
@@ -95,9 +97,7 @@ jobs:
           rm -rf ./dist/ibm_db-*/clidriver*
           rm -rf ./dist/ibm_db-*.tar.gz
       - name: create tar file 
-        run: |
-         cd dist
-         tar -czvf ./ibm_db-3.1.4.13.tar.gz ./ibm_db-*
+        run: tar -czvf ./dist/ibm_db-3.1.4.14.tar.gz ./ibm_db-3.1.4.14/
       - name: ls after tar 
         run: ls ./dist
       - name: Upload sdist
