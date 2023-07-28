@@ -89,21 +89,26 @@ jobs:
           python -m pip install --upgrade pip build
       - name: Build sdist
         run: python -m build --sdist --no-isolation
+      - name : ls command before untar 
+        run: ls
+      - name: ls before untar for dist 
+        run: ls ./dist/
       - name: untar *.tar.gz file 
-        run: tar -xzvf ./dist/*.tar.gz -C ./dist/
+        run:  tar -xzvf ./dist/*.tar.gz 
       - name: remove clidriver directory 
         run: |
           rm -rf ./ibm_db-*/clidriver*
           rm -rf ./dist/ibm_db-*/clidriver*
       - name: create tar file 
-        run: tar -czvf ./dist/$PACKAGE.tar.gz ./$PACKAGE
-      - name: ls after tar 
+        run: tar -czvf ./dist/$PACKAGE.tar.gz ./$PACKAGE/
+      - name: content of dist  after create tar file 
         run: ls ./dist
       - name: Upload sdist
         uses: actions/upload-artifact@v3
         with:
           path: |
-            ./dist/*.tar.gz  
+            ./dist/*.tar.gz
+
             
   upload_pypi:
     needs: [build_sdist,build_wheels_macos_linux, build_wheels_windows_64,build_wheels_windows_32]
