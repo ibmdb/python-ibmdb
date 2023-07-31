@@ -89,10 +89,6 @@ jobs:
           python -m pip install --upgrade pip build
       - name: Build sdist
         run: python -m build --sdist --no-isolation
-      - name : ls command before untar 
-        run: ls
-      - name: ls before untar for dist 
-        run: ls ./dist/
       - name: untar *.tar.gz file 
         run: |
           echo "cd dist"
@@ -101,6 +97,8 @@ jobs:
           mkdir $PACKAGE
           echo "tar -xzvf $PACKAGE.tar.gz -C $PACKAGE"
           tar -xzvf $PACKAGE.tar.gz -C $PACKAGE
+          echo "ls $PACKAGE/"
+          ls $PACKAGE/
           echo "rm -rf $PACKAGE/clidriver*"
           rm -rf $PACKAGE/clidriver*
           echo "ls"
@@ -109,8 +107,8 @@ jobs:
           rm -rf $PACKAGE.tar.gz
           echo "ls"
           ls
-          echo " ls $PACKAGE"
-          ls $PACKAGE   
+          echo " ls $PACKAGE/"
+          ls $PACKAGE/
           echo "tar -czvf $PACKAGE.tar.gz $PACKAGE"
           tar -czvf $PACKAGE.tar.gz $PACKAGE
           echo "rm -rf $PACKAGE"
