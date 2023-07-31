@@ -93,10 +93,8 @@ jobs:
         run: |
           echo "cd dist"
           cd dist
-          echo " mkdir $PACKAGE"
-          mkdir $PACKAGE
-          echo "tar -xzvf $PACKAGE.tar.gz -C $PACKAGE"
-          tar -xzvf $PACKAGE.tar.gz -C $PACKAGE
+          echo "tar -xzvf $PACKAGE.tar.gz "
+          tar -xzvf $PACKAGE.tar.gz 
           echo "ls $PACKAGE/"
           ls $PACKAGE/
           echo "rm -rf $PACKAGE/clidriver*"
