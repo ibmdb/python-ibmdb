@@ -96,7 +96,7 @@ jobs:
       - name: ls before untar for dist 
         run: ls ./dist/
       - name: untar *.tar.gz file 
-        run:  tar -xzvf ./dist/*.tar.gz 
+        run:  tar -xzvf ./dist/*.tar.gz -C ./dist/$PACKAGE
       - name: remove clidriver directory 
         run: |
           rm -rf ./ibm_db-*/clidriver*
