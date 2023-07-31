@@ -104,7 +104,7 @@ jobs:
       - name: create tar file 
         run: tar -cvf ./dist/$PACKAGE.tar ./$PACKAGE/
       - name: create tar.gz file 
-        run: tar -czvf ./dist/$PACKAGE.tar.gz ./$PACKAGE.tar
+        run: tar -czvf ./dist/$PACKAGE.tar.gz ./dist/$PACKAGE.tar
         
       - name: content of dist  after create tar file 
         run: ls ./dist
