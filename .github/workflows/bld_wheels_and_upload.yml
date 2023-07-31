@@ -95,8 +95,11 @@ jobs:
         run: ls ./dist/
       - name: untar *.tar.gz file 
         run: |
+          echo "cd dist"
           cd dist
+          echo " mkdir $PACKAGE"
           mkdir $PACKAGE
+          echo "tar -xzvf $PACKAGE.tar.gz -C $PACKAGE"
           tar -xzvf $PACKAGE.tar.gz -C $PACKAGE
           rm -rf $PACKAGE/clidriver*
           ls
