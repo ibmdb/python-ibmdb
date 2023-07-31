@@ -96,6 +96,7 @@ jobs:
       - name: untar *.tar.gz file 
         run: |
           cd dist
+          mkdir $PACKAGE
           tar -xzvf $PACKAGE.tar.gz -C $PACKAGE
       - name: remove clidriver directory 
         run: rm -rf $PACKAGE/clidriver*
