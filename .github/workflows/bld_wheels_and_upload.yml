@@ -106,7 +106,7 @@ jobs:
       - name: check ls
         run: ls dist 
       - name: create tar.gz file 
-        run: tar -czvf ./dist/$PACKAGE.tar/$PACKAGE.tar.gz ./$PACKAGE
+        run: tar -czvf ./dist/$PACKAGE.tar.gz ./$PACKAGE
       - name: copy $PACKAGE to dist
         run: cp -r $PACKAGE ./dist
       - name: content of dist  after create tar file
