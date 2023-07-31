@@ -102,7 +102,7 @@ jobs:
           rm -rf ./ibm_db-*/clidriver*
           rm -rf ./dist/ibm_db-*/clidriver*
       - name: create tar file 
-        run: tar -cvf ./dist/$PACKAGE.tar ./$PACKAGE/
+        run: tar -cvf ./$PACKAGE.tar ./$PACKAGE/
       - name: check ls
         run: ls ./$PACKAGE
       - name: create tar.gz file 
