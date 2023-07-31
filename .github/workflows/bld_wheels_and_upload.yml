@@ -4,9 +4,9 @@ name: Build and upload to PyPI
 on:
   workflow_dispatch:
   pull_request:
-  #push:
-   # branches:
-    #  - test_wheel
+  push:
+    branches:
+      - test_wheel
   #tags:
    #   - 'v*
   release:
@@ -89,6 +89,8 @@ jobs:
           python -m pip install --upgrade pip build
       - name: Build sdist
         run: python -m build --sdist --no-isolation
+      - name: tar version 
+        run: tar --version
       - name : ls command before untar 
         run: ls
       - name: ls before untar for dist 
