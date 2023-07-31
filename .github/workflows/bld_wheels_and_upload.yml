@@ -96,13 +96,13 @@ jobs:
       - name: ls before untar for dist 
         run: ls ./dist/
       - name: untar *.tar.gz file 
-        run:  tar -xzvf ./dist/*.tar.gz -C ./dist/$PACKAGE
+        run:  tar -xzvf ./dist/*.tar.gz 
       - name: remove clidriver directory 
         run: |
           rm -rf ./ibm_db-*/clidriver*
           rm -rf ./dist/ibm_db-*/clidriver*
       - name: create tar file 
-        run: tar -cvf ./$PACKAGE.tar ./dist/$PACKAGE/
+        run: tar -cvf ./dist/$PACKAGE.tar ./$PACKAGE/
       - name: check ls
         run: ls dist 
       - name: create tar.gz file 
