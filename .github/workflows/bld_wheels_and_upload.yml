@@ -96,7 +96,7 @@ jobs:
       - name: untar *.tar.gz file 
         run: |
           cd dist
-          tar -xzvf $PACKAGE.tar.gz 
+          tar -xzvf $PACKAGE.tar.gz -C $PACKAGE
       - name: remove clidriver directory 
         run: rm -rf $PACKAGE/clidriver*
       - name: check pwd
