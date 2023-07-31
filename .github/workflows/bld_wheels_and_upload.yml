@@ -101,13 +101,21 @@ jobs:
           mkdir $PACKAGE
           echo "tar -xzvf $PACKAGE.tar.gz -C $PACKAGE"
           tar -xzvf $PACKAGE.tar.gz -C $PACKAGE
+          echo "rm -rf $PACKAGE/clidriver*"
           rm -rf $PACKAGE/clidriver*
+          echo "ls"
           ls
+          echo "rm -rf $PACKAGE.tar.gz"
           rm -rf $PACKAGE.tar.gz
+          echo "ls"
           ls
-          ls $PACKAGE      
+          echo " ls $PACKAGE"
+          ls $PACKAGE   
+          echo "tar -czvf $PACKAGE.tar.gz $PACKAGE"
           tar -czvf $PACKAGE.tar.gz $PACKAGE
+          echo "rm -rf $PACKAGE"
           rm -rf $PACKAGE
+          echo "ls"
           ls
       - name: Upload sdist
         uses: actions/upload-artifact@v3
