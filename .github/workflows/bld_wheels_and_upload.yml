@@ -99,6 +99,10 @@ jobs:
           tar -xzvf $PACKAGE.tar.gz 
       - name: remove clidriver directory 
         run: rm -rf $PACKAGE/clidriver*
+      - name: check pwd
+         run:pwd 
+      - name: check for ls 
+        run: ls 
       - name: create tar.gz file 
         run: tar -czvf $PACKAGE.tar.gz $PACKAGE
       - name: delete untarred file 
