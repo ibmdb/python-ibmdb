@@ -4,16 +4,20 @@ name: Build and upload to PyPI
 on:
   workflow_dispatch:
   pull_request:
-  #push:
-   # branches:
-    #  - test_wheel
+  push:
+    branches:
+      - test_wheel
   #tags:
    #   - 'v*
   release:
     types:
       - published
+
+env:
+   PACKAGE: ibm_db-3.1.4.16    
+  
 jobs:
-   build_sdist:
+  build_sdist:
     name: Build source distribution
     runs-on: ubuntu-latest
     steps:
@@ -25,20 +29,63 @@ jobs:
         run: python -m build --sdist --no-isolation
       - name: untar *.tar.gz file 
         run: |
-          tar -xzvf ./dist/*.tar.gz -C ./dist/
-      - name: remove clidriver directory 
-        run: |
-          rm -rf ./ibm_db-*/clidriver*
-          rm -rf ./dist/ibm_db-*/clidriver*
-          rm -rf ./dist/ibm_db-*.tar.gz
-      - name: ls
-        run: ls ./dist/
-      - name: create tar file 
-        run: tar -czvf ./dist/ibm_db-3.4.9.tar.gz ./dist/ibm_db*
-      - name: ls
-        run: ls ./dist/
+          echo "cd dist"
+          cd dist
+          echo "tar -xzvf $PACKAGE.tar.gz "
+          tar -xzvf $PACKAGE.tar.gz 
+          echo "ls"
+          ls
+          echo "ls $PACKAGE/"
+          ls $PACKAGE/
+          echo "rm -rf $PACKAGE/clidriver*"
+          rm -rf $PACKAGE/clidriver*
+          echo "ls"
+          ls
+          echo "rm -rf $PACKAGE.tar.gz"
+          rm -rf $PACKAGE.tar.gz
+          echo "ls"
+          ls
+          echo " ls $PACKAGE/"
+          ls $PACKAGE/
+          echo "tar -czvf $PACKAGE.tar.gz $PACKAGE"
+          tar -czvf $PACKAGE.tar.gz $PACKAGE
+          echo "rm -rf $PACKAGE"
+          rm -rf $PACKAGE
+          echo "ls"
+          ls
       - name: Upload sdist
         uses: actions/upload-artifact@v3
         with:
           path: |
-            ./dist/*.tar.gz
+            ./dist/$PACKAGE.tar.gz
+            
+  upload_pypi:
+    needs: [build_sdist]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+     #upload to PyPI on every tag starting with 'v'
+    #if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    # alternatively, to publish when a GitHub Release is created, use the following rule:
+    #if: github.event_name == 'release' && github.event.action == 'published'
+    steps:
+    - uses: actions/download-artifact@v3
+      with:
+        # unpacks default artifact into dist/
+        #if `name: artifact` is omitted, the action will create extra parent dir
+        name: artifact
+        path: dist
+    - name: Publish distribution 📦 to Test PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        user: ${{secrets.TESTPYPI_USER}}
+        password: ${{ secrets.TESTPYPI_PASSWORD}}
+        repository-url: https://test.pypi.org/legacy/
+        skip-existing: true
+    - name: Publish distribution 📦 to PyPI
+      if: startsWith(github.ref, 'refs/tags')
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        user: ${{secrets.PYPI_USER}}
+        password: ${{ secrets.PYPI_PASSWORD}}
