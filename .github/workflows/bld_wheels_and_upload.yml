@@ -100,7 +100,7 @@ jobs:
       - name: remove clidriver directory 
         run: rm -rf $PACKAGE/clidriver*
       - name: check pwd
-         run:pwd 
+        run: pwd 
       - name: check for ls 
         run: ls 
       - name: create tar.gz file 
