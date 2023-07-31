@@ -98,23 +98,19 @@ jobs:
           cd dist
           mkdir $PACKAGE
           tar -xzvf $PACKAGE.tar.gz -C $PACKAGE
-      - name: remove clidriver directory 
-        run: rm -rf $PACKAGE/clidriver*
-      - name: check pwd
-        run: pwd 
-      - name: check for ls 
-        run: ls 
-      - name: create tar.gz file 
-        run: tar -czvf $PACKAGE.tar.gz $PACKAGE
-      - name: delete untarred file 
-        run: rm -rf $PACKAGE
-      - name : ls command  
-        run: ls
+          rm -rf $PACKAGE/clidriver*
+          ls
+          rm -rf $PACKAGE.tar.gz
+          ls
+          ls $PACKAGE      
+          tar -czvf $PACKAGE.tar.gz $PACKAGE
+          rm -rf $PACKAGE
+          ls
       - name: Upload sdist
         uses: actions/upload-artifact@v3
         with:
           path: |
-            $PACKAGE.tar.gz
+            ./dist/$PACKAGE.tar.gz
 
             
   upload_pypi:
