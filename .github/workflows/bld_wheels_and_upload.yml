@@ -18,7 +18,7 @@ env:
   
 jobs:
   build_wheels_windows_64:
-    name: Build wheels on ${{ matrix.os }} 64-bit 
+    name: Build wheels on ${{ matrix.os }} 64-bit ${{ python-version}}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -36,7 +36,7 @@ jobs:
           path: ./wheelhouse/*.whl   
   
   build_wheels_windows_32:
-    name: Build wheels on ${{ matrix.os }} 32-bit
+    name: Build wheels on ${{ matrix.os }} 32-bit ${{ python-version }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -52,7 +52,7 @@ jobs:
         with:
           path: ./wheelhouse/*.whl       
   build_wheels_macos_linux:
-    name: Build wheels on ${{ matrix.os }}
+    name: Build wheels on ${{ matrix.os }} ${{python-version}}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
