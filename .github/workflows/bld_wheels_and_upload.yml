@@ -18,12 +18,12 @@ env:
   
 jobs:
   build_wheels_windows_64:
-    name: Build wheels on ${{ matrix.os }} 64-bit ${{matrix.python-version}}
+    name: Build wheels on ${{ matrix.os }} 64-bit for python version ${{matrix.python-version}}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [windows-latest]
-        python-version: [3.7, 3.8, 3.9, 3.10, 3.11]
+        python-version: [3.7, 3.8, 3.9, "3.10", "3.11"]
     steps:
       - uses: actions/checkout@v3
       - name: Build wheels
@@ -36,12 +36,12 @@ jobs:
           path: ./wheelhouse/*.whl   
   
   build_wheels_windows_32:
-    name: Build wheels on ${{ matrix.os }} 32-bit ${{ matrix.python-version }}
+    name: Build wheels on ${{ matrix.os }} 32-bit for python version ${{ matrix.python-version }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [windows-latest]
-        python-version: [3.7, 3.8, 3.9, 3.10, 3.11]
+        python-version: [3.7, 3.8, 3.9, "3.10", "3.11"]
     steps:
       - uses: actions/checkout@v3
       - name: Build wheels
@@ -52,13 +52,13 @@ jobs:
         with:
           path: ./wheelhouse/*.whl       
   build_wheels_macos_linux:
-    name: Build wheels on ${{ matrix.os }} ${{matrix.python-version}}
+    name: Build wheels on ${{ matrix.os }} for python version ${{matrix.python-version}}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [macos-latest,ubuntu-latest]
-        python-version: [3.7, 3.8, 3.9, 3.10, 3.11]
-    steps:
+        python-version: [3.7, 3.8, 3.9, "3.10", "3.11"]
+    steps:'
       - uses: actions/checkout@v3
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.12.1
