@@ -18,53 +18,51 @@ env:
   
 jobs:
   build_wheels_windows_64:
-    name: Build wheels on ${{ matrix.os }} 64-bit for python version ${{matrix.python-version}}
+    name: Build wheels on ${{ matrix.os }} 64-bit
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [windows-latest]
-        python-version: [3.7, 3.8, 3.9, "3.10", "3.11"]
     steps:
       - uses: actions/checkout@v3
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.12.1
         env:
           CIBW_BUILD: "*-win_amd64"
-          CIBW_SKIP: pp*
+          CIBW_SKIP: "cp36-* pp*"
       - uses: actions/upload-artifact@v3
         with:
           path: ./wheelhouse/*.whl   
   
   build_wheels_windows_32:
-    name: Build wheels on ${{ matrix.os }} 32-bit for python version ${{ matrix.python-version }}
+    name: Build wheels on ${{ matrix.os }} 32-bit
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [windows-latest]
-        python-version: [3.7, 3.8, 3.9, "3.10", "3.11"]
     steps:
       - uses: actions/checkout@v3
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.12.1
         env:
           CIBW_BUILD: "*-win32"
+          CIBW_SKIP: "cp36-* pp*"
       - uses: actions/upload-artifact@v3
         with:
           path: ./wheelhouse/*.whl       
   build_wheels_macos_linux:
-    name: Build wheels on ${{ matrix.os }} for python version ${{matrix.python-version}}
+    name: Build wheels on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [macos-latest,ubuntu-latest]
-        python-version: [3.7, 3.8, 3.9, "3.10", "3.11"]
     steps:
       - uses: actions/checkout@v3
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.12.1
         env:
          CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
-         CIBW_SKIP: "*-musllinux_* pp* *-*linux_{aarch64,ppc64le}"
+         CIBW_SKIP: "cp36-* *-musllinux_* pp* *-*linux_{aarch64,ppc64le}"
          CIBW_REPAIR_WHEEL_COMMAND_LINUX:
             auditwheel repair
               --exclude libdb2.so.1
