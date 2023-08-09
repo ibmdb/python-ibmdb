@@ -8,11 +8,8 @@ on:
     branches:
       - master
   # Sequence of patterns matched against refs/tags
-  tags:
+    tags:
       - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
-  release:
-    types:
-      - published
 
 env:
    PACKAGE: ibm_db-3.1.4.19
