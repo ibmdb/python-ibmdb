@@ -1,21 +1,22 @@
 name: Build and upload to PyPI
 
-# Build on every branch push, tag push, and pull request change:
+# Build on every workflow_dispatch, branch push, tag push, and pull request change:
 on:
   workflow_dispatch:
   pull_request:
   push:
     branches:
-      - test_wheel
-  #tags:
-   #   - 'v*
+      - master
+  # Sequence of patterns matched against refs/tags
+  tags:
+      - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
   release:
     types:
       - published
 
 env:
-   PACKAGE: ibm_db-3.1.4.18     
-  
+   PACKAGE: ibm_db-3.1.4
+
 jobs:
   build_wheels_windows_64:
     name: Build wheels on ${{ matrix.os }} 64-bit
@@ -129,9 +130,7 @@ jobs:
       matrix:
         os: [ubuntu-latest]
      #upload to PyPI on every tag starting with 'v'
-    #if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
-    # alternatively, to publish when a GitHub Release is created, use the following rule:
-    #if: github.event_name == 'release' && github.event.action == 'published'
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     steps:
     - uses: actions/download-artifact@v3
       with:
