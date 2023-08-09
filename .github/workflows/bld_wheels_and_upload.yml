@@ -15,7 +15,7 @@ on:
       - published
 
 env:
-   PACKAGE: ibm_db-3.1.4
+   PACKAGE: ibm_db-3.1.4.19
 
 jobs:
   build_wheels_windows_64:
