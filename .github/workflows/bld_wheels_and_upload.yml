@@ -6,13 +6,13 @@ on:
   pull_request:
   push:
     branches:
-      - master
+      - test_wheel
   # Sequence of patterns matched against refs/tags
     tags:
       - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
 
 env:
-   PACKAGE: ibm_db-3.1.4
+   PACKAGE: ibm_db-3.1.4.20
 
 jobs:
   build_wheels_windows_64:
@@ -87,32 +87,14 @@ jobs:
           python -m pip install --upgrade pip build
       - name: Build sdist
         run: python -m build --sdist --no-isolation
-      - name: untar *.tar.gz file 
+      - name: Build source distribution 
         run: |
-          echo "cd dist"
           cd dist
-          echo "tar -xzvf $PACKAGE.tar.gz "
           tar -xzvf $PACKAGE.tar.gz 
-          echo "ls"
-          ls
-          echo "ls $PACKAGE/"
-          ls $PACKAGE/
-          echo "rm -rf $PACKAGE/clidriver*"
           rm -rf $PACKAGE/clidriver*
-          echo "ls"
-          ls
-          echo "rm -rf $PACKAGE.tar.gz"
           rm -rf $PACKAGE.tar.gz
-          echo "ls"
-          ls
-          echo " ls $PACKAGE/"
-          ls $PACKAGE/
-          echo "tar -czvf $PACKAGE.tar.gz $PACKAGE"
           tar -czvf $PACKAGE.tar.gz $PACKAGE
-          echo "rm -rf $PACKAGE"
           rm -rf $PACKAGE
-          echo "ls"
-          ls
       - name: Upload sdist
         uses: actions/upload-artifact@v3
         with:
