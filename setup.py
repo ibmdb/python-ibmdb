@@ -505,6 +505,7 @@ setup( name    = PACKAGE,
                     'Programming Language :: Python :: 3.9',
                     'Programming Language :: Python :: 3.10',
                     'Programming Language :: Python :: 3.11',
+                    'Programming Language :: Python :: 3.12',
                     'Topic :: Database :: Front-Ends'],
 
     long_description = 'Python DBI driver for IBM Db2 for LUW, IBM Informix, IBM Db2 for iSeries(AS400) and IBM Db2 for z/OS servers',
