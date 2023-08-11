@@ -1289,7 +1289,7 @@ class Cursor(object):
             self.messages.append(_get_exception(inst))
             raise self.messages[len(self.messages) - 1]
         if not num_columns:
-            return True
+            return False
         self._result_set_produced = True
 
         return True
@@ -1406,8 +1406,8 @@ class Cursor(object):
         self.__description = None
         self._all_stmt_handlers = []
         self._prepare_helper(operation)
-        self._set_cursor_helper()
         self._execute_helper(parameters)
+        self._set_cursor_helper()
         return self._set_rowcount()
 
     def executemany(self, operation, seq_parameters):
