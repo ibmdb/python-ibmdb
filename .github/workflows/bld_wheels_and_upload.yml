@@ -89,10 +89,10 @@ jobs:
       - name: Build source distribution 
         run: |
           cd dist
-          tar -xzvf $PACKAGE.tar.gz 
+          tar -xzf $PACKAGE.tar.gz 
           rm -rf $PACKAGE/clidriver*
           rm -rf $PACKAGE.tar.gz
-          tar -czvf $PACKAGE.tar.gz $PACKAGE
+          tar -czf $PACKAGE.tar.gz $PACKAGE
           rm -rf $PACKAGE
       - name: Upload sdist
         uses: actions/upload-artifact@v3
