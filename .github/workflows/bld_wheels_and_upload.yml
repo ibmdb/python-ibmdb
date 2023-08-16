@@ -6,13 +6,10 @@ on:
   pull_request:
   push:
     branches:
-      - master
+      - test_wheel
   # Sequence of patterns matched against refs/tags
     tags:
       - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
-
-env:
-   PACKAGE: ibm_db-3.1.4
 
 jobs:
   build_wheels_windows_64:
@@ -86,14 +83,23 @@ jobs:
         run: python -m pip install --upgrade pip build
       - name: Build sdist
         run: python -m build --sdist --no-isolation
+      - name: Package version version
+        id: version
+        run: |
+           cd dist
+           pip install ibm_db*
+           echo "VERSION=$(python -c 'import ibm_db; print(ibm_db.__version__)')" >> $GITHUB_OUTPUT
       - name: Build source distribution 
         run: |
+          PACKAGE="ibm_db-$VERSION"
           cd dist
           tar -xzf $PACKAGE.tar.gz 
           rm -rf $PACKAGE/clidriver*
           rm -rf $PACKAGE.tar.gz
           tar -czf $PACKAGE.tar.gz $PACKAGE
           rm -rf $PACKAGE
+        env:
+          VERSION: ${{ steps.version.outputs.VERSION}}
       - name: Upload sdist
         uses: actions/upload-artifact@v3
         with:
