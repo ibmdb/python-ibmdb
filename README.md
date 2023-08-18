@@ -41,7 +41,7 @@ Provides Python interface for connecting to IBM Db2 for LUW, IBM Informix and IB
 
 <a name="prereq"></a>
 ## Pre-requisites
-Install Python 2.7 or Python 3 <= 3.11. The minimum python version supported by driver is python 2.7 and the latest version supported is python 3.11 except version 3.3 as it has reached end-of-life.
+Install Python 3.7 <= 3.11. The minimum python version supported by driver is python 3.7 and the latest version supported is python 3.11.
 
 > **For MacOS M1 / Apple Silicon chip system**
 > 
@@ -62,18 +62,6 @@ Install Python 2.7 or Python 3 <= 3.11. The minimum python version supported by 
 >   ```
 > 2. When regular installation does not work, it might help to preface your installation command with `ARCHFLAGS="-arch x86_64"`. Be sure to have uninstalled `ibm_db` before installing again, otherwise this fix won't help.
 
-The pre-built 32-bit and 64-bit binaries on windows are available for the following versions:
-```
-python 2.7
-python 3.4
-python 3.5
-python 3.6
-python 3.7
-python 3.8
-python 3.9
-python 3.10
-python 3.11
-```
 
 You might need zlib, openssl, pip installations if not already available in your setup.
 
@@ -109,7 +97,8 @@ If you have to use your own URL for clidriver please set environment variable
 IBM_DB_INSTALLER_URL
 ```
 
-If you are using python 3.8 or 3.9 on windows and building the source manually, you will need to set dll path of dependent library of clidriver before importing the module as:
+Note: For windows after installing ibm_db, we need to make sure to set dll path of dependent library of clidriver before importing the module as:
+
 ```
 import os
 os.add_dll_directory('path to clidriver installation until bin')

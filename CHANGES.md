@@ -1,3 +1,22 @@
+2023-08-08, Version 3.1.5
+=========================
+
+ * Fix for issue #857 (Earammak)
+ 
+ * Support for Null value for an array (Earammak)
+  
+ * Fix for issue #838 (Earammak)
+ 
+ * Code change #837 and readme update (Earammak)
+ 
+ * Optimize _checkGcc in setup.py (pschoen-itsc)
+ 
+ * Initial wheel support code changes (Earammak)
+ 
+ * Fix for issues #823 and #828 (Earammak)
+ 
+ * Readme update for latest python #813 and Readme update #814 (Earammak)
+ 
 2022-11-24, Version 3.1.4
 =========================
 

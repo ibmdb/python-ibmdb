@@ -25,6 +25,32 @@ Below steps were followed for the same:
 
 - NOTE(Default behaviour): 
 	- IBM_DB_HOME is the HLQ for your Db2 libraries(SDSNMACS, SDSNC.H)
+   
+ - For compatibility with python ibm_db the following parameters must be set in the ODBC ini file
+   CURRENTAPPENSCH=ASCII or CURRENTAPPENSCH=UNICODE (CURRENTAPPENSCH=EBCDIC is not supported)
+   MULTICONTEXT=2
+   FLOAT=IEEE
+   e.g.
+     ```; This is a comment line...
+        ; Example COMMON stanza
+        [COMMON]
+        MVSDEFAULTSSID=VC1A
+        CONNECTTYPE=1
+        MULTICONTEXT=2
+        CURRENTAPPENSCH=ASCII
+        FLOAT=IEEE
+        ; Example SUBSYSTEM stanza for VC1A subsystem
+        [VC1A]
+        MVSATTACHTYPE=RRSAF
+        PLANNAME=DSNACLI
+        ; Example DATA SOURCE stanza for STLEC1 data source
+        [STLEC1]
+        AUTOCOMMIT=1
+        CURSORHOLD=1
+     ```
+ - The ODBC ini file must be encoded in IBM-1047 and cannot have the text tag on, e.g.,
+   chtag -b $DSNAOINI or chtag -m -c IBM-1047 $DSNAOINI.
+   Use chtag -p $DSNAOINI to verify that the file have T=off (text tag off) and is either tagged binary or mixed IBM-1047.
 
 e.g.
 

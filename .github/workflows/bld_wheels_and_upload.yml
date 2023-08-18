@@ -1,0 +1,138 @@
+name: Build and upload to PyPI
+
+# Build on every workflow_dispatch, branch push, tag push, and pull request change
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches:
+      - master
+  # Sequence of patterns matched against refs/tags
+    tags:
+      - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+
+jobs:
+  build_wheels_windows_64:
+    name: Build wheels on ${{ matrix.os }} 64-bit
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.12.2
+        env:
+          CIBW_BUILD: "*-win_amd64"
+          CIBW_SKIP: "cp36-* pp*"
+      - uses: actions/upload-artifact@v3
+        with:
+          path: ./wheelhouse/*.whl   
+  
+  build_wheels_windows_32:
+    name: Build wheels on ${{ matrix.os }} 32-bit
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.12.2
+        env:
+          CIBW_BUILD: "*-win32"
+          CIBW_SKIP: "cp36-* pp*"
+      - uses: actions/upload-artifact@v3
+        with:
+          path: ./wheelhouse/*.whl       
+  build_wheels_macos_linux:
+    name: Build wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest,ubuntu-latest]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.12.2
+        env:
+         CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
+         CIBW_SKIP: "cp36-* *-musllinux_* pp* *-*linux_{aarch64,ppc64le}"
+         CIBW_REPAIR_WHEEL_COMMAND_LINUX:
+            auditwheel repair
+              --exclude libdb2.so.1
+              --exclude libDB2xml4c.so.58 
+              --exclude libm.so.6
+              --exclude libcrypt.so.1
+              --exclude libpam.so.0
+              --exclude librt.so.1
+              --exclude libpthread.so.0
+              --exclude libc.so.6
+              --exclude libdl.so.2
+              --wheel-dir {dest_dir}
+              {wheel}
+      - uses: actions/upload-artifact@v3
+        with:
+          path: ./wheelhouse/*.whl
+  build_sdist:
+    name: Build source distribution
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Python dependencies
+        run: python -m pip install --upgrade pip build
+      - name: Build sdist
+        run: python -m build --sdist --no-isolation
+      - name: Package version 
+        id: version
+        run: |
+           cd dist
+           pip install ibm_db*
+           echo "VERSION=$(python -c 'import ibm_db; print(ibm_db.__version__)')" >> $GITHUB_OUTPUT
+      - name: Build source distribution 
+        run: |
+          PACKAGE="ibm_db-$VERSION"
+          cd dist
+          tar -xzf $PACKAGE.tar.gz 
+          rm -rf $PACKAGE/clidriver*
+          rm -rf $PACKAGE.tar.gz
+          tar -czf $PACKAGE.tar.gz $PACKAGE
+          rm -rf $PACKAGE
+        env:
+          VERSION: ${{ steps.version.outputs.VERSION}}
+      - name: Upload sdist
+        uses: actions/upload-artifact@v3
+        with:
+          path: |
+            ./dist/*.tar.gz
+
+            
+  upload_pypi:
+    needs: [build_sdist,build_wheels_macos_linux, build_wheels_windows_64,build_wheels_windows_32]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+     #upload to PyPI on every tag starting with 'v'
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    steps:
+    - uses: actions/download-artifact@v3
+      with:
+        # unpacks default artifact into dist/
+        #if `name: artifact` is omitted, the action will create extra parent dir
+        name: artifact
+        path: dist
+    - name: Publish distribution to Test PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        user: ${{secrets.TESTPYPI_USER}}
+        password: ${{ secrets.TESTPYPI_PASSWORD}}
+        repository-url: https://test.pypi.org/legacy/
+        skip-existing: true
+    - name: Publish distribution to PyPI
+      if: startsWith(github.ref, 'refs/tags')
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        user: ${{secrets.PYPI_USER}}
+        password: ${{ secrets.PYPI_PASSWORD}}
+

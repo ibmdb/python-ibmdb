@@ -61,7 +61,6 @@ static int is_systemi, is_informix;      /* 1 == TRUE; 0 == FALSE; */
 #define DLOPEN LoadLibrary
 #define DLSYM GetProcAddress
 #define DLCLOSE FreeLibrary
-#define LIBDB2 "db2cli64.dll"
 #elif _AIX
 #define DLOPEN dlopen
 #define DLSYM dlsym
@@ -72,6 +71,11 @@ static int is_systemi, is_informix;      /* 1 == TRUE; 0 == FALSE; */
 #define DLSYM dlsym
 #define DLCLOSE dlclose
 #define LIBDB2 "libdb2.so.1"
+#endif
+#ifdef _WIN64
+#define LIBDB2 "db2cli64.dll"
+#else
+#define LIBDB2 "db2cli.dll"
 #endif
 
 /* Defines a linked list structure for error messages */
@@ -12401,6 +12405,7 @@ INIT_ibm_db(void) {
     PyModule_AddIntConstant(m, "SQL_ATTR_PARAM_BIND_TYPE", SQL_ATTR_PARAM_BIND_TYPE);
     PyModule_AddIntConstant(m, "SQL_PARAM_BIND_BY_COLUMN", SQL_PARAM_BIND_BY_COLUMN);
     PyModule_AddIntConstant(m, "SQL_ATTR_XML_DECLARATION", SQL_ATTR_XML_DECLARATION);
+#ifndef __MVS__
     PyModule_AddIntConstant(m, "SQL_ATTR_CLIENT_APPLCOMPAT", SQL_ATTR_CLIENT_APPLCOMPAT);
     PyModule_AddIntConstant(m, "SQL_ATTR_CURRENT_PACKAGE_SET", SQL_ATTR_CURRENT_PACKAGE_SET);
     PyModule_AddIntConstant(m, "SQL_ATTR_ACCESS_MODE", SQL_ATTR_ACCESS_MODE);
@@ -12487,6 +12492,7 @@ INIT_ibm_db(void) {
     PyModule_AddIntConstant(m, "SQL_ATTR_IGNORE_SERVER_LIST",SQL_ATTR_IGNORE_SERVER_LIST);
     PyModule_AddIntConstant(m, "SQL_ATTR_DECFLOAT_ROUNDING_MODE", SQL_ATTR_DECFLOAT_ROUNDING_MODE);
     PyModule_AddIntConstant(m, "SQL_ATTR_PING_DB", SQL_ATTR_PING_DB);
+#endif
     PyModule_AddIntConstant(m, " SQL_ATTR_TXN_ISOLATION",  SQL_ATTR_TXN_ISOLATION);
     return MOD_RETURN_VAL(m);
 }

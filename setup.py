@@ -10,6 +10,7 @@ import zipfile
 import shutil
 import glob
 import subprocess
+import platform
 
 if sys.version_info >= (3, ):
     from urllib import request
@@ -468,7 +469,10 @@ else:
     ext_modules = _ext_modules(ibm_db_include, library, ibm_db_lib, ibm_db_lib_runtime)
 
 if (sys.platform[0:3] == 'win'):
-    library = ['db2cli64']
+    if (platform.architecture()[0] == '64bit'):
+      library = ['db2cli64']
+    else:
+      library = ['db2cli']
     if prebuildIbmdbPYD:
         ext_modules = None
         modules.append('ibm_db')
@@ -496,11 +500,6 @@ setup( name    = PACKAGE,
                     'Operating System :: Microsoft :: Windows :: Windows 10',
                     'Operating System :: Unix',
                     'Programming Language :: Python',
-                    'Programming Language :: Python :: 2',
-                    'Programming Language :: Python :: 2.7',
-                    'Programming Language :: Python :: 3',
-                    'Programming Language :: Python :: 3.5',
-                    'Programming Language :: Python :: 3.6',
                     'Programming Language :: Python :: 3.7',
                     'Programming Language :: Python :: 3.8',
                     'Programming Language :: Python :: 3.9',
