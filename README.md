@@ -6,7 +6,9 @@ Python support for IBM Db2 for LUW, IBM Informix and IBM Db2 for z/OS
 Provides Python interface for connecting to IBM Db2 for LUW, IBM Informix and IBM Db2 for z/OS
 
 ## <a name="api"></a> API Documentation
-For more information on the APIs supported by ibm_db, please refer to: https://github.com/ibmdb/python-ibmdb/wiki/APIs
+For more information on the APIs supported by ibm_db, please refer to below link:
+
+https://github.com/ibmdb/python-ibmdb/wiki/APIs
 
 <a name='components'></a>
 ## Components
@@ -259,11 +261,6 @@ More examples can be found under ['ibm_db_tests'](https://github.com/ibmdb/pytho
 [API Documentation](https://github.com/ibmdb/python-ibmdb/wiki/APIs) has examples for each API.
 
 Jupyter Notebook examples can be found here -> [Other Examples](https://github.com/IBM/db2-python/tree/master/Jupyter_Notebooks)
-
-## <a name="api"></a> API Documentation
-For more information on the APIs supported by ibm_db, please refer to below link:
-
-https://github.com/ibmdb/python-ibmdb/wiki/APIs
 
 ### <a name="Licenserequirements"></a> License requirements for connecting to databases
 
