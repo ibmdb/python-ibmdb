@@ -11,7 +11,7 @@ Provides Python interface for connecting to IBM Db2 for LUW, IBM Informix and IB
 1. The **ibm_db** contains:
    * **ibm_db** driver: Python driver for IBM Db2 for LUW, IBM Informix and IBM Db2 for z/OS databases. Uses the IBM Data Server Driver for ODBC and CLI APIs to connect to IBM Db2 for LUW and Informix.
    * **ibm_db_dbi**: Python driver for IBM Db2 for LUW and IBM Informix databases that complies to the DB-API 2.0 specification.
-   Checkout the [README](https://github.com/ibmdb/python-ibmdb/tree/master/IBM_DB/ibm_db) for getting started with ibm_db and ibm_db_dbi
+   
 
 ## <a name="api"></a> API Documentation
 For more information on the APIs supported by ibm_db, please refer to below link:
