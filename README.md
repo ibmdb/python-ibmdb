@@ -1,35 +1,12 @@
 Python support for IBM Db2 for LUW, IBM Informix and IBM Db2 for z/OS
 =========
 
-[![Build Status](https://travis-ci.com/ibmdb/python-ibmdb.svg?branch=master)](https://travis-ci.com/ibmdb/python-ibmdb)
-
 ## Python, DB-API components for IBM Db2 for LUW, IBM Informix and IBM Db2 for z/OS
 
 Provides Python interface for connecting to IBM Db2 for LUW, IBM Informix and IBM Db2 for z/OS
 
-### Table of contents
-
-[Components](#components)
-
-[Pre-requisites](#pre-requisites)
-
-[Installation](#inst)
-
-[Quick Example](#eg)
-
-[API Documentation](#api)
-
-[Downloads](#downloads)
-
-[Latest Updates](#latest-updates)
-
-[Support & Feedback](#support)
-
-[Contributing to the ibm_db python project](#contributing-to-the-ibm_db-python-project)
-
-[Some common issues](#KnownIssues)
-
-[Testing](#testing)
+## <a name="api"></a> API Documentation
+For more information on the APIs supported by ibm_db, please refer to: https://github.com/ibmdb/python-ibmdb/wiki/APIs
 
 <a name='components'></a>
 ## Components
