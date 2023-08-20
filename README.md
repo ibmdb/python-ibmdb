@@ -64,7 +64,7 @@ You might need zlib, openssl, pip installations if not already available in your
 <a name="installation"></a> 
 ## Installation
 
-Python wheels are built for linux, macos and windows for multiple python versions.And for other platforms package gets installed from source distribution.
+Python wheels are built for linux, macos and windows for multiple python versions (from python version 3.7 to 3.11).And for other platforms package gets installed from source distribution.
 
 You can install the driver using pip as:
 
