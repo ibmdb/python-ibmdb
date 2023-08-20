@@ -64,6 +64,7 @@ You might need zlib, openssl, pip installations if not already available in your
 <a name="installation"></a> 
 ## Installation
 
+python wheels are built for linux, macos and windows for  multiple python versions.And for other platforms package get installed from source distribution.
 You can install the driver using pip as:
 
 ```
@@ -76,7 +77,17 @@ If you have to use your own URL for clidriver please set environment variable
 IBM_DB_INSTALLER_URL
 ```
 
-Note: For windows after installing ibm_db, we need to make sure to set dll path of dependent library of clidriver before importing the module as:
+Note: For windows after installing ibm_db,recieves the below error when we try to import ibm_db :
+```>python
+Python 3.11.4 (tags/v3.11.4:d2340ef, Jun  7 2023, 05:45:37) [MSC v.1934 64 bit (AMD64)] on win32
+Type "help", "copyright", "credits" or "license" for more information.
+>>> import ibm_db
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+ImportError: DLL load failed while importing ibm_db: The specified module could not be found.
+>>>
+```
+We need to make sure to set dll path of dependent library of clidriver before importing the module as:
 
 ```
 import os
