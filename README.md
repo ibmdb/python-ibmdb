@@ -1,35 +1,9 @@
 Python support for IBM Db2 for LUW, IBM Informix and IBM Db2 for z/OS
 =========
 
-[![Build Status](https://travis-ci.com/ibmdb/python-ibmdb.svg?branch=master)](https://travis-ci.com/ibmdb/python-ibmdb)
-
 ## Python, DB-API components for IBM Db2 for LUW, IBM Informix and IBM Db2 for z/OS
 
 Provides Python interface for connecting to IBM Db2 for LUW, IBM Informix and IBM Db2 for z/OS
-
-### Table of contents
-
-[Components](#components)
-
-[Pre-requisites](#pre-requisites)
-
-[Installation](#inst)
-
-[Quick Example](#eg)
-
-[API Documentation](#api)
-
-[Downloads](#downloads)
-
-[Latest Updates](#latest-updates)
-
-[Support & Feedback](#support)
-
-[Contributing to the ibm_db python project](#contributing-to-the-ibm_db-python-project)
-
-[Some common issues](#KnownIssues)
-
-[Testing](#testing)
 
 <a name='components'></a>
 ## Components
@@ -37,7 +11,12 @@ Provides Python interface for connecting to IBM Db2 for LUW, IBM Informix and IB
 1. The **ibm_db** contains:
    * **ibm_db** driver: Python driver for IBM Db2 for LUW, IBM Informix and IBM Db2 for z/OS databases. Uses the IBM Data Server Driver for ODBC and CLI APIs to connect to IBM Db2 for LUW and Informix.
    * **ibm_db_dbi**: Python driver for IBM Db2 for LUW and IBM Informix databases that complies to the DB-API 2.0 specification.
-   Checkout the [README](https://github.com/ibmdb/python-ibmdb/tree/master/IBM_DB/ibm_db) for getting started with ibm_db and ibm_db_dbi
+   
+
+## <a name="api"></a> API Documentation
+For more information on the APIs supported by ibm_db, please refer to below link:
+
+https://github.com/ibmdb/python-ibmdb/wiki/APIs
 
 <a name="prereq"></a>
 ## Pre-requisites
@@ -85,6 +64,8 @@ You might need zlib, openssl, pip installations if not already available in your
 <a name="installation"></a> 
 ## Installation
 
+Python wheels are built for linux, macos and windows for multiple python versions (from python version 3.7 to 3.11).And for other platforms package gets installed from source distribution.
+
 You can install the driver using pip as:
 
 ```
@@ -97,7 +78,17 @@ If you have to use your own URL for clidriver please set environment variable
 IBM_DB_INSTALLER_URL
 ```
 
-Note: For windows after installing ibm_db, we need to make sure to set dll path of dependent library of clidriver before importing the module as:
+Note: For windows after installing ibm_db,recieves the below error when we try to import ibm_db :
+```>python
+Python 3.11.4 (tags/v3.11.4:d2340ef, Jun  7 2023, 05:45:37) [MSC v.1934 64 bit (AMD64)] on win32
+Type "help", "copyright", "credits" or "license" for more information.
+>>> import ibm_db
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+ImportError: DLL load failed while importing ibm_db: The specified module could not be found.
+>>>
+```
+We need to make sure to set dll path of dependent library of clidriver before importing the module as:
 
 ```
 import os
@@ -282,11 +273,6 @@ More examples can be found under ['ibm_db_tests'](https://github.com/ibmdb/pytho
 [API Documentation](https://github.com/ibmdb/python-ibmdb/wiki/APIs) has examples for each API.
 
 Jupyter Notebook examples can be found here -> [Other Examples](https://github.com/IBM/db2-python/tree/master/Jupyter_Notebooks)
-
-## <a name="api"></a> API Documentation
-For more information on the APIs supported by ibm_db, please refer to below link:
-
-https://github.com/ibmdb/python-ibmdb/wiki/APIs
 
 ### <a name="Licenserequirements"></a> License requirements for connecting to databases
 

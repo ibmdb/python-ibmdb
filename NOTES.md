@@ -4,7 +4,7 @@ Please note that on z/OS, you can only have one active connection per thread.
 
 ## Installation from source code
 ```shell 
-cd /u/pdharr/git/python-ibmdb/IBM_DB/ibm_db
+cd /u/pdharr/git/python-ibmdb
 export IBM_DB_HOME='DSN.VC10'
 python setup.py install
 ```
