@@ -320,13 +320,6 @@ You can also get the source code by cloning the ibm_db github repository as :
 git clone git@github.com:ibmdb/python-ibmdb.git
 ```
 
-<a name='latest-updates'></a>
-## Latest Updates
-
-### *Updated ibm_db*
-  Mar 2, 2022: A new release 3.1.1 of ibm_db and ibm_db_dbi available.
-
-
 <a name='support'></a>
 ## Support & feedback
 **Your feedback is very much appreciated and expected through project ibm-db:**
