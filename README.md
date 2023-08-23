@@ -22,33 +22,26 @@ https://github.com/ibmdb/python-ibmdb/wiki/APIs
 ## Pre-requisites
 Install Python 3.7 <= 3.11. The minimum python version supported by driver is python 3.7 and the latest version supported is python 3.11.
 
-> **For MacOS M1 / Apple Silicon chip system**
+### To install ibm_db on z/OS system
+
+Please follow detailed installation instructions as documented here: [ibm_db Installation on z/OS](INSTALL.md#inszos)
+
+### For MacOS M1/M2/ Apple Silicon chip system
 > 
 > **Important: The driver for IBM DB2 is not compatible with Apple Silicon and will have to run in emulated mode.**
 > Please support [this request for an Apple Silicon version of the driver](https://ibm-data-and-ai.ideas.ibm.com/ideas/DB2CON-I-92) to show IBM that you are interested in a native solution.
 > 
 > Several things might be necessary to get `ibm_db` working on the Apple Silicon architecture:
-> 1. Install x64 version of python for ibm_db as ibm_db do not work with arm64 version of python. Example, you may install [this version](https://www.python.org/ftp/python/3.9.11/python-3.9.11-macosx10.9.pkg) of python on M1 Chip system and then install ibm_db.
->   When using pyenv to manage your Python installations, make sure you have pyenv installed as x86-compatible and run it in x86 mode (ie prepending all your command with `arch -x86_64`). If you are using Homebrew to install `pyenv`, Homebrew will itself also have to be installed as x86-compatible:
->   ```bash
->   # If you are using Homebrew to manage your pyenv installation, make sure Homebrew is installed as x86-compatible
->   arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
->   # Make sure you are using Homebrew's x86-compatible version (especially important if you have installed Homebrew for Apple Silicon as well)
->   eval "$(/usr/local/bin/brew shellenv)"
->   arch -x86_64 brew install pyenv
->   # Any time we want to use pyenv, we should first run `eval "$(/usr/local/bin/brew shellenv)"`
->   arch -x86_64 pyenv install <YOUR_PYTHON_VERSION>
->   ```
-> 2. When regular installation does not work, it might help to preface your installation command with `ARCHFLAGS="-arch x86_64"`. Be sure to have uninstalled `ibm_db` before installing again, otherwise this fix won't help.
+>
+> * Open new terminal and run command `arch -x86_64 /bin/bash    or arch -x86_64 /bin/zsh`.
+> *  Verify the output of  `gcc -v` command. It should show `Target: x86_64-apple-darwin21` in output.
+> * Install Intel Version of Python like: https://www.python.org/ftp/python/3.9.11/python-3.9.11-macosx10.9.pkg
+> * Check output of commands `python --version` , `which python` and `file /usr/local/bin/python` commands. It should show `/usr/local/bin/python: Mach-O 64-bit executable x86_64`
+> * Check [this](INSTALL.md#m1chip) link for detailed instructions about installation of ibm_db on MacOS M1/M2 Chip system.
 
+### Linux/Unix:
 
-You might need zlib, openssl, pip installations if not already available in your setup.
-
-* z/OS:
-  In case of any issues using Python on z/OS, refer to this [file](install.md) and also refer to this [doc](https://github.com/ibmdb/node-ibm_db#configure-odbc-driver-on-zos).
-
-* Linux/Unix:
-  If you face problems due to missing python header files while installing the driver, you would need to install python developer package and retry install. e.g:
+If you face problems due to missing python header files while installing the driver, you would need to install python developer package and retry install. e.g:
 
 ```
     zypper install python-devel
@@ -56,10 +49,21 @@ You might need zlib, openssl, pip installations if not already available in your
     yum install python-devel
 ```
 
-* MAC OS:
-  Db2 V11.5.4 clidriver is built with GCC version 8.4.0 and hence you may need to upgrade to this version if you face problems due to old version of the GCC compiler in your environment while loading the ibm_db library.
+### Windows:
 
-* For installing ibm_db on **Docker Linux container**, you may need to install **gcc, python, pip, python-devel, libxml2 and pam** if not already installed. Refer to [Installation](#docker) for more details.
+* If a db2 client or server or dsdriver or clidriver is already installed in the system and user has already set installed path to `PATH` environment variable, then user need to set [environment variable](#envvar) `IBM_DB_HOME` manaully to the installed path before installing `ibm_db`.
+
+* To verify it, just execute `db2level` command before installation of `ibm_db`. If it works, note down the install directory path and set system level environment variable `IBM_DB_HOME` as install path shown in output of `db2level` command.
+
+* If user has installed clidriver in `F:\DSDRIVER` and if the "PATH" environment variable has `F:\DSDRIVER\bin`, then user should also set `IBM_DB_HOME` to `F:\DSDRIVER`.
+
+### MAC OS:
+
+Db2 V11.5.4 clidriver is built with GCC version 8.4.0 and hence you may need to upgrade to this version if you face problems due to old version of the GCC compiler in your environment while loading the ibm_db library.
+
+### Docker Linux containers:
+
+* You may need to install **gcc, python, pip, python-devel, libxml2 and pam** if not already installed. Refer to [Installation](#docker) for more details.
 
 <a name="installation"></a> 
 ## Installation
@@ -122,9 +126,9 @@ pip3 install ibm_db
 pip uninstall ibm_db
 ```
 
-The ODBC and CLI Driver(clidriver) is automatically downloaded at the time of installation and it is recommended to use this driver. However, if you wish to use an existing installation of clidriver or install the clidriver manually and use it, you can set IBM_DB_HOME environment variable. For more information on how to set this variable, refer [Environment Variables](#envvar) section.
+> The ODBC and CLI Driver(clidriver) is automatically downloaded at the time of installation and it is recommended to use this driver. However, if you wish to use an existing installation of clidriver or install the clidriver manually and use it, you can set IBM_DB_HOME environment variable as documented below:
 
-* <a name="environment variables"></a>Environment Variables:
+* <a name="envvar"></a>Environment Variables:
   `IBM_DB_HOME :`
 
   Set this environment variable to avoid automatic downloading of the clidriver during installation. You could set this to the installation path of ODBC and CLI driver in your environment.<br>
@@ -156,10 +160,6 @@ The ODBC and CLI Driver(clidriver) is automatically downloaded at the time of in
   The ODBC and CLI driver is available for download at [Db2 LUW ODBC and CLI Driver](https://public.dhe.ibm.com/ibmdl/export/pub/software/data/db2/drivers/odbc_cli/).
 Refer to ([License requirements](#Licenserequirements)) for more details on the CLI driver for manual download and installation.
 
-[ Note : For Windows, if clidriver is already installed in the system. And user already set installed path to PATH environment variable, then user need to set IBM_DB_HOME path manaully to the installed path.
-If user has installed clidriver in F:\DSDRIVER. And if the "PATH" is set to F:\DSDRIVER\bin. Then user should set IBM_DB_HOME to F:\DSDRIVER. Below is example to set IBM_DB_HOME.
-  set IBM_DB_HOME=F:\DSDRIVER ]
-
 * Installing using Anaconda distribution of python
 ```
 conda install -c conda-forge ibm_db
@@ -175,7 +175,7 @@ conda install -c conda-forge ibm_db
 |Windows       |  x64           |  Yes         | Latest    |
 |Windows       |  x32           |  Yes         | Latest    |
 
-Install x64 version of python on M1 Chip system.
+Install Intel/x64 version of python on M1 Chip system. Check [this](INSTALL.md#m1chip) link for detailed instructions.
 
 ## <a name="quick example"></a> Quick Example
 ```python
@@ -290,18 +290,18 @@ If you intend to install the clidriver manually, Following are the details of th
 
 |Platform      |Architecture    |Cli Driver               |Supported     |Version      |
 | :---:        |  :---:         |  :---:                  |  :---:       | :--:
-|AIX           |  ppc           |aix32_odbc_cli.tar.gz    |  Yes         | V11.5.6     |
-|              |  others        |aix64_odbc_cli.tar.gz    |  Yes         | V11.5.6     |
-|Darwin        |  x64           |macos64_odbc_cli.tar.gz  |  Yes         | V11.5.6     |
-|Linux         |  x64           |linuxx64_odbc_cli.tar.gz |  Yes         | V11.5.6     |
-|              |  s390x         |s390x64_odbc_cli.tar.gz  |  Yes         | V11.5.6     |
+|AIX           |  ppc           |aix32_odbc_cli.tar.gz    |  Yes         | V11.5.8     |
+|              |  others        |aix64_odbc_cli.tar.gz    |  Yes         | V11.5.8     |
+|Darwin        |  x64           |macos64_odbc_cli.tar.gz  |  Yes         | V11.5.8     |
+|Linux         |  x64           |linuxx64_odbc_cli.tar.gz |  Yes         | V11.5.8     |
+|              |  s390x         |s390x64_odbc_cli.tar.gz  |  Yes         | V11.5.8     |
 |              |  s390          |s390_odbc_cli.tar.gz     |  Yes         | V11.1       |
-|              |  ppc64  (LE)   |ppc64le_odbc_cli.tar.gz  |  Yes         | V11.5.6     |
+|              |  ppc64  (LE)   |ppc64le_odbc_cli.tar.gz  |  Yes         | V11.5.8     |
 |              |  ppc64         |ppc64_odbc_cli.tar.gz    |  Yes         | V10.5       |
 |              |  ppc32         |ppc32_odbc_cli.tar.gz    |  Yes         | V10.5       |
-|              |  others        |linuxia32_odbc_cli.tar.gz|  Yes         | V11.5.6     |
-|Windows       |  x64           |ntx64_odbc_cli.zip       |  Yes         | V11.5.6     |
-|              |  x32           |nt32_odbc_cli.zip        |  Yes         | V11.5.6     |
+|              |  others        |linuxia32_odbc_cli.tar.gz|  Yes         | V11.5.8     |
+|Windows       |  x64           |ntx64_odbc_cli.zip       |  Yes         | V11.5.8     |
+|              |  x32           |nt32_odbc_cli.zip        |  Yes         | V11.5.8     |
 |Sun           | i86pc          |sunamd64_odbc_cli.tar.gz |  Yes         | V10.5       |
 |              |                |sunamd32_odbc_cli.tar.gz |  Yes         | V10.5       |
 |              | sparc          |sun64_odbc_cli.tar.gz    |  Yes         | V11.1       |
@@ -355,9 +355,16 @@ For Ubuntu use
 apt-get install python3-dev
 ```
 
-### Once the above steps goes through fine, try re-installing ibm_db.
+* Once the above steps works fine, try re-installing ibm_db.
 
-### Issues with MAC OS X
+## 2. SQL30081N Error
+
+If connection fails with SQL30081N error - means `ibm_db` installation is correct and there is some issue with connection string. Please check database connection info and use correct connection string. If you are using SSL connection, port must be SSL port and connection string must have `Security=SSL;` and `SSLServerCertificate=<full path of cert.arm file>;`.
+
+## 3. Issues with MAC OS X
+
+* If `import ibm_db` fails with `Symbol not found: ___cxa_throw_bad_array_new_length` error or `malloc` error: Please follow instructions as documented [here](INSTALL.md#symbolerror).
+
 * If you run into errors for libdb2.dylib as below:
 
 ```python
@@ -379,7 +386,7 @@ export DYLD_LIBRARY_PATH=/usr/local/lib/python3.5/site-packages/clidriver/lib:$D
 If the issue is not resolved even after setting DYLD_LIBRARY_PATH, you could refer:
 [MAC OS Hints and Tips](https://medium.com/@sudhanvalp/overcome-ibm-db-import-error-image-not-found-on-macos-578f07b70762)
 
-* Resolving SQL1042C error
+### Resolving SQL1042C error
 
 If you hit following error while attempting to connect to a database:
 
@@ -402,7 +409,7 @@ In case of similar issue in windows platform
 set PATH=<clidriver_folder_path>\bin\amd64.VC12.CRT;%PATH%
 ```
 
-* ERROR Failed building wheel for ibm_db
+## 4. ERROR: Failed building wheel for ibm_db
 
 In case of the error seen while building wheel use the following flag along with ibm_db for installation
 
@@ -413,6 +420,11 @@ Install ibm_db with the pip flag --no-build-isolation:
 pip3 install ibm_db --no-build-isolation
 ```
 
+## 5. For Issues on IBM iSeries System (AS400)
+
+* If you have installed `ibm_db` on IBM i and need help, please open an issue [here](https://github.com/kadler/python-ibmdb/issues).
+
+* If you have installed `ibm_db` on distributed platform and want to connect to AS400 server, you must have to use db2connect license. `ibm_db` do not work with `IBM i Access` driver.
 
 <a name='testing'></a>
 # Testing
