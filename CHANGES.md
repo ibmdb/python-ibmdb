@@ -1,4 +1,4 @@
-2023-08-08, Version 3.1.5
+2023-08-21, Version 3.2.0
 =========================
 
  * Fix for issue #857 (Earammak)
@@ -17,6 +17,8 @@
  
  * Readme update for latest python #813 and Readme update #814 (Earammak)
  
+ * Updated README.md, NOTES.md and rename INSTALL.md (Earammak)
+
 2022-11-24, Version 3.1.4
 =========================
 
