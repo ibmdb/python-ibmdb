@@ -1,5 +1,4 @@
 import os
-import sys
 import os.path
 import sys
 import ssl
@@ -12,15 +11,17 @@ import glob
 import subprocess
 import platform
 
-if sys.version_info >= (3, ):
+if sys.version_info >= (3,):
     from urllib import request
     from io import BytesIO
 else:
     import urllib2 as request
     from cStringIO import StringIO as BytesIO
 
-from setuptools import setup, find_packages, Extension
+from distutils import ccompiler
+from distutils import sysconfig as distutils_sysconfig
 from distutils.sysconfig import get_python_lib
+from setuptools import setup, find_packages, Extension
 from setuptools.command.build_ext import build_ext
 from setuptools.command.install import install
 
@@ -87,11 +88,12 @@ def _checkForIncludeFolder(db2path):
 def _getinstalledDb2Path():
     status,output = subprocess.getstatusoutput('db2cli validate')
     if(status == 0):
-        _printOnly("Db2 installation detected ... ")
         path = output.split("Install/Instance Path     : ")[1].split()[0]
+        _printOnly("Pre-installed Db2 client detected in the system as " + path)
+        _printOnly("Please make sure you have set IBM_DB_HOME = "+ path +" to avoid FileNotFoundError.")
         _includeFlag = _checkForIncludeFolder(path)
         if(_includeFlag):
-            _printOnly("Setting IBM_DB_HOME=" + path + " and skipping the clidriver download for the installation")
+            _printOnly("**Found DB2 ODBC Driver from PATH, so skipping the clidriver download.**")
             os.environ["IBM_DB_HOME"]=path
         else:
             _printOnly(_errormessage("includeFolderMissing"))
@@ -107,13 +109,31 @@ def _checkGcc():
         _printAndExit(_errormessage("noGcc"))
         
 def _checkPythonHeaderFile():
-    from distutils import sysconfig as s
-    config = s.get_config_vars()
-    _include_dir = config['INCLUDEPY']
-    if (os.path.exists(os.path.join(_include_dir,'Python.h'))):
-        _printOnly("Pre-requisite check [Python.h] : Passed")
-    else:
-        _printAndExit(_errormessage("noPythonDevel"))     
+    for _include_dir in _compiler_include_dirs():
+        if os.path.exists(os.path.join(_include_dir, "Python.h")):
+            _printOnly("Pre-requisite check [Python.h] : Passed")
+            return
+    _printAndExit(_errormessage("noPythonDevel"))
+
+def _compiler_include_dirs():
+    """Return generator that spits out an include directories.
+    This honors env variables by way of invoking
+    :func:`distutils_sysconfig.customize_compiler` to get the behavior
+    described here:
+    https://setuptools.pypa.io/en/latest/userguide/ext_modules.html#compiler-and-linker-options
+    Returns:
+        generator: Directory to search for header files
+    """
+    compiler = ccompiler.new_compiler()
+    distutils_sysconfig.customize_compiler(compiler)
+
+    if distutils_sysconfig.get_config_var("INCLUDEPY") is not None:
+        yield distutils_sysconfig.get_config_var("INCLUDEPY")
+
+    for _linker_arg in compiler.linker_so:
+        if not _linker_arg.startswith("-I"):
+            continue
+        yield _linker_arg.lstrip("-I ")
 
 if sys.version_info >= (3, ):      
     _getinstalledDb2Path()
@@ -161,7 +181,7 @@ if('zos' in sys.platform):
                     os.system("chtag -r " + get_python_lib() + r"/ibm_db*.so")
                 except:
                     _printOnly("Could not change file tag information")
-            
+
     class PostBuildExt(build_ext):
         def run(self):
             build_ext.run(self)
@@ -170,7 +190,7 @@ if('zos' in sys.platform):
                     os.system("chtag -r " + self.build_lib + r"/ibm_db*.so")
                 except:
                     _printOnly("Could not change file tag information")
-                    
+
     cmd_class = dict(install = PostInstall, build_ext = PostBuildExt)
 
 # defining extension
@@ -465,10 +485,8 @@ modules = ['ibm_db_dbi', 'testfunctions', 'ibmdb_tests']
 
 if 'zos' == sys.platform:
     ext_modules = _ext_modules(os.path.join(os.getcwd(), include_dir), library, ibm_db_lib, ibm_db_lib_runtime)
-else:
-    ext_modules = _ext_modules(ibm_db_include, library, ibm_db_lib, ibm_db_lib_runtime)
 
-if (sys.platform[0:3] == 'win'):
+elif (sys.platform[0:3] == 'win'):
     if (platform.architecture()[0] == '64bit'):
       library = ['db2cli64']
     else:
@@ -478,6 +496,8 @@ if (sys.platform[0:3] == 'win'):
         modules.append('ibm_db')
     else:
         ext_modules = _ext_modules(ibm_db_include, library, ibm_db_lib)
+else:
+    ext_modules = _ext_modules(ibm_db_include, library, ibm_db_lib, ibm_db_lib_runtime)
         
 if('win32' not in sys.platform):
     if sys.version_info >= (3, ):        
