@@ -1,23 +1,25 @@
-2023-08-21, Version 3.2.0
+2023-08-25, Version 3.2.0
 =========================
 
- * Fix for issue #857 (Earammak)
- 
+ * Update setup.py to Honor GCC environment variables
+
+ * Support for Python Wheels in ibm_db (Earammak)
+
+ * Fix for exception thrown by read_sql_query() from pandas while invoking a stored-procedure
+
+ * move files from IBM_DB/ibm_db to root directory
+
  * Support for Null value for an array (Earammak)
-  
- * Fix for issue #838 (Earammak)
  
- * Code change #837 and readme update (Earammak)
- 
+ * ibm_db_execute: arrays of PYTHON_DECIMAL fails for FLOAT and DOUBLE datatypes
+
+ * Fix: uninitialized variable in _python_ibm_db_execute_helper1
+
  * Optimize _checkGcc in setup.py (pschoen-itsc)
- 
- * Initial wheel support code changes (Earammak)
- 
- * Fix for issues #823 and #828 (Earammak)
- 
- * Readme update for latest python #813 and Readme update #814 (Earammak)
- 
- * Updated README.md, NOTES.md and rename INSTALL.md (Earammak)
+
+ * Support for additional connect options - connection attributes
+
+ * Fix: ibm_db.execute_many returns bind error with numpy.int64 values #828
 
 2022-11-24, Version 3.1.4
 =========================

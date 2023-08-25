@@ -68,7 +68,7 @@ Db2 V11.5.4 clidriver is built with GCC version 8.4.0 and hence you may need to 
 <a name="installation"></a> 
 ## Installation
 
-Python wheels are built for linux, macos and windows for multiple python versions (from python version 3.7 to 3.11).And for other platforms package gets installed from source distribution.
+* Python **Wheels** are built for Linux, MacOS and Windows operating systems for multiple python versions (from python version 3.7 to 3.11). For other platforms, package gets installed from source distribution.
 
 You can install the driver using pip as:
 
@@ -77,12 +77,12 @@ pip install ibm_db
 ```
 This will install ibm_db and ibm_db_dbi module.
 
-If you have to use your own URL for clidriver please set environment variable
+If you have to use your own URL for clidriver.tar.gz/.zip please set environment variable
 ```
 IBM_DB_INSTALLER_URL
 ```
 
-Note: For windows after installing ibm_db,recieves the below error when we try to import ibm_db :
+**Note:** For windows after installing ibm_db, recieves the below error when we try to import ibm_db :
 ```>python
 Python 3.11.4 (tags/v3.11.4:d2340ef, Jun  7 2023, 05:45:37) [MSC v.1934 64 bit (AMD64)] on win32
 Type "help", "copyright", "credits" or "license" for more information.
@@ -97,9 +97,11 @@ We need to make sure to set dll path of dependent library of clidriver before im
 ```
 import os
 os.add_dll_directory('path to clidriver installation until bin')
+import ibm_db
 
 e.g:
 os.add_dll_directory('C:\Program Files\IBM\CLIDRIVER\\bin')
+import ibm_db
 ```
 Refer https://bugs.python.org/issue36085 for more details.
 
@@ -471,7 +473,7 @@ fail on version 8.x of Db2.
   In order to run the entire python driver testsuite on Windows, run this
   command at the command prompt:
   ```
-    ibmdb_tests.py
+    python ibmdb_tests.py
   ```
   To run a single test, set the environment variable, **SINGLE_PYTHON_TEST**, to
   the test filename you would like to run, followed by the previous command.
