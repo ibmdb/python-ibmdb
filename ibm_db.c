@@ -12493,6 +12493,6 @@ INIT_ibm_db(void) {
     PyModule_AddIntConstant(m, "SQL_ATTR_DECFLOAT_ROUNDING_MODE", SQL_ATTR_DECFLOAT_ROUNDING_MODE);
     PyModule_AddIntConstant(m, "SQL_ATTR_PING_DB", SQL_ATTR_PING_DB);
 #endif
-    PyModule_AddIntConstant(m, " SQL_ATTR_TXN_ISOLATION",  SQL_ATTR_TXN_ISOLATION);
+    PyModule_AddIntConstant(m, "SQL_ATTR_TXN_ISOLATION",  SQL_ATTR_TXN_ISOLATION);
     return MOD_RETURN_VAL(m);
 }
