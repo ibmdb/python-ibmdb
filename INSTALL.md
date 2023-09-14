@@ -21,15 +21,87 @@ DEALINGS IN THE SOFTWARE.
 
 ## Contents
 
-1. [ibm_db Installation on z/OS](#inszos)
-2. [ibm_db installation on MacOS M1/M2 Chip System](#m1chip)
-3. [Troubleshooting Post Install Errors](#troubleshooting)
+1. [ibm_db Installation on Linux](#inslnx)
+2. [ibm_db Installation on AIX on Power Systems](#insaix_p)
+3. [ibm_db Installation on Linux on System z](#inslnx_z)
+4. [ibm_db Installation on Windows](#inswin)
+5. [ibm_db Installation on MacOS](#insmac)
+6. [ibm_db Installation on z/OS](#inszos)
+7. [ibm_db installation on MacOS M1/M2 Chip System](#m1chip)
+8. [Troubleshooting Post Install Errors](#troubleshooting)
  -  [SQL30081N Error](#sql30081n)
  -  [Symbol not found error or malloc error](#symbolerror)
 
-## <a name="inszos"></a> 1. ibm_db Installation on z/OS
 
-### 1.1 Install Python for z/OS
+## <a name="inslnx"></a> 1. Python-ibm_db Installation on Linux.
+
+### Install python-ibm_db
+
+Below are the steps to install [*python-ibm_db*](https://github.com/ibmdb/python-ibm_db) from github or pip.
+
+#### 1.1 Direct Installation.
+```
+pip install ibm_db
+```
+or
+```
+pip install git+https://git@github.com/ibmdb/python-ibm_db.git
+```
+
+#### 1.2 Manual Installation by using git clone.
+
+```
+git clone https://github.com/ibmdb/python-ibm_db/
+cd python-ibmdb
+python setup.py build
+python setup.py install
+````
+
+## <a name="insaix_p"></a> 2. Python-ibm_db Installation on AIX on Power Systems.
+
+### 2.1 Install python-ibm_db
+
+Follow the same steps mentioned in [Python-ibm_db Installation on Linux](#inslnx).
+
+
+## <a name="inslnx_z"></a> 3. Python-ibm_db Installation on Linux on System z.
+
+### 3.1 Install python-ibm_db
+
+Follow the same steps mentioned in [Python-ibm_db Installation on Linux](#inslnx).
+
+
+## <a name="inswin"></a> 4. Python-ibm_db Installation on Windows.
+
+Below are the steps to install [*python-ibm_db*](https://github.com/ibmdb/python-ibm_db) from github or pip.
+
+#### 4.1 Direct Installation.
+```
+pip install ibm_db
+```
+or
+```
+pip install git+https://github.com/ibmdb/python-ibmdb.git
+```
+
+#### 4.2 Manual Installation by using git clone.
+
+```
+git clone https://github.com/ibmdb/python-ibm_db/
+cd python-ibmdb
+python setup.py build
+python setup.py install
+````
+
+## <a name="insmac"></a> 5. Python-ibm_db Installation on MacOS.
+
+### 5.1 Install python-ibm_db
+
+Follow the same steps mentioned in [python-ibm_db Installation on Linux](#inslnx).
+
+## <a name="inszos"></a> 6. ibm_db Installation on z/OS
+
+### 6.1 Install Python for z/OS
 
 Below steps were followed for the same:
 
@@ -42,7 +114,7 @@ Below steps were followed for the same:
     -- UI72589 (v12)
 ```
 
-### 1.2 Configure ODBC driver on z/OS
+### 6.2 Configure ODBC driver on z/OS
 Please refer to the [ODBC Guide and References](https://www.ibm.com/support/knowledgecenter/SSEPEK/pdf/db2z_12_odbcbook.pdf) cookbook for how to configure your ODBC driver. Specifically, you need to ensure you have:
 
 1. Binded the ODBC packages.  A sample JCL is provided in the `SDSNSAMP` dataset in member `DSNTIJCL`.  Customize the JCL with specifics to your system.
@@ -168,7 +240,7 @@ export DB2_MACS=$IBM_DB_HOME.XXXX
 
 Reference Chapter 3 in the [ODBC Guide and References](https://www.ibm.com/support/knowledgecenter/SSEPEK/pdf/db2z_12_odbcbook.pdf) for more instructions.
 
-### 1.3 Verify python installation
+### 6.3 Verify python installation
 1. Make sure when python is installed, you validate the same by typing &quot;python3 -V&quot; and it should return 3.8.3 or greater.
 - Unless you are a sysprog you'll likely not have authority to create the site-package so consider using a python virtual environment as following:
 ```
@@ -185,11 +257,33 @@ import ibm_db
 conn = ibm_db.connect('','','')
 ```
 
-### 1.4 Installing Python driver for Db2 i.e. ibm\_db &amp; Running a validation Program
+### 6.4 Installing Python driver for Db2 i.e. ibm\_db &amp; Running a validation Program
 
 Now that the Python and ODBC is ready, for connecting to Db2 you need a Db2 Python driver which we are going to install.
 
 Follow the standard steps for the same i.e. pip3 install ibm_db
+
+### 6.5 Install python-ibm_db
+
+Below are the steps to install [*python-ibm_db*](https://github.com/ibmdb/python-ibm_db) from github or pip.
+
+#### 6.5.1 Direct Installation.
+```
+pip install ibm_db
+```
+or
+```
+pip install git+https://git@github.com/ibmdb/python-ibm_db.git
+```
+
+#### 6.5.2 Manual Installation by using git clone.
+
+```
+git clone https://github.com/ibmdb/python-ibm_db/
+cd python-ibmdb
+python setup.py build
+python setup.py install
+````
 
 Now assuming everything went fine. You can run a test program i.e. **odbc\_test.py** with below content to validate if the setup has been done perfectly i.e. bash-4.3$ python3 odbc\_test.py:
 
@@ -213,9 +307,9 @@ else:
 print('ODBC Test end')
 ```
 
-## <a name="m1chip"></a> 2. ibm_db installation on MacOS M1/M2 Chip System (arm64 architecture)
+## <a name="m1chip"></a> 7. ibm_db installation on MacOS M1/M2 Chip System (arm64 architecture)
 
-### 2.1 Install GCC using Homebrew
+### 7.1 Install GCC using Homebrew
 
 **Warning:** If you use the ARM version of homebrew (as recommended for M1/M2 chip systems) you will get the following error message:
 ```
@@ -251,7 +345,7 @@ Suppose path of gcc lib is `/usr/local/homebrew/lib/gcc/12`. Then update your .b
 export DYLD_LIBRARY_PATH=/usr/local/homebrew/lib/gcc/12:$DYLD_LIBRARY_PATH
 ```
 
-### 2.2 Steps to Install Intel Python after verifying setup
+### 7.2 Steps to Install Intel Python after verifying setup
 
 Several things might be necessary to get `ibm_db` working on the Apple Silicon architecture:
 
@@ -283,7 +377,7 @@ Several things might be necessary to get `ibm_db` working on the Apple Silicon a
 *  Verify the output of  `gcc -v` command. It should show `Target: x86_64-apple-darwin21` in output.
 * Install Intel Version of Python like: https://www.python.org/ftp/python/3.9.11/python-3.9.11-macosx10.9.pkg
 
-### 2.3 Install ibm_db with x86_64 version of gcc12 and Python on M1/M2 Chip System
+### 7.3 Install ibm_db with x86_64 version of gcc12 and Python on M1/M2 Chip System
 
 * Open a new terminal and run below commands:
 ```
@@ -294,13 +388,13 @@ pip3 install ibm_db
 ```
 Now, run your test program to verify.
 
-## <a name="troubleshooting"></a> 3. Troubleshooting Post Install Errors
+## <a name="troubleshooting"></a> 8. Troubleshooting Post Install Errors
 
-<a name="sql30081n"></a> 3.1 SQL30081N Error
+<a name="sql30081n"></a> 8.1 SQL30081N Error
 
 * If connection fails with SQL30081N error: means `ibm_db` installation is correct and you need to provide correct connection string.
 
-<a name="symbolerror"></a> 3.2 Symbol not found error or malloc error
+<a name="symbolerror"></a> 8.2 Symbol not found error or malloc error
 
 * If `import ibm_db` fails with `Symbol not found: ___cxa_throw_bad_array_new_length` error or `malloc` error:
   You need to find the correct location of lib/gcc/12 directory and add it to DYLD_LIBRARY_PATH environment variable.
@@ -319,3 +413,4 @@ install_name_tool -change /usr/local/lib/gcc/8/libstdc++.6.dylib /usr/local/Home
 i.e. change current path of `libstdc++.6.dylib` in `libdb2.dylib` library to the corrent path in your system. You can find the path of `libstdc++.6.dylib` in libdb2.dylib using the command : `otool -L libdb2.dylib`. Once you have the path of libstdc++.6.dylib, you need to change it using the commond: `install_name_tool -change <current path in libdb2.dylib>  <actual path in your system>  libdb2.dylib`
 
 Now run your test program and verify.
+
