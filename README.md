@@ -437,15 +437,36 @@ settings. A config.py.sample exists that can be copied and modified for your
 environment.
 
 The config.py should look like this:
+Set Environment Variables DB2_USER, DB2_PASSWD, DB2_DATABASE, DB2_HOST, DB2_PORT etc... accordingly.
 
 ```python
 test_dir =      'ibm_db_tests'         # Location of testsuite file (relative to current directory)
 
-database =      'test'          # Database to connect to
-user     =      'db2inst1'      # User ID to connect with
-password =      'password'      # Password for given User ID
-hostname =      'localhost'     # Hostname
-port     =      50000           # Port Number
+if 'DB2_USER' in os.environ:
+    user = os.getenv('DB2_USER')                  # User ID to connect with
+else:
+    warnings.warn("Warning: Environment variable DB2_USER is not set.")
+    env_not_set = True
+if 'DB2_PASSWD' in os.environ:
+    password = os.getenv('DB2_PASSWD')            # Password for given User ID
+else:
+    warnings.warn("Warning: Environment variable DB2_PASSWD is not set.")
+    env_not_set = True
+if 'DB2_HOST' in os.environ:
+    hostname = os.getenv('DB2_HOST')              # Hostname
+else:
+    warnings.warn("Warning: Environment variable DB2_HOST is not set.")
+    env_not_set = True
+if 'DB2_PORT' in os.environ:
+    port = os.getenv('DB2_PORT')                  # Port Number
+else:
+    warnings.warn("Warning: Environment variable DB2_PORT is not set.")
+    env_not_set = True
+if 'DB2_DATABASE' in os.environ:
+    database = os.getenv('DB2_DATABASE')          # Database to connect to
+else:
+    warnings.warn("Warning: Environment variable DB2_DATABASE is not set.")
+    env_not_set = True
 ```
 
 Point the database to mydatabase as created by the following command.
