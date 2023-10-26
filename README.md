@@ -436,16 +436,52 @@ directory. A valid config.py will need to be created to configure your Db2
 settings. A config.py.sample exists that can be copied and modified for your
 environment.
 
-The config.py should look like this:
+* Set Environment Variables DB2_USER, DB2_PASSWD accordingly.
+```
+For example, by sourcing the following ENV variables:
+For Linux
+export DB2_USER=<Username>
+export DB2_PASSWD=<Password>
 
+For windows
+set DB2_USER=<Username>
+set DB2_PASSWD=<Password>
+
+```
+* OR
+```
+If not using environment variables, update user and password information in
+config.json file.
+
+```
+The config.py should look like this:
 ```python
 test_dir =      'ibm_db_tests'         # Location of testsuite file (relative to current directory)
+file_path = 'config.json'
 
-database =      'test'          # Database to connect to
-user     =      'db2inst1'      # User ID to connect with
-password =      'password'      # Password for given User ID
-hostname =      'localhost'     # Hostname
-port     =      50000           # Port Number
+with open(file_path, 'r') as file:
+    data = json.load(file)
+
+database = data['database']               # Database to connect to
+hostname = data['hostname']               # Hostname
+port = data['port']                       # Port Number
+
+env_not_set = False
+if 'DB2_USER' in os.environ:
+     user = os.getenv('DB2_USER')         # User ID to connect with
+else:
+    user = data['user']
+    env_not_set = True
+if 'DB2_PASSWD' in os.environ:
+    password = os.getenv('DB2_PASSWD')    # Password for given User ID
+else:
+    password = data['password']
+    env_not_set = True
+
+if env_not_set == True:
+    warnings.warn("Warning: Environment variable DB2_USER or DB2_PASSWD is not set.")
+    print("Please set it before running test file and avoid")
+    print("hardcoded password in config.json file." )
 ```
 
 Point the database to mydatabase as created by the following command.
