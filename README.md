@@ -77,6 +77,16 @@ pip install ibm_db
 ```
 This will install ibm_db and ibm_db_dbi module.
 
+**Note:**
+```
+When ibm_db wheel packages is installed auto downloading of clidriver does not happen,
+instead it uses already packed clidriver from wheel package.
+
+Instead of "pip install ibm_db", you install ibm_db using source package using below command,
+so it considers IBM_DB_HOME env variable and doesn't download clidriver.
+pip install ibm_db --no-binary :all:
+```
+
 If you have to use your own URL for clidriver.tar.gz/.zip please set environment variable
 ```
 IBM_DB_INSTALLER_URL
