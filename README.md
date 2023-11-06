@@ -77,10 +77,24 @@ pip install ibm_db
 ```
 This will install ibm_db and ibm_db_dbi module.
 
+**Note:**
+When we install ibm_db package on Linux, MacOS and Windows, `pip install ibm_db` command install
+prebuilt Wheel package that includes clidriver too and ignores `IBM_DB_HOME` or `IBM_DB_INSTALLER_URL`
+environment variables if set. Also, auto downloading of clidriver does not happen as clidriver is
+already present inside wheel package.
+
+To inforce auto downloading of clidriver or to make setting of environment variable `IBM_DB_HOME`
+effective, install ibm_db from source distribution using below command:
+```
+pip install ibm_db --no-binary :all:
+```
+
 If you have to use your own URL for clidriver.tar.gz/.zip please set environment variable
 ```
-IBM_DB_INSTALLER_URL
+IBM_DB_INSTALLER_URL=full_path_of_clidriver.tar.gz/.zip
 ```
+When ibm_db get installed from wheel package, you can find clidriver under site_packages directory
+of Python. You need to copy license file under `site_packages/clidirver/license` to be effective, if any.
 
 **Note:** For windows after installing ibm_db, recieves the below error when we try to import ibm_db :
 ```>python
@@ -137,12 +151,14 @@ pip uninstall ibm_db
   e.g:
   ```
   Windows :
-  set IBM_DB_HOME=c:/Users/skauser/clidriver
+  set IBM_DB_HOME=C:/Users/userid/clidriver
 
   Other platforms:
-  export IBM_DB_HOME=/home/skauser/clidriver
+  export IBM_DB_HOME=/home/userid/clidriver
   ```
-
+**Note:** You must need to install ibm_db using command `pip install ibm_db --no-binary :all:` on Linux, Windows and MacOS to
+ make setting of `IBM_DB_HOME` effective.
+ 
   You are required to set the library path to the clidriver under IBM_DB_HOME to pick this version of the ODBC and CLI Driver.<br>
   e.g:
   ```
