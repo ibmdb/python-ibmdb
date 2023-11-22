@@ -1,3 +1,15 @@
+2023-11-22, Version 3.2.1
+=========================
+
+ * Updated readme.md with Note regarding ibm_db installation. (#896) (bchoudhary6415)
+
+ * Enhance ibm_db driver to read Db2 credential from Env var for testing (#894) (bchoudhary6415)
+
+ * Updated INSTALL.md (#889) (Earammak)
+
+ * Fix typo in `SQL_ATTR_TXN_ISOLATION` (#884) (Nikita Sobolev)
+
+
 2023-08-25, Version 3.2.0
 =========================
 

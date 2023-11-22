@@ -26,6 +26,8 @@ Install Python 3.7 <= 3.11. The minimum python version supported by driver is py
 
 Please follow detailed installation instructions as documented here: [ibm_db Installation on z/OS](INSTALL.md#inszos)
 
+- **SQL1598N Error** - It is expected in absence of valid db2connect license. Please click [here](#Licenserequirements) and read instructions.
+
 ### For MacOS M1/M2/ Apple Silicon chip system
 > 
 > **Important: The driver for IBM DB2 is not compatible with Apple Silicon and will have to run in emulated mode.**
@@ -86,7 +88,7 @@ already present inside wheel package.
 To inforce auto downloading of clidriver or to make setting of environment variable `IBM_DB_HOME`
 effective, install ibm_db from source distribution using below command:
 ```
-pip install ibm_db --no-binary :all:
+pip install ibm_db --no-binary :all: --no-cache-dir
 ```
 
 If you have to use your own URL for clidriver.tar.gz/.zip please set environment variable
@@ -114,7 +116,7 @@ os.add_dll_directory('path to clidriver installation until bin')
 import ibm_db
 
 e.g:
-os.add_dll_directory('C:\Program Files\IBM\CLIDRIVER\\bin')
+os.add_dll_directory('C:\\Program Files\\IBM\\CLIDRIVER\\bin')
 import ibm_db
 ```
 Refer https://bugs.python.org/issue36085 for more details.
@@ -292,13 +294,40 @@ More examples can be found under ['ibm_db_tests'](https://github.com/ibmdb/pytho
 
 Jupyter Notebook examples can be found here -> [Other Examples](https://github.com/IBM/db2-python/tree/master/Jupyter_Notebooks)
 
-### <a name="Licenserequirements"></a> License requirements for connecting to databases
+## <a name="Licenserequirements"></a>For z/OS and iSeries Connectivity and SQL1598N error
 
-Python ibm_db driver can connect to Db2 on Linux Unix and Windows without any additional license/s, however, connecting to databases on Db2 for z/OS or Db2 for i(AS400) Servers require either client side or server side license/s. The client side license would need to be copied under `license` folder of your `clidriver` installation directory and for activating server side license, you would need to purchase Db2 Connect Unlimited for System z® and Db2 Connect Unlimited Edition for System i®.
+- Connection to `Db2 for z/OS` or `Db2 for i`(AS400) Server using `ibm_db` driver from distributed platforms (Linux, Unix, Windows and MacOS) is not free. It requires either client side or server side license.
 
-To know more about license and purchasing cost, please contact [IBM Customer Support](https://www.ibm.com/mysupport/s/?language=en_US).
+- Connection to `Db2 for LUW` or `Informix` Server using `ibm_db` driver is free.
 
-To know more about server based licensing viz db2connectactivate, follow below links:
+- `ibm_db` returns SQL1598N error in absence of a valid db2connect license. SQL1598N error is returned by the Db2 Server to client.
+To suppress this error, Db2 server must be activated with db2connectactivate utility OR a client side db2connect license file must exist.
+
+- Db2connect license can be applied on database server or client side. A **db2connect license of version 11.5** is required for ibm_db.
+
+- For activating server side license, you can purchase either `Db2 Connect Unlimited Edition for System z®` or `Db2 Connect Unlimited Edition for System i®` license from IBM.
+
+- Ask your DBA to run db2connectactivate utility on Server to activate db2connect license.
+
+- If database Server is enabled for db2connect, no need to apply client side db2connect license.
+
+- If Db2 Server is not db2connectactivated to accept unlimited number of client connection, you must need to apply client side db2connect license.
+
+- db2connectactivate utility and client side db2connect license both comes together from IBM in a single zip file.
+
+- Client side db2connect license is a `db2con*.lic` file that must be copied under `clidriver\license` directory.
+
+- If you have a `db2jcc_license_cisuz.jar` file, it will not work for ibm_db. `db2jcc_license_cisuz.jar` is a db2connect license file for Java Driver. For non-Java Driver, client side db2connect license comes as a file name `db2con*.lic`.
+
+- If environment variable `IBM_DB_HOME` or `IBM_DB_INSTALLER_URL` is not set, `ibm_db` automatically downloads [open source driver specific clidriver](https://public.dhe.ibm.com/ibmdl/export/pub/software/data/db2/drivers/odbc_cli/) from https://public.dhe.ibm.com/ibmdl/export/pub/software/data/db2/drivers/odbc_cli and save as `node_modules\ibm_db\installer\clidriver`. Ignores any other installation.
+
+- If `IBM_DB_HOME` or `IBM_DB_INSTALLER_URL` is set, you need to have same version of db2connect license as installed db2 client. Check db2 client version using `db2level` command to know version of db2connect license required. The license file should get copied under `$IBM_DB_HOME\license` directory.
+
+- If you do not have db2connect license, contact [IBM Customer Support](https://www.ibm.com/mysupport/s/?language=en_US) to buy db2connect license. Find the `db2con*.lic` file in the db2connect license shared by IBM and copy it under `.../node_modules/ibm_db/installer/clidriver/license` folder to be effective.
+
+- To know more about license and purchasing cost, please contact [IBM Customer Support](https://www.ibm.com/mysupport/s/?language=en_US).
+
+- To know more about server based licensing viz db2connectactivate, follow below links:
 * [Activating the license certificate file for Db2 Connect Unlimited Edition](https://www.ibm.com/docs/en/db2/11.5?topic=li-activating-license-certificate-file-db2-connect-unlimited-edition).
 * [Unlimited licensing using db2connectactivate utility](https://www.ibm.com/docs/en/db2/11.1?topic=edition-db2connectactivate-server-license-activation-utility).
 
