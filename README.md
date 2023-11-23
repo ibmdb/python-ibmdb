@@ -158,8 +158,8 @@ pip uninstall ibm_db
   Other platforms:
   export IBM_DB_HOME=/home/userid/clidriver
   ```
-**Note:** You must need to install ibm_db using command `pip install ibm_db --no-binary :all:` on Linux, Windows and MacOS to
- make setting of `IBM_DB_HOME` effective.
+**Note:** You must need to install ibm_db using command `pip install ibm_db --no-binary :all: --no-cache-dir`
+on Linux, Windows and MacOS to make setting of `IBM_DB_HOME` effective.
  
   You are required to set the library path to the clidriver under IBM_DB_HOME to pick this version of the ODBC and CLI Driver.<br>
   e.g:
@@ -288,11 +288,12 @@ Using SSLClientKeyStoreDB and SSLClientKeyStash keyword
  
 conn = ibm_db.connect("DATABASE=<DATABASE_NAME>;HOSTNAME=<HOSTNAME>;PORT=<SSL_PORT>;SECURITY=SSL;SSLClientKeyStoreDB=<FULL_PATH_TO_CLIENT_KEY_STORE_DB>;SSLClientKeyStash=<FULL_PATH_TO_CLIENT_KEY_STASH>;UID=<USER_ID>;PWD=<PASSWORD>",'','')
 ```
-More examples can be found under ['ibm_db_tests'](https://github.com/ibmdb/python-ibmdb/tree/master/IBM_DB/ibm_db/ibm_db_tests) folder.
 
-[API Documentation](https://github.com/ibmdb/python-ibmdb/wiki/APIs) has examples for each API.
+* More examples can be found under ['ibm_db_tests'](https://github.com/ibmdb/python-ibmdb/tree/master/IBM_DB/ibm_db/ibm_db_tests) folder.
 
-Jupyter Notebook examples can be found here -> [Other Examples](https://github.com/IBM/db2-python/tree/master/Jupyter_Notebooks)
+* [API Documentation](https://github.com/ibmdb/python-ibmdb/wiki/APIs) has examples for each API.
+
+* **Jupyter Notebook** examples can be found here -> [Other Examples](https://github.com/IBM/db2-python/tree/master/Jupyter_Notebooks)
 
 ## <a name="Licenserequirements"></a>For z/OS and iSeries Connectivity and SQL1598N error
 
@@ -319,11 +320,11 @@ To suppress this error, Db2 server must be activated with db2connectactivate uti
 
 - If you have a `db2jcc_license_cisuz.jar` file, it will not work for ibm_db. `db2jcc_license_cisuz.jar` is a db2connect license file for Java Driver. For non-Java Driver, client side db2connect license comes as a file name `db2con*.lic`.
 
-- If environment variable `IBM_DB_HOME` or `IBM_DB_INSTALLER_URL` is not set, `ibm_db` automatically downloads [open source driver specific clidriver](https://public.dhe.ibm.com/ibmdl/export/pub/software/data/db2/drivers/odbc_cli/) from https://public.dhe.ibm.com/ibmdl/export/pub/software/data/db2/drivers/odbc_cli and save as `node_modules\ibm_db\installer\clidriver`. Ignores any other installation.
+- If environment variable `IBM_DB_HOME` or `IBM_DB_INSTALLER_URL` is not set, `ibm_db` automatically downloads open source driver specific clidriver from https://public.dhe.ibm.com/ibmdl/export/pub/software/data/db2/drivers/odbc_cli and save as `site_packages\clidriver`. Ignores any other installation.
 
-- If `IBM_DB_HOME` or `IBM_DB_INSTALLER_URL` is set, you need to have same version of db2connect license as installed db2 client. Check db2 client version using `db2level` command to know version of db2connect license required. The license file should get copied under `$IBM_DB_HOME\license` directory.
+- If `IBM_DB_HOME` or `IBM_DB_INSTALLER_URL` is set, you need to have same version of db2connect license as installed db2 client. Check db2 client version using `db2level` command to know version of required db2connect license. The license file should get copied under `$IBM_DB_HOME\license` directory.
 
-- If you do not have db2connect license, contact [IBM Customer Support](https://www.ibm.com/mysupport/s/?language=en_US) to buy db2connect license. Find the `db2con*.lic` file in the db2connect license shared by IBM and copy it under `.../node_modules/ibm_db/installer/clidriver/license` folder to be effective.
+- If you do not have db2connect license, contact [IBM Customer Support](https://www.ibm.com/mysupport/s/?language=en_US) to buy db2connect license. Find the `db2con*.lic` file in the db2connect license shared by IBM and copy it under `.../site_packages/clidriver/license` directory or `$IBM_DB_HOME\license` directory (if IBM_DB_HOME is set), to be effective.
 
 - To know more about license and purchasing cost, please contact [IBM Customer Support](https://www.ibm.com/mysupport/s/?language=en_US).
 
