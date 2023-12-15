@@ -96,7 +96,7 @@ If you have to use your own URL for clidriver.tar.gz/.zip please set environment
 IBM_DB_INSTALLER_URL=full_path_of_clidriver.tar.gz/.zip
 ```
 When ibm_db get installed from wheel package, you can find clidriver under site_packages directory
-of Python. You need to copy license file under `site_packages/clidirver/license` to be effective, if any.
+of Python. You need to copy license file under `site_packages/clidriver/license` to be effective, if any.
 
 **Note:** For windows after installing ibm_db, recieves the below error when we try to import ibm_db :
 ```>python
