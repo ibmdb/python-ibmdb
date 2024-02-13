@@ -18,9 +18,14 @@ else:
     import urllib2 as request
     from cStringIO import StringIO as BytesIO
 
-from distutils import ccompiler
-from distutils import sysconfig as distutils_sysconfig
-from distutils.sysconfig import get_python_lib
+if sys.version_info.major == 3 and sys.version_info.minor >= 12:
+    from setuptools._distutils import ccompiler
+    from setuptools._distutils import sysconfig as distutils_sysconfig
+    from setuptools._distutils.sysconfig import get_python_lib
+else:
+    from distutils import ccompiler
+    from distutils import sysconfig as distutils_sysconfig
+    from distutils.sysconfig import get_python_lib
 from setuptools import setup, find_packages, Extension
 from setuptools.command.build_ext import build_ext
 from setuptools.command.install import install
@@ -62,7 +67,7 @@ def _printAndExit(msg):
       
 def _errormessage(option):
     if(option == "downloadFailedWin"):
-        message = "\nPlease download the clidriver manually from the above link and unzip the contents into a particular location.\nSet the location of the directory to the system enviroment variable \"IBM_DB_HOME\"\nExample set IBM_DB_HOME=C:\downloads\db2driver\clidriver\nOnce the above settings are done please try installing ibm_db again."
+        message = "\nPlease download the clidriver manually from the above link and unzip the contents into a particular location.\nSet the location of the directory to the system enviroment variable \"IBM_DB_HOME\"\nExample set IBM_DB_HOME=C:/downloads/db2driver/clidriver\nOnce the above settings are done please try installing ibm_db again."
     if(option == "downloadFailed"):
         message = "\nPlease download the clidriver manually from the above link and untar the contents into a particular directory.\nSet the location of the directory to the system enviroment variable \"IBM_DB_HOME\"\nExample export IBM_DB_HOME=/home/db2driver/clidriver\nOnce the above settings are done try installing ibm_db again."
     if(option == "includeFolderMissing"):
@@ -525,6 +530,7 @@ setup( name    = PACKAGE,
                     'Programming Language :: Python :: 3.9',
                     'Programming Language :: Python :: 3.10',
                     'Programming Language :: Python :: 3.11',
+                    'Programming Language :: Python :: 3.12',
                     'Topic :: Database :: Front-Ends'],
 
     long_description = 'Python DBI driver for IBM Db2 for LUW, IBM Informix, IBM Db2 for iSeries(AS400) and IBM Db2 for z/OS servers',

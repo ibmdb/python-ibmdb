@@ -139,7 +139,10 @@ class IbmDbTestFunctions(unittest.TestCase):
             else:
                 pattern = self.expected_LUW(callstack[1][1])
 
-            sym = ['\[','\]','\(','\)']
+            if sys.version_info.major == 3 and sys.version_info.minor >= 12:
+                sym = ['/[', '/]', '/(', '/)']
+            else:
+                sym = ['\[','\]','\(','\)']
             for chr in sym:
                 pattern = re.sub(chr, '\\' + chr, pattern)
 

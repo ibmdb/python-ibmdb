@@ -47,7 +47,7 @@
 #define StringOBJ_FromStr(str)      PyUnicode_DecodeLocale(str, NULL)
 #define PyString_Check              PyUnicode_Check
 #define StringObj_Format            PyUnicode_Format
-#define StringObj_Size              PyUnicode_GET_SIZE
+#define StringObj_Size              PyUnicode_GET_LENGTH
 #define MOD_RETURN_ERROR            NULL
 #define MOD_RETURN_VAL(mod)         mod
 #define INIT_ibm_db PyInit_ibm_db

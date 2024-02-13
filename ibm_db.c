@@ -1579,7 +1579,7 @@ static PyObject* getSQLWCharAsPyUnicodeObject(SQLWCHAR* sqlwcharData, int sqlwch
 
     if (maxuniValue <= 65536) {
     /* this is UCS2 python.. nothing to do really */
-        return PyUnicode_FromUnicode((Py_UNICODE *)sqlwcharData, sqlwcharBytesLen / sizeof(SQLWCHAR));
+        return PyUnicode_FromWideChar((Py_UNICODE *)sqlwcharData, sqlwcharBytesLen / sizeof(SQLWCHAR));
         }
 
     if (is_bigendian()) {
@@ -1619,7 +1619,7 @@ static SQLWCHAR* getUnicodeDataAsSQLWCHAR(PyObject *pyobj, int *isNewBuffer)
     long maxuniValue;
     PyObject *pyUTFobj;
     SQLWCHAR* pNewBuffer = NULL;
-    int nCharLen = PyUnicode_GET_SIZE(pyobj);
+    int nCharLen = PyUnicode_GET_LENGTH(pyobj);
 
     sysmodule = PyImport_ImportModule("sys");
     maxuni = PyObject_GetAttrString(sysmodule, "maxunicode");
@@ -1627,7 +1627,7 @@ static SQLWCHAR* getUnicodeDataAsSQLWCHAR(PyObject *pyobj, int *isNewBuffer)
 
     if (maxuniValue <= 65536) {
         *isNewBuffer = 0;
-        return (SQLWCHAR*)PyUnicode_AS_UNICODE(pyobj);
+        return (SQLWCHAR*)PyUnicode_AsWideCharString(pyobj,maxuniValue);
     }
 
     *isNewBuffer = 1;
