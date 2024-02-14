@@ -1438,19 +1438,19 @@ static PyObject *_python_ibm_db_connect_helper( PyObject *self, PyObject *args, 
 #ifdef __MVS__
                 rc = SQLConnectW((SQLHDBC)conn_res->hdbc,
                     database,
-                    PyUnicode_GetSize(databaseObj)*2,
+                    PyUnicode_GetLength(databaseObj)*2,
                     uid,
-                    PyUnicode_GetSize(uidObj)*2,
+                    PyUnicode_GetLength(uidObj)*2,
                     password,
-                    PyUnicode_GetSize(passwordObj)*2);
+                    PyUnicode_GetLength(passwordObj)*2);
 #else
                 rc = SQLConnectW((SQLHDBC)conn_res->hdbc,
                     database,
-                    PyUnicode_GetSize(databaseObj),
+                    PyUnicode_GetLength(databaseObj),
                     uid,
-                    PyUnicode_GetSize(uidObj),
+                    PyUnicode_GetLength(uidObj),
                     password,
-                    PyUnicode_GetSize(passwordObj));
+                    PyUnicode_GetLength(passwordObj));
 #endif
                 Py_END_ALLOW_THREADS;
             }
@@ -5373,7 +5373,7 @@ static PyObject *_python_ibm_db_prepare_helper(conn_handle *conn_res, PyObject *
         if (PyString_Check(py_stmt) || PyUnicode_Check(py_stmt)) {
             py_stmt = PyUnicode_FromObject(py_stmt);
             if (py_stmt != NULL &&  py_stmt != Py_None) {
-                stmt_size = PyUnicode_GetSize(py_stmt);
+                stmt_size = PyUnicode_GetLength(py_stmt);
             } else {
                 PyErr_SetString(PyExc_Exception, "Error occure during processing of statement");
                 return NULL;
@@ -5893,7 +5893,7 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
                                     tmp_uvalue = NULL;
                                 }
                                 tmp_uvalue = getUnicodeDataAsSQLWCHAR(item, &isNewBuffer);
-                                curr->ivalue = PyUnicode_GetSize(item);
+                                curr->ivalue = PyUnicode_GetLength(item);
                                 curr->ivalue = curr->ivalue * sizeof(SQLWCHAR);
                             }
                             param_length = curr->ivalue;
@@ -6060,7 +6060,7 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
                             curr->uvalue = NULL;
                         }
                         curr->uvalue = getUnicodeDataAsSQLWCHAR(bind_data, &isNewBuffer);
-                        curr->ivalue = PyUnicode_GetSize(bind_data);
+                        curr->ivalue = PyUnicode_GetLength(bind_data);
                         curr->ivalue = curr->ivalue * sizeof(SQLWCHAR);
                     }
                     param_length = curr->ivalue;
