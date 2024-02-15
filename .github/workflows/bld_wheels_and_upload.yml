@@ -19,13 +19,13 @@ jobs:
       matrix:
         os: [windows-latest]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4.1.1
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.12.2
+        uses: pypa/cibuildwheel@v2.16.5
         env:
           CIBW_BUILD: "*-win_amd64"
           CIBW_SKIP: "cp36-* pp*"
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4.3.1
         with:
           path: ./wheelhouse/*.whl   
   
@@ -36,13 +36,13 @@ jobs:
       matrix:
         os: [windows-latest]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4.1.1
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.12.2
+        uses: pypa/cibuildwheel@v2.16.5
         env:
           CIBW_BUILD: "*-win32"
           CIBW_SKIP: "cp36-* pp*"
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4.3.1
         with:
           path: ./wheelhouse/*.whl       
   build_wheels_macos_linux:
