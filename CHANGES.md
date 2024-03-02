@@ -1,3 +1,13 @@
+2024-03-02, Version 3.2.2
+=========================
+
+ * Support for python3.12 (#913) (bchoudhary6415)
+
+ * fixed Typo on clidriver (#905) (Manoj K Jadwani)
+
+ * doc: update readme file (Bimal Jha)
+
+
 2023-11-22, Version 3.2.1
 =========================
 
