@@ -573,3 +573,11 @@ If trusted context is not set up, there will be two failures related to trusted 
 1. The rowcount for select statements can not be generated.
 2. Some warnings from the drivers are not caught by the wrapper.
    As such these might go unnoticed.
+
+## M1 MAC Steps to install IBM DB and support Docker RUN
+Steps for  M1 :-
+Install Podman / Docker
+Install python (Intel version). Ref: https://www.python.org/downloads/release/python-3810/
+after installation of intel python you need change interprator to python 3.8
+for M1 - docker build -t image name . --platform=linux/amd64, podman build -t image name . --platform=linux/amd64
+Intel : docker build -t <image name> .
