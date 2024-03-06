@@ -7,45 +7,16 @@
 .gitattributes   git-encoding=iso8859-1 zos-working-tree-encoding=iso8859-1
 .gitignore       git-encoding=iso8859-1 zos-working-tree-encoding=iso8859-1
 # Binary files, selected by file extension.
-#
-# Note that "Binary" really just means "Not touched when moved
-# between the git repository and the working tree." In some cases
-# these are actually UTF-8 or CP1251 (the usual Windows code page).
-#
-# If you don't have these in your tree, removing these from the
-# .gitattributes file will speed up git's processing a bit.
-#
-# While it would make sense to have BINARY be BINARY on all platforms,
+
 # Other platforms don't use the BINARY term, But do recognize "binary" macro
 *.jpg   git-encoding=BINARY    zos-working-tree-encoding=BINARY binary
-*.crx   git-encoding=BINARY    zos-working-tree-encoding=BINARY binary
-*.eot   git-encoding=BINARY    zos-working-tree-encoding=BINARY binary
-*.fdt   git-encoding=BINARY    zos-working-tree-encoding=BINARY binary
-*.fdx   git-encoding=BINARY    zos-working-tree-encoding=BINARY binary
-*.gen   git-encoding=BINARY    zos-working-tree-encoding=BINARY binary
-*.gif   git-encoding=BINARY    zos-working-tree-encoding=BINARY binary
-*.gz    git-encoding=BINARY    zos-working-tree-encoding=BINARY binary
-*.ico   git-encoding=BINARY    zos-working-tree-encoding=BINARY binary
 *.jar   git-encoding=BINARY    zos-working-tree-encoding=BINARY binary
 *.jpg   git-encoding=BINARY    zos-working-tree-encoding=BINARY binary
 *.node  git-encoding=BINARY    zos-working-tree-encoding=BINARY binary
-*.otf   git-encoding=BINARY    zos-working-tree-encoding=BINARY binary
 *.png   git-encoding=BINARY    zos-working-tree-encoding=BINARY binary
 *.PNG   git-encoding=BINARY    zos-working-tree-encoding=BINARY binary
-*.resources   git-encoding=BINARY    zos-working-tree-encoding=BINARY binary
-*.scss  git-encoding=BINARY    zos-working-tree-encoding=BINARY binary
-*.segments_1   git-encoding=BINARY    zos-working-tree-encoding=BINARY binary
-*.so    git-encoding=BINARY    zos-working-tree-encoding=BINARY binary
-*.svg   git-encoding=BINARY    zos-working-tree-encoding=BINARY binary
-*.swp   git-encoding=BINARY    zos-working-tree-encoding=BINARY binary
 *.tar   git-encoding=BINARY    zos-working-tree-encoding=BINARY binary
 *.tgz   git-encoding=BINARY    zos-working-tree-encoding=BINARY binary
-*.tii   git-encoding=BINARY    zos-working-tree-encoding=BINARY binary
-*.tis   git-encoding=BINARY    zos-working-tree-encoding=BINARY binary
-*.tree  git-encoding=BINARY    zos-working-tree-encoding=BINARY binary
-*.ttf   git-encoding=BINARY    zos-working-tree-encoding=BINARY binary
-*.woff  git-encoding=BINARY    zos-working-tree-encoding=BINARY binary
-*.woff2 git-encoding=BINARY    zos-working-tree-encoding=BINARY binary
 *.zip   git-encoding=BINARY    zos-working-tree-encoding=BINARY binary
 # Always use LF for npm package files because npm cli likes to change line endings.
 package*.json text eol=lf
