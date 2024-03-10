@@ -25,7 +25,7 @@ jobs:
         env:
           CIBW_BUILD: "*-win_amd64"
           CIBW_SKIP: "cp36-* pp*"
-      - uses: actions/upload-artifact@v4.3.1
+      - uses: actions/upload-artifact@v3
         with:
           path: ./wheelhouse/*.whl   
   
