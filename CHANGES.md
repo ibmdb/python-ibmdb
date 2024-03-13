@@ -1,3 +1,11 @@
+2024-03-13, Version 3.2.3
+=========================
+
+ * Downgrade upload-artifact on 64 bit Windows (#919) (Bradley Reynolds)
+
+ * Upgrade cibuildwheel on Linux & Mac OS job (#920) (Bradley Reynolds)
+
+
 2024-03-02, Version 3.2.2
 =========================
 
