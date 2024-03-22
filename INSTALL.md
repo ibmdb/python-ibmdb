@@ -414,3 +414,26 @@ i.e. change current path of `libstdc++.6.dylib` in `libdb2.dylib` library to the
 
 Now run your test program and verify.
 
+
+# M1 MAC Steps to Install IBM DB and Support Docker RUN
+## Installation Steps:
+### Install Podman / Docker:
+- **Podman:** Follow the instructions provided on the [official Podman website](https://podman.io/getting-started/installation) to install Podman on your M1 Mac.
+- **Docker:** Alternatively, you can install Docker using the native Apple Silicon version or the Rosetta-translated Intel version. Choose the method that best fits your requirements.
+### Install Intel Version of Python:
+1. Download and install the Intel version of Python 3.8 from the [official Python website](https://www.python.org/downloads/release/python-3810/).
+2. After installation, ensure that you set the interpreter to Python 3.8 in your development environment.
+## Configuration Steps:
+### Configure Docker for M1:
+- For M1 Macs, ensure compatibility by specifying the platform architecture during Docker build commands:
+docker build -t <image_name> . --platform=linux/amd64
+Alternatively, if you're using Podman:
+podman build -t <image_name> . --platform=linux/amd64
+### Build Docker Image (Intel):
+- If you're using an Intel Mac or running Docker with Rosetta translation, use the following command to build your Docker image:
+docker build -t <image_name> .
+## Additional Notes:
+- These steps are tailored for M1 Macs to ensure seamless installation and configuration of IBM DB and Docker support.
+- Verify that your Dockerfile and any dependencies are compatible with the specified platform architecture.
+Follow these steps carefully to set up IBM DB and Docker support on your M1 Mac environment. If you encounter any issues or have further questions, feel free to seek assistance from the community or relevant support channels.
+Happy coding!
