@@ -67,6 +67,10 @@ Db2 V11.5.4 clidriver is built with GCC version 8.4.0 and hence you may need to 
 
 * You may need to install **gcc, python, pip, python-devel, libxml2 and pam** if not already installed. Refer to [Installation](#docker) for more details.
 
+### Manual Installation
+
+To install ibm_db from source code after clone from git, or to know the detialed installation steps for various platforms, please check [INSTALL document](https://github.com/ibmdb/python-ibmdb/blob/master/INSTALL.md#inslnx).
+
 <a name="installation"></a> 
 ## Installation
 
@@ -271,23 +275,65 @@ True
 
 ## Example of SSL Connection String
  
+* **Secure Database Connection using SSL/TSL** - ibm_db supports secure connection to Database Server over SSL same as ODBC/CLI driver. If you have SSL Certificate from server or an CA signed certificate, just use it in connection string as below:
 ```
 Using SSLServerCertificate keyword
  
-conn = ibm_db.connect("DATABASE=<DATABASE_NAME>;HOSTNAME=<HOSTNAME>;PORT=<SSL_PORT>;SECURITY=SSL;SSLServerCertificate=<FULL_PATH_TO_SERVER_CERTIFICATE>;UID=<USER_ID>;PWD=<PASSWORD>",'','')
+connStr = "DATABASE=<DATABASE_NAME>;HOSTNAME=<HOSTNAME>;PORT=<SSL_PORT>;UID=<USER_ID>;PWD=<PASSWORD>;" +
+          "SECURITY=SSL;SSLServerCertificate=<FULL_PATH_TO_SERVER_CERTIFICATE>;"
+conn = ibm_db.connect(connStr,'','')
 ```
  
+> Note the two extra keywords **Security** and **SSLServerCertificate** used in connection string. `SSLServerCertificate` should point to the SSL Certificate from server or an CA signed certificate. Also, `PORT` must be `SSL` port and not the TCPI/IP port. Make sure Db2 server is configured to accept connection on SSL port else `ibm_db` will throw SQL30081N error.
+
+> Value of `SSLServerCertificate` keyword must be full path of a certificate file generated for client authentication.
+ It normally has `*.arm` or `*.cert` or `*.pem` extension. `ibm_db` do not support `*.jks` format file as it is not a
+ certificate file but a Java KeyStore file, extract certificate from it using keytool and then use the *.cert file.
+
+> `ibm_db` uses IBM ODBC/CLI Driver for connectivity and it do not support a `*.jks` file as keystoredb as `keystore.jks` is meant for Java applications.
+ Note that `*.jks` file is a `Java Key Store` file and it is not an SSL Certificate file. You can extract SSL certificate from JKS file using below `keytool` command:
+ ```
+ keytool -exportcert -alias your_certificate_alias -file client_cert.cert -keystore  keystore.jks
+ ```
+ Now, you can use the generated `client_cert.cert` as the value of `SSLServerCertificate` in connection string.
+
+> Do not use keyworkds like `sslConnection=true` in connection string as it is a JDBC connection keyword and ibm_db
+ ignores it. Corresponding ibm_db connection keyword for `sslConnection` is `Security` hence, use `Security=SSL;` in
+ connection string instead.
+
+> `ibm_db` supports only ODBC/CLI Driver keywords in connection string: https://www.ibm.com/docs/en/db2/11.5?topic=odbc-cliodbc-configuration-keywords
+
+* To connect to dashDB in IBM Cloud, use below connection string:
+
+```
+connStr = "DATABASE=database;HOSTNAME=hostname;PORT=port;PROTOCOL=TCPIP;UID=username;PWD=passwd;Security=SSL";
+```
+> We just need to add **Security=SSL** in connection string to have a secure connection against Db2 server in IBM Cloud.
+
+**Note:** You can also create a KeyStore DB using GSKit command line tool and use it in connection string along with other keywords as documented in [DB2 Infocenter](http://www.ibm.com/support/knowledgecenter/en/SSEPGG_11.5.0/com.ibm.db2.luw.admin.sec.doc/doc/t0053518.html).
+
+* If you have created a KeyStore DB using GSKit using password or you have got *.kdb file with *.sth file:
 ```
 Using SSLClientKeyStoreDB and SSLClientKeyStoreDBPassword keyword
  
-conn = ibm_db.connect("DATABASE=<DATABASE_NAME>;HOSTNAME=<HOSTNAME>;PORT=<SSL_PORT>;SECURITY=SSL;SSLClientKeyStoreDB=<FULL_PATH_TO_CLIENT_KEY_STORE_DB>;SSLClientKeyStoreDBPassword=<KEYSTORE_PASSWORD>;UID=<USER_ID>;PWD=<PASSWORD>",'','')
+connStr = "DATABASE=<DATABASE_NAME>;HOSTNAME=<HOSTNAME>;PORT=<SSL_PORT>;UID=<USER_ID>;PWD=<PASSWORD>;" +
+          "SECURITY=SSL;SSLClientKeyStoreDB=<FULL_PATH_TO_KEY_STORE_DB>;SSLClientKeyStoreDBPassword=<KEYSTORE_PASSWD>;"
+conn = ibm_db.connect(connStr,'','')
 ```
  
 ```
 Using SSLClientKeyStoreDB and SSLClientKeyStash keyword
  
-conn = ibm_db.connect("DATABASE=<DATABASE_NAME>;HOSTNAME=<HOSTNAME>;PORT=<SSL_PORT>;SECURITY=SSL;SSLClientKeyStoreDB=<FULL_PATH_TO_CLIENT_KEY_STORE_DB>;SSLClientKeyStash=<FULL_PATH_TO_CLIENT_KEY_STASH>;UID=<USER_ID>;PWD=<PASSWORD>",'','')
+connStr = "DATABASE=<DATABASE_NAME>;HOSTNAME=<HOSTNAME>;PORT=<SSL_PORT>;UID=<USER_ID>;PWD=<PASSWORD>;" +
+          "SECURITY=SSL;SSLClientKeyStoreDB=<FULL_PATH_TO_KEY_STORE_DB>;" +
+          "SSLClientKeyStash=<FULL_PATH_TO_CLIENT_KEY_STASH>;"
+conn = ibm_db.connect(connStr,'','')
 ```
+
+> If you have downloaded `IBMCertTrustStore` from IBM site, ibm_db will not work with it; you need to
+ download `Secure Connection Certificates.zip` file that comes for IBM DB2 Command line tool(CLP).
+ `Secure Connection Certificates.zip` has *.kdb and *.sth files that should be used as the value of
+ `SSLClientKeystoreDB` and `SSLClientKeystash` in connection string.
 
 * More examples can be found under ['ibm_db_tests'](https://github.com/ibmdb/python-ibmdb/tree/master/IBM_DB/ibm_db/ibm_db_tests) folder.
 
