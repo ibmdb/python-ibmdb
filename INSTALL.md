@@ -21,25 +21,22 @@ DEALINGS IN THE SOFTWARE.
 
 ## Contents
 
-1. [ibm_db Installation on Linux](#inslnx)
-2. [ibm_db Installation on AIX on Power Systems](#insaix_p)
-3. [ibm_db Installation on Linux on System z](#inslnx_z)
-4. [ibm_db Installation on Windows](#inswin)
-5. [ibm_db Installation on MacOS](#insmac)
-6. [ibm_db Installation on z/OS](#inszos)
-7. [ibm_db installation on MacOS M1/M2 Chip System](#m1chip)
-8. [Troubleshooting Post Install Errors](#troubleshooting)
+1. [ibm_db Installation on Linux, AIX, zLinux, Widnows and MaxOS(x64) with Intel Chip.](#inslnx)
+2. [ibm_db Installation on z/OS](#inszos)
+3. [ibm_db installation on MacOS M1/M2 Chip System](#m1chip)
+4. [Troubleshooting Post Install Errors](#troubleshooting)
  -  [SQL30081N Error](#sql30081n)
  -  [Symbol not found error or malloc error](#symbolerror)
 
 
-## <a name="inslnx"></a> 1. Python-ibm_db Installation on Linux.
+## <a name="inslnx"></a> 1. Python-ibm_db Installation on Linux, AIX, zLinux, Windows and MaxOS(x64) with Intel Chip.
 
 ### Install python-ibm_db
 
 Below are the steps to install [*python-ibm_db*](https://github.com/ibmdb/python-ibm_db) from github or pip.
 
-#### 1.1 Direct Installation.
+#### 1.1 Direct Installation using pip.
+To install ibm_db and ibm_db_dbi module.
 ```
 pip install ibm_db
 ```
@@ -47,61 +44,82 @@ or
 ```
 pip install git+https://git@github.com/ibmdb/python-ibm_db.git
 ```
+* `pip install ibm_db` installs python wheel images on Linux, Windows and MacOS(x64) for python v>=3.7
+* If wheel image is not available or for AIX and zLiux, native C++ code of ibm_db requires in-system compilation. For such case,
+    you should have a C++ compiler installed in the system. Make sure the commands `gcc --version` and `make --version` works
+    fine on Linux and MacOS system.
+* For AIX and zLinux, you should have xLC Compiler intalled in the system. Also, `make` should be installed.
+* For other pre-requisite and non-wheel installation, please check [here](https://github.com/ibmdb/python-ibmdb?tab=readme-ov-file#installation).
 
-#### 1.2 Manual Installation by using git clone.
+**Note:**
+When we install ibm_db package on Linux, MacOS and Windows, `pip install ibm_db` command install
+prebuilt Wheel package that includes clidriver too and ignores `IBM_DB_HOME` or `IBM_DB_INSTALLER_URL`
+environment variables if set. Also, auto downloading of clidriver does not happen as clidriver is
+already present inside wheel package.
+
+To inforce auto downloading of clidriver or to make setting of environment variable `IBM_DB_HOME`
+effective, install ibm_db from source distribution using below command:
+```
+pip install ibm_db --no-binary :all: --no-cache-dir
+```
+
+If you have to use your own URL for clidriver.tar.gz/.zip please set environment variable
+```
+IBM_DB_INSTALLER_URL=full_path_of_clidriver.tar.gz/.zip
+```
+When ibm_db get installed from wheel package, you can find clidriver under site_packages directory
+of Python. You need to copy license file under `site_packages/clidriver/license` to be effective, if any.
+
+**Note:** For windows after installing ibm_db, recieves the below error when we try to import ibm_db :
+```>python
+Python 3.11.4 (tags/v3.11.4:d2340ef, Jun  7 2023, 05:45:37) [MSC v.1934 64 bit (AMD64)] on win32
+Type "help", "copyright", "credits" or "license" for more information.
+>>> import ibm_db
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+ImportError: DLL load failed while importing ibm_db: The specified module could not be found.
+>>>
+```
+We need to make sure to set dll path of dependent library of clidriver before importing the module as:
+
+```
+import os
+os.add_dll_directory('path to clidriver installation until bin')
+import ibm_db
+
+e.g:
+os.add_dll_directory('C:\\Program Files\\IBM\\CLIDRIVER\\bin')
+import ibm_db
+```
+Refer https://bugs.python.org/issue36085 for more details.
+
+
+#### 1.2 Manual Installation by using setup.py
 
 ```
 git clone https://github.com/ibmdb/python-ibm_db/
 cd python-ibmdb
 python setup.py build
 python setup.py install
-````
-
-## <a name="insaix_p"></a> 2. Python-ibm_db Installation on AIX on Power Systems.
-
-### 2.1 Install python-ibm_db
-
-Follow the same steps mentioned in [Python-ibm_db Installation on Linux](#inslnx).
-
-
-## <a name="inslnx_z"></a> 3. Python-ibm_db Installation on Linux on System z.
-
-### 3.1 Install python-ibm_db
-
-Follow the same steps mentioned in [Python-ibm_db Installation on Linux](#inslnx).
-
-
-## <a name="inswin"></a> 4. Python-ibm_db Installation on Windows.
-
-Below are the steps to install [*python-ibm_db*](https://github.com/ibmdb/python-ibm_db) from github or pip.
-
-#### 4.1 Direct Installation.
-```
-pip install ibm_db
-```
-or
-```
-pip install git+https://github.com/ibmdb/python-ibmdb.git
+pip list
 ```
 
-#### 4.2 Manual Installation by using git clone.
+- `python setup.py install` command, installs python egg under site_packages.
 
+#### 1.3 Manual Installation using python wheel (Only Linux, Windows and MacOS(x64))
+
+To install ibm_db as python wheel, use below commands(recommended):
 ```
 git clone https://github.com/ibmdb/python-ibm_db/
 cd python-ibmdb
-python setup.py build
-python setup.py install
-````
+python -m build  => Note down the path of generated *.whl file to use below
+pip install dist/ibm_db-3.2.3-cp311-cp311-win_amd64.whl
+pip list  => You can see ibm_db in the output
+```
 
-## <a name="insmac"></a> 5. Python-ibm_db Installation on MacOS.
+## <a name="inszos"></a> 2. ibm_db Installation on z/OS
 
-### 5.1 Install python-ibm_db
-
-Follow the same steps mentioned in [python-ibm_db Installation on Linux](#inslnx).
-
-## <a name="inszos"></a> 6. ibm_db Installation on z/OS
-
-### 6.1 Install Python for z/OS
+### 2.1 Install Python for z/OS
 
 Below steps were followed for the same:
 
@@ -114,7 +132,7 @@ Below steps were followed for the same:
     -- UI72589 (v12)
 ```
 
-### 6.2 Configure ODBC driver on z/OS
+### 2.2 Configure ODBC driver on z/OS
 Please refer to the [ODBC Guide and References](https://www.ibm.com/support/knowledgecenter/SSEPEK/pdf/db2z_12_odbcbook.pdf) cookbook for how to configure your ODBC driver. Specifically, you need to ensure you have:
 
 1. Binded the ODBC packages.  A sample JCL is provided in the `SDSNSAMP` dataset in member `DSNTIJCL`.  Customize the JCL with specifics to your system.
@@ -240,7 +258,7 @@ export DB2_MACS=$IBM_DB_HOME.XXXX
 
 Reference Chapter 3 in the [ODBC Guide and References](https://www.ibm.com/support/knowledgecenter/SSEPEK/pdf/db2z_12_odbcbook.pdf) for more instructions.
 
-### 6.3 Verify python installation
+### 2.3 Verify python installation
 1. Make sure when python is installed, you validate the same by typing &quot;python3 -V&quot; and it should return 3.8.3 or greater.
 - Unless you are a sysprog you'll likely not have authority to create the site-package so consider using a python virtual environment as following:
 ```
@@ -257,17 +275,17 @@ import ibm_db
 conn = ibm_db.connect('','','')
 ```
 
-### 6.4 Installing Python driver for Db2 i.e. ibm\_db &amp; Running a validation Program
+### 2.4 Installing Python driver for Db2 i.e. ibm\_db &amp; Running a validation Program
 
 Now that the Python and ODBC is ready, for connecting to Db2 you need a Db2 Python driver which we are going to install.
 
 Follow the standard steps for the same i.e. pip3 install ibm_db
 
-### 6.5 Install python-ibm_db
+### 2.5 Install python-ibm_db
 
 Below are the steps to install [*python-ibm_db*](https://github.com/ibmdb/python-ibm_db) from github or pip.
 
-#### 6.5.1 Direct Installation.
+#### 2.5.1 Direct Installation.
 ```
 pip install ibm_db
 ```
@@ -276,7 +294,7 @@ or
 pip install git+https://git@github.com/ibmdb/python-ibm_db.git
 ```
 
-#### 6.5.2 Manual Installation by using git clone.
+#### 2.5.2 Manual Installation by using git clone.
 
 ```
 git clone https://github.com/ibmdb/python-ibm_db/
@@ -307,9 +325,9 @@ else:
 print('ODBC Test end')
 ```
 
-## <a name="m1chip"></a> 7. ibm_db installation on MacOS M1/M2 Chip System (arm64 architecture)
+## <a name="m1chip"></a> 3. ibm_db installation on MacOS M1/M2 Chip System (arm64 architecture)
 
-### 7.1 Install GCC using Homebrew
+### 3.1 Install GCC using Homebrew
 
 **Warning:** If you use the ARM version of homebrew (as recommended for M1/M2 chip systems) you will get the following error message:
 ```
@@ -345,7 +363,7 @@ Suppose path of gcc lib is `/usr/local/homebrew/lib/gcc/12`. Then update your .b
 export DYLD_LIBRARY_PATH=/usr/local/homebrew/lib/gcc/12:$DYLD_LIBRARY_PATH
 ```
 
-### 7.2 Steps to Install Intel Python after verifying setup
+### 3.2 Steps to Install Intel Python after verifying setup
 
 Several things might be necessary to get `ibm_db` working on the Apple Silicon architecture:
 
@@ -377,7 +395,7 @@ Several things might be necessary to get `ibm_db` working on the Apple Silicon a
 *  Verify the output of  `gcc -v` command. It should show `Target: x86_64-apple-darwin21` in output.
 * Install Intel Version of Python like: https://www.python.org/ftp/python/3.9.11/python-3.9.11-macosx10.9.pkg
 
-### 7.3 Install ibm_db with x86_64 version of gcc12 and Python on M1/M2 Chip System
+### 3.3 Install ibm_db with x86_64 version of gcc12 and Python on M1/M2 Chip System
 
 * Open a new terminal and run below commands:
 ```
@@ -388,13 +406,13 @@ pip3 install ibm_db
 ```
 Now, run your test program to verify.
 
-## <a name="troubleshooting"></a> 8. Troubleshooting Post Install Errors
+## <a name="troubleshooting"></a> 4. Troubleshooting Post Install Errors
 
-<a name="sql30081n"></a> 8.1 SQL30081N Error
+<a name="sql30081n"></a> 4.1 SQL30081N Error
 
 * If connection fails with SQL30081N error: means `ibm_db` installation is correct and you need to provide correct connection string.
 
-<a name="symbolerror"></a> 8.2 Symbol not found error or malloc error
+<a name="symbolerror"></a> 4.2 Symbol not found error or malloc error
 
 * If `import ibm_db` fails with `Symbol not found: ___cxa_throw_bad_array_new_length` error or `malloc` error:
   You need to find the correct location of lib/gcc/12 directory and add it to DYLD_LIBRARY_PATH environment variable.
