@@ -12494,5 +12494,10 @@ INIT_ibm_db(void) {
     PyModule_AddIntConstant(m, "SQL_ATTR_PING_DB", SQL_ATTR_PING_DB);
 #endif
     PyModule_AddIntConstant(m, "SQL_ATTR_TXN_ISOLATION",  SQL_ATTR_TXN_ISOLATION);
+	PyModule_AddIntConstant(m, "SQL_TXN_READ_UNCOMMITTED", SQL_TXN_READ_UNCOMMITTED);
+	PyModule_AddIntConstant(m, "SQL_TXN_READ_COMMITTED", SQL_TXN_READ_COMMITTED);
+	PyModule_AddIntConstant(m, "SQL_TXN_REPEATABLE_READ", SQL_TXN_REPEATABLE_READ);
+	PyModule_AddIntConstant(m, "SQL_TXN_SERIALIZABLE", SQL_TXN_SERIALIZABLE);
+	PyModule_AddIntConstant(m, "SQL_TXN_NO_COMMIT", SQL_TXN_NOCOMMIT);
     return MOD_RETURN_VAL(m);
 }
