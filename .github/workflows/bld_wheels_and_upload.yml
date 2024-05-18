@@ -58,6 +58,7 @@ jobs:
         env:
          CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
          CIBW_SKIP: "cp36-* *-musllinux_* pp* *-*linux_{aarch64,ppc64le}"
+         CIBW_ARCHS_MACOS: "x86_64"
          CIBW_REPAIR_WHEEL_COMMAND_LINUX:
             auditwheel repair
               --exclude libdb2.so.1
