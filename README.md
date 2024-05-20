@@ -378,6 +378,26 @@ To suppress this error, Db2 server must be activated with db2connectactivate uti
 * [Activating the license certificate file for Db2 Connect Unlimited Edition](https://www.ibm.com/docs/en/db2/11.5?topic=li-activating-license-certificate-file-db2-connect-unlimited-edition).
 * [Unlimited licensing using db2connectactivate utility](https://www.ibm.com/docs/en/db2/11.1?topic=edition-db2connectactivate-server-license-activation-utility).
 
+#### Troubleshooting SQL1598N Error:
+
+If you have copied db2con*.lic file under clidriver/license directory, but still getting SQL1598N Error; try below options:
+
+* `cd clidriver/bin` directory and run `./db2level` command. Make sure you have the db2connect license of same major and minor version as of clidriver.
+
+* Make sure the user running python program has read permission for license file.
+
+* Make sure the user running python program has read-write permission for `clidriver/license` and `clidriver/cfgcache` directories as license check utility need to create some cache files under `cfgcache` and `license` directories.
+
+* Validate your license file and connectivity using below db2cli command:
+```
+  db2cli validate -connstring "connection string as used in python program" -displaylic
+
+  OR
+
+  db2cli validate -database "dbname:hostname:port" -userid dbuser -passwd dbpasswd -connect -displaylic
+```
+
+
 If you intend to install the clidriver manually, Following are the details of the client driver versions that you can download from [CLIDRIVER](https://public.dhe.ibm.com/ibmdl/export/pub/software/data/db2/drivers/odbc_cli/) to be able to connect to databases on non-LUW servers. You would need the client side license file as per Version for corresponding installation.:
 
 #### <a name="LicenseDetails"></a> CLIDriver and Client license versions for Specific Platform and Architecture
