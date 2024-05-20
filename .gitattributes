@@ -18,5 +18,3 @@
 *.tar   git-encoding=BINARY    zos-working-tree-encoding=BINARY binary
 *.tgz   git-encoding=BINARY    zos-working-tree-encoding=BINARY binary
 *.zip   git-encoding=BINARY    zos-working-tree-encoding=BINARY binary
-# Always use LF for npm package files because npm cli likes to change line endings.
-package*.json text eol=lf
