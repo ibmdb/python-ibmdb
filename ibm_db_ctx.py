@@ -23,20 +23,4 @@ class Db2connect:
         #print("exit method called")
         ibm_db.close(self.__cxn)
         self.__cxn = None      
-  
-"""connection_str = config.database
-with DB2connect(connection_str,'','') as conn:
-   print("with block ")
-   print("connect")
-   print(conn)
-   #run query 
-   stmt = ibm_db.prepare(conn, "SELECT * from animals WHERE weight < 10.0")
-   result = ibm_db.execute(stmt)
-   print (result)
 
-   
-print("after with connect object :", conn)
-#run some query expected some errors
-stmt = ibm_db.prepare(conn, "SELECT * from animals WHERE weight < 10.0")
-result = ibm_db.execute(stmt)
-"""
