@@ -1,16 +1,16 @@
-Python support for IBM Db2 for LUW, IBM Informix and IBM Db2 for z/OS
+Python support for IBM Db2 for LUW and IBM Db2 for z/OS
 =========
 
-## Python, DB-API components for IBM Db2 for LUW, IBM Informix and IBM Db2 for z/OS
+## Python, DB-API components for IBM Db2 for LUW and IBM Db2 for z/OS
 
-Provides Python interface for connecting to IBM Db2 for LUW, IBM Informix and IBM Db2 for z/OS
+Provides Python interface for connecting to IBM Db2 for LUW and IBM Db2 for z/OS
 
 <a name='components'></a>
 ## Components
 
 1. The **ibm_db** contains:
-   * **ibm_db** driver: Python driver for IBM Db2 for LUW, IBM Informix and IBM Db2 for z/OS databases. Uses the IBM Data Server Driver for ODBC and CLI APIs to connect to IBM Db2 for LUW and Informix.
-   * **ibm_db_dbi**: Python driver for IBM Db2 for LUW and IBM Informix databases that complies to the DB-API 2.0 specification.
+   * **ibm_db** driver: Python driver for IBM Db2 for LUW and IBM Db2 for z/OS databases. Uses the IBM Data Server Driver for ODBC and CLI APIs to connect to IBM Db2 for LUW.
+   * **ibm_db_dbi**: Python driver for IBM Db2 for LUW that complies to the DB-API 2.0 specification.
    
 
 ## <a name="api"></a> API Documentation
@@ -345,7 +345,7 @@ conn = ibm_db.connect(connStr,'','')
 
 - Connection to `Db2 for z/OS` or `Db2 for i`(AS400) Server using `ibm_db` driver from distributed platforms (Linux, Unix, Windows and MacOS) is not free. It requires either client side or server side license.
 
-- Connection to `Db2 for LUW` or `Informix` Server using `ibm_db` driver is free.
+- Connection to `Db2 for LUW` Server using `ibm_db` driver is free.
 
 - `ibm_db` returns SQL1598N error in absence of a valid db2connect license. SQL1598N error is returned by the Db2 Server to client.
 To suppress this error, Db2 server must be activated with db2connectactivate utility OR a client side db2connect license file must exist.
