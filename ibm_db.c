@@ -70,12 +70,14 @@ static int is_systemi, is_informix;      /* 1 == TRUE; 0 == FALSE; */
 #define DLOPEN dlopen
 #define DLSYM dlsym
 #define DLCLOSE dlclose
-#define LIBDB2 "libdb2.so.1"
 #endif
 #ifdef _WIN64
 #define LIBDB2 "db2cli64.dll"
 #else
 #define LIBDB2 "db2cli.dll"
+#endif
+#ifdef __linux__
+#define LIBDB2 "libdb2.so.1"
 #endif
 
 /* Defines a linked list structure for error messages */
