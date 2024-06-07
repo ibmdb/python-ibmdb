@@ -23,6 +23,11 @@ class IbmDbTestCase(unittest.TestCase):
         obj.assert_expectf(self.run_test_trusted_context_pconnect)
 
     def run_test_trusted_context_pconnect(self):
+        if ( sys.platform == 'win32'):  # on ms-windows get hostname from env to avoid importing other modules
+            this_hostname = os.environ['COMPUTERNAME']
+        else:
+            this_hostname = os.uname()[1]  # get local non-windows hostname
+    
         sql_drop_role = "DROP ROLE role_01"
         sql_create_role = "CREATE ROLE role_01"
 
@@ -31,7 +36,7 @@ class IbmDbTestCase(unittest.TestCase):
         sql_create_trusted_context = "CREATE TRUSTED CONTEXT ctx BASED UPON CONNECTION USING SYSTEM AUTHID "
         sql_create_trusted_context += config.auth_user
         sql_create_trusted_context += " ATTRIBUTES (ADDRESS '"
-        sql_create_trusted_context += config.hostname
+        sql_create_trusted_context += this_hostname
         sql_create_trusted_context += "') DEFAULT ROLE role_01 ENABLE WITH USE FOR "
         sql_create_trusted_context += config.tc_user
 
@@ -154,7 +159,7 @@ class IbmDbTestCase(unittest.TestCase):
 #__LUW_EXPECTED__
 #Trusted connection succeeded.
 #User has been switched.
-#[%s][%s][%s] SQL0551N  "%s" does not have the %s privilege to perform operation "UPDATE" on object "%s.TRUSTED_TABLE".  SQLSTATE=42501 SQLCODE=-551
+#[%s][%s][%s] SQL0551N  The statement failed because the authorization ID does not have the required authorization or privilege to perform the operation.  Authorization ID: "%s".  Operation: "UPDATE". Object: "%s.TRUSTED_TABLE".  SQLSTATE=42501 SQLCODE=-551
 #Explicit Trusted Connection succeeded.
 #Explicit Trusted Connection succeeded.
 #Explicit Trusted Connection succeeded.
@@ -169,7 +174,7 @@ class IbmDbTestCase(unittest.TestCase):
 #__ZOS_EXPECTED__
 #Trusted connection succeeded.
 #User has been switched.
-#[%s][%s][%s] SQL0551N  "%s" does not have the %s privilege to perform operation "UPDATE" on object "%s.TRUSTED_TABLE".  SQLSTATE=42501 SQLCODE=-551
+#[%s][%s][%s] SQL0551N  The statement failed because the authorization ID does not have the required authorization or privilege to perform the operation.  Authorization ID: "%s".  Operation: "UPDATE". Object: "%s.TRUSTED_TABLE".  SQLSTATE=42501 SQLCODE=-551
 #Explicit Trusted Connection succeeded.
 #Explicit Trusted Connection succeeded.
 #Explicit Trusted Connection succeeded.
@@ -184,7 +189,7 @@ class IbmDbTestCase(unittest.TestCase):
 #__SYSTEMI_EXPECTED__
 #Trusted connection succeeded.
 #User has been switched.
-#[%s][%s][%s] SQL0551N  "%s" does not have the privilege to perform operation "UPDATE" on object "%s.TRUSTED_TABLE".  SQLSTATE=42501 SQLCODE=-551
+#[%s][%s][%s] SQL0551N  The statement failed because the authorization ID does not have the required authorization or privilege to perform the operation.  Authorization ID: "%s".  Operation: "UPDATE". Object: "%s.TRUSTED_TABLE".  SQLSTATE=42501 SQLCODE=-551
 #Explicit Trusted Connection succeeded.
 #Explicit Trusted Connection succeeded.
 #Explicit Trusted Connection succeeded.
@@ -199,7 +204,7 @@ class IbmDbTestCase(unittest.TestCase):
 #__IDS_EXPECTED__
 #Trusted connection succeeded.
 #User has been switched.
-#[%s][%s][%s] SQL0551N  "%s" does not have the %s privilege to perform operation "UPDATE" on object "%s.TRUSTED_TABLE".  SQLSTATE=42501 SQLCODE=-551
+#[%s][%s][%s] SQL0551N  The statement failed because the authorization ID does not have the required authorization or privilege to perform the operation.  Authorization ID: "%s".  Operation: "UPDATE". Object: "%s.TRUSTED_TABLE".  SQLSTATE=42501 SQLCODE=-551
 #Explicit Trusted Connection succeeded.
 #Explicit Trusted Connection succeeded.
 #Explicit Trusted Connection succeeded.
