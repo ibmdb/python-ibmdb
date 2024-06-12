@@ -23,10 +23,18 @@ class IbmDbTestCase(unittest.TestCase):
         obj.assert_expectf(self.run_test_trusted_context_connect)
 
     def run_test_trusted_context_connect(self):
+        # if the Db2-server cannot resolve the remote-client hostname(where testcase runs), then use config.py tc_appserver_address to give IP-address
+        # and use that IP-address in the trusted-context definition, to allow operation remotely from the Db2-server.
+
         if ( sys.platform == 'win32'):  # on ms-windows get hostname from env to avoid importing other modules
             this_hostname = os.environ['COMPUTERNAME']
         else:
             this_hostname = os.uname()[1]  # get local non-windows hostname
+
+        if config.tc_appserver_address:
+            if config.tc_appserver_address != '':
+                this_hostname = config.tc_appserver_address # in case Db2-server cannot resolve remote-client hostname
+ 
         
         sql_drop_role = "DROP ROLE role_01"
         sql_create_role = "CREATE ROLE role_01"

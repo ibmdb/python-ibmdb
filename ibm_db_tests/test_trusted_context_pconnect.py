@@ -27,6 +27,12 @@ class IbmDbTestCase(unittest.TestCase):
             this_hostname = os.environ['COMPUTERNAME']
         else:
             this_hostname = os.uname()[1]  # get local non-windows hostname
+
+        if config.tc_appserver_address:
+            if config.tc_appserver_address != '': 
+                this_hostname = config.tc_appserver_address # in case Db2-server cannot resolve remote-client hostname
+ 
+
     
         sql_drop_role = "DROP ROLE role_01"
         sql_create_role = "CREATE ROLE role_01"
