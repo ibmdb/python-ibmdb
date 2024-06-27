@@ -57,25 +57,37 @@ static PyObject* getSQLWCharAsPyUnicodeObject(SQLWCHAR* sqlwcharData, int sqlwch
 const int _check_i = 1;
 #define is_bigendian() ( (*(char*)&_check_i) == 0 )
 static int is_systemi, is_informix;      /* 1 == TRUE; 0 == FALSE; */
+
 #ifdef _WIN32
 #define DLOPEN LoadLibrary
 #define DLSYM GetProcAddress
 #define DLCLOSE FreeLibrary
+#ifdef _WIN64
+#define LIBDB2 "db2cli64.dll"
+#else
+#define LIBDB2 "db2cli.dll"
+#endif
 #elif _AIX
 #define DLOPEN dlopen
 #define DLSYM dlsym
 #define DLCLOSE dlclose
-#define LIBDB2 "libdb2.a"
+#ifdef __64BIT__
+/*64-bit library in the archive libdb2.a*/
+#define LIBDB2 "libdb2.a(shr_64.o)"
+#else
+/*32-bit library in the archive libdb2.a*/
+#define LIBDB2 "libdb2.a(shr.o)"
+#endif
+#elif __APPLE__
+#define DLOPEN dlopen
+#define DLSYM dlsym
+#define DLCLOSE dlclose
+#define LIBDB2 "libdb2.dylib"
 #else
 #define DLOPEN dlopen
 #define DLSYM dlsym
 #define DLCLOSE dlclose
 #define LIBDB2 "libdb2.so.1"
-#endif
-#ifdef _WIN64
-#define LIBDB2 "db2cli64.dll"
-#else
-#define LIBDB2 "db2cli.dll"
 #endif
 
 /* Defines a linked list structure for error messages */
@@ -2021,10 +2033,6 @@ static int _python_ibm_db_createdb(conn_handle *conn_res, PyObject *dbNameObj, P
     sqlcreatedbType sqlcreatedb;
 #endif
 
-#if defined __APPLE__ || defined _AIX
-    PyErr_SetString( PyExc_Exception, "Not supported: This function is currently not supported on this platform" );
-    return -1;
-#else
 
     if ( !NIL_P( conn_res ) ) {
         if ( NIL_P( dbNameObj ) ) {
@@ -2066,6 +2074,8 @@ static int _python_ibm_db_createdb(conn_handle *conn_res, PyObject *dbNameObj, P
 
 #ifdef _WIN32
         cliLib = DLOPEN( LIBDB2 );
+#elif _AIX
+        cliLib = DLOPEN( LIBDB2, RTLD_MEMBER | RTLD_LAZY );
 #else
         cliLib = DLOPEN( LIBDB2, RTLD_LAZY );
 #endif
@@ -2118,7 +2128,6 @@ static int _python_ibm_db_createdb(conn_handle *conn_res, PyObject *dbNameObj, P
         PyErr_SetString( PyExc_Exception, "Supplied connection object Parameter is invalid" );
         return -1;
     }
-#endif
 }
 
 /*
@@ -2142,11 +2151,6 @@ static int _python_ibm_db_dropdb(conn_handle *conn_res, PyObject *dbNameObj, int
     void *cliLib;
 #endif
 
-#if defined __APPLE__ || defined _AIX
-    PyErr_SetString( PyExc_Exception, "Not supported: This function is currently not supported on this platform" );
-    return -1;
-#else
-
     if ( !NIL_P( conn_res ) ) {
         if ( NIL_P( dbNameObj ) ) {
             PyErr_SetString( PyExc_Exception, "Supplied database name Parameter is invalid" );
@@ -2167,6 +2171,8 @@ static int _python_ibm_db_dropdb(conn_handle *conn_res, PyObject *dbNameObj, int
 
 #ifdef _WIN32
         cliLib = DLOPEN( LIBDB2 );
+#elif _AIX
+        cliLib = DLOPEN( LIBDB2, RTLD_MEMBER | RTLD_LAZY );
 #else
         cliLib = DLOPEN( LIBDB2, RTLD_LAZY );
 #endif
@@ -2218,7 +2224,6 @@ static int _python_ibm_db_dropdb(conn_handle *conn_res, PyObject *dbNameObj, int
         PyErr_SetString( PyExc_Exception, "Supplied connection object Parameter is invalid" );
         return -1;
     }
-#endif
 }
 
 /*!# ibm_db.createdb
