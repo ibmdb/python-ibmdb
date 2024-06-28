@@ -23,6 +23,19 @@ class IbmDbTestCase(unittest.TestCase):
         obj.assert_expectf(self.run_test_trusted_context_connect)
 
     def run_test_trusted_context_connect(self):
+        # if the Db2-server cannot resolve the remote-client hostname(where testcase runs), then use config.py tc_appserver_address to give IP-address
+        # and use that IP-address in the trusted-context definition, to allow operation remotely from the Db2-server.
+
+        if ( sys.platform == 'win32'):  # on ms-windows get hostname from env to avoid importing other modules
+            this_hostname = os.environ['COMPUTERNAME']
+        else:
+            this_hostname = os.uname()[1]  # get local non-windows hostname
+
+        if config.tc_appserver_address:
+            if config.tc_appserver_address != '':
+                this_hostname = config.tc_appserver_address # in case Db2-server cannot resolve remote-client hostname
+ 
+        
         sql_drop_role = "DROP ROLE role_01"
         sql_create_role = "CREATE ROLE role_01"
 
@@ -31,7 +44,7 @@ class IbmDbTestCase(unittest.TestCase):
         sql_create_trusted_context = "CREATE TRUSTED CONTEXT ctx BASED UPON CONNECTION USING SYSTEM AUTHID "
         sql_create_trusted_context += config.auth_user
         sql_create_trusted_context += " ATTRIBUTES (ADDRESS '"
-        sql_create_trusted_context += config.hostname
+        sql_create_trusted_context += this_hostname
         sql_create_trusted_context += "') DEFAULT ROLE role_01 ENABLE WITH USE FOR "
         sql_create_trusted_context += config.tc_user
 
@@ -324,7 +337,7 @@ class IbmDbTestCase(unittest.TestCase):
 #But trusted user is not switched.
 #Trusted connection succeeded.
 #User has been switched.
-#[%s][%s][%s] SQL0551N  "%s" does not have the %s privilege to perform operation "UPDATE" on object "%s.TRUSTED_TABLE".  SQLSTATE=42501 SQLCODE=-551
+#[%s][%s][%s] SQL0551N  The statement failed because the authorization ID does not have the required authorization or privilege to perform the operation.  Authorization ID: "%s".  Operation: "UPDATE". Object: "%s.TRUSTED_TABLE".  SQLSTATE=42501 SQLCODE=-551
 #Trusted connection succeeded.
 #[%s][%s][%s] SQL30082N  Security processing failed with reason "24" ("USERNAME AND/OR PASSWORD INVALID").  SQLSTATE=08001 SQLCODE=-30082
 #Trusted connection succeeded.
@@ -334,7 +347,7 @@ class IbmDbTestCase(unittest.TestCase):
 #[%s][%s][%s] SQL20361N  The switch user request using authorization ID "%s" within trusted context "CTX" failed with reason code "2".  SQLSTATE=42517 SQLCODE=-20361
 #Trusted connection succeeded.
 #User has been switched.
-#[%s][%s][%s] SQL0551N  "%s" does not have the %s privilege to perform operation "INSERT" on object "%s.TRUSTED_TABLE".  SQLSTATE=42501 SQLCODE=-551
+#[%s][%s][%s] SQL0551N  The statement failed because the authorization ID does not have the required authorization or privilege to perform the operation.  Authorization ID: "%s".  Operation: "INSERT". Object: "%s.TRUSTED_TABLE".  SQLSTATE=42501 SQLCODE=-551
 #Connection succeeded.
 #__ZOS_EXPECTED__
 #Normal connection established.
@@ -344,7 +357,7 @@ class IbmDbTestCase(unittest.TestCase):
 #But trusted user is not switched.
 #Trusted connection succeeded.
 #User has been switched.
-#[%s][%s][%s] SQL0551N  "%s" does not have the %s privilege to perform operation "UPDATE" on object "%s.TRUSTED_TABLE".  SQLSTATE=42501 SQLCODE=-551
+#[%s][%s][%s] SQL0551N  The statement failed because the authorization ID does not have the required authorization or privilege to perform the operation.  Authorization ID: "%s".  Operation: "UPDATE". Object: "%s.TRUSTED_TABLE".  SQLSTATE=42501 SQLCODE=-551
 #Trusted connection succeeded.
 #[%s][%s][%s] SQL30082N  Security processing failed with reason "24" ("USERNAME AND/OR PASSWORD INVALID").  SQLSTATE=08001 SQLCODE=-30082
 #Trusted connection succeeded.
@@ -354,7 +367,7 @@ class IbmDbTestCase(unittest.TestCase):
 #[%s][%s][%s] SQL20361N  The switch user request using authorization ID "%s" within trusted context "CTX" failed with reason code "2".  SQLSTATE=42517 SQLCODE=-20361
 #Trusted connection succeeded.
 #User has been switched.
-#[%s][%s][%s] SQL0551N  "%s" does not have the %s privilege to perform operation "INSERT" on object "%s.TRUSTED_TABLE".  SQLSTATE=42501 SQLCODE=-551
+#[%s][%s][%s] SQL0551N  The statement failed because the authorization ID does not have the required authorization or privilege to perform the operation.  Authorization ID: "%s".  Operation: "INSERT". Object: "%s.TRUSTED_TABLE".  SQLSTATE=42501 SQLCODE=-551
 #Connection succeeded.
 #__SYSTEMI_EXPECTED__
 #Normal connection established.
@@ -364,7 +377,7 @@ class IbmDbTestCase(unittest.TestCase):
 #But trusted user is not switched.
 #Trusted connection succeeded.
 #User has been switched.
-#[%s][%s][%s] SQL0551N  "%s" does not have the %s privilege to perform operation "UPDATE" on object "%s.TRUSTED_TABLE".  SQLSTATE=42501 SQLCODE=-551
+#[%s][%s][%s] SQL0551N  The statement failed because the authorization ID does not have the required authorization or privilege to perform the operation.  Authorization ID: "%s".  Operation: "UPDATE". Object: "%s.TRUSTED_TABLE".  SQLSTATE=42501 SQLCODE=-551
 #Trusted connection succeeded.
 #[%s][%s][%s] SQL30082N  Security processing failed with reason "24" ("USERNAME AND/OR PASSWORD INVALID").  SQLSTATE=08001 SQLCODE=-30082
 #Trusted connection succeeded.
@@ -374,7 +387,7 @@ class IbmDbTestCase(unittest.TestCase):
 #[%s][%s][%s] SQL20361N  The switch user request using authorization ID "%s" within trusted context "CTX" failed with reason code "2".  SQLSTATE=42517 SQLCODE=-20361
 #Trusted connection succeeded.
 #User has been switched.
-#[%s][%s][%s] SQL0551N  "%s" does not have the %s privilege to perform operation "INSERT" on object "%s.TRUSTED_TABLE".  SQLSTATE=42501 SQLCODE=-551
+#[%s][%s][%s] SQL0551N  The statement failed because the authorization ID does not have the required authorization or privilege to perform the operation.  Authorization ID: "%s".  Operation: "INSERT". Object: "%s.TRUSTED_TABLE".  SQLSTATE=42501 SQLCODE=-551
 #Connection succeeded.
 #__IDS_EXPECTED__
 #Normal connection established.
@@ -384,7 +397,7 @@ class IbmDbTestCase(unittest.TestCase):
 #But trusted user is not switched.
 #Trusted connection succeeded.
 #User has been switched.
-#[%s][%s][%s] SQL0551N  "%s" does not have the %s privilege to perform operation "UPDATE" on object "%s.TRUSTED_TABLE".  SQLSTATE=42501 SQLCODE=-551
+#[%s][%s][%s] SQL0551N  The statement failed because the authorization ID does not have the required authorization or privilege to perform the operation.  Authorization ID: "%s".  Operation: "UPDATE". Object: "%s.TRUSTED_TABLE".  SQLSTATE=42501 SQLCODE=-551
 #Trusted connection succeeded.
 #[%s][%s][%s] SQL30082N  Security processing failed with reason "24" ("USERNAME AND/OR PASSWORD INVALID").  SQLSTATE=08001 SQLCODE=-30082
 #Trusted connection succeeded.
@@ -394,5 +407,5 @@ class IbmDbTestCase(unittest.TestCase):
 #[%s][%s][%s] SQL20361N  The switch user request using authorization ID "%s" within trusted context "CTX" failed with reason code "2".  SQLSTATE=42517 SQLCODE=-20361
 #Trusted connection succeeded.
 #User has been switched.
-#[%s][%s][%s] SQL0551N  "%s" does not have the %s privilege to perform operation "INSERT" on object "%s.TRUSTED_TABLE".  SQLSTATE=42501 SQLCODE=-551
+#[%s][%s][%s] SQL0551N  The statement failed because the authorization ID does not have the required authorization or privilege to perform the operation.  Authorization ID: "%s".  Operation: "INSERT". Object: "%s.TRUSTED_TABLE".  SQLSTATE=42501 SQLCODE=-551
 #Connection succeeded.

@@ -17,7 +17,7 @@ if sys.platform != 'zos':
 
     env_not_set = False
     if 'DB2_USER' in os.environ:
-        user = os.getenv('DB2_USER')          # User ID to connect with
+        user = os.getenv('DB2_USER')          # User ID to connect with (must be secadm for trusted-context testcases)
     else:
         user = data['user']
         env_not_set = True
@@ -52,3 +52,5 @@ auth_user   =    'auth_user'    # Authentic user of Database
 auth_pass   =    'auth_pass'    # Password for Authentic user
 tc_user     =    'tc_user'    # Trusted user
 tc_pass     =    'tc_pass'    # Password to trusted user
+tc_appserver_address = '' # optional. Hostname/IP-address, where trusted-context testcases run, defaults to local hostname
+
