@@ -2033,6 +2033,10 @@ static int _python_ibm_db_createdb(conn_handle *conn_res, PyObject *dbNameObj, P
     sqlcreatedbType sqlcreatedb;
 #endif
 
+#if defined(__MVS__)
+    PyErr_SetString( PyExc_Exception, "Not supported: This function not supported on this platform" );
+    return -1;
+#endif
 
     if ( !NIL_P( conn_res ) ) {
         if ( NIL_P( dbNameObj ) ) {
@@ -2072,6 +2076,7 @@ static int _python_ibm_db_createdb(conn_handle *conn_res, PyObject *dbNameObj, P
             }
         }
 
+#ifndef __MVS__
 #ifdef _WIN32
         cliLib = DLOPEN( LIBDB2 );
 #elif _AIX
@@ -2085,6 +2090,7 @@ static int _python_ibm_db_createdb(conn_handle *conn_res, PyObject *dbNameObj, P
             _python_clear_local_var( dbNameObj, dbName, codesetObj, codeset, modeObj, mode, isNewBuffer );
             return -1;
         }
+#endif
         Py_BEGIN_ALLOW_THREADS;
 #ifdef _WIN32
         sqlcreatedb =  DLSYM( cliLib, "SQLCreateDbW" );
@@ -2151,6 +2157,11 @@ static int _python_ibm_db_dropdb(conn_handle *conn_res, PyObject *dbNameObj, int
     void *cliLib;
 #endif
 
+#if defined(__MVS__)
+    PyErr_SetString( PyExc_Exception, "Not supported: This function not supported on this platform" );
+    return -1;
+#endif
+
     if ( !NIL_P( conn_res ) ) {
         if ( NIL_P( dbNameObj ) ) {
             PyErr_SetString( PyExc_Exception, "Supplied database name Parameter is invalid" );
@@ -2168,7 +2179,7 @@ static int _python_ibm_db_dropdb(conn_handle *conn_res, PyObject *dbNameObj, int
         } else {
             return -1;
         }
-
+#ifndef __MVS__
 #ifdef _WIN32
         cliLib = DLOPEN( LIBDB2 );
 #elif _AIX
@@ -2182,6 +2193,7 @@ static int _python_ibm_db_dropdb(conn_handle *conn_res, PyObject *dbNameObj, int
             _python_clear_local_var( dbNameObj, dbName, NULL, NULL, NULL, NULL, isNewBuffer );
             return -1;
         }
+#endif
         Py_BEGIN_ALLOW_THREADS;
 #ifdef _WIN32
         sqldropdb = DLSYM( cliLib, "SQLDropDbW" );
