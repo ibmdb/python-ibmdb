@@ -41,6 +41,20 @@ def debug(filename=None):
         logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 
+def LogMsg(level, message):
+    if log_enabled:
+        if level == 1:
+            logger.debug(message)
+        elif level == 2:
+            logger.info(message)
+        elif level == 3:
+            logger.warning(message)
+        elif level == 4:
+            logger.error(message)
+        elif level == 5:
+            logger.exception(message)
+
+
 PY2 = sys.version_info < (3, )
 
 if not PY2:
@@ -462,22 +476,19 @@ def _retrieve_current_schema(dsn):
     ODBC_CURRENTSCHEMA_KEYWORD = 'CURRENTSCHEMA='
     current_schema_value = None
     current_schema_start = dsn.find(ODBC_CURRENTSCHEMA_KEYWORD)
-    if log_enabled:
-        logger.debug(f"current_schema_start: {current_schema_start}")
+    message = f"current_schema_start: {current_schema_start}"
+    LogMsg(1, message)
 
     if current_schema_start > -1:
         current_schema_end = dsn.find(';', current_schema_start)
-        if log_enabled:
-            logger.debug(f"ODBC_CURRENTSCHEMA_KEYWORD: {ODBC_CURRENTSCHEMA_KEYWORD}")
-            logger.debug(f"current_schema_end: {current_schema_end}")
+        message = f"ODBC_CURRENTSCHEMA_KEYWORD: {ODBC_CURRENTSCHEMA_KEYWORD}"
+        LogMsg(1, message)
+        LogMsg(1, f"current_schema_end: {current_schema_end}")
         current_schema_value = dsn[
             (current_schema_start + len(ODBC_CURRENTSCHEMA_KEYWORD))
             :current_schema_end
         ]
-
-    if log_enabled:
-        logger.debug(f"current_schema_value: {current_schema_value}")
-
+    LogMsg(1, f"current_schema_value: {current_schema_value}")
     return current_schema_value
 
 
@@ -486,16 +497,14 @@ def _server_connect(dsn, user='', password='', host=''):
     """
 
     if dsn is None:
-        if log_enabled:
-            logger.error("dsn value should not be None")
+        LogMsg(4, "dsn value should not be None")
         raise InterfaceError("dsn value should not be None")
 
     if (not isinstance(dsn, string_types)) | \
        (not isinstance(user, string_types)) | \
        (not isinstance(password, string_types)) | \
        (not isinstance(host, string_types)):
-        if log_enabled:
-            logger.error("Arguments should be of type string or unicode")
+        LogMsg(4, "Arguments should be of type string or unicode")
         raise InterfaceError("Arguments should be of type string or unicode")
 
     # If the dsn does not contain port and protocal adding database
@@ -520,8 +529,8 @@ def _server_connect(dsn, user='', password='', host=''):
     try:
         conn = ibm_db.connect(dsn, '', '')
     except Exception as inst:
-        if log_enabled:
-            logger.exception(f"An exception occurred while connecting to server: {inst}")
+        message = f"An exception occurred while connecting to server: {inst}"
+        LogMsg(5, message)
         raise _get_exception(inst)
 
     return conn
@@ -531,146 +540,129 @@ def createdb(database, dsn, user='', password='', host='', codeset='', mode=''):
     """
 
     if database is None:
-        if log_enabled:
-            logger.error("createdb expects a not None database name value")
+        LogMsg(4, "createdb expects a not None database name value")
         raise InterfaceError("createdb expects a not None database name value")
     if (not isinstance(database, string_types)) | \
        (not isinstance(codeset, string_types)) | \
        (not isinstance(mode, string_types)):
-        if log_enabled:
-            logger.error("Arguments should be string or unicode")
+        LogMsg(4, "Arguments should be string or unicode")
         raise InterfaceError("Arguments should be string or unicode")
 
     conn = _server_connect(dsn, user=user, password=password, host=host)
     try:
         return_value = ibm_db.createdb(conn, database, codeset, mode)
-        if log_enabled:
-            logger.debug(f"Return value from ibm_db.createdb: {return_value}")
+        LogMsg(1, f"Return value from ibm_db.createdb: {return_value}")
     except Exception as inst:
-        if log_enabled:
-            logger.exception(f"An exception occurred during database creation: {inst}")
+        LogMsg(5, f"An exception occurred during database creation: {inst}")
         raise _get_exception(inst)
     finally:
         try:
             ibm_db.close(conn)
         except Exception as inst:
-            if log_enabled:
-                logger.exception(f"An exception occurred while closing connection: {inst}")
+            LogMsg(5, f"An exception occurred while closing connection: {inst}")
             raise _get_exception(inst)
 
     return return_value
+
 
 def dropdb(database, dsn, user='', password='', host=''):
     """This method drops the specified database
     """
 
     if database is None:
-        if log_enabled:
-            logger.error("dropdb expects a not None database name value")
+        LogMsg(4, "dropdb expects a not None database name value")
         raise InterfaceError("dropdb expects a not None database name value")
-    if (not isinstance(database, string_types)):
-        if log_enabled:
-            logger.error("Arguments should be string or unicode")
+    if not isinstance(database, string_types):
+        LogMsg(4, "Arguments should be string or unicode")
         raise InterfaceError("Arguments should be string or unicode")
 
     conn = _server_connect(dsn, user=user, password=password, host=host)
     try:
         return_value = ibm_db.dropdb(conn, database)
-        if log_enabled:
-            logger.debug(f"Return value from ibm_db.dropdb: {return_value}")
+        LogMsg(1, f"Return value from ibm_db.dropdb: {return_value}")
     except Exception as inst:
-        if log_enabled:
-            logger.exception(f"An exception occurred during database droping: {inst}")
+        LogMsg(5, f"An exception occurred during database droping: {inst}")
         raise _get_exception(inst)
     finally:
         try:
             ibm_db.close(conn)
         except Exception as inst:
-            if log_enabled:
-                logger.exception(f"An exception occurred while closing connection: {inst}")
+            LogMsg(5, f"An exception occurred while closing connection: {inst}")
             raise _get_exception(inst)
 
     return return_value
+
 
 def recreatedb(database, dsn, user='', password='', host='', codeset='', mode=''):
     """This method drops and then recreate the database by using the specified database name, code set, and mode
     """
 
     if database is None:
-        if log_enabled:
-            logger.error("recreatedb expects a not None database name value")
+        LogMsg(4, "recreatedb expects a not None database name value")
         raise InterfaceError("recreatedb expects a not None database name value")
     if (not isinstance(database, string_types)) | \
        (not isinstance(codeset, string_types)) | \
        (not isinstance(mode, string_types)):
-        if log_enabled:
-            logger.error("Arguments should be string or unicode")
+        LogMsg(4, "Arguments should be string or unicode")
         raise InterfaceError("Arguments should be string or unicode")
 
     conn = _server_connect(dsn, user=user, password=password, host=host)
     try:
         return_value = ibm_db.recreatedb(conn, database, codeset, mode)
-        if log_enabled:
-            logger.debug(f"Return value from ibm_db.recreatedb: {return_value}")
+        LogMsg(1, f"Return value from ibm_db.recreatedb: {return_value}")
     except Exception as inst:
-        if log_enabled:
-            logger.exception(f"An exception occurred during database recreation: {inst}")
+        LogMsg(5, f"An exception occurred during database recreation: {inst}")
         raise _get_exception(inst)
     finally:
         try:
             ibm_db.close(conn)
         except Exception as inst:
-            if log_enabled:
-                logger.exception(f"An exception occurred while closing connection: {inst}")
+            LogMsg(5, f"An exception occurred while closing connection: {inst}")
             raise _get_exception(inst)
 
     return return_value
+
 
 def createdbNX(database, dsn, user='', password='', host='', codeset='', mode=''):
     """This method creates a database if it not exist by using the specified database name, code set, and mode
     """
 
     if database is None:
-        if log_enabled:
-            logger.error("createdbNX expects a not None database name value")
+        LogMsg(4, "createdbNX expects a not None database name value")
         raise InterfaceError("createdbNX expects a not None database name value")
     if (not isinstance(database, string_types)) | \
        (not isinstance(codeset, string_types)) | \
        (not isinstance(mode, string_types)):
-        if log_enabled:
-            logger.error("Arguments should be string or unicode")
+        LogMsg(4, "Arguments should be string or unicode")
         raise InterfaceError("Arguments should be string or unicode")
 
     conn = _server_connect(dsn, user=user, password=password, host=host)
     try:
         return_value = ibm_db.createdbNX(conn, database, codeset, mode)
-        if log_enabled:
-            logger.debug(f"Return value from ibm_db.createdbNX: {return_value}")
+        LogMsg(1, f"Return value from ibm_db.createdbNX: {return_value}")
     except Exception as inst:
-        if log_enabled:
-            logger.exception(f"An exception occurred during database createdbNX: {inst}")
+        LogMsg(5, f"An exception occurred during database createdbNX: {inst}")
         raise _get_exception(inst)
     finally:
         try:
             ibm_db.close(conn)
         except Exception as inst:
-            if log_enabled:
-                logger.exception(f"An exception occurred while closing connection: {inst}")
+            LogMsg(5, f"An exception occurred while closing connection: {inst}")
             raise _get_exception(inst)
 
     return return_value
+
 
 def connect(dsn, user='', password='', host='', database='', conn_options=None):
     """This method creates a non-persistent connection to the database. It returns
         a ibm_db_dbi.Connection object.
     """
     try:
-        if log_enabled:
-            logger.debug(f"dsn: {dsn}, user: {user}, host: {host}, database: {database}, conn_options: {conn_options}")
+        message = f"dsn: {dsn}, user: {user}, host: {host}, database: {database}, conn_options: {conn_options}"
+        LogMsg(1, message)
 
         if dsn is None:
-            if log_enabled:
-                logger.error("connect expects a not None dsn value")
+            LogMsg(4, "connect expects a not None dsn value")
             raise InterfaceError("connect expects a not None dsn value")
 
         if (not isinstance(dsn, string_types)) | \
@@ -678,16 +670,14 @@ def connect(dsn, user='', password='', host='', database='', conn_options=None):
            (not isinstance(password, string_types)) | \
            (not isinstance(host, string_types)) | \
            (not isinstance(database, string_types)):
-            if log_enabled:
-                logger.error("connect expects the first five arguments to"
-                                                          " be of type string or unicode")
+            message = "connect expects the first five arguments to be of type string or unicode"
+            LogMsg(4, message)
             raise InterfaceError("connect expects the first five arguments to"
                                                           " be of type string or unicode")
         if conn_options is not None:
             if not isinstance(conn_options, dict):
-                if log_enabled:
-                    logger.error("connect expects the sixth argument"
-                                     " (conn_options) to be of type dict")
+                message = "connect expects the sixth argument (conn_options) to be of type dict"
+                LogMsg(4, message)
                 raise InterfaceError("connect expects the sixth argument"
                                      " (conn_options) to be of type dict")
             if not SQL_ATTR_AUTOCOMMIT in conn_options:
@@ -714,18 +704,15 @@ def connect(dsn, user='', password='', host='', database='', conn_options=None):
         if password != '' and dsn.find('PWD=') == -1:
             dsn = dsn + "PWD=" + password + ";"
 
-        if log_enabled:
-            logger.debug(f"Connection string: {dsn}")
+        LogMsg(1, f"Connection string: {dsn}")
 
         conn = ibm_db.connect(dsn, '', '', conn_options)
         conn_object = Connection(conn)
         conn_object.set_current_schema(_retrieve_current_schema(dsn) or user)
-        if log_enabled:
-            logger.debug("Connection successful.")
+        LogMsg(1, "Connection successful.")
         return conn_object
     except Exception as inst:
-        if log_enabled:
-            logger.exception(f"An exception occurred while connecting: {inst}")
+        LogMsg(5,f"An exception occurred while connecting: {inst}")
         raise _get_exception(inst)
 
 
@@ -735,8 +722,7 @@ def pconnect(dsn, user='', password='', host='', database='', conn_options=None)
     """
 
     if dsn is None:
-        if log_enabled:
-            logger.error("connect expects a not None dsn value")
+        LogMsg(4, "connect expects a not None dsn value")
         raise InterfaceError("connect expects a not None dsn value")
 
     if (not isinstance(dsn, string_types)) | \
@@ -744,14 +730,12 @@ def pconnect(dsn, user='', password='', host='', database='', conn_options=None)
        (not isinstance(password, string_types)) | \
        (not isinstance(host, string_types)) | \
        (not isinstance(database, string_types)):
-        if log_enabled:
-            logger.error("connect expects the first five arguments to be of type string or unicode")
+        LogMsg(4, "connect expects the first five arguments to be of type string or unicode")
         raise InterfaceError("connect expects the first five arguments to"
                                                       " be of type string or unicode")
     if conn_options is not None:
         if not isinstance(conn_options, dict):
-            if log_enabled:
-                logger.error("connect expects the sixth argument (conn_options) to be of type dict")
+            LogMsg(4, "connect expects the sixth argument (conn_options) to be of type dict")
             raise InterfaceError("connect expects the sixth argument"
                                  " (conn_options) to be of type dict")
         if not SQL_ATTR_AUTOCOMMIT in conn_options:
@@ -778,17 +762,14 @@ def pconnect(dsn, user='', password='', host='', database='', conn_options=None)
     if password != '' and dsn.find('PWD=') == -1:
         dsn = dsn + "PWD=" + password + ";"
     try:
-        if log_enabled:
-            logger.debug(f"Connecting to database with DSN: {dsn}")
+        LogMsg(1, f"Connecting to database with DSN: {dsn}")
         conn = ibm_db.pconnect(dsn, '', '', conn_options)
-        if log_enabled:
-            logger.debug("Connection established successfully")
+        LogMsg(1, "Connection established successfully")
         conn_object = Connection(conn)
         conn_object.set_current_schema(_retrieve_current_schema(dsn) or user)
         return conn_object
     except Exception as inst:
-        if log_enabled:
-            logger.exception(f"An exception occurred while connecting: {inst}")
+        LogMsg(5, f"An exception occurred while connecting: {inst}")
         raise _get_exception(inst)
 
 class Connection(object):
@@ -834,20 +815,15 @@ class Connection(object):
         self.rollback()
         try:
             if self.conn_handler is None:
-                if log_enabled:
-                    logger.error("Connection cannot be closed; "
-                                     "connection is no longer active.")
+                LogMsg(4, "Connection cannot be closed; connection is no longer active.")
                 raise ProgrammingError("Connection cannot be closed; "
                                      "connection is no longer active.")
             else:
-                if log_enabled:
-                    logger.debug(f"Closing connection: conn_handler={self.conn_handler}")
+                LogMsg(1, f"Closing connection: conn_handler={self.conn_handler}")
                 return_value = ibm_db.close(self.conn_handler)
-                if log_enabled:
-                    logger.debug("Connection closed.")
+                LogMsg(1, "Connection closed.")
         except Exception as inst:
-            if log_enabled:
-                logger.exception(f"An exception occurred while closing connection: {inst}")
+            LogMsg(5, f"An exception occurred while closing connection: {inst}")
             raise _get_exception(inst)
         self.conn_handler = None
         for index in range(len(self._cursor_list)):
@@ -866,11 +842,9 @@ class Connection(object):
         """
         try:
             return_value = ibm_db.commit(self.conn_handler)
-            if log_enabled:
-                logger.debug("Transaction committed.")
+            LogMsg(1, "Transaction committed.")
         except Exception as inst:
-            if log_enabled:
-                logger.exception(f"An exception occurred while committing transaction: {inst}")
+            LogMsg(5, f"An exception occurred while committing transaction: {inst}")
             raise _get_exception(inst)
         return return_value
 
@@ -881,11 +855,9 @@ class Connection(object):
         """
         try:
             return_value = ibm_db.rollback(self.conn_handler)
-            if log_enabled:
-                logger.debug("Transaction rolled back.")
+            LogMsg(1, "Transaction rolled back.")
         except Exception as inst:
-            if log_enabled:
-                logger.exception(f"An exception occurred while rolling back transaction: {inst}")
+            LogMsg(5, f"An exception occurred while rolling back transaction: {inst}")
             raise _get_exception(inst)
         return return_value
 
@@ -895,9 +867,7 @@ class Connection(object):
 
         """
         if self.conn_handler is None:
-            if log_enabled:
-                logger.error("Cursor cannot be returned; "
-                               "connection is no longer active.")
+            LogMsg(4, "Cursor cannot be returned; connection is no longer active.")
             raise ProgrammingError("Cursor cannot be returned; "
                                "connection is no longer active.")
         cursor = Cursor(self.conn_handler, self)
@@ -909,8 +879,7 @@ class Connection(object):
         """Input: connection attribute dictionary
            Return: True on success or False on failure
         """
-        if log_enabled:
-            logger.debug(f"Setting connection options: {attr_dict}")
+        LogMsg(1, f"Setting connection options: {attr_dict}")
         return ibm_db.set_option(self.conn_handler, attr_dict, 1)
 
     # Retrieves connection attributes values
@@ -918,22 +887,19 @@ class Connection(object):
         """Input: connection attribute key
            Return: current setting of the resource attribute requested
         """
-        if log_enabled:
-            logger.debug(f"Getting connection option: {attr_key}")
+        LogMsg(1, f"Getting connection option: {attr_key}")
         return ibm_db.get_option(self.conn_handler, attr_key, 1)
 
     # Sets FIX_RETURN_TYPE. Added for performance improvement
     def set_fix_return_type(self, is_on):
         try:
-            if log_enabled:
-                logger.debug(f"Setting fix return type to: {is_on}")
+            LogMsg(1, f"Setting fix return type to: {is_on}")
             if is_on:
                 self.FIX_RETURN_TYPE = 1
             else:
                 self.FIX_RETURN_TYPE = 0
         except Exception as inst:
-            if log_enabled:
-                logger.exception(f"An exception occurred while setting fix return type: {inst}")
+            LogMsg(5, f"An exception occurred while setting fix return type: {inst}")
             raise _get_exception(inst)
         return self.FIX_RETURN_TYPE
 
@@ -943,18 +909,15 @@ class Connection(object):
            Return: True on success or False on failure
         """
         try:
-            if log_enabled:
-                logger.debug(f"Setting autocommit to: {is_on}")
+            LogMsg(1, f"Setting autocommit to: {is_on}")
             if is_on:
                 is_set = ibm_db.set_option(self.conn_handler, {SQL_ATTR_AUTOCOMMIT : SQL_AUTOCOMMIT_ON}, 1)
             else:
                 is_set = ibm_db.set_option(self.conn_handler, {SQL_ATTR_AUTOCOMMIT : SQL_AUTOCOMMIT_OFF}, 1)
         except Exception as inst:
-            if log_enabled:
-                logger.exception(f"An exception occurred while setting autocommit: {inst}")
+            LogMsg(5, f"An exception occurred while setting autocommit: {inst}")
             raise _get_exception(inst)
-        if log_enabled:
-            logger.debug(f"set_autocommit returns: {is_set}")
+        LogMsg(1, f"set_autocommit returns: {is_set}")
         return is_set
 
     # Sets connection attribute values
@@ -964,12 +927,10 @@ class Connection(object):
         """
         self.current_schema = schema_name
         try:
-            if log_enabled:
-                logger.debug(f"Setting current schema to: {schema_name}")
+            LogMsg(1, f"Setting current schema to: {schema_name}")
             is_set = ibm_db.set_option(self.conn_handler, {SQL_ATTR_CURRENT_SCHEMA : schema_name}, 1)
         except Exception as inst:
-            if log_enabled:
-                logger.exception(f"An exception occurred setting current schema: {inst}")
+            LogMsg(5, f"An exception occurred setting current schema: {inst}")
             raise _get_exception(inst)
         return is_set
 
@@ -981,11 +942,9 @@ class Connection(object):
             conn_schema = ibm_db.get_option(self.conn_handler, SQL_ATTR_CURRENT_SCHEMA, 1)
             if conn_schema is not None and conn_schema != '':
                 self.current_schema = conn_schema
-            if log_enabled:
-                logger.debug(f"Current schema: {self.current_schema}")
+            LogMsg(1, f"Current schema: {self.current_schema}")
         except Exception as inst:
-            if log_enabled:
-                logger.exception(f"An exception occurred while getting current schema: {inst}")
+            LogMsg(5, f"An exception occurred while getting current schema: {inst}")
             raise _get_exception(inst)
         return self.current_schema
 
@@ -997,11 +956,9 @@ class Connection(object):
             server_info = []
             server_info.append(self.dbms_name)
             server_info.append(self.dbms_ver)
-            if log_enabled:
-                logger.debug(f"Server info: {server_info}")
+            LogMsg(2, f"Server info: {server_info}")
         except Exception as inst:
-            if log_enabled:
-                logger.exception(f"An exception occurred while getting server info: {inst}")
+            LogMsg(5, f"An exception occurred while getting server info: {inst}")
             raise _get_exception(inst)
         return tuple(server_info)
 
@@ -1013,22 +970,18 @@ class Connection(object):
         """Input: connection - ibm_db.IBM_DBConnection object
            Return: sequence of table metadata dicts for the specified schema
         """
-        if log_enabled:
-            logger.debug(f"Retrieving the tables for a specified schema")
+        LogMsg(2, f"Retrieving the tables for a specified schema")
         result = []
         if schema_name is not None:
             schema_name = self.set_case("DB2_LUW", schema_name)
-            if log_enabled:
-                logger.debug(f"Schema name: {schema_name}")
+            LogMsg(2, f"Schema name: {schema_name}")
         if table_name is not None:
             table_name = self.set_case("DB2_LUW", table_name)
-            if log_enabled:
-                logger.debug(f"Table name: {table_name}")
+            LogMsg(2, f"Table name: {table_name}")
 
         try:
             stmt = ibm_db.tables(self.conn_handler, None, schema_name, table_name)
-            if log_enabled:
-                logger.debug(f"Statement to retrieve table: {stmt}")
+            LogMsg(1, f"Statement to retrieve table: {stmt}")
             row = ibm_db.fetch_assoc(stmt)
             i = 0
             while (row):
@@ -1037,8 +990,7 @@ class Connection(object):
                 row = ibm_db.fetch_assoc(stmt)
             ibm_db.free_result(stmt)
         except Exception as inst:
-            if log_enabled:
-                logger.exception(f"An exception occurred while retrieving the tables: {inst}")
+            LogMsg(5, f"An exception occurred while retrieving the tables: {inst}")
             raise _get_exception(inst)
 
         return result
@@ -1060,22 +1012,18 @@ class Connection(object):
            'ASC_OR_DESC':       'A'
            }
         """
-        if log_enabled:
-            logger.debug(f"Retrieving metadata pertaining to index for specified schema/Table")
+        LogMsg(2, f"Retrieving metadata pertaining to index for specified schema/Table")
         result = []
         if schema_name is not None:
             schema_name = self.set_case("DB2_LUW", schema_name)
-            if log_enabled:
-                logger.debug(f"Schema name: {schema_name}")
+            LogMsg(2, f"Schema name: {schema_name}")
         if table_name is not None:
             table_name = self.set_case("DB2_LUW", table_name)
-            if log_enabled:
-                logger.debug(f"Table name: {table_name}")
+            LogMsg(2, f"Table name: {table_name}")
 
         try:
             stmt = ibm_db.statistics(self.conn_handler, None, schema_name, table_name, unique)
-            if log_enabled:
-                logger.debug(f"Statement to retrieving metadata pertaining to index: {stmt}")
+            LogMsg(1, f"Statement to retrieving metadata pertaining to index: {stmt}")
             row = ibm_db.fetch_assoc(stmt)
             i = 0
             while (row):
@@ -1085,8 +1033,7 @@ class Connection(object):
                 row = ibm_db.fetch_assoc(stmt)
             ibm_db.free_result(stmt)
         except Exception as inst:
-            if log_enabled:
-                logger.exception(f"An exception occurred while retrieving metadata pertaining to index: {inst}")
+            LogMsg(5, f"An exception occurred while retrieving metadata pertaining to index: {inst}")
             raise _get_exception(inst)
 
         return result
@@ -1105,22 +1052,18 @@ class Connection(object):
            'KEY_SEQ':       1
            }
         """
-        if log_enabled:
-            logger.debug(f"Retrieving metadata pertaining to primary keys for specified schema/Table")
+        LogMsg(2, f"Retrieving metadata pertaining to primary keys for specified schema/Table")
         result = []
         if schema_name is not None:
             schema_name = self.set_case("DB2_LUW", schema_name)
-            if log_enabled:
-                logger.debug(f"Schema name: {schema_name}")
+            LogMsg(2, f"Schema name: {schema_name}")
         if table_name is not None:
             table_name = self.set_case("DB2_LUW", table_name)
-            if log_enabled:
-                logger.debug(f"Table name: {table_name}")
+            LogMsg(2, f"Table name: {table_name}")
 
         try:
             stmt = ibm_db.primary_keys(self.conn_handler, None, schema_name, table_name)
-            if log_enabled:
-                logger.debug(f"Statement to retrieving metadata pertaining to primary keys: {stmt}")
+            LogMsg(1, f"Statement to retrieving metadata pertaining to primary keys: {stmt}")
             row = ibm_db.fetch_assoc(stmt)
             i = 0
             while (row):
@@ -1129,8 +1072,7 @@ class Connection(object):
                 row = ibm_db.fetch_assoc(stmt)
             ibm_db.free_result(stmt)
         except Exception as inst:
-            if log_enabled:
-                logger.exception(f"An exception occurred while retrieving metadata pertaining to primary keys: {inst}")
+            LogMsg(5, f"An exception occurred while retrieving metadata pertaining to primary keys: {inst}")
             raise _get_exception(inst)
 
         return result
@@ -1153,22 +1095,18 @@ class Connection(object):
            'FKTABLE_SCHEM': 'PYTHONIC'
            }
         """
-        if log_enabled:
-            logger.debug(f"Retrieving metadata pertaining to foreign keys for specified schema/Table")
+        LogMsg(2, f"Retrieving metadata pertaining to foreign keys for specified schema/Table")
         result = []
         if schema_name is not None:
             schema_name = self.set_case("DB2_LUW", schema_name)
-            if log_enabled:
-                logger.debug(f"Schema name: {schema_name}")
+            LogMsg(2, f"Schema name: {schema_name}")
         if table_name is not None:
             table_name = self.set_case("DB2_LUW", table_name)
-            if log_enabled:
-                logger.debug(f"Table name: {table_name}")
+            LogMsg(2, f"Table name: {table_name}")
 
         try:
             stmt = ibm_db.foreign_keys(self.conn_handler, None, None, None, None, schema_name, table_name)
-            if log_enabled:
-                logger.debug(f"Statement to retrieving metadata pertaining to foreign keys: {stmt}")
+            LogMsg(1, f"Statement to retrieving metadata pertaining to foreign keys: {stmt}")
             row = ibm_db.fetch_assoc(stmt)
             i = 0
             while (row):
@@ -1177,8 +1115,7 @@ class Connection(object):
                 row = ibm_db.fetch_assoc(stmt)
             ibm_db.free_result(stmt)
         except Exception as inst:
-            if log_enabled:
-                logger.exception(f"An exception occurred while retrieving metadata pertaining foreign keys: {inst}")
+            LogMsg(5, f"An exception occurred while retrieving metadata pertaining foreign keys: {inst}")
             raise _get_exception(inst)
 
         return result
@@ -1202,22 +1139,18 @@ class Connection(object):
            'DECIMAL_DIGITS':     None
            }
         """
-        if log_enabled:
-            logger.debug(f"Retrieving the columns for a specified schema/Table")
+        LogMsg(2, f"Retrieving the columns for a specified schema/Table")
         result = []
         if schema_name is not None:
             schema_name = self.set_case("DB2_LUW", schema_name)
-            if log_enabled:
-                logger.debug(f"Schema name: {schema_name}")
+            LogMsg(2, f"Schema name: {schema_name}")
         if table_name is not None:
             table_name = self.set_case("DB2_LUW", table_name)
-            if log_enabled:
-                logger.debug(f"Table name: {table_name}")
+            LogMsg(2, f"Table name: {table_name}")
 
         try:
             stmt = ibm_db.columns(self.conn_handler, None, schema_name, table_name)
-            if log_enabled:
-                logger.debug(f"Statement to retrieving the columns: {stmt}")
+            LogMsg(1, f"Statement to retrieving the columns: {stmt}")
             row = ibm_db.fetch_assoc(stmt)
             i = 0
             while (row):
@@ -1238,8 +1171,7 @@ class Connection(object):
                             include_columns.append(column)
                     result = include_columns
         except Exception as inst:
-            if log_enabled:
-                logger.exception(f"An exception occurred while retrieving the columns: {inst}")
+            LogMsg(5, f"An exception occurred while retrieving the columns: {inst}")
             raise _get_exception(inst)
 
         return result
@@ -1271,9 +1203,8 @@ class Cursor(object):
 
         try:
             num_columns = ibm_db.num_fields(self.stmt_handler)
-            if log_enabled:
-                logger.info("Fetching column descriptions...")
-                logger.debug(f"Number of columns: {num_columns}")
+            LogMsg(2, "Fetching column descriptions...")
+            LogMsg(1, f"Number of columns: {num_columns}")
 
             """ If the execute statement did not produce a result set return None.
             """
@@ -1286,9 +1217,8 @@ class Cursor(object):
                                                           column_index))
                 type = ibm_db.field_type(self.stmt_handler, column_index)
                 type = type.upper()
-                if log_enabled:
-                    logger.info(f"Processing column")
-                    logger.debug(f"Column type: {type}")
+                LogMsg(2, f"Processing column")
+                LogMsg(1, f"Column type: {type}")
                 if STRING == type:
                     column_desc.append(STRING)
                 elif TEXT == type:
@@ -1333,9 +1263,8 @@ class Cursor(object):
 
                 self.__description.append(column_desc)
         except Exception as inst:
-            if self.log_enabled:
-                logger.exception(f"An exception occurred: {_get_exception(inst)}")
-                logger.debug("Full exception traceback:", exc_info=True)
+            LogMsg(5, f"An exception occurred: {_get_exception(inst)}")
+            LogMsg(1, "Full exception traceback:", exc_info=True)
             self.messages.append(_get_exception(inst))
             raise self.messages[len(self.messages) - 1]
 
@@ -1391,10 +1320,9 @@ class Cursor(object):
         self.__connection = conn_object
         self.messages = []
         self.FIX_RETURN_TYPE = conn_object.FIX_RETURN_TYPE
-        if log_enabled:
-            logger.info("Cursor object initialized.")
-            logger.debug(f"Connection handler: {self.conn_handler}")
-            logger.debug(f"Connection object: {self.__connection}")
+        LogMsg(2, "Cursor object initialized.")
+        LogMsg(1, f"Connection handler: {self.conn_handler}")
+        LogMsg(1, f"Connection object: {self.__connection}")
 
     # This method closes the statemente associated with the cursor object.
     # It takes no argument.
@@ -1411,14 +1339,12 @@ class Cursor(object):
             '''
             #self.messages.append(ProgrammingError("Cursor cannot be closed; connection is no longer active."))
             #raise self.messages[len(self.messages) - 1]
-            if log_enabled:
-                logger.warning("Cursor cannot be closed; connection is no longer active.")
+            LogMsg(3, "Cursor cannot be closed; connection is no longer active.")
             return None
         try:
             return_value = ibm_db.free_stmt(self.stmt_handler)
         except Exception as inst:
-            if log_enabled:
-                logger.error(f"Error occurred while closing cursor: {_get_exception(inst)}")
+            LogMsg(4, f"Error occurred while closing cursor: {_get_exception(inst)}")
             self.messages.append(_get_exception(inst))
             raise self.messages[len(self.messages) - 1]
         self.stmt_handler = None
@@ -1429,14 +1355,12 @@ class Cursor(object):
                 self.__connection._cursor_list.remove(weakref.ref(self))
             except:
                 pass
-        if log_enabled:
-            logger.info("Cursor closed successfully.")
+        LogMsg(2, "Cursor closed successfully.")
         return return_value
 
     # helper for calling procedure
     def _callproc_helper(self, procname, parameters=None):
-        if log_enabled:
-            logger.debug(f"Calling procedure: {procname}")
+        LogMsg(1, f"Calling procedure: {procname}")
         if parameters is not None:
             buff = []
             CONVERT_STR = (buffer)
@@ -1447,28 +1371,23 @@ class Cursor(object):
                     param = str(param)
                 buff.append(param)
             parameters = tuple(buff)
-            if log_enabled:
-                logger.debug(f"Procedure parameters: {parameters}")
+            LogMsg(1, f"Procedure parameters: {parameters}")
 
             try:
                 result = ibm_db.callproc(self.conn_handler, procname,parameters)
             except Exception as inst:
-                if log_enabled:
-                    logger.error(f"Error procedure '{procname}': {_get_exception(inst)}")
+                LogMsg(4, f"Error procedure '{procname}': {_get_exception(inst)}")
                 self.messages.append(_get_exception(inst))
                 raise self.messages[len(self.messages) - 1]
         else:
-            if log_enabled:
-                logger.debug("Calling procedure without parameters.")
+            LogMsg(1, "Calling procedure without parameters.")
             try:
                 result = ibm_db.callproc(self.conn_handler, procname)
             except Exception as inst:
-                if log_enabled:
-                    logger.error(f"Error calling procedure '{procname}': {_get_exception(inst)}")
+                LogMsg(4, f"Error calling procedure '{procname}': {_get_exception(inst)}")
                 self.messages.append(_get_exception(inst))
                 raise self.messages[len(self.messages) - 1]
-        if log_enabled:
-            logger.info(f"Procedure '{procname}' called successfully.")
+        LogMsg(2, f"Procedure '{procname}' called successfully.")
         return result
 
 
@@ -1478,23 +1397,19 @@ class Cursor(object):
         the stored procedure as arguments.
 
         """
-        if log_enabled:
-            logger.debug(f"Calling callproc with procname={procname}, parameters={parameters}")
+        LogMsg(1, f"Calling callproc with procname={procname}, parameters={parameters}")
         self.messages = []
         if not isinstance(procname, string_types):
-            if log_enabled:
-                logger.error("callproc expects the first argument to be of type String or Unicode.")
+            LogMsg(4, "callproc expects the first argument to be of type String or Unicode.")
             self.messages.append(InterfaceError("callproc expects the first argument to be of type String or Unicode."))
             raise self.messages[len(self.messages) - 1]
         if parameters is not None:
             if not isinstance(parameters, (list, tuple)):
-                if log_enabled:
-                    logger.error("callproc expects the second argument to be of type list or tuple.")
+                LogMsg(4, "callproc expects the second argument to be of type list or tuple.")
                 self.messages.append(InterfaceError("callproc expects the second argument to be of type list or tuple."))
                 raise self.messages[len(self.messages) - 1]
         result = self._callproc_helper(procname, parameters)
-        if log_enabled:
-            logger.debug(f"Result received from callproc helper: {result}")
+        LogMsg(1, f"Result received from callproc helper: {result}")
         return_value = None
         self.__description = None
         self._all_stmt_handlers = []
@@ -1504,8 +1419,7 @@ class Cursor(object):
         else:
             self.stmt_handler = result
         self._result_set_produced = True
-        if log_enabled:
-            logger.debug(
+        LogMsg(1,
                 f"callproc executed successfully. stmt_handler={self.stmt_handler}, return_value={return_value}")
         return return_value
 
@@ -1513,18 +1427,15 @@ class Cursor(object):
     def _prepare_helper(self, operation, parameters=None):
         try:
             ibm_db.free_stmt(self.stmt_handler)
-            if log_enabled:
-                logger.debug("Successfully freed existing statement handler.")
+            LogMsg(1, "Successfully freed existing statement handler.")
         except:
             pass
 
         try:
             self.stmt_handler = ibm_db.prepare(self.conn_handler, operation)
-            if log_enabled:
-                logger.debug(f"Successfully prepared statement with operation: {operation}")
+            LogMsg(1, f"Successfully prepared statement with operation: {operation}")
         except Exception as inst:
-            if log_enabled:
-                logger.error(f"Error preparing statement with operation '{operation}': {_get_exception(inst)}")
+            LogMsg(4, f"Error preparing statement with operation '{operation}': {_get_exception(inst)}")
             self.messages.append(_get_exception(inst))
             raise self.messages[len(self.messages) - 1]
 
@@ -1532,20 +1443,16 @@ class Cursor(object):
     def _set_cursor_helper(self):
         if (ibm_db.get_option(self.stmt_handler, ibm_db.SQL_ATTR_CURSOR_TYPE, 0) != ibm_db.SQL_CURSOR_FORWARD_ONLY):
             self._is_scrollable_cursor = True
-            if log_enabled:
-                logger.debug("Cursor type is scrollable.")
+            LogMsg(1, "Cursor type is scrollable.")
         else:
             self._is_scrollable_cursor = False
-            if log_enabled:
-                logger.debug("Cursor type is forward-only.")
+            LogMsg(1, "Cursor type is forward-only.")
         self._result_set_produced = False
         try:
             num_columns = ibm_db.num_fields(self.stmt_handler)
-            if log_enabled:
-                logger.debug(f"Number of columns retrieved: {num_columns}")
+            LogMsg(1, f"Number of columns retrieved: {num_columns}")
         except Exception as inst:
-            if log_enabled:
-                logger.error(f"Error getting number of columns: {_get_exception(inst)}")
+            LogMsg(4, f"Error getting number of columns: {_get_exception(inst)}")
             self.messages.append(_get_exception(inst))
             raise self.messages[len(self.messages) - 1]
         if not num_columns:
@@ -1568,43 +1475,41 @@ class Cursor(object):
                     param = str(param)
                 buff.append(param)
             parameters = tuple(buff)
-            if log_enabled:
-                logger.debug(f"Executing statement with parameters: {parameters}")
+            LogMsg(1, f"Executing statement with parameters: {parameters}")
             try:
                 return_value = ibm_db.execute(self.stmt_handler, parameters)
                 if not return_value:
                     if ibm_db.conn_errormsg() is not None:
+                        error_msg = f"Connection error: {str(ibm_db.conn_errormsg())}"
+                        LogMsg(4, error_msg)
                         self.messages.append(Error(str(ibm_db.conn_errormsg())))
                         raise self.messages[len(self.messages) - 1]
                     if ibm_db.stmt_errormsg() is not None:
+                        error_msg = f"Statement error: {str(ibm_db.conn_errormsg())}"
+                        LogMsg(4, error_msg)
                         self.messages.append(Error(str(ibm_db.stmt_errormsg())))
                         raise self.messages[len(self.messages) - 1]
             except Exception as inst:
-                if log_enabled:
-                    logger.error(f"Error executing statement with parameters: {_get_exception(inst)} ")
+                LogMsg(4, f"Error executing statement with parameters: {_get_exception(inst)} ")
                 self.messages.append(_get_exception(inst))
                 raise self.messages[len(self.messages) - 1]
         else:
-            if log_enabled:
-                logger.debug(f"Executing statement without parameters")
+            LogMsg(1, f"Executing statement without parameters")
             try:
                 return_value = ibm_db.execute(self.stmt_handler)
                 if not return_value:
                     if ibm_db.conn_errormsg() is not None:
-                        if log_enabled:
-                            error_msg = f"Connection error: {str(ibm_db.conn_errormsg())}"
-                            logger.error(error_msg)
+                        error_msg = f"Connection error: {str(ibm_db.conn_errormsg())}"
+                        LogMsg(4, error_msg)
                         self.messages.append(Error(str(ibm_db.conn_errormsg())))
                         raise self.messages[len(self.messages) - 1]
                     if ibm_db.stmt_errormsg() is not None:
-                        if log_enabled:
-                            error_msg = f"Statement error: {str(ibm_db.conn_errormsg())}"
-                            logger.error(error_msg)
+                        error_msg = f"Statement error: {str(ibm_db.conn_errormsg())}"
+                        LogMsg(4, error_msg)
                         self.messages.append(Error(str(ibm_db.stmt_errormsg())))
                         raise self.messages[len(self.messages) - 1]
             except Exception as inst:
-                if log_enabled:
-                    logger.error(f"Error executing statement without parameters: {_get_exception(inst)} ")
+                LogMsg(4, f"Error executing statement without parameters: {_get_exception(inst)} ")
                 self.messages.append(_get_exception(inst))
                 raise self.messages[len(self.messages) - 1]
         return return_value
@@ -1616,22 +1521,18 @@ class Cursor(object):
         if not self._result_set_produced:
             try:
                 counter = ibm_db.num_rows(self.stmt_handler)
-                if log_enabled:
-                    logger.debug(f"Number of rows retrieved: {counter}")
+                LogMsg(1, f"Number of rows retrieved: {counter}")
             except Exception as inst:
-                if log_enabled:
-                    logger.error(f"Error getting row count: {_get_exception(inst)}")
+                LogMsg(4, f"Error getting row count: {_get_exception(inst)}")
                 self.messages.append(_get_exception(inst))
                 raise self.messages[len(self.messages) - 1]
             self.__rowcount = counter
         elif self._is_scrollable_cursor:
             try:
                 counter = ibm_db.get_num_result(self.stmt_handler)
-                if log_enabled:
-                    logger.debug(f"Number of rows retrieved: {counter}")
+                LogMsg(1, f"Number of rows retrieved: {counter}")
             except Exception as inst:
-                if log_enabled:
-                    logger.error(f"Error getting row count: {_get_exception(inst)}")
+                LogMsg(4, f"Error getting row count: {_get_exception(inst)}")
                 self.messages.append(_get_exception(inst))
                 raise self.messages[len(self.messages) - 1]
             if counter >= 0:
@@ -1651,34 +1552,28 @@ class Cursor(object):
         operation = 'SELECT IDENTITY_VAL_LOCAL() FROM SYSIBM.SYSDUMMY1'
         try:
             stmt_handler = ibm_db.prepare(self.conn_handler, operation)
-            if log_enabled:
-                logger.debug(f"Preparing statement with operation: {operation}")
+            LogMsg(1, f"Preparing statement with operation: {operation}")
             if ibm_db.execute(stmt_handler):
                 row = ibm_db.fetch_tuple(stmt_handler)
                 if row[0] is not None:
                     identity_val = int(row[0])
-                    if log_enabled:
-                        logger.debug(f"Identity value retrieved: {identity_val}")
+                    LogMsg(1, f"Identity value retrieved: {identity_val}")
                 else:
                     identity_val = None
-                    if log_enabled:
-                        logger.debug("Identity value is None")
+                    LogMsg(1, "Identity value is None")
             else:
                 if ibm_db.conn_errormsg() is not None:
-                    if log_enabled:
-                        error_msg = f"Connection error: {str(ibm_db.conn_errormsg())}"
-                        logger.error(error_msg)
+                    error_msg = f"Connection error: {str(ibm_db.conn_errormsg())}"
+                    LogMsg(4, error_msg)
                     self.messages.append(Error(str(ibm_db.conn_errormsg())))
                     raise self.messages[len(self.messages) - 1]
                 if ibm_db.stmt_errormsg() is not None:
-                    if log_enabled:
-                        error_msg = f"Statement error: {str(ibm_db.stmt_errormsg())}"
-                        logger.error(error_msg)
+                    error_msg = f"Statement error: {str(ibm_db.stmt_errormsg())}"
+                    LogMsg(4, error_msg)
                     self.messages.append(Error(str(ibm_db.stmt_errormsg())))
                     raise self.messages[len(self.messages) - 1]
         except Exception as inst:
-            if log_enabled:
-                logger.error(f"Error occured in getting identity value: {_get_exception(inst)}")
+            LogMsg(4, f"Error occured in getting identity value: {_get_exception(inst)}")
             self.messages.append(_get_exception(inst))
             raise self.messages[len(self.messages) - 1]
         return identity_val
@@ -1691,20 +1586,18 @@ class Cursor(object):
         sequence of values to substitute for the parameter markers in
         the SQL statement as arguments.
         """
-        if log_enabled:
-            logger.debug(f"Executing SQL operation: {operation}")
-            if parameters is not None:
-                logger.debug(f"SQL parameters: {parameters}")
+        LogMsg(1, f"Executing SQL operation: {operation}")
+        if parameters is not None:
+            LogMsg(1, f"SQL parameters: {parameters}")
         self.messages = []
         if not isinstance(operation, string_types):
-            if log_enabled:
-                logger.error("execute expects the first argument [%s] to be of type String or Unicode." % operation )
+            err_msg = "execute expects the first argument [%s] to be of type String or Unicode." % operation
+            LogMsg(4, err_msg)
             self.messages.append(InterfaceError("execute expects the first argument [%s] to be of type String or Unicode." % operation ))
             raise self.messages[len(self.messages) - 1]
         if parameters is not None:
             if not isinstance(parameters, (list, tuple, dict)):
-                if log_enabled:
-                    logger.error("execute parameters argument should be sequence.")
+                LogMsg(4, "execute parameters argument should be sequence.")
                 self.messages.append(InterfaceError("execute parameters argument should be sequence."))
                 raise self.messages[len(self.messages) - 1]
         self.__description = None
@@ -1712,8 +1605,7 @@ class Cursor(object):
         self._prepare_helper(operation)
         self._execute_helper(parameters)
         self._set_cursor_helper()
-        if log_enabled:
-            logger.debug("SQL operation executed successfully.")
+        LogMsg(2, "SQL operation executed successfully.")
         return self._set_rowcount()
 
     def executemany(self, operation, seq_parameters):
@@ -1723,24 +1615,20 @@ class Cursor(object):
         and sequence of sequence of values to substitute for the
         parameter markers in the SQL statement as its argument.
         """
-        if log_enabled:
-            logger.debug("Executing SQL operation in executemany: %s", operation)
-            logger.debug("Number of parameter sets: %d", len(seq_parameters))
+        LogMsg(1, "Executing SQL operation in executemany: %s", operation)
+        LogMsg(1, "Number of parameter sets: %d", len(seq_parameters))
         self.messages = []
         if not isinstance(operation, string_types):
-            if log_enabled:
-                logger.error(f"executemany expects the first argument to be of type String or Unicode.")
+            LogMsg(4, f"executemany expects the first argument to be of type String or Unicode.")
             self.messages.append(InterfaceError("executemany expects the first argument to be of type String or Unicode."))
             raise self.messages[len(self.messages) - 1]
         if seq_parameters is None:
-            if log_enabled:
-                logger.error(f"executemany expects a not None seq_parameters value")
+            LogMsg(4, f"executemany expects a not None seq_parameters value")
             self.messages.append(InterfaceError("executemany expects a not None seq_parameters value"))
             raise self.messages[len(self.messages) - 1]
 
         if not isinstance(seq_parameters, (list, tuple)):
-            if log_enabled:
-                logger.error(f"executemany expects the second argument to be of type list or tuple of sequence.")
+            LogMsg(4, f"executemany expects the second argument to be of type list or tuple of sequence.")
             self.messages.append(InterfaceError("executemany expects the second argument to be of type list or tuple of sequence."))
             raise self.messages[len(self.messages) - 1]
 
@@ -1771,25 +1659,21 @@ class Cursor(object):
                 ibm_db.autocommit(self.conn_handler, autocommit)
             if self.__rowcount == -1:
                 if ibm_db.conn_errormsg() is not None:
-                    if log_enabled:
-                        error_msg = f"Connection error: {str(ibm_db.conn_errormsg())}"
-                        logger.error(error_msg)
+                    error_msg = f"Connection error: {str(ibm_db.conn_errormsg())}"
+                    LogMsg(4, error_msg)
                     self.messages.append(Error(str(ibm_db.conn_errormsg())))
                     raise self.messages[len(self.messages) - 1]
                 if ibm_db.stmt_errormsg() is not None:
-                    if log_enabled:
-                        error_msg = f"Statement error: {str(ibm_db.conn_errormsg())}"
-                        logger.error(error_msg)
+                    error_msg = f"Statement error: {str(ibm_db.conn_errormsg())}"
+                    LogMsg(4, error_msg)
                     self.messages.append(Error(str(ibm_db.stmt_errormsg())))
                     raise self.messages[len(self.messages) - 1]
         except Exception as inst:
             self._set_rowcount()
             self.messages.append(Error(inst))
-            if log_enabled:
-                logger.error(f"Error in executemany: {inst}")
+            LogMsg(4, f"Error in executemany: {inst}")
             raise self.messages[len(self.messages) - 1]
-        if log_enabled:
-            logger.debug("SQL operation executemany successfully.")
+        LogMsg(2, "SQL operation executemany successfully.")
         return True
 
     def _fetch_helper(self, fetch_size=-1):
@@ -1800,9 +1684,11 @@ class Cursor(object):
         If this is not provided it fetches all the remaining rows.
         """
         if self.stmt_handler is None:
+            LogMsg(4, "Please execute an SQL statement in order to get a row from result set.")
             self.messages.append(ProgrammingError("Please execute an SQL statement in order to get a row from result set."))
             raise self.messages[len(self.messages) - 1]
-        if self._result_set_produced == False:
+        if not self._result_set_produced:
+            LogMsg(4, "The last call to execute did not produce any result set.")
             self.messages.append(ProgrammingError("The last call to execute did not produce any result set."))
             raise  self.messages[len(self.messages) - 1]
         row_list = []
@@ -1813,8 +1699,11 @@ class Cursor(object):
                 row = ibm_db.fetch_tuple(self.stmt_handler)
             except Exception as inst:
                 if ibm_db.stmt_errormsg() is not None:
+                    error_msg = f"Statement error: {str(ibm_db.stmt_errormsg())}"
+                    LogMsg(4, error_msg)
                     self.messages.append(Error(str(ibm_db.stmt_errormsg())))
                 else:
+                    LogMsg(4, f"Error occured : {_get_exception(inst)}")
                     self.messages.append(_get_exception(inst))
                 if len(row_list) == 0:
                     raise self.messages[len(self.messages) - 1]
@@ -1836,14 +1725,12 @@ class Cursor(object):
         executing an SQL statement which produces a result set.
 
         """
-        if log_enabled:
-            logger.debug("Fetching one row from the database.")
+        LogMsg(2, "Fetching one row from the database.")
         row_list = self._fetch_helper(1)
-        if log_enabled:
-            if len(row_list) == 0:
-                logger.debug("No rows fetched.")
-            else:
-                logger.debug("Row fetched successfully.")
+        if len(row_list) == 0:
+            LogMsg(1, "No rows fetched.")
+        else:
+            LogMsg(1, "Row fetched successfully.")
         if len(row_list) == 0:
             return None
         else:
@@ -1855,51 +1742,44 @@ class Cursor(object):
         It takes the number of rows to fetch as an argument.  If this
         is not provided it fetches self.arraysize number of rows.
         """
-        if log_enabled:
-            logger.debug("Fetching %d rows from the database.", size)
+        LogMsg(1, "Fetching %d rows from the database.", size)
         if not isinstance(size, int_types):
-            if log_enabled:
-                logger.exception("fetchmany expects argument type int or long.")
+            LogMsg(5, "fetchmany expects argument type int or long.")
             self.messages.append(InterfaceError( "fetchmany expects argument type int or long."))
             raise self.messages[len(self.messages) - 1]
         if size == 0:
             size = self.arraysize
         if size < -1:
-            if log_enabled:
-                logger.error("fetchmany argument size expected to be positive")
+            LogMsg(4, "fetchmany argument size expected to be positive")
             self.messages.append(ProgrammingError("fetchmany argument size expected to be positive."))
             raise self.messages[len(self.messages) - 1]
 
-        if log_enabled:
-            logger.debug("Fetched %d rows successfully.", len(self._fetch_helper(size)))
+        message = "Fetched %d rows successfully.", len(self._fetch_helper(size))
+        LogMsg(1, message)
         return self._fetch_helper(size)
 
     def fetchall(self):
         """This method fetches all remaining rows from the database,
         after executing an SQL statement which produces a result set.
         """
-        if log_enabled:
-            logger.debug("Fetching all remaining rows from the database.")
+        LogMsg(2, "Fetching all remaining rows from the database.")
         rows_fetched = self._fetch_helper()
-        if log_enabled:
-            self.logger.debug("Fetched %d rows successfully.", len(rows_fetched))
+        message = "Fetched %d rows successfully.", len(rows_fetched)
+        LogMsg(1, message)
         return rows_fetched
 
     def nextset(self):
         """This method can be used to get the next result set after
         executing a stored procedure, which produces multiple result sets.
         """
-        if log_enabled:
-            logger.debug("Attempting to retrieve next result set.")
+        LogMsg(2, "Attempting to retrieve next result set.")
         self.messages = []
         if self.stmt_handler is None:
-            if log_enabled:
-                logger.error("Please execute an SQL statement in order to get result sets.")
+            LogMsg(4, "Please execute an SQL statement in order to get result sets.")
             self.messages.append(ProgrammingError("Please execute an SQL statement in order to get result sets."))
             raise self.messages[len(self.messages) - 1]
         if self._result_set_produced == False:
-            if log_enabled:
-                logger.error("The last call to execute did not produce any result set.")
+            LogMsg(4, "The last call to execute did not produce any result set.")
             self.messages.append(ProgrammingError("The last call to execute did not produce any result set."))
             raise self.messages[len(self.messages) - 1]
         try:
@@ -1910,8 +1790,7 @@ class Cursor(object):
             self._all_stmt_handlers.append(self.stmt_handler)
             self.stmt_handler = ibm_db.next_result(self._all_stmt_handlers[0])
         except Exception as inst:
-            if log_enabled:
-                logger.error(f"Error while retrieving next result set: {_get_exception(inst)}")
+            LogMsg(4, f"Error while retrieving next result set: {_get_exception(inst)}")
             self.messages.append(_get_exception(inst))
             raise self.messages[len(self.messages) - 1]
 
@@ -1920,8 +1799,7 @@ class Cursor(object):
         if self.stmt_handler == None:
             return None
 
-        if log_enabled:
-            logger.debug("Successfully retrieved next result set.")
+        LogMsg(1, "Successfully retrieved next result set.")
         return True
 
     def setinputsizes(self, sizes):
@@ -1936,8 +1814,8 @@ class Cursor(object):
     # and binary data in a row tuple fetched from the database
     # to decimal and binary objects, for returning it to the user.
     def _fix_return_data_type(self, row):
-        if log_enabled:
-            logger.debug("Fixing return data types for row: %s", row)
+        message = "Fixing return data types for row: %s", row
+        LogMsg(1, message)
         row_list = None
         for index in range(len(row)):
             if row[index] is not None:
@@ -1956,15 +1834,13 @@ class Cursor(object):
                         row_list[index] = decimal.Decimal(str(row[index]).replace(",", "."))
 
                 except Exception as inst:
-                    if log_enabled:
-                        logger.error(f"Data type format error: {str(inst)}")
+                    LogMsg(4, f"Data type format error: {str(inst)}")
                     self.messages.append(DataError("Data type format error: "+ str(inst)))
                     raise self.messages[len(self.messages) - 1]
         if row_list is None:
             return row
         else:
-            if log_enabled:
-                logger.debug("Fixed return data types: %s", row_list)
+            LogMsg(1, "Fixed return data types: %s", row_list)
             return tuple(row_list)
 
     def __enter__(self):
