@@ -273,6 +273,31 @@ True
 True
 ```
 
+## Logging
+
+### Logging in ibm_db_dbi Module
+You can enable logging in the ibm_db_dbi module to debug and trace activities.
+Logging can be directed to the console or a specified file.
+
+To enable logging:
+```
+import ibm_db_dbi as dbi
+
+# Log to console
+dbi.debug(True)
+
+# Log to a file (e.g., log.txt)
+dbi.debug("log.txt")
+
+# stop logging
+dbi.debug(False)
+```
+Calling dbi.debug(True) with boolean True argument will output logs to the console.
+
+Calling dbi.debug("log.txt") will log messages to the specified file (log.txt in this example).
+
+Calling dbi.debug(False) with boolean False argument will stop logging.
+
 ## Example of SSL Connection String
  
 * **Secure Database Connection using SSL/TSL** - ibm_db supports secure connection to Database Server over SSL same as ODBC/CLI driver. If you have SSL Certificate from server or an CA signed certificate, just use it in connection string as below:
