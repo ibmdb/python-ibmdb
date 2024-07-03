@@ -284,14 +284,19 @@ To enable logging:
 import ibm_db_dbi as dbi
 
 # Log to console
-dbi.debug()
+dbi.debug(True)
 
 # Log to a file (e.g., log.txt)
 dbi.debug("log.txt")
+
+# stop logging
+dbi.debug(False)
 ```
-Calling dbi.debug() without arguments will output logs to the console.
+Calling dbi.debug(True) with boolean True argument will output logs to the console.
 
 Calling dbi.debug("log.txt") will log messages to the specified file (log.txt in this example).
+
+Calling dbi.debug(False) with boolean False argument will stop logging.
 
 ## Example of SSL Connection String
  
