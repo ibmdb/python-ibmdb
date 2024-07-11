@@ -484,14 +484,14 @@ DCO 1.1 Signed-off-by: Random J Developer <random@developer.org>
 ### Always use the latest pip
 ```python3 -m pip install --upgrade pip```
 
-### Install the package python3-dev that delivers the python.h header file
+### Install the package python3-devel that delivers the python.h header file
 ```
 For RHEL use
-yum install python3-dev
+sudo yum install python3-devel
 ```
 ```
 For Ubuntu use
-apt-get install python3-dev
+sudo apt-get install python3-devel
 ```
 
 * Once the above steps works fine, try re-installing ibm_db.
