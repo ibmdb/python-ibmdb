@@ -398,7 +398,6 @@ static void _python_ibm_db_clear_param_cache( stmt_handle *stmt_res )
 /*    static void _python_ibm_db_free_result_struct(stmt_handle* handle) */
 static void _python_ibm_db_free_result_struct(stmt_handle* handle) {
     int i;
-    param_node *curr_ptr = NULL, *prev_ptr = NULL;
 
     if ( handle != NULL ) {
         _python_ibm_db_clear_param_cache(handle);
@@ -1607,8 +1606,6 @@ static PyObject* getSQLWCharAsPyUnicodeObject(SQLWCHAR* sqlwcharData, int sqlwch
 
 static SQLCHAR* getUnicodeDataAsSQLCHAR(PyObject *pyobj, int *isNewBuffer)
 {
-    PyObject *sysmodule = NULL, *maxuni = NULL;
-    long maxuniValue;
     SQLCHAR* pNewBuffer = NULL;
     PyObject* pyBytesobj = PyUnicode_AsUTF8String(pyobj);
     int nCharLen = PyBytes_GET_SIZE(pyBytesobj);
@@ -2602,7 +2599,7 @@ static PyObject *_python_ibm_db_bind_param_helper(int argc, stmt_handle *stmt_re
     SQLUINTEGER sql_precision = 0;
     SQLSMALLINT sql_scale = 0;
     SQLSMALLINT sql_nullable = SQL_NO_NULLS;
-    char error[DB2_MAX_ERR_MSG_LEN];
+    char error[DB2_MAX_ERR_MSG_LEN + 50];
     int rc = 0;
 
     /* Check for Param options */
@@ -5376,7 +5373,7 @@ static PyObject *_python_ibm_db_prepare_helper(conn_handle *conn_res, PyObject *
 {
     stmt_handle *stmt_res;
     int rc;
-    char error[DB2_MAX_ERR_MSG_LEN];
+    char error[DB2_MAX_ERR_MSG_LEN +50];
     SQLWCHAR *stmt = NULL;
     int stmt_size = 0;
     int isNewBuffer;
@@ -6813,7 +6810,7 @@ static int _python_ibm_db_execute_helper2(stmt_handle *stmt_res, PyObject *data,
     int rc = SQL_SUCCESS;
     param_node *curr = NULL;    /* To traverse the list */
     PyObject *bind_data;         /* Data value from symbol table */
-    char error[DB2_MAX_ERR_MSG_LEN];
+    char error[DB2_MAX_ERR_MSG_LEN +50];
 
     /* Used in call to SQLDescribeParam if needed */
     SQLSMALLINT param_no;
@@ -6920,9 +6917,7 @@ static PyObject *_python_ibm_db_execute_helper1(stmt_handle *stmt_res, PyObject 
     SQLSMALLINT num = 0;
     SQLPOINTER valuePtr;
     PyObject *data;
-    char error[DB2_MAX_ERR_MSG_LEN];
-    /* This is used to loop over the param cache */
-    param_node *prev_ptr, *curr_ptr;
+    char error[DB2_MAX_ERR_MSG_LEN +50];
     /* Free any cursors that might have been allocated in a previous call to
     * SQLExecute
     */
@@ -7724,7 +7719,7 @@ static PyObject *ibm_db_num_fields(PyObject *self, PyObject *args)
     stmt_handle *stmt_res;
     int rc = 0;
     SQLSMALLINT indx = 0;
-    char error[DB2_MAX_ERR_MSG_LEN];
+    char error[DB2_MAX_ERR_MSG_LEN +50];
 
     if (!PyArg_ParseTuple(args, "O", &py_stmt_res))
         return NULL;
@@ -7801,7 +7796,7 @@ static PyObject *ibm_db_num_rows(PyObject *self, PyObject *args)
     stmt_handle *stmt_res;
     int rc = 0;
     SQLINTEGER count = 0;
-    char error[DB2_MAX_ERR_MSG_LEN];
+    char error[DB2_MAX_ERR_MSG_LEN + 50];
 
     if (!PyArg_ParseTuple(args, "O", &py_stmt_res))
         return NULL;
@@ -7857,7 +7852,7 @@ static PyObject *ibm_db_get_num_result(PyObject *self, PyObject *args)
     stmt_handle *stmt_res;
     int rc = 0;
     SQLINTEGER count = 0;
-    char error[DB2_MAX_ERR_MSG_LEN];
+    char error[DB2_MAX_ERR_MSG_LEN +50];
     SQLSMALLINT strLenPtr;
 
     if (!PyArg_ParseTuple(args, "O", &py_stmt_res))
@@ -8811,7 +8806,7 @@ static PyObject *ibm_db_result(PyObject *self, PyObject *args)
     DATE_STRUCT *date_ptr;
     TIME_STRUCT *time_ptr;
     TIMESTAMP_STRUCT *ts_ptr;
-    char error[DB2_MAX_ERR_MSG_LEN];
+    char error[DB2_MAX_ERR_MSG_LEN + 50];
     SQLINTEGER in_length, out_length = -10; /* Initialize out_length to some
                         * meaningless value
                         * */
@@ -9186,7 +9181,7 @@ static PyObject *_python_ibm_db_bind_fetch_helper(PyObject *args, int op)
     PyObject *key = NULL;
     PyObject *value = NULL;
     PyObject *py_row_number = NULL;
-    char error[DB2_MAX_ERR_MSG_LEN];
+    char error[DB2_MAX_ERR_MSG_LEN +50];
 
     if (!PyArg_ParseTuple(args, "O|O", &py_stmt_res, &py_row_number))
         return NULL;
@@ -9631,7 +9626,7 @@ static PyObject *ibm_db_fetch_row(PyObject *self, PyObject *args)
     SQLINTEGER row_number = -1;
     stmt_handle* stmt_res = NULL;
     int rc;
-    char error[DB2_MAX_ERR_MSG_LEN];
+    char error[DB2_MAX_ERR_MSG_LEN + 50];
 
     if (!PyArg_ParseTuple(args, "O|O", &py_stmt_res, &py_row_number))
         return NULL;
@@ -11435,7 +11430,7 @@ static PyObject* ibm_db_execute_many (PyObject *self, PyObject *args) {
     PyObject *params = NULL;
     PyObject *py_stmt_res = NULL;
     stmt_handle *stmt_res = NULL;
-    char error[DB2_MAX_ERR_MSG_LEN];
+    char error[DB2_MAX_ERR_MSG_LEN + 50];
     PyObject *data = NULL;
     error_msg_node *head_error_list = NULL;
     int err_count = 0;
@@ -12109,9 +12104,7 @@ static PyObject* ibm_db_check_function_support(PyObject *self, PyObject *args)
  */
 PyObject *ibm_db_get_last_serial_value(int argc, PyObject *args, PyObject *self)
 {
-    PyObject *stmt = NULL;
     SQLCHAR *value = NULL;
-        PyObject *return_value = NULL;
         SQLINTEGER pcbValue = 0;
     stmt_handle *stmt_res;
     int rc = 0;
