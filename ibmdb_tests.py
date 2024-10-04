@@ -6,6 +6,9 @@ import unittest
 import glob
 import config
 import importlib
+# To log while testing
+import ibm_db
+ibm_db.debug("log.txt")
 
 _HTML_RUNNER = False
 
