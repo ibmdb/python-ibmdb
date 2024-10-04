@@ -275,6 +275,29 @@ True
 
 ## Logging
 
+### Logging in ibm_db Module
+You can enable logging in the ibm_db module to debug and trace activities.
+Logging can be directed to the console or a specified file.
+
+To enable logging:
+```
+import ibm_db
+
+# Log to console
+ibm_db.debug(True)
+
+# Log to a file (e.g., log.txt)
+ibm_db.debug("log.txt")
+
+# stop logging
+ibm_db.debug(False)
+```
+Calling ibm_db.debug(True) with boolean True argument will output logs to the console.
+
+Calling ibm_db.debug("log.txt") will log messages to the specified file (log.txt in this example).
+
+Calling ibm_db.debug(False) with boolean False argument will stop logging.
+
 ### Logging in ibm_db_dbi Module
 You can enable logging in the ibm_db_dbi module to debug and trace activities.
 Logging can be directed to the console or a specified file.
