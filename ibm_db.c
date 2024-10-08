@@ -14176,6 +14176,7 @@ static PyObject *ibm_db_get_option(PyObject *self, PyObject *args)
                     case SQL_ATTR_CURSOR_TYPE:
                     case SQL_ATTR_ROWCOUNT_PREFETCH:
                     case SQL_ATTR_QUERY_TIMEOUT:
+					case SQL_ATTR_CALL_RETURN:
                         isInteger = 1;
                         snprintf(messageStr, sizeof(messageStr), "Option %d is considered integer", op_integer);
                         LogMsg(DEBUG, messageStr, fileName);
@@ -15581,6 +15582,7 @@ INIT_ibm_db(void) {
     PyModule_AddIntConstant(m, "SQL_ATTR_NETWORK_STATISTICS", SQL_ATTR_NETWORK_STATISTICS);
     PyModule_AddIntConstant(m, "SQL_ATTR_OVERRIDE_CHARACTER_CODEPAGE", SQL_ATTR_OVERRIDE_CHARACTER_CODEPAGE);
     PyModule_AddIntConstant(m, "SQL_ATTR_OVERRIDE_CODEPAGE", SQL_ATTR_OVERRIDE_CODEPAGE);
+	PyModule_AddIntConstant(m, "SQL_ATTR_CALL_RETURN", SQL_ATTR_CALL_RETURN);
     PyModule_AddIntConstant(m, "SQL_ATTR_OVERRIDE_PRIMARY_AFFINITY", SQL_ATTR_OVERRIDE_PRIMARY_AFFINITY);
     PyModule_AddIntConstant(m, "SQL_ATTR_PARC_BATCH", SQL_ATTR_PARC_BATCH);
     PyModule_AddIntConstant(m, "SQL_ATTR_PING_NTIMES", SQL_ATTR_PING_NTIMES);
