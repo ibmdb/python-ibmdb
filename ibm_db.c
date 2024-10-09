@@ -334,6 +334,7 @@ static void python_ibm_db_init_globals(struct _ibm_db_globals *ibm_db_globals) {
     memset(ibm_db_globals->__python_stmt_err_msg, 0, DB2_MAX_ERR_MSG_LEN);
     memset(ibm_db_globals->__python_conn_err_state, 0, SQL_SQLSTATE_SIZE + 1);
     memset(ibm_db_globals->__python_stmt_err_state, 0, SQL_SQLSTATE_SIZE + 1);
+    memset(ibm_db_globals->__python_err_code, 0, SQL_SQLCODE_SIZE + 1);
 }
 
 static PyObject *persistent_list;
@@ -642,6 +643,7 @@ static void _python_ibm_db_check_sql_errors( SQLHANDLE handle, SQLSMALLINT hType
     SQLCHAR msg[SQL_MAX_MESSAGE_LENGTH + 1] = {0};
     SQLCHAR sqlstate[SQL_SQLSTATE_SIZE + 1] = {0};
     SQLCHAR errMsg[DB2_MAX_ERR_MSG_LEN] = {0};
+    SQLCHAR errcode[SQL_SQLCODE_SIZE + 1] = {0};
     SQLINTEGER sqlcode = 0;
     SQLSMALLINT length = 0;
     char *p= NULL;
@@ -658,6 +660,7 @@ static void _python_ibm_db_check_sql_errors( SQLHANDLE handle, SQLSMALLINT hType
                           SQL_MAX_MESSAGE_LENGTH + 1, &length );
     snprintf(messageStr, sizeof(messageStr), "SQLGetDiagRec returned rc1=%d, sqlstate=%s, sqlcode=%d, msg=%s, length=%d",
              rc1, sqlstate, sqlcode, msg, length);
+    sprintf((char*)errcode, "SQLCODE=%d",(int)sqlcode);
     LogMsg(DEBUG, messageStr, fileName);
 
     if ( rc1 == SQL_SUCCESS )
@@ -696,6 +699,8 @@ static void _python_ibm_db_check_sql_errors( SQLHANDLE handle, SQLSMALLINT hType
                                         (char*)sqlstate, SQL_SQLSTATE_SIZE+1);
                             strncpy( IBM_DB_G(__python_conn_err_msg),
                                         (char*)errMsg, DB2_MAX_ERR_MSG_LEN);
+                            strncpy( IBM_DB_G(__python_err_code),
+                                        (char*)errcode, SQL_SQLCODE_SIZE);
                             break;
 
                         case SQL_HANDLE_STMT:
@@ -707,6 +712,9 @@ static void _python_ibm_db_check_sql_errors( SQLHANDLE handle, SQLSMALLINT hType
                                         (char*)sqlstate, SQL_SQLSTATE_SIZE+1);
                             strncpy( IBM_DB_G(__python_stmt_err_msg),
                                         (char*)errMsg, DB2_MAX_ERR_MSG_LEN);
+                            strncpy( IBM_DB_G(__python_err_code),
+                                        (char*)errcode, SQL_SQLCODE_SIZE);
+
                             break;
                     }
                 }
@@ -2340,6 +2348,7 @@ static void _python_ibm_db_clear_conn_err_cache(void)
     LogMsg(INFO, "entry _python_ibm_db_clear_conn_err_cache()", fileName);
     memset(IBM_DB_G(__python_conn_err_msg), 0, DB2_MAX_ERR_MSG_LEN);
     memset(IBM_DB_G(__python_conn_err_state), 0, SQL_SQLSTATE_SIZE + 1);
+    memset(IBM_DB_G(__python_err_code), 0, SQL_SQLCODE_SIZE + 1);
     LogMsg(INFO, "exit _python_ibm_db_clear_conn_err_cache()", fileName);
 }
 
@@ -2394,6 +2403,109 @@ static void _python_ibm_db_clear_conn_err_cache(void)
  * ibm_db.get_option
  */
 
+static PyObject *ibm_db_get_sqlcode(PyObject *self, PyObject *args)
+{
+    conn_handle *conn_res = NULL;
+    PyObject *py_conn_res = NULL;
+    stmt_handle *stmt_res = NULL;
+    PyObject *py_stmt_res = NULL;
+    PyObject *retVal = NULL;
+    SQLINTEGER return_str = NULL; /* This variable is used by
+                             * _python_ibm_db_check_sql_errors to return err
+                             * strings */
+    LogMsg(INFO, "entry get_sqlcode()", fileName);
+    if (!PyArg_ParseTuple(args, "|O", &py_conn_res) | (!PyArg_ParseTuple(args, "|O", &py_stmt_res))){
+        LogMsg(ERROR, "Failed to parse arguments", fileName);
+        return NULL;
+	}
+
+    snprintf(messageStr, sizeof(messageStr), "Parsed values: py_conn_res=%p, py_stmt_res=%p", py_conn_res, py_stmt_res);
+    LogMsg(DEBUG, messageStr, fileName);
+
+    if ((!NIL_P(py_conn_res)) | (!NIL_P(py_stmt_res))) {
+        if (!PyObject_TypeCheck(py_conn_res, &conn_handleType)) {
+			LogMsg(ERROR, "Supplied Connection object Parameter is invalid", fileName);
+            PyErr_SetString( PyExc_Exception, "Supplied connection object Parameter is invalid" );
+            return NULL;
+        } else {
+            conn_res = (conn_handle *)py_conn_res;
+            snprintf(messageStr, sizeof(messageStr), "Connection handle is valid. conn_res: %p", (void *)conn_res);
+            LogMsg(DEBUG, messageStr, fileName);
+        }
+        if (!PyObject_TypeCheck(py_stmt_res, &stmt_handleType)) {
+			LogMsg(ERROR, "Supplied statement object Parameter is invalid", fileName);
+            PyErr_SetString( PyExc_Exception, "Supplied statement object parameter is invalid" );
+            return NULL;
+        } else {
+            stmt_res = (stmt_handle *)py_stmt_res;
+			snprintf(messageStr, sizeof(messageStr), "Statement handle is valid. stmt_res: %p", (void *)stmt_res);
+            LogMsg(DEBUG, messageStr, fileName);
+        }
+
+        return_str = (SQLINTEGER*)PyMem_New(SQLINTEGER, 1);
+		snprintf(messageStr, sizeof(messageStr), "Allocated return_str: %p, size: %d", return_str, DB2_MAX_ERR_MSG_LEN);
+        LogMsg(DEBUG, messageStr, fileName);
+
+        if (return_str == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+        }
+
+        memset(return_str, 0, sizeof(return_str));
+		LogMsg(DEBUG, "Initialized return_str with zeros", fileName);
+        if(SQL_HANDLE_DBC){
+            _python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, -1, 0,
+                                        return_str, DB2_ERR,
+                                        conn_res->error_recno_tracker);
+		    snprintf(messageStr, sizeof(messageStr), "SQL errors checked. return_str: %s", return_str);
+            LogMsg(DEBUG, messageStr, fileName);
+		}
+
+        if(SQL_HANDLE_STMT){
+            _python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, -1, 0,
+                                        return_str, DB2_ERR,
+                                        stmt_res->error_recno_tracker);
+		    snprintf(messageStr, sizeof(messageStr), "SQL errors checked. return_str: %s", return_str);
+            LogMsg(DEBUG, messageStr, fileName);
+		}
+
+        if (conn_res->error_recno_tracker-conn_res->errormsg_recno_tracker >= 1) {
+            LogMsg(DEBUG, "Updating errormsg_recno_tracker", fileName);
+            conn_res->errormsg_recno_tracker = conn_res->error_recno_tracker;
+        }
+
+        conn_res->error_recno_tracker++;
+        snprintf(messageStr, sizeof(messageStr), "Updated error_recno_tracker: %d, errormsg_recno_tracker: %d", conn_res->error_recno_tracker, stmt_res->errormsg_recno_tracker);
+        LogMsg(DEBUG, messageStr, fileName);
+
+        if (stmt_res->error_recno_tracker-stmt_res->errormsg_recno_tracker >= 1) {
+			 LogMsg(DEBUG, "Updating errormsg_recno_tracker", fileName);
+            stmt_res->errormsg_recno_tracker = stmt_res->error_recno_tracker;
+        }
+
+        stmt_res->error_recno_tracker++;
+        snprintf(messageStr, sizeof(messageStr), "Updated error_recno_tracker: %d, errormsg_recno_tracker: %d", stmt_res->error_recno_tracker, stmt_res->errormsg_recno_tracker);
+        LogMsg(DEBUG, messageStr, fileName);
+
+        retVal = StringOBJ_FromASCII(return_str);
+        if(return_str != NULL) {
+            PyMem_Del(return_str);
+            return_str = NULL;
+        }
+
+        snprintf(messageStr, sizeof(messageStr), "Created return value: %p", retVal);
+        LogMsg(DEBUG, messageStr, fileName);
+        LogMsg(INFO, "exit get_sqlcode()", fileName);
+        return retVal;
+
+    } else {
+        PyObject *defaultErrorCode = StringOBJ_FromASCII(IBM_DB_G(__python_err_code));
+        snprintf(messageStr, sizeof(messageStr), "No Statement object provided. Returning default error sqlcode: %s", PyUnicode_AsUTF8(defaultErrorCode));
+        LogMsg(DEBUG, messageStr, fileName);
+        LogMsg(INFO, "exit conn_error()", fileName);
+        return StringOBJ_FromASCII(IBM_DB_G(__python_err_code));
+    }
+}
 
 
 /*!# ibm_db.connect
@@ -15373,6 +15485,7 @@ static PyMethodDef ibm_db_Methods[] = {
     {"tables", (PyCFunction)ibm_db_tables, METH_VARARGS, "Returns a result set listing the tables and associated metadata in a database"},
     {"get_last_serial_value", (PyCFunction)ibm_db_get_last_serial_value, METH_VARARGS, "Returns last serial value inserted for identity column"},
     {"debug", (PyCFunction)ibm_db_debug, METH_VARARGS | METH_KEYWORDS, "Enable logging with optional log file or disable logging"},
+    {"get_sqlcode", (PyCFunction)ibm_db_get_sqlcode, METH_VARARGS, "Returns a string containing the SQLCODE returned by the last connection attempt/ SQL statement"},
     /* An end-of-listing sentinel: */
     {NULL, NULL, 0, NULL}
 };
