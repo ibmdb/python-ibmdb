@@ -63,6 +63,7 @@
 #define Qfalse Py_INCREF(Py_False); return Py_False
 */
 #define TYPE(data) _python_get_variable_type(data)
+#define SQL_SQLCODE_SIZE 15
 
 /* Python types */
 #define PYTHON_FIXNUM 1
@@ -210,6 +211,7 @@ struct _ibm_db_globals {
     char __python_conn_warn_state[SQL_SQLSTATE_SIZE + 1];
     char __python_stmt_warn_msg[DB2_MAX_ERR_MSG_LEN + 1];
     char __python_stmt_warn_state[SQL_SQLSTATE_SIZE + 1];
+    char __python_err_code[SQL_SQLCODE_SIZE + 1];
 #ifdef PASE /* i5/OS ease of use turn off commit */
     long i5_allow_commit;
 #endif /* PASE */
