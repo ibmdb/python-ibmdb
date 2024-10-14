@@ -14288,7 +14288,9 @@ static PyObject *ibm_db_get_option(PyObject *self, PyObject *args)
                     case SQL_ATTR_CURSOR_TYPE:
                     case SQL_ATTR_ROWCOUNT_PREFETCH:
                     case SQL_ATTR_QUERY_TIMEOUT:
-					case SQL_ATTR_CALL_RETURN:
+#ifndef __MVS__
+                    case SQL_ATTR_CALL_RETURN:
+#endif
                         isInteger = 1;
                         snprintf(messageStr, sizeof(messageStr), "Option %d is considered integer", op_integer);
                         LogMsg(DEBUG, messageStr, fileName);
