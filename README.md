@@ -20,7 +20,7 @@ https://github.com/ibmdb/python-ibmdb/wiki/APIs
 
 <a name="prereq"></a>
 ## Pre-requisites
-Install Python 3.7 <= 3.12. The minimum python version supported by driver is python 3.7 and the latest version supported is python 3.12.
+Install Python 3.7 <= 3.13. The minimum python version supported by driver is python 3.7 and the latest version supported is python 3.13.
 
 ### To install ibm_db on z/OS system
 
