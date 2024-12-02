@@ -102,28 +102,18 @@ static int debug_mode = 0;
 static char* fileName = NULL;
 static char messageStr[2024];
 
-// Function to get the current timestamp
-static void get_timestamp(char *buffer, size_t size) {
-    time_t now = time(NULL);
-    struct tm *tm_info = localtime(&now);
-    strftime(buffer, size, "%Y-%m-%d %H:%M:%S", tm_info);
-}
-
 // LogMsg function
 static void LogMsg(const char *log_level, const char *message, const char *file_name) {
     // logging if in debug mode
     if (debug_mode)
     {
-        char timestamp[20];
-        get_timestamp(timestamp, sizeof(timestamp));
-
         // Print formatted log message
         if (file_name == NULL) {
-            printf("%s - %s - %s\n", timestamp, log_level, message);
+            printf("[%s] - %s\n", log_level, message);
         } else {
             FILE *file = fopen(file_name, "a");
             if (file != NULL) {
-                fprintf(file, "%s - %s - %s\n", timestamp, log_level, message);
+                fprintf(file, "[%s] - %s\n", log_level, message);
                 fclose(file);
             } else {
                 printf("Failed to open log file: %s\n", file_name);
@@ -2112,11 +2102,11 @@ static PyObject* getSQLWCharAsPyUnicodeObject(SQLWCHAR* sqlwcharData, int sqlwch
     if (maxuniValue <= 65536) {
     /* this is UCS2 python.. nothing to do really */
         LogMsg(DEBUG, "Python is UCS2, using PyUnicode_FromWideChar", fileName);
-        PyObject *result = PyUnicode_FromWideChar((Py_UNICODE *)sqlwcharData, sqlwcharBytesLen / sizeof(SQLWCHAR));
+        PyObject *result = PyUnicode_FromWideChar((wchar_t *)sqlwcharData, sqlwcharBytesLen / sizeof(SQLWCHAR));
         snprintf(messageStr, sizeof(messageStr), "UCS2 conversion result: %p", (void*)result);
         LogMsg(DEBUG, messageStr, fileName);
         LogMsg(INFO, "exit getSQLWCharAsPyUnicodeObject()", fileName);
-        return PyUnicode_FromWideChar((Py_UNICODE *)sqlwcharData, sqlwcharBytesLen / sizeof(SQLWCHAR));
+        return PyUnicode_FromWideChar((wchar_t *)sqlwcharData, sqlwcharBytesLen / sizeof(SQLWCHAR));
         }
 
     if (is_bigendian()) {
@@ -4569,7 +4559,7 @@ static PyObject *ibm_db_foreign_keys(PyObject *self, PyObject *args)
         LogMsg(ERROR, "Failed to parse arguments", fileName);
         return NULL;
     }
-    snprintf(messageStr, sizeof(messageStr), "Parsed values: py_conn_res=%p, pk_qualifier=%s, pk_owner=%s, pk_table_name=%s, fk_qualifier=%s, fk_owner=%s, fk_table_name=%s",
+    snprintf(messageStr, sizeof(messageStr), "Parsed values: py_conn_res=%p, pk_qualifier=%p, pk_owner=%p, pk_table_name=%p, fk_qualifier=%p, fk_owner=%p, fk_table_name=%p",
      (void *)py_conn_res, (void *)py_pk_qualifier, (void *)py_pk_owner, (void *)py_pk_table_name, (void *)py_fk_qualifier, (void *)py_fk_owner, (void *)py_fk_table_name);
     LogMsg(DEBUG, messageStr, fileName);
     if (py_pk_qualifier != NULL && py_pk_qualifier != Py_None) {
@@ -11363,8 +11353,8 @@ static PyObject *ibm_db_result(PyObject *self, PyObject *args)
             if (column_type == SQL_DECFLOAT){
                 in_length = MAX_DECFLOAT_LENGTH;
             }
-            out_ptr = (SQLPOINTER)ALLOC_N(Py_UNICODE, in_length);
-            memset(out_ptr,0,sizeof(Py_UNICODE)*in_length);
+            out_ptr = (SQLPOINTER)ALLOC_N(wchar_t, in_length);
+            memset(out_ptr,0,sizeof(wchar_t)*in_length);
 
             if ( out_ptr == NULL ) {
                 LogMsg(ERROR, "Failed to allocate memory for data", fileName);
@@ -11373,7 +11363,7 @@ static PyObject *ibm_db_result(PyObject *self, PyObject *args)
             }
 
             rc = _python_ibm_db_get_data(stmt_res, col_num+1, SQL_C_WCHAR,
-                         out_ptr, in_length * sizeof(Py_UNICODE), &out_length);
+                         out_ptr, in_length * sizeof(wchar_t), &out_length);
             snprintf(messageStr, sizeof(messageStr), "values received rc: %d, out_length: %d", rc, out_length);
             LogMsg(DEBUG, messageStr, fileName);
 
@@ -11748,6 +11738,9 @@ static PyObject *_python_ibm_db_bind_fetch_helper(PyObject *args, int op)
             LogMsg(EXCEPTION, "Supplied parameter is invalid", fileName);
             return NULL;
         }
+    }
+    if(op == FETCH_INDEX && row_number>0) {
+        row_number = 0;
     }
     _python_ibm_db_init_error_info(stmt_res);
 
@@ -12560,6 +12553,7 @@ PyObject *ibm_db_fetch_object(int argc, PyObject **argv, PyObject *self)
  * there are no rows left in the result set, or if the row requested by
  * row_number does not exist in the result set.
  */
+
 static PyObject *ibm_db_fetch_array(PyObject *self, PyObject *args)
 {
     LogMsg(INFO, "entry fetch_tuple()", fileName);
@@ -15422,6 +15416,132 @@ static PyObject* ibm_db_debug(PyObject* self, PyObject* args) {
     Py_RETURN_NONE;
 }
 
+// Fetch one row from the result set
+static PyObject* ibm_db_fetchone(PyObject *self, PyObject *args)
+{
+    LogMsg(INFO, "entry fetchone()", fileName);
+    PyObject *argsStr = PyObject_Repr(args); // Get string representation of args
+    snprintf(messageStr, sizeof(messageStr), "Received arguments: %s", PyUnicode_AsUTF8(argsStr));
+    LogMsg(INFO, messageStr, fileName);
+    PyObject *return_value = NULL;
+    LogMsg(DEBUG, "calling _python_ibm_db_bind_fetch_helper with FETCH_INDEX", fileName);
+    return_value = _python_ibm_db_bind_fetch_helper(args, FETCH_INDEX);
+    snprintf(messageStr, sizeof(messageStr), "Fetched value: %p", return_value);
+    LogMsg(DEBUG, messageStr, fileName);
+    if (return_value == NULL) {
+        LogMsg(DEBUG, "No more rows, returning None", fileName);
+        Py_RETURN_NONE;
+    }
+    if (PyTuple_Check(return_value) || PyList_Check(return_value)) {
+        snprintf(messageStr, sizeof(messageStr), "Valid row fetched: %p", return_value);
+        LogMsg(DEBUG, messageStr, fileName);
+        LogMsg(INFO, "exit fetchone()", fileName);
+        return return_value;
+    }
+    snprintf(messageStr, sizeof(messageStr), "Fetched value is not a tuple or list, returning None");
+    LogMsg(DEBUG, messageStr, fileName);
+    LogMsg(INFO, "exit fetchone()", fileName);
+    Py_RETURN_NONE;
+}
+
+// Fetch many rows from the result set
+static PyObject* ibm_db_fetchmany(PyObject *self, PyObject *args)
+{
+    LogMsg(INFO, "entry fetchmany()", fileName);
+    PyObject *argsStr = PyObject_Repr(args);  // Get string representation of args
+    snprintf(messageStr, sizeof(messageStr), "Received arguments: %s", PyUnicode_AsUTF8(argsStr));
+    LogMsg(INFO, messageStr, fileName);
+    PyObject *return_value = NULL;
+    PyObject *result_list = NULL;
+    int num_rows = 0;
+    PyObject *stmt = NULL;
+    if (!PyArg_ParseTuple(args, "Oi", &stmt, &num_rows)) {
+        LogMsg(ERROR, "Failed to parse arguments", fileName);
+        LogMsg(EXCEPTION, "fetchmany requires a statement handle and an integer argument for the number of rows", fileName);
+        PyErr_SetString(PyExc_Exception, "fetchmany requires a statement handle and an integer argument for the number of rows");
+        return NULL;
+    }
+    snprintf(messageStr, sizeof(messageStr), "Parsed statement handle: %p, Number of rows to fetch: %d", stmt, num_rows);
+    LogMsg(DEBUG, messageStr, fileName);
+    if (num_rows <= 0) {
+        LogMsg(ERROR, "Number of rows must be greater than zero", fileName);
+        PyErr_SetString(PyExc_Exception, "Number of rows must be greater than zero");
+        return NULL;
+    }
+    result_list = PyList_New(0);
+    if (result_list == NULL) {
+        LogMsg(ERROR, "Memory allocation failed for result list", fileName);
+        return NULL;
+    }
+    LogMsg(DEBUG, "Initialized result list", fileName);
+    int fetch_count = 0;
+    while (fetch_count < num_rows && (return_value = _python_ibm_db_bind_fetch_helper(args, FETCH_INDEX)) != NULL) {
+        snprintf(messageStr, sizeof(messageStr), "Fetched row %d: %p", fetch_count + 1, return_value);
+        LogMsg(DEBUG, messageStr, fileName);
+        if (PyTuple_Check(return_value) || PyList_Check(return_value)) {
+            LogMsg(DEBUG, "Valid row fetched, appending to result list", fileName);
+            if (PyList_Append(result_list, return_value) == -1) {
+                LogMsg(ERROR, "Failed to append row to result list", fileName);
+                Py_XDECREF(result_list);
+                return NULL;
+            }
+            fetch_count++;
+        } else {
+            LogMsg(DEBUG, "Fetched value is not a valid row, breaking loop", fileName);
+            break;
+        }
+    }
+    if (PyList_Size(result_list) == 0) {
+        LogMsg(DEBUG, "No rows fetched, returning None", fileName);
+        Py_XDECREF(result_list);
+        Py_RETURN_NONE;
+    }
+    snprintf(messageStr, sizeof(messageStr), "Returning %zd rows", PyList_Size(result_list));
+    LogMsg(DEBUG, messageStr, fileName);
+    LogMsg(INFO, "exit fetchmany()", fileName);
+    return result_list;
+}
+
+// Fetch all rows from the result set
+static PyObject *ibm_db_fetchall(PyObject *self, PyObject *args)
+{
+    LogMsg(INFO, "entry fetchmany()", fileName);
+    PyObject *argsStr = PyObject_Repr(args);  // Get string representation of args
+    snprintf(messageStr, sizeof(messageStr), "Received arguments: %s", PyUnicode_AsUTF8(argsStr));
+    LogMsg(INFO, messageStr, fileName);
+    PyObject *return_value = NULL;
+    PyObject *result_list = NULL;
+    result_list = PyList_New(0);
+    if (result_list == NULL) {
+        LogMsg(ERROR, "Memory allocation failed for result list", fileName);
+        return NULL;
+    }
+    LogMsg(DEBUG, "Initialized result list", fileName);
+    while ((return_value = _python_ibm_db_bind_fetch_helper(args, FETCH_INDEX)) != NULL) {
+        snprintf(messageStr, sizeof(messageStr), "Fetched return value: %p", return_value);
+        LogMsg(DEBUG, messageStr, fileName);
+        if (PyTuple_Check(return_value) || PyList_Check(return_value)) {
+            LogMsg(DEBUG, "Valid row fetched, appending to result list", fileName);
+            if (PyList_Append(result_list, return_value) == -1) {
+                LogMsg(ERROR, "Failed to append row to result list", fileName);
+                Py_XDECREF(result_list);
+                return NULL;
+            }
+        } else {
+            LogMsg(DEBUG, "Fetched value is not a valid row, breaking loop", fileName);
+            break;
+        }
+    }
+    if (PyList_Size(result_list) == 0) {
+        LogMsg(DEBUG, "No rows fetched, returning None", fileName);
+        Py_XDECREF(result_list);
+        Py_RETURN_NONE;
+    }
+    snprintf(messageStr, sizeof(messageStr), "Returning %zd rows", PyList_Size(result_list));
+    LogMsg(DEBUG, messageStr, fileName);
+    LogMsg(INFO, "exit fetchall()", fileName);
+    return result_list;
+}
 
 /* Listing of ibm_db module functions: */
 static PyMethodDef ibm_db_Methods[] = {
@@ -15488,6 +15608,9 @@ static PyMethodDef ibm_db_Methods[] = {
     {"get_last_serial_value", (PyCFunction)ibm_db_get_last_serial_value, METH_VARARGS, "Returns last serial value inserted for identity column"},
     {"debug", (PyCFunction)ibm_db_debug, METH_VARARGS | METH_KEYWORDS, "Enable logging with optional log file or disable logging"},
     {"get_sqlcode", (PyCFunction)ibm_db_get_sqlcode, METH_VARARGS, "Returns a string containing the SQLCODE returned by the last connection attempt/ SQL statement"},
+    {"fetchone", (PyCFunction)ibm_db_fetchone, METH_VARARGS, "Fetch a single row from the result set."},
+    {"fetchall", (PyCFunction)ibm_db_fetchall, METH_VARARGS, "Fetch all rows from the result set."},
+    {"fetchmany", (PyCFunction)ibm_db_fetchmany, METH_VARARGS, "Fetch a specified number of rows from the result set."},
     /* An end-of-listing sentinel: */
     {NULL, NULL, 0, NULL}
 };

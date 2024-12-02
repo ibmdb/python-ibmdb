@@ -23,9 +23,9 @@ This module implements the Python DB API Specification v2.0 for DB2 database.
 
 import types, string, time, datetime, decimal, sys
 import weakref
-import logging
+import logging as log_ibmdb_dbi
 
-logger = logging.getLogger(__name__)
+logger = log_ibmdb_dbi.getLogger(__name__)
 log_enabled = False
 
 # Define macros for log levels
@@ -41,12 +41,12 @@ def debug(option):
     if isinstance(option, bool):
         log_enabled = option
         if log_enabled:
-            logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+            log_ibmdb_dbi.basicConfig(level=log_ibmdb_dbi.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
     elif isinstance(option, str):
         log_enabled = True  # Set log_enabled to True
         if '.' not in option:
             option += '.txt'
-        logging.basicConfig(filename=option, level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s',
+        log_ibmdb_dbi.basicConfig(filename=option, level=log_ibmdb_dbi.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s',
                             filemode='w')
     else:
         print("Invalid argument in debug. Please give a boolean or a file name in string.")
@@ -1777,7 +1777,8 @@ class Cursor(object):
         It takes the number of rows to fetch as an argument.  If this
         is not provided it fetches self.arraysize number of rows.
         """
-        LogMsg(DEBUG, "Fetching %d rows from the database.", size)
+        message = "Fetching %d rows from the database." % size
+        LogMsg(DEBUG, message)
         if not isinstance(size, int_types):
             LogMsg(EXCEPTION, "fetchmany expects argument type int or long.")
             self.messages.append(InterfaceError("fetchmany expects argument type int or long."))
