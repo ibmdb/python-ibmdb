@@ -239,6 +239,8 @@ def _setDllPath():
 
 def _downloadClidriver(url):
     print(' Downloading DSDriver from url = ',url)
+    # Create an unverified SSL context to bypass certificate verification
+    context = ssl._create_unverified_context()
     file_stream = BytesIO(request.urlopen(url, context=context).read())
     if (os_ == 'win'):
         if sys.version_info[0:2] <= (2, 5):
@@ -269,10 +271,6 @@ def print_exception( e, url):
         _printAndExit(err )
     else:
         _printOnly(err)
-
-if('win32' not in sys.platform):
-    if ('arm64' in os.uname()[4]):
-        _printAndExit("Arm64 architecture is not supported. Please install intel-only (x64) version of python and then install ibm_db.")
 
 if('win32' in sys.platform):
     prebuildPYDname = ''
@@ -362,6 +360,10 @@ if ((ibm_db_home == '') and (ibm_db_dir == '') and (ibm_db_lib == '')):
         os_ = 'mac'
         cliFileName = 'macos64_odbc_cli.tar.gz'
         arch_ = 'x86_64'
+        if ('arm64' in os.uname()[4]):
+            os_ = 'mac'
+            cliFileName = 'macarm64_odbc_cli.tar.gz'
+            arch_ = 'arm64'
     else:
         _printAndExit("Not a known platform for python ibm_db.")
 
@@ -539,7 +541,7 @@ setup( name    = PACKAGE,
 
     long_description = open(readme).read(),
     long_description_content_type = 'text/markdown',
-    platforms = 'Linux32/64, Win32/64, MacOS64, aix32/64, ppc32/64, sunamd32/64, sun32/64, ppc64le, z/OS',
+    platforms = 'Linux32/64, Win32/64, MacOS64, MacARM64, aix32/64, ppc32/64, sunamd32/64, sun32/64, ppc64le, z/OS',
     ext_modules  = ext_modules,
     py_modules   = modules,
     packages     = find_packages(),

@@ -2174,11 +2174,11 @@ static SQLWCHAR* getUnicodeDataAsSQLWCHAR(PyObject *pyobj, int *isNewBuffer)
     LogMsg(DEBUG, messageStr, fileName);
     if (maxuniValue <= 65536) {
         *isNewBuffer = 0;
-        PyObject *result = (SQLWCHAR*)PyUnicode_AsWideCharString(pyobj, maxuniValue);
+        PyObject *result = (SQLWCHAR*)PyUnicode_AsWideCharString(pyobj, &maxuniValue);
         snprintf(messageStr, sizeof(messageStr), " result obtained: %p", (void*)result);
         LogMsg(DEBUG, "UCS2 case:", fileName);
         LogMsg(INFO, "exit getUnicodeDataAsSQLWCHAR()", fileName);
-        return (SQLWCHAR*)PyUnicode_AsWideCharString(pyobj,maxuniValue);
+        return (SQLWCHAR*)PyUnicode_AsWideCharString(pyobj, &maxuniValue);
     }
 
     *isNewBuffer = 1;
@@ -2400,7 +2400,7 @@ static PyObject *ibm_db_get_sqlcode(PyObject *self, PyObject *args)
     stmt_handle *stmt_res = NULL;
     PyObject *py_stmt_res = NULL;
     PyObject *retVal = NULL;
-    SQLINTEGER return_str = NULL; /* This variable is used by
+    char *return_str = NULL; /* This variable is used by
                              * _python_ibm_db_check_sql_errors to return err
                              * strings */
     LogMsg(INFO, "entry get_sqlcode()", fileName);
@@ -7170,7 +7170,7 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
                         snprintf(messageStr, sizeof(messageStr), "List index %d, item pointer: %p", i, (void*)item);
                         LogMsg(DEBUG, messageStr, fileName);
 			            if (TYPE(item) == PYTHON_NIL){
-				            curr->ivalueArray[i] = NULL;
+				            curr->ivalueArray[i] = 0;
 				            curr->bind_indicator_array[i] = SQL_NULL_DATA;
 			            } else {
 				            curr->ivalueArray[i] = PyLong_AsLong(item);
@@ -7227,7 +7227,7 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
                     snprintf(messageStr, sizeof(messageStr), "List index %d, item pointer: %p", i, (void*)item);
                     LogMsg(DEBUG, messageStr, fileName);
 			        if (TYPE(item) == PYTHON_NIL){
-				        curr->ivalueArray[i] = NULL;
+				        curr->ivalueArray[i] = 0;
 				        curr->bind_indicator_array[i] = SQL_NULL_DATA;
 			        } else {
                         curr->ivalueArray[i] = PyLong_AsLong(item);
@@ -7287,7 +7287,7 @@ static int _python_ibm_db_bind_data( stmt_handle *stmt_res, param_node *curr, Py
                     snprintf(messageStr, sizeof(messageStr), "List index %d, item pointer: %p", i, (void*)item);
                     LogMsg(DEBUG, messageStr, fileName);
 			        if (TYPE(item) == PYTHON_NIL){
-				        curr->ivalueArray[i] = NULL;
+				        curr->ivalueArray[i] = 0;
 				        curr->bind_indicator_array[i] = SQL_NULL_DATA;
                         snprintf(messageStr, sizeof(messageStr), "List item index %d is PYTHON_NIL: ivalueArray[%d]=NULL, bind_indicator_array[%d]=SQL_NULL_DATA",
                          i, i, i);
