@@ -29,17 +29,9 @@ Please follow detailed installation instructions as documented here: [ibm_db Ins
 - **SQL1598N Error** - It is expected in absence of valid db2connect license. Please click [here](#Licenserequirements) and read instructions.
 
 ### For MacOS M1/M2/ Apple Silicon chip system
-> 
-> **Important: The driver for IBM DB2 is not compatible with Apple Silicon and will have to run in emulated mode.**
-> Please support [this request for an Apple Silicon version of the driver](https://ibm-data-and-ai.ideas.ibm.com/ideas/DB2CON-I-92) to show IBM that you are interested in a native solution.
-> 
-> Several things might be necessary to get `ibm_db` working on the Apple Silicon architecture:
->
-> * Open new terminal and run command `arch -x86_64 /bin/bash    or arch -x86_64 /bin/zsh`.
-> *  Verify the output of  `gcc -v` command. It should show `Target: x86_64-apple-darwin21` in output.
-> * Install Intel Version of Python like: https://www.python.org/ftp/python/3.9.11/python-3.9.11-macosx10.9.pkg
-> * Check output of commands `python --version` , `which python` and `file /usr/local/bin/python` commands. It should show `/usr/local/bin/python: Mach-O 64-bit executable x86_64`
-> * Check [this](INSTALL.md#m1chip) link for detailed instructions about installation of ibm_db on MacOS M1/M2 Chip system.
+
+  **MacOS with Silicon Chip** - Supported from next release onwards using v12.x clidriver.
+  **MacOS with Intel Chip** - Supported using v11.x clidriver only. By default v11.5.9 clidriver will get downloaded.
 
 ### Linux/Unix:
 
@@ -59,9 +51,6 @@ If you face problems due to missing python header files while installing the dri
 
 * If user has installed clidriver in `F:\DSDRIVER` and if the "PATH" environment variable has `F:\DSDRIVER\bin`, then user should also set `IBM_DB_HOME` to `F:\DSDRIVER`.
 
-### MAC OS:
-
-Db2 V11.5.4 clidriver is built with GCC version 8.4.0 and hence you may need to upgrade to this version if you face problems due to old version of the GCC compiler in your environment while loading the ibm_db library.
 
 ### Docker Linux containers:
 
@@ -450,24 +439,25 @@ If you intend to install the clidriver manually, Following are the details of th
 
 #### <a name="LicenseDetails"></a> CLIDriver and Client license versions for Specific Platform and Architecture
 
-|Platform      |Architecture    |Cli Driver               |Supported     |Version      |
+|Platform      |Architecture    |Cli Driver               |Supported     |Version        |
 | :---:        |  :---:         |  :---:                  |  :---:       | :--:
-|AIX           |  ppc           |aix32_odbc_cli.tar.gz    |  Yes         | V11.5.8     |
-|              |  others        |aix64_odbc_cli.tar.gz    |  Yes         | V11.5.8     |
-|Darwin        |  x64           |macos64_odbc_cli.tar.gz  |  Yes         | V11.5.8     |
-|Linux         |  x64           |linuxx64_odbc_cli.tar.gz |  Yes         | V11.5.8     |
-|              |  s390x         |s390x64_odbc_cli.tar.gz  |  Yes         | V11.5.8     |
-|              |  s390          |s390_odbc_cli.tar.gz     |  Yes         | V11.1       |
-|              |  ppc64  (LE)   |ppc64le_odbc_cli.tar.gz  |  Yes         | V11.5.8     |
-|              |  ppc64         |ppc64_odbc_cli.tar.gz    |  Yes         | V10.5       |
-|              |  ppc32         |ppc32_odbc_cli.tar.gz    |  Yes         | V10.5       |
-|              |  others        |linuxia32_odbc_cli.tar.gz|  Yes         | V11.5.8     |
-|Windows       |  x64           |ntx64_odbc_cli.zip       |  Yes         | V11.5.8     |
-|              |  x32           |nt32_odbc_cli.zip        |  Yes         | V11.5.8     |
-|Sun           | i86pc          |sunamd64_odbc_cli.tar.gz |  Yes         | V10.5       |
-|              |                |sunamd32_odbc_cli.tar.gz |  Yes         | V10.5       |
-|              | sparc          |sun64_odbc_cli.tar.gz    |  Yes         | V11.1       |
-|              | sparc          |sun32_odbc_cli.tar.gz    |  Yes         | V11.1       |
+|AIX           |  ppc           |aix32_odbc_cli.tar.gz    |  Yes         | V11.5.9       |
+|              |  others        |aix64_odbc_cli.tar.gz    |  Yes         | V11.5.9       |
+|Darwin        |  x64           |macos64_odbc_cli.tar.gz  |  Yes         | Till V11.5.9  |
+               |  arm64         |macarm64_odbc_cli.tar.gz |  Yes         | From V12.1.0  |
+|Linux         |  x64           |linuxx64_odbc_cli.tar.gz |  Yes         | V11.5.9       |
+|              |  s390x         |s390x64_odbc_cli.tar.gz  |  Yes         | V11.5.9       |
+|              |  s390          |s390_odbc_cli.tar.gz     |  Yes         | V11.1         |
+|              |  ppc64  (LE)   |ppc64le_odbc_cli.tar.gz  |  Yes         | V11.5.9       |
+|              |  ppc64         |ppc64_odbc_cli.tar.gz    |  Yes         | V10.5         |
+|              |  ppc32         |ppc32_odbc_cli.tar.gz    |  Yes         | V10.5         |
+|              |  others        |linuxia32_odbc_cli.tar.gz|  Yes         | V11.5.9       |
+|Windows       |  x64           |ntx64_odbc_cli.zip       |  Yes         | V11.5.9       |
+|              |  x32           |nt32_odbc_cli.zip        |  Yes         | V11.5.9       |
+|Sun           | i86pc          |sunamd64_odbc_cli.tar.gz |  Yes         | V10.5         |
+|              |                |sunamd32_odbc_cli.tar.gz |  Yes         | V10.5         |
+|              | sparc          |sun64_odbc_cli.tar.gz    |  Yes         | V11.1         |
+|              | sparc          |sun32_odbc_cli.tar.gz    |  Yes         | V11.1         |
 
 You can refer to [ODBC and CLI Driver installation](http://www-01.ibm.com/support/docview.wss?uid=swg21418043) for details on how to install the driver manually.
 
