@@ -441,19 +441,19 @@ If you intend to install the clidriver manually, Following are the details of th
 
 |Platform      |Architecture    |Cli Driver               |Supported     |Version        |
 | :---:        |  :---:         |  :---:                  |  :---:       | :--:
-|AIX           |  ppc           |aix32_odbc_cli.tar.gz    |  Yes         | V11.5.8       |
-|              |  others        |aix64_odbc_cli.tar.gz    |  Yes         | V11.5.8       |
+|AIX           |  ppc           |aix32_odbc_cli.tar.gz    |  Yes         | V11.5.9       |
+|              |  others        |aix64_odbc_cli.tar.gz    |  Yes         | V11.5.9       |
 |Darwin        |  x64           |macos64_odbc_cli.tar.gz  |  Yes         | Till V11.5.9  |
                |  arm64         |macarm64_odbc_cli.tar.gz |  Yes         | From V12.1.0  |
-|Linux         |  x64           |linuxx64_odbc_cli.tar.gz |  Yes         | V11.5.8       |
-|              |  s390x         |s390x64_odbc_cli.tar.gz  |  Yes         | V11.5.8       |
+|Linux         |  x64           |linuxx64_odbc_cli.tar.gz |  Yes         | V11.5.9       |
+|              |  s390x         |s390x64_odbc_cli.tar.gz  |  Yes         | V11.5.9       |
 |              |  s390          |s390_odbc_cli.tar.gz     |  Yes         | V11.1         |
-|              |  ppc64  (LE)   |ppc64le_odbc_cli.tar.gz  |  Yes         | V11.5.8       |
+|              |  ppc64  (LE)   |ppc64le_odbc_cli.tar.gz  |  Yes         | V11.5.9       |
 |              |  ppc64         |ppc64_odbc_cli.tar.gz    |  Yes         | V10.5         |
 |              |  ppc32         |ppc32_odbc_cli.tar.gz    |  Yes         | V10.5         |
-|              |  others        |linuxia32_odbc_cli.tar.gz|  Yes         | V11.5.8       |
-|Windows       |  x64           |ntx64_odbc_cli.zip       |  Yes         | V11.5.8       |
-|              |  x32           |nt32_odbc_cli.zip        |  Yes         | V11.5.8       |
+|              |  others        |linuxia32_odbc_cli.tar.gz|  Yes         | V11.5.9       |
+|Windows       |  x64           |ntx64_odbc_cli.zip       |  Yes         | V11.5.9       |
+|              |  x32           |nt32_odbc_cli.zip        |  Yes         | V11.5.9       |
 |Sun           | i86pc          |sunamd64_odbc_cli.tar.gz |  Yes         | V10.5         |
 |              |                |sunamd32_odbc_cli.tar.gz |  Yes         | V10.5         |
 |              | sparc          |sun64_odbc_cli.tar.gz    |  Yes         | V11.1         |
