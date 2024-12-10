@@ -19,13 +19,13 @@ jobs:
       matrix:
         os: [windows-latest]
     steps:
-      - uses: actions/checkout@v4.1.1
+      - uses: actions/checkout@v4.2.2
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.16.5
+        uses: pypa/cibuildwheel@v2.22.0
         env:
           CIBW_BUILD: "*-win_amd64"
           CIBW_SKIP: "cp36-* pp*"
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4.4.3
         with:
           path: ./wheelhouse/*.whl   
   
@@ -36,26 +36,41 @@ jobs:
       matrix:
         os: [windows-latest]
     steps:
-      - uses: actions/checkout@v4.1.1
+      - uses: actions/checkout@v4.2.2
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.16.5
+        uses: pypa/cibuildwheel@v2.22.0
         env:
           CIBW_BUILD: "*-win32"
           CIBW_SKIP: "cp36-* pp*"
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4.4.3
         with:
-          path: ./wheelhouse/*.whl       
-  build_wheels_macos_linux:
+          path: ./wheelhouse/*.whl
+  build_wheels_macosx86:
     name: Build wheels on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        # macos-13 is an intel runner, macos-14 is apple silicon
-        os: [macos-13,macos-14,ubuntu-latest]
+        # macos-13 is an intel runner
+        os: [macos-13]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4.2.2
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.16.5
+        uses: pypa/cibuildwheel@v2.22.0
+      - uses: actions/upload-artifact@v4.4.3
+        with:
+          path: ./wheelhouse/*.whl
+        
+  build_wheels_macosarm64_linux:
+    name: Build wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        # macos-14 is apple silicon
+        os: [macos-14,ubuntu-latest]
+    steps:
+      - uses: actions/checkout@v4.2.2
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.22.0
         env:
          CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
          CIBW_SKIP: "cp36-* *-musllinux_* pp* *-*linux_{aarch64,ppc64le}"
@@ -72,14 +87,14 @@ jobs:
               --exclude libdl.so.2
               --wheel-dir {dest_dir}
               {wheel}
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4.4.3
         with:
           path: ./wheelhouse/*.whl
   build_sdist:
     name: Build source distribution
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4.2.2
       - name: Install Python dependencies
         run: python -m pip install --upgrade pip build
       - name: Build sdist
@@ -102,7 +117,7 @@ jobs:
         env:
           VERSION: ${{ steps.version.outputs.VERSION}}
       - name: Upload sdist
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4.4.3
         with:
           path: |
             ./dist/*.tar.gz
