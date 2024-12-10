@@ -24,6 +24,9 @@ DEALINGS IN THE SOFTWARE.
 1. [ibm_db Installation on Linux, AIX, zLinux, Widnows and MacOS.](#inslnx)
 2. [ibm_db Installation on z/OS](#inszos)
 3. [ibm_db installation on MacOS M1/M2 Chip System](#m1chip)
+4. [Troubleshooting Post Install Errors on MacOS](#troubleshooting)
+     [SQL30081N Error](#sql30081n)
+     [Symbol not found error or malloc error](#symbolerror)
 
 ## <a name="inslnx"></a> 1. Python-ibm_db Installation on Linux, AIX, zLinux, Windows and MacOS.
 
@@ -327,6 +330,27 @@ print('ODBC Test end')
 
 ### Installation:
     Follow same steps as documented for [ibm_db Installation on Linux, AIX, zLinux, Widnows and MacOS.](#inslnx)
+
+## <a name="troubleshooting"></a> 4. Troubleshooting Post Install Errors on MacOS
+<a name="sql30081n"></a> 4.1 SQL30081N Error
+* If connection fails with SQL30081N error: means `ibm_db` installation is correct and you need to provide correct connection string.
+<a name="symbolerror"></a> 4.2 Symbol not found error or malloc error
+* If `import ibm_db` fails with `Symbol not found: ___cxa_throw_bad_array_new_length` error or `malloc` error:
+  You need to find the correct location of lib/gcc/12 directory and add it to DYLD_LIBRARY_PATH environment variable.
+  Also, execute below commands from terminal with correct location of `lib/gcc/12/libstdc++.6.dylib` library.
+  ```
+  cd ..../site_packages/clidriverd/lib
+  install_name_tool -change /usr/local/lib/gcc/8/libstdc++.6.dylib <full path of libstdc++.6.dylib> libdb2.dylib
+  f.e.
+  install_name_tool -change /usr/local/lib/gcc/8/libstdc++.6.dylib /usr/local/homebrew/lib/gcc/12/libstdc++.6.dylib libdb2.dylib
+  ```
+* Suppose, you have installed gcc v13.1.0 and libstdc++ is available under `/usr/local/Homebrew/Cellar/gcc/13.1.0/lib/gcc/13`, then you need to run below two commands from terminal to fix this issue:
+```
+cd  .../lib/python3.11/site-packages/clidriver/lib
+install_name_tool -change /usr/local/lib/gcc/8/libstdc++.6.dylib /usr/local/Homebrew/Cellar/gcc/13.1.0/lib/gcc/13/libstdc++.6.dylib libdb2.dylib
+```
+i.e. change current path of `libstdc++.6.dylib` in `libdb2.dylib` library to the corrent path in your system. You can find the path of `libstdc++.6.dylib` in libdb2.dylib using the command : `otool -L libdb2.dylib`. Once you have the path of libstdc++.6.dylib, you need to change it using the commond: `install_name_tool -change <current path in libdb2.dylib>  <actual path in your system>  libdb2.dylib`
+Now run your test program and verify.
 
 # M1 MAC Steps to Install IBM DB and Support Docker RUN
 ## Installation Steps:

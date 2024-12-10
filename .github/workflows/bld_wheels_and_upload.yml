@@ -21,7 +21,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4.1.1
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.16.5
+        uses: pypa/cibuildwheel@v2.22.0
         env:
           CIBW_BUILD: "*-win_amd64"
           CIBW_SKIP: "cp36-* pp*"
@@ -38,7 +38,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4.1.1
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.16.5
+        uses: pypa/cibuildwheel@v2.22.0
         env:
           CIBW_BUILD: "*-win32"
           CIBW_SKIP: "cp36-* pp*"
@@ -55,7 +55,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.16.5
+        uses: pypa/cibuildwheel@v2.22.0
         env:
          CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
          CIBW_SKIP: "cp36-* *-musllinux_* pp* *-*linux_{aarch64,ppc64le}"
