@@ -25,8 +25,8 @@ DEALINGS IN THE SOFTWARE.
 2. [ibm_db Installation on z/OS](#inszos)
 3. [ibm_db installation on MacOS M1/M2 Chip System](#m1chip)
 4. [Troubleshooting Post Install Errors on MacOS](#troubleshooting)
-     [SQL30081N Error](#sql30081n)
-     [Symbol not found error or malloc error](#symbolerror)
+    - [SQL30081N Error](#41-sql30081n-error)
+    - [Symbol not found error or malloc error](#42-symbol-not-found-error-or-malloc-error)
 
 ## <a name="inslnx"></a> 1. Python-ibm_db Installation on Linux, AIX, zLinux, Windows and MacOS.
 
@@ -326,15 +326,20 @@ print('ODBC Test end')
 
 ## <a name="m1chip"></a> 3. ibm_db installation on MacOS M1/M2 Chip System (arm64 architecture)
 **Important:
-> ibm_db@3.3.0 onwards supports native installation on MacOS ARM64(M* Chip/Apple Silicon Chip) system using clidriver/dsdriver version 12.1.0.
+> ibm_db@3.2.4 onwards supports native installation on MacOS ARM64(M* Chip/Apple Silicon Chip) system using clidriver/dsdriver version 12.1.0.
+> You need **db2connect v12.1 license** to connect to z/OS or iSeries server from M1 Chip system.
 
 ### Installation:
     Follow same steps as documented for [ibm_db Installation on Linux, AIX, zLinux, Widnows and MacOS.](#inslnx)
 
 ## <a name="troubleshooting"></a> 4. Troubleshooting Post Install Errors on MacOS
-<a name="sql30081n"></a> 4.1 SQL30081N Error
+
+### 4.1 SQL30081N Error
+
 * If connection fails with SQL30081N error: means `ibm_db` installation is correct and you need to provide correct connection string.
-<a name="symbolerror"></a> 4.2 Symbol not found error or malloc error
+
+### 4.2 Symbol not found error or malloc error
+
 * If `import ibm_db` fails with `Symbol not found: ___cxa_throw_bad_array_new_length` error or `malloc` error:
   You need to find the correct location of lib/gcc/12 directory and add it to DYLD_LIBRARY_PATH environment variable.
   Also, execute below commands from terminal with correct location of `lib/gcc/12/libstdc++.6.dylib` library.
@@ -352,25 +357,3 @@ install_name_tool -change /usr/local/lib/gcc/8/libstdc++.6.dylib /usr/local/Home
 i.e. change current path of `libstdc++.6.dylib` in `libdb2.dylib` library to the corrent path in your system. You can find the path of `libstdc++.6.dylib` in libdb2.dylib using the command : `otool -L libdb2.dylib`. Once you have the path of libstdc++.6.dylib, you need to change it using the commond: `install_name_tool -change <current path in libdb2.dylib>  <actual path in your system>  libdb2.dylib`
 Now run your test program and verify.
 
-# M1 MAC Steps to Install IBM DB and Support Docker RUN
-## Installation Steps:
-### Install Podman / Docker:
-- **Podman:** Follow the instructions provided on the [official Podman website](https://podman.io/getting-started/installation) to install Podman on your M1 Mac.
-- **Docker:** Alternatively, you can install Docker using the native Apple Silicon version or the Rosetta-translated Intel version. Choose the method that best fits your requirements.
-### Install Intel Version of Python:
-1. Download and install the Intel version of Python 3.8 from the [official Python website](https://www.python.org/downloads/release/python-3810/).
-2. After installation, ensure that you set the interpreter to Python 3.8 in your development environment.
-## Configuration Steps:
-### Configure Docker for M1:
-- For M1 Macs, ensure compatibility by specifying the platform architecture during Docker build commands:
-docker build -t <image_name> . --platform=linux/amd64
-Alternatively, if you're using Podman:
-podman build -t <image_name> . --platform=linux/amd64
-### Build Docker Image (Intel):
-- If you're using an Intel Mac or running Docker with Rosetta translation, use the following command to build your Docker image:
-docker build -t <image_name> .
-## Additional Notes:
-- These steps are tailored for M1 Macs to ensure seamless installation and configuration of IBM DB and Docker support.
-- Verify that your Dockerfile and any dependencies are compatible with the specified platform architecture.
-Follow these steps carefully to set up IBM DB and Docker support on your M1 Mac environment. If you encounter any issues or have further questions, feel free to seek assistance from the community or relevant support channels.
-Happy coding!
