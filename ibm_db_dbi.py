@@ -499,7 +499,7 @@ def _get_exception(inst):
 def _retrieve_current_schema(dsn):
     """This method retrieve the value of ODBC keyword CURRENTSCHEMA from DSN
     """
-
+    LogMsg(INFO, "entry _retrieve_current_schema()")
     ODBC_CURRENTSCHEMA_KEYWORD = 'CURRENTSCHEMA='
     current_schema_value = None
     current_schema_start = dsn.find(ODBC_CURRENTSCHEMA_KEYWORD)
@@ -516,13 +516,14 @@ def _retrieve_current_schema(dsn):
                                :current_schema_end
                                ]
     LogMsg(DEBUG, f"current_schema_value: {current_schema_value}")
+    LogMsg(INFO, "exit _retrieve_current_schema()")
     return current_schema_value
 
 
 def _server_connect(dsn, user='', password='', host=''):
     """This method create connection with server
     """
-
+    LogMsg(INFO, "entry _server_connect()")
     if dsn is None:
         LogMsg(ERROR, "dsn value should not be None")
         raise InterfaceError("dsn value should not be None")
@@ -559,14 +560,14 @@ def _server_connect(dsn, user='', password='', host=''):
         message = f"An exception occurred while connecting to server: {inst}"
         LogMsg(EXCEPTION, message)
         raise _get_exception(inst)
-
+    LogMsg(INFO, "exit _server_connect()")
     return conn
 
 
 def createdb(database, dsn, user='', password='', host='', codeset='', mode=''):
     """This method creates a database by using the specified database name, code set, and mode
     """
-
+    LogMsg(INFO, "entry createdb()")
     if database is None:
         LogMsg(ERROR, "createdb expects a not None database name value")
         raise InterfaceError("createdb expects a not None database name value")
@@ -589,14 +590,14 @@ def createdb(database, dsn, user='', password='', host='', codeset='', mode=''):
         except Exception as inst:
             LogMsg(EXCEPTION, f"An exception occurred while closing connection: {inst}")
             raise _get_exception(inst)
-
+    LogMsg(INFO, "exit createdb()")
     return return_value
 
 
 def dropdb(database, dsn, user='', password='', host=''):
     """This method drops the specified database
     """
-
+    LogMsg(INFO, "entry dropdb()")
     if database is None:
         LogMsg(ERROR, "dropdb expects a not None database name value")
         raise InterfaceError("dropdb expects a not None database name value")
@@ -617,14 +618,14 @@ def dropdb(database, dsn, user='', password='', host=''):
         except Exception as inst:
             LogMsg(EXCEPTION, f"An exception occurred while closing connection: {inst}")
             raise _get_exception(inst)
-
+    LogMsg(INFO, "exit dropdb()")
     return return_value
 
 
 def recreatedb(database, dsn, user='', password='', host='', codeset='', mode=''):
     """This method drops and then recreate the database by using the specified database name, code set, and mode
     """
-
+    LogMsg(INFO, "entry recreatedb()")
     if database is None:
         LogMsg(ERROR, "recreatedb expects a not None database name value")
         raise InterfaceError("recreatedb expects a not None database name value")
@@ -647,14 +648,14 @@ def recreatedb(database, dsn, user='', password='', host='', codeset='', mode=''
         except Exception as inst:
             LogMsg(EXCEPTION, f"An exception occurred while closing connection: {inst}")
             raise _get_exception(inst)
-
+    LogMsg(INFO, "exit recreatedb()")
     return return_value
 
 
 def createdbNX(database, dsn, user='', password='', host='', codeset='', mode=''):
     """This method creates a database if it not exist by using the specified database name, code set, and mode
     """
-
+    LogMsg(INFO, "entry createdbNX()")
     if database is None:
         LogMsg(ERROR, "createdbNX expects a not None database name value")
         raise InterfaceError("createdbNX expects a not None database name value")
@@ -677,7 +678,7 @@ def createdbNX(database, dsn, user='', password='', host='', codeset='', mode=''
         except Exception as inst:
             LogMsg(EXCEPTION, f"An exception occurred while closing connection: {inst}")
             raise _get_exception(inst)
-
+    LogMsg(INFO, "exit createdbNX()")
     return return_value
 
 
@@ -685,6 +686,7 @@ def connect(dsn, user='', password='', host='', database='', conn_options=None):
     """This method creates a non-persistent connection to the database. It returns
         a ibm_db_dbi.Connection object.
     """
+    LogMsg(INFO, "entry connect()")
     try:
         message = f"dsn: {dsn}, user: {user}, host: {host}, database: {database}, conn_options: {conn_options}"
         LogMsg(DEBUG, message)
@@ -738,6 +740,7 @@ def connect(dsn, user='', password='', host='', database='', conn_options=None):
         conn_object = Connection(conn)
         conn_object.set_current_schema(_retrieve_current_schema(dsn) or user)
         LogMsg(INFO, "Connection successful.")
+        LogMsg(INFO, "exit connect()")
         return conn_object
     except Exception as inst:
         LogMsg(EXCEPTION, f"An exception occurred while connecting: {inst}")
@@ -748,7 +751,7 @@ def pconnect(dsn, user='', password='', host='', database='', conn_options=None)
     """This method creates persistent connection to the database. It returns
         a ibm_db_dbi.Connection object.
     """
-
+    LogMsg(INFO, "entry pconnect()")
     if dsn is None:
         LogMsg(ERROR, "connect expects a not None dsn value")
         raise InterfaceError("connect expects a not None dsn value")
@@ -795,6 +798,7 @@ def pconnect(dsn, user='', password='', host='', database='', conn_options=None)
         LogMsg(INFO, "Connection established successfully")
         conn_object = Connection(conn)
         conn_object.set_current_schema(_retrieve_current_schema(dsn) or user)
+        LogMsg(INFO, "exit pconnect()")
         return conn_object
     except Exception as inst:
         LogMsg(EXCEPTION, f"An exception occurred while connecting: {inst}")
@@ -842,6 +846,7 @@ class Connection(object):
         the Connection object.  It takes no arguments.
 
         """
+        LogMsg(INFO, "entry close()")
         self.rollback()
         try:
             if self.conn_handler is None:
@@ -863,6 +868,7 @@ class Connection(object):
                 tmp_cursor.stmt_handler = None
                 tmp_cursor._all_stmt_handlers = None
         self._cursor_list = []
+        LogMsg(INFO, "exit close()")
         return return_value
 
     def commit(self):
@@ -870,12 +876,14 @@ class Connection(object):
         Connection object.  It takes no arguments.
 
         """
+        LogMsg(INFO, "entry commit()")
         try:
             return_value = ibm_db.commit(self.conn_handler)
             LogMsg(INFO, "Transaction committed.")
         except Exception as inst:
             LogMsg(EXCEPTION, f"An exception occurred while committing transaction: {inst}")
             raise _get_exception(inst)
+        LogMsg(INFO, "exit commit()")
         return return_value
 
     def rollback(self):
@@ -883,12 +891,14 @@ class Connection(object):
         Connection object.  It takes no arguments.
 
         """
+        LogMsg(INFO, "entry rollback()")
         try:
             return_value = ibm_db.rollback(self.conn_handler)
             LogMsg(INFO, "Transaction rolled back.")
         except Exception as inst:
             LogMsg(EXCEPTION, f"An exception occurred while rolling back transaction: {inst}")
             raise _get_exception(inst)
+        LogMsg(INFO, "exit rollback()")
         return return_value
 
     def cursor(self):
@@ -896,12 +906,14 @@ class Connection(object):
         Connection.  It takes no arguments.
 
         """
+        LogMsg(INFO, "entry cursor()")
         if self.conn_handler is None:
             LogMsg(ERROR, "Cursor cannot be returned; connection is no longer active.")
             raise ProgrammingError("Cursor cannot be returned; "
                                    "connection is no longer active.")
         cursor = Cursor(self.conn_handler, self)
         self._cursor_list.append(weakref.ref(cursor))
+        LogMsg(INFO, "exit cursor()")
         return cursor
 
     # Sets connection attribute values
@@ -909,7 +921,9 @@ class Connection(object):
         """Input: connection attribute dictionary
            Return: True on success or False on failure
         """
+        LogMsg(INFO, "entry set_option()")
         LogMsg(DEBUG, f"Setting connection options: {attr_dict}")
+        LogMsg(INFO, "exit set_option()")
         return ibm_db.set_option(self.conn_handler, attr_dict, 1)
 
     # Retrieves connection attributes values
@@ -917,11 +931,14 @@ class Connection(object):
         """Input: connection attribute key
            Return: current setting of the resource attribute requested
         """
+        LogMsg(INFO, "entry get_option()")
         LogMsg(DEBUG, f"Getting connection option: {attr_key}")
+        LogMsg(INFO, "exit get_option()")
         return ibm_db.get_option(self.conn_handler, attr_key, 1)
 
     # Sets FIX_RETURN_TYPE. Added for performance improvement
     def set_fix_return_type(self, is_on):
+        LogMsg(INFO, "entry set_fix_return_type()")
         try:
             LogMsg(DEBUG, f"Setting fix return type to: {is_on}")
             if is_on:
@@ -931,6 +948,7 @@ class Connection(object):
         except Exception as inst:
             LogMsg(EXCEPTION, f"An exception occurred while setting fix return type: {inst}")
             raise _get_exception(inst)
+        LogMsg(INFO, "exit set_fix_return_type()")
         return self.FIX_RETURN_TYPE
 
     # Sets connection AUTOCOMMIT attribute
@@ -938,6 +956,7 @@ class Connection(object):
         """Input: connection attribute: true if AUTOCOMMIT ON, false otherwise (i.e. OFF)
            Return: True on success or False on failure
         """
+        LogMsg(INFO, "entry set_autocommit()")
         try:
             LogMsg(DEBUG, f"Setting autocommit to: {is_on}")
             if is_on:
@@ -948,6 +967,7 @@ class Connection(object):
             LogMsg(EXCEPTION, f"An exception occurred while setting autocommit: {inst}")
             raise _get_exception(inst)
         LogMsg(DEBUG, f"set_autocommit returns: {is_set}")
+        LogMsg(INFO, "exit set_autocommit()")
         return is_set
 
     # Sets connection attribute values
@@ -955,6 +975,7 @@ class Connection(object):
         """Input: connection attribute dictionary
            Return: True on success or False on failure
         """
+        LogMsg(INFO, "entry set_current_schema()")
         self.current_schema = schema_name
         try:
             LogMsg(DEBUG, f"Setting current schema to: {schema_name}")
@@ -962,12 +983,14 @@ class Connection(object):
         except Exception as inst:
             LogMsg(EXCEPTION, f"An exception occurred setting current schema: {inst}")
             raise _get_exception(inst)
+        LogMsg(INFO, "exit set_current_schema()")
         return is_set
 
     # Retrieves connection attributes values
     def get_current_schema(self):
         """Return: current setting of the schema attribute
         """
+        LogMsg(INFO, "entry get_current_schema()")
         try:
             conn_schema = ibm_db.get_option(self.conn_handler, SQL_ATTR_CURRENT_SCHEMA, 1)
             if conn_schema is not None and conn_schema != '':
@@ -976,12 +999,14 @@ class Connection(object):
         except Exception as inst:
             LogMsg(EXCEPTION, f"An exception occurred while getting current schema: {inst}")
             raise _get_exception(inst)
+        LogMsg(INFO, "exit get_current_schema()")
         return self.current_schema
 
     # Retrieves the IBM Data Server version for a given Connection object
     def server_info(self):
         """Return: tuple (DBMS_NAME, DBMS_VER)
         """
+        LogMsg(INFO, "entry server_info()")
         try:
             server_info = []
             server_info.append(self.dbms_name)
@@ -990,9 +1015,13 @@ class Connection(object):
         except Exception as inst:
             LogMsg(EXCEPTION, f"An exception occurred while getting server info: {inst}")
             raise _get_exception(inst)
+        LogMsg(INFO, "exit server_info()")
         return tuple(server_info)
 
     def set_case(self, server_type, str_value):
+        LogMsg(INFO, "entry set_case()")
+        LogMsg(DEBUG, f"set case to {str_value}")
+        LogMsg(INFO, "exit set_case()")
         return str_value.upper()
 
     # Retrieves the tables for a specified schema (and/or given table name)
@@ -1000,6 +1029,7 @@ class Connection(object):
         """Input: connection - ibm_db.IBM_DBConnection object
            Return: sequence of table metadata dicts for the specified schema
         """
+        LogMsg(INFO, "entry tables()")
         LogMsg(INFO, f"Retrieving the tables for a specified schema")
         result = []
         if schema_name is not None:
@@ -1022,7 +1052,7 @@ class Connection(object):
         except Exception as inst:
             LogMsg(EXCEPTION, f"An exception occurred while retrieving the tables: {inst}")
             raise _get_exception(inst)
-
+        LogMsg(INFO, "exit tables()")
         return result
 
     # Retrieves metadata pertaining to index for specified schema (and/or table name)
@@ -1042,6 +1072,7 @@ class Connection(object):
            'ASC_OR_DESC':       'A'
            }
         """
+        LogMsg(INFO, "entry indexes()")
         LogMsg(INFO, f"Retrieving metadata pertaining to index for specified schema/Table")
         result = []
         if schema_name is not None:
@@ -1065,7 +1096,7 @@ class Connection(object):
         except Exception as inst:
             LogMsg(EXCEPTION, f"An exception occurred while retrieving metadata pertaining to index: {inst}")
             raise _get_exception(inst)
-
+        LogMsg(INFO, "exit indexes()")
         return result
 
     # Retrieves metadata pertaining to primary keys for specified schema (and/or table name)
@@ -1082,6 +1113,7 @@ class Connection(object):
            'KEY_SEQ':       1
            }
         """
+        LogMsg(INFO, "entry primary_keys()")
         LogMsg(INFO, f"Retrieving metadata pertaining to primary keys for specified schema/Table")
         result = []
         if schema_name is not None:
@@ -1104,7 +1136,7 @@ class Connection(object):
         except Exception as inst:
             LogMsg(EXCEPTION, f"An exception occurred while retrieving metadata pertaining to primary keys: {inst}")
             raise _get_exception(inst)
-
+        LogMsg(INFO, "exit primary_keys()")
         return result
 
     # Retrieves metadata pertaining to foreign keys for specified schema (and/or table name)
@@ -1125,6 +1157,7 @@ class Connection(object):
            'FKTABLE_SCHEM': 'PYTHONIC'
            }
         """
+        LogMsg(INFO, "entry foreign_keys()")
         LogMsg(INFO, f"Retrieving metadata pertaining to foreign keys for specified schema/Table")
         result = []
         if schema_name is not None:
@@ -1148,6 +1181,7 @@ class Connection(object):
             LogMsg(EXCEPTION, f"An exception occurred while retrieving metadata pertaining foreign keys: {inst}")
             raise _get_exception(inst)
 
+        LogMsg(INFO, "exit foreign_keys()")
         return result
 
     # Retrieves the columns for a specified schema (and/or table name and column name)
@@ -1169,6 +1203,7 @@ class Connection(object):
            'DECIMAL_DIGITS':     None
            }
         """
+        LogMsg(INFO, "entry columns()")
         LogMsg(INFO, f"Retrieving the columns for a specified schema/Table")
         result = []
         if schema_name is not None:
@@ -1204,6 +1239,7 @@ class Connection(object):
             LogMsg(EXCEPTION, f"An exception occurred while retrieving the columns: {inst}")
             raise _get_exception(inst)
 
+        LogMsg(INFO, "exit columns()")
         return result
 
     def __enter__(self):
@@ -1224,6 +1260,7 @@ class Cursor(object):
         """ If this method has already been called, after executing a select statement,
             return the stored information in the self.__description.
         """
+        LogMsg(INFO, "entry __get_description()")
         if self.__description is not None:
             return self.__description
 
@@ -1294,10 +1331,10 @@ class Cursor(object):
                 self.__description.append(column_desc)
         except Exception as inst:
             LogMsg(EXCEPTION, f"An exception occurred: {_get_exception(inst)}")
-            LogMsg(DEBUG, "Full exception traceback:", exc_info=True)
             self.messages.append(_get_exception(inst))
             raise self.messages[len(self.messages) - 1]
 
+        LogMsg(INFO, "exit __get_description()")
         return self.__description
 
     # This attribute provides the metadata information of the columns
@@ -1362,6 +1399,7 @@ class Cursor(object):
         arguments.
 
         """
+        LogMsg(INFO, "entry close()")
         messages = []
         if self.conn_handler is None:
             '''
@@ -1386,10 +1424,12 @@ class Cursor(object):
             except:
                 pass
         LogMsg(INFO, "Cursor closed successfully.")
+        LogMsg(INFO, "exit close()")
         return return_value
 
     # helper for calling procedure
     def _callproc_helper(self, procname, parameters=None):
+        LogMsg(INFO, "entry _callproc_helper()")
         LogMsg(DEBUG, f"Calling procedure: {procname}")
         if parameters is not None:
             buff = []
@@ -1418,6 +1458,7 @@ class Cursor(object):
                 self.messages.append(_get_exception(inst))
                 raise self.messages[len(self.messages) - 1]
         LogMsg(INFO, f"Procedure '{procname}' called successfully.")
+        LogMsg(INFO, "exit _callproc_helper()")
         return result
 
     def callproc(self, procname, parameters=None):
@@ -1426,6 +1467,7 @@ class Cursor(object):
         the stored procedure as arguments.
 
         """
+        LogMsg(INFO, "entry callproc()")
         LogMsg(DEBUG, f"Calling callproc with procname={procname}, parameters={parameters}")
         self.messages = []
         if not isinstance(procname, string_types):
@@ -1451,10 +1493,12 @@ class Cursor(object):
         self._result_set_produced = True
         LogMsg(DEBUG,
                f"callproc executed successfully. stmt_handler={self.stmt_handler}, return_value={return_value}")
+        LogMsg(INFO, "exit callproc()")
         return return_value
 
     # Helper for preparing an SQL statement.
     def _prepare_helper(self, operation, parameters=None):
+        LogMsg(INFO, "entry _prepare_helper()")
         try:
             ibm_db.free_stmt(self.stmt_handler)
             LogMsg(DEBUG, "Successfully freed existing statement handler.")
@@ -1464,6 +1508,7 @@ class Cursor(object):
         try:
             self.stmt_handler = ibm_db.prepare(self.conn_handler, operation)
             LogMsg(DEBUG, f"Successfully prepared statement with operation: {operation}")
+            LogMsg(INFO, "exit _prepare_helper()")
         except Exception as inst:
             LogMsg(ERROR, f"Error preparing statement with operation '{operation}': {_get_exception(inst)}")
             self.messages.append(_get_exception(inst))
@@ -1471,6 +1516,7 @@ class Cursor(object):
 
     # Helper for preparing an SQL statement.
     def _set_cursor_helper(self):
+        LogMsg(INFO, "entry _set_cursor_helper()")
         if (ibm_db.get_option(self.stmt_handler, ibm_db.SQL_ATTR_CURSOR_TYPE, 0) != ibm_db.SQL_CURSOR_FORWARD_ONLY):
             self._is_scrollable_cursor = True
             LogMsg(INFO, "Cursor type is scrollable.")
@@ -1486,13 +1532,16 @@ class Cursor(object):
             self.messages.append(_get_exception(inst))
             raise self.messages[len(self.messages) - 1]
         if not num_columns:
+            LogMsg(INFO, "exit _set_cursor_helper()")
             return False
         self._result_set_produced = True
 
+        LogMsg(INFO, "exit _set_cursor_helper()")
         return True
 
     # Helper for executing an SQL statement.
     def _execute_helper(self, parameters=None):
+        LogMsg(INFO, "entry  _execute_helper()")
         if parameters is not None:
             buff = []
             CONVERT_STR = (buffer)
@@ -1542,11 +1591,13 @@ class Cursor(object):
                 LogMsg(ERROR, f"Error executing statement without parameters: {_get_exception(inst)} ")
                 self.messages.append(_get_exception(inst))
                 raise self.messages[len(self.messages) - 1]
+        LogMsg(INFO, "exit  _execute_helper()")
         return return_value
 
     # This method is used to set the rowcount after executing an SQL
     # statement.
     def _set_rowcount(self):
+        LogMsg(INFO, "entry  _set_rowcount()")
         self.__rowcount = -1
         if not self._result_set_produced:
             try:
@@ -1567,6 +1618,7 @@ class Cursor(object):
                 raise self.messages[len(self.messages) - 1]
             if counter >= 0:
                 self.__rowcount = counter
+        LogMsg(INFO, "exit  _set_rowcount()")
         return True
 
     # Retrieves the last generated identity value from the DB2 catalog
@@ -1579,6 +1631,7 @@ class Cursor(object):
          - An INSERT statement with a fullselect
 
         """
+        LogMsg(INFO, "entry  _get_last_identity_val()")
         operation = 'SELECT IDENTITY_VAL_LOCAL() FROM SYSIBM.SYSDUMMY1'
         try:
             stmt_handler = ibm_db.prepare(self.conn_handler, operation)
@@ -1606,6 +1659,7 @@ class Cursor(object):
             LogMsg(ERROR, f"Error occured in getting identity value: {_get_exception(inst)}")
             self.messages.append(_get_exception(inst))
             raise self.messages[len(self.messages) - 1]
+        LogMsg(INFO, "exit  _get_last_identity_val()")
         return identity_val
 
     last_identity_val = property(_get_last_identity_val, None, None, "")
@@ -1617,6 +1671,7 @@ class Cursor(object):
         sequence of values to substitute for the parameter markers in
         the SQL statement as arguments.
         """
+        LogMsg(INFO, "entry execute()")
         LogMsg(DEBUG, f"Executing SQL operation: {operation}")
         if parameters is not None:
             LogMsg(DEBUG, f"SQL parameters: {parameters}")
@@ -1638,6 +1693,7 @@ class Cursor(object):
         self._execute_helper(parameters)
         self._set_cursor_helper()
         LogMsg(INFO, "SQL operation executed successfully.")
+        LogMsg(INFO, "exit execute()")
         return self._set_rowcount()
 
     def executemany(self, operation, seq_parameters):
@@ -1647,8 +1703,9 @@ class Cursor(object):
         and sequence of sequence of values to substitute for the
         parameter markers in the SQL statement as its argument.
         """
-        LogMsg(DEBUG, "Executing SQL operation in executemany: %s", operation)
-        LogMsg(DEBUG, "Number of parameter sets: %d", len(seq_parameters))
+        LogMsg(INFO, "entry executemany()")
+        LogMsg(DEBUG, f"Executing SQL operation in executemany: {operation}")
+        LogMsg(DEBUG, f"Number of parameter sets: {len(seq_parameters)}")
         self.messages = []
         if not isinstance(operation, string_types):
             LogMsg(ERROR, f"executemany expects the first argument to be of type String or Unicode.")
@@ -1708,6 +1765,7 @@ class Cursor(object):
             LogMsg(ERROR, f"Error in executemany: {inst}")
             raise self.messages[len(self.messages) - 1]
         LogMsg(INFO, "SQL operation executemany successfully.")
+        LogMsg(INFO, "exit executemany()")
         return True
 
     def _fetch_helper(self, fetch_size=-1):
@@ -1717,6 +1775,7 @@ class Cursor(object):
         It takes the number of rows to fetch as an argument.
         If this is not provided it fetches all the remaining rows.
         """
+        LogMsg(INFO, "entry _fetch_helper()")
         if self.stmt_handler is None:
             LogMsg(ERROR, "Please execute an SQL statement in order to get a row from result set.")
             self.messages.append(
@@ -1753,6 +1812,7 @@ class Cursor(object):
             else:
                 return row_list
             rows_fetched = rows_fetched + 1
+        LogMsg(INFO, "exit _fetch_helper()")
         return row_list
 
     def fetchone(self):
@@ -1760,6 +1820,7 @@ class Cursor(object):
         executing an SQL statement which produces a result set.
 
         """
+        LogMsg(INFO, "entry fetchone()")
         LogMsg(INFO, "Fetching one row from the database.")
         row_list = self._fetch_helper(1)
         if len(row_list) == 0:
@@ -1767,8 +1828,10 @@ class Cursor(object):
         else:
             LogMsg(DEBUG, "Row fetched successfully.")
         if len(row_list) == 0:
+            LogMsg(INFO, "exit fetchone()")
             return None
         else:
+            LogMsg(INFO, "exit fetchone()")
             return row_list[0]
 
     def fetchmany(self, size=0):
@@ -1777,7 +1840,8 @@ class Cursor(object):
         It takes the number of rows to fetch as an argument.  If this
         is not provided it fetches self.arraysize number of rows.
         """
-        message = "Fetching %d rows from the database." % size
+        LogMsg(INFO, "entry fetchmany()")
+        message = f"Fetching {size} rows from the database."
         LogMsg(DEBUG, message)
         if not isinstance(size, int_types):
             LogMsg(EXCEPTION, "fetchmany expects argument type int or long.")
@@ -1790,24 +1854,27 @@ class Cursor(object):
             self.messages.append(ProgrammingError("fetchmany argument size expected to be positive."))
             raise self.messages[len(self.messages) - 1]
 
-        message = "Fetched %d rows successfully.", len(self._fetch_helper(size))
+        message = f"Fetched {len(self._fetch_helper(size))} rows successfully."
         LogMsg(DEBUG, message)
+        LogMsg(INFO, "exit fetchmany()")
         return self._fetch_helper(size)
 
     def fetchall(self):
         """This method fetches all remaining rows from the database,
         after executing an SQL statement which produces a result set.
         """
+        LogMsg(INFO, "entry fetchall()")
         LogMsg(INFO, "Fetching all remaining rows from the database.")
         rows_fetched = self._fetch_helper()
-        message = "Fetched %d rows successfully.", len(rows_fetched)
-        LogMsg(DEBUG, message)
+        LogMsg(DEBUG, f"Fetched {len(rows_fetched)} rows successfully.")
+        LogMsg(INFO, "exit fetchall()")
         return rows_fetched
 
     def nextset(self):
         """This method can be used to get the next result set after
         executing a stored procedure, which produces multiple result sets.
         """
+        LogMsg(INFO, "entry nextset()")
         LogMsg(INFO, "Attempting to retrieve next result set.")
         self.messages = []
         if self.stmt_handler is None:
@@ -1836,6 +1903,7 @@ class Cursor(object):
             return None
 
         LogMsg(INFO, "Successfully retrieved next result set.")
+        LogMsg(INFO, "exit nextset()")
         return True
 
     def setinputsizes(self, sizes):
@@ -1850,7 +1918,8 @@ class Cursor(object):
     # and binary data in a row tuple fetched from the database
     # to decimal and binary objects, for returning it to the user.
     def _fix_return_data_type(self, row):
-        message = "Fixing return data types for row: %s", row
+        LogMsg(INFO, "entry _fix_return_data_type()")
+        message = f"Fixing return data types for row: {row}"
         LogMsg(DEBUG, message)
         row_list = None
         for index in range(len(row)):
@@ -1874,9 +1943,11 @@ class Cursor(object):
                     self.messages.append(DataError("Data type format error: " + str(inst)))
                     raise self.messages[len(self.messages) - 1]
         if row_list is None:
+            LogMsg(INFO, "exit _fix_return_data_type()")
             return row
         else:
-            LogMsg(DEBUG, "Fixed return data types: %s", row_list)
+            LogMsg(DEBUG, f"Fixed return data types: {row_list}")
+            LogMsg(INFO, "exit _fix_return_data_type()")
             return tuple(row_list)
 
     def __enter__(self):
