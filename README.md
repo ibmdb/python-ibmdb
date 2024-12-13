@@ -30,7 +30,7 @@ Please follow detailed installation instructions as documented here: [ibm_db Ins
 
 ### For MacOS M1/M2/ Apple Silicon chip system
 
-  **MacOS with Silicon Chip** - Supported from next release onwards using v12.x clidriver.
+  **MacOS with Silicon Chip** - Supported from v3.2.4 onwards using v12.x clidriver.
   **MacOS with Intel Chip** - Supported using v11.x clidriver only. By default v11.5.9 clidriver will get downloaded.
 
 ### Linux/Unix:
@@ -187,8 +187,6 @@ conda install -c conda-forge ibm_db
 |Darwin        |  Mac OS x64    |  Yes         | Latest    |
 |Windows       |  x64           |  Yes         | Latest    |
 |Windows       |  x32           |  Yes         | Latest    |
-
-Install Intel/x64 version of python on M1 Chip system. Check [this](INSTALL.md#m1chip) link for detailed instructions.
 
 ## <a name="quick example"></a> Quick Example
 ```python
@@ -388,6 +386,8 @@ conn = ibm_db.connect(connStr,'','')
 To suppress this error, Db2 server must be activated with db2connectactivate utility OR a client side db2connect license file must exist.
 
 - Db2connect license can be applied on database server or client side. A **db2connect license of version 11.5** is required for ibm_db.
+
+- For MacOS M1/M2/M3 Chip System (ARM64 processor), **db2connect license of version 12.1** is required.
 
 - For activating server side license, you can purchase either `Db2 Connect Unlimited Edition for System z®` or `Db2 Connect Unlimited Edition for System i®` license from IBM.
 
@@ -669,34 +669,10 @@ fail on version 8.x of Db2.
 
 If trusted context is not set up, there will be two failures related to trusted context. When thick client has been used then additional three failures related to create, recreate DB.
 
-`ibm_db` do not work with arm64 version of python, use x64 version.
-
-
 ## Known Limitations for the Python wrapper
 
 1. The rowcount for select statements can not be generated.
 2. Some warnings from the drivers are not caught by the wrapper.
    As such these might go unnoticed.
 
-# M1 MAC Steps to Install IBM DB and Support Docker RUN
-## Installation Steps:
-### Install Podman / Docker:
-- **Podman:** Follow the instructions provided on the [official Podman website](https://podman.io/getting-started/installation) to install Podman on your M1 Mac.
-- **Docker:** Alternatively, you can install Docker using the native Apple Silicon version or the Rosetta-translated Intel version. Choose the method that best fits your requirements.
-### Install Intel Version of Python:
-1. Download and install the Intel version of Python 3.8 from the [official Python website](https://www.python.org/downloads/release/python-3810/).
-2. After installation, ensure that you set the interpreter to Python 3.8 in your development environment.
-## Configuration Steps:
-### Configure Docker for M1:
-- For M1 Macs, ensure compatibility by specifying the platform architecture during Docker build commands:
-docker build -t <image_name> . --platform=linux/amd64
-Alternatively, if you're using Podman:
-podman build -t <image_name> . --platform=linux/amd64
-### Build Docker Image (Intel):
-- If you're using an Intel Mac or running Docker with Rosetta translation, use the following command to build your Docker image:
-docker build -t <image_name> .
-## Additional Notes:
-- These steps are tailored for M1 Macs to ensure seamless installation and configuration of IBM DB and Docker support.
-- Verify that your Dockerfile and any dependencies are compatible with the specified platform architecture.
-Follow these steps carefully to set up IBM DB and Docker support on your M1 Mac environment. If you encounter any issues or have further questions, feel free to seek assistance from the community or relevant support channels.
 Happy coding!

@@ -31,7 +31,7 @@ from setuptools.command.build_ext import build_ext
 from setuptools.command.install import install
 
 PACKAGE = 'ibm_db'
-VERSION = '3.2.3'
+VERSION = '3.2.4'
 LICENSE = 'Apache License 2.0'
 readme = os.path.join(os.path.dirname(__file__),'README.md')
 
@@ -512,6 +512,7 @@ if('win32' not in sys.platform):
            _checkGcc()
            _checkPythonHeaderFile()
 
+#'Operating System :: z/OS', pypi upload fails with error - Not a valid classifier
 setup( name    = PACKAGE,
     version = VERSION,
     license = LICENSE,
@@ -525,10 +526,12 @@ setup( name    = PACKAGE,
                     'Intended Audience :: Developers',
                     'License :: OSI Approved :: Apache Software License',
                     'Operating System :: Microsoft :: Windows :: Windows 10',
+                    'Operating System :: Microsoft :: Windows :: Windows 11',
                     'Operating System :: Unix',
-                    'Operating System :: Linux',
-                    'Operating System :: MacOS-x64',
-                    'Operating System :: z/OS',
+                    'Operating System :: POSIX :: AIX',
+                    'Operating System :: POSIX :: Linux',
+                    'Operating System :: MacOS',
+                    'Operating System :: MacOS :: MacOS X',
                     'Programming Language :: Python',
                     'Programming Language :: Python :: 3.7',
                     'Programming Language :: Python :: 3.8',
