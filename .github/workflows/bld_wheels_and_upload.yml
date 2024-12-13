@@ -1,5 +1,4 @@
 name: Build and upload to PyPI
-
 # Build on every workflow_dispatch, branch push, tag push, and pull request change
 on:
   workflow_dispatch:
@@ -27,9 +26,9 @@ jobs:
           CIBW_SKIP: "cp36-* pp*"
       - uses: actions/upload-artifact@v4.4.3
         with:
-          name: wheels_windows64__${{ github.sha }}
-          path: ./wheelhouse/*.whl   
-  
+          name: ibmdb-wheels64-${{ matrix.os }}
+          path: wheelhouse/*.whl
+
   build_wheels_windows_32:
     name: Build wheels on ${{ matrix.os }} 32-bit
     runs-on: ${{ matrix.os }}
@@ -45,9 +44,9 @@ jobs:
           CIBW_SKIP: "cp36-* pp*"
       - uses: actions/upload-artifact@v4.4.3
         with:
-          name: wheels_windows32__${{ github.sha }}
-          path: ./wheelhouse/*.whl
-          
+          name: ibmdb-wheels32-${{ matrix.os }}
+          path: wheelhouse/*.whl
+
   build_wheels_linux:
     name: Build wheels on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
@@ -64,7 +63,7 @@ jobs:
          CIBW_REPAIR_WHEEL_COMMAND_LINUX:
             auditwheel repair
               --exclude libdb2.so.1
-              --exclude libDB2xml4c.so.58 
+              --exclude libDB2xml4c.so.58
               --exclude libm.so.6
               --exclude libcrypt.so.1
               --exclude libpam.so.0
@@ -76,8 +75,8 @@ jobs:
               {wheel}
       - uses: actions/upload-artifact@v4.4.3
         with:
-          name: wheels_linux__${{ github.sha }}
-          path: ./wheelhouse/*.whl
+          name: ibmdb-wheels-${{ matrix.os }}
+          path: wheelhouse/*.whl
 
   build_macos_arm64_wheels:
     name: Build wheels on macOS ARM64
@@ -91,8 +90,8 @@ jobs:
       - name: Upload wheels
         uses: actions/upload-artifact@v4.4.3
         with:
-          name: wheels_macos_arm64__${{ github.sha }}
-          path: ./wheelhouse/*.whl
+          name: ibmdb-wheelsarm64-${{ matrix.os }}
+          path: wheelhouse/*.whl
 
   build_wheels_macos_x86:
     name: Build wheels for macOS x86_64
@@ -120,8 +119,8 @@ jobs:
       - name: Upload wheels as artifacts
         uses: actions/upload-artifact@v4.4.3
         with:
-          name: wheels_macosx86_python313__${{ github.sha }}
-          path: ./wheelhouse/*.whl
+          name: ibmdb-wheelsx86-${{ matrix.os }}
+          path: wheelhouse/*.whl
 
   build_sdist:
     name: Build source distribution
@@ -138,11 +137,11 @@ jobs:
            cd dist
            pip install ibm_db*
            echo "VERSION=$(python -c 'import ibm_db; print(ibm_db.__version__)')" >> $GITHUB_OUTPUT
-      - name: Build source distribution 
+      - name: Build source distribution
         run: |
           PACKAGE="ibm_db-$VERSION"
           cd dist
-          tar -xzf $PACKAGE.tar.gz 
+          tar -xzf $PACKAGE.tar.gz
           rm -rf $PACKAGE/clidriver*
           rm -rf $PACKAGE.tar.gz
           tar -czf $PACKAGE.tar.gz $PACKAGE
@@ -152,10 +151,10 @@ jobs:
       - name: Upload sdist
         uses: actions/upload-artifact@v4.4.3
         with:
-          path: |
-            ./dist/*.tar.gz
+          name: ibmdb-sdist
+          path: dist/*.tar.gz
 
-            
+
   upload_pypi:
     needs: [build_sdist,build_wheels_linux, build_wheels_windows_64,build_wheels_windows_32, build_macos_arm64_wheels, build_wheels_macos_x86]
     runs-on: ${{ matrix.os }}
@@ -165,15 +164,16 @@ jobs:
     permissions:
       # IMPORTANT: this permission is mandatory for trusted publishing
       id-token: write
+
     #upload to PyPI on every tag starting with 'v'
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     steps:
     - uses: actions/download-artifact@v4.1.7
       with:
-        # unpacks default artifact into dist/
-        #if `name: artifact` is omitted, the action will create extra parent dir
-        name: artifact
         path: dist
+        pattern: ibmdb-*
+        merge-multiple: true
+
     - name: Publish distribution to PyPI
       if: startsWith(github.ref, 'refs/tags')
-      uses: pypa/gh-action-pypi-publish@release/v1
+      uses: pypa/gh-action-pypi-publish@release/v1.12

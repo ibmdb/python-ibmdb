@@ -1,3 +1,47 @@
+2024-12-11, Version 3.2.4
+=========================
+
+ * doc update for macos arm64 support (Bimal Jha)
+
+ * update ibm_db_dbi logging and fix LogMag error issue #978 (bchoudhary6415)
+
+ * Support python-ibm_db driver for MACOS ARM64 platform (#972) (Earammak)
+
+ * Support Python 3.13 and add fetch APIs (fetchone, fetchmany, fetchall) (#971) (bchoudhary6415)
+
+ * Added check to pass compilation issue for zos (#968) (Earammak)
+
+ * New API to return SQLCODE (#966) (Earammak)
+
+ * Added SQL_ATTR_CALL_RETURN attribute to return from stored procdure (#965) (Earammak)
+
+ * Support for logging in ibm_db module (#964) (bchoudhary6415)
+
+ * Fix Buffer Overflow Warning in sprintf and remove unused variables (#961) (Earammak)
+
+ * Context manager support with connection object (#947) (Earammak)
+
+ * doc: update readme file #955 (Bimal Jha)
+
+ * Support for logging in ibm_db_dbi module (#954) (bchoudhary6415)
+
+ * Fix for libdb2 for createdb and dropdb (#953) (Earammak)
+
+ * change Beta relese to Production (Bimal Jha)
+
+ * Adding .gitattributes file (#940) (bchoudhary6415)
+
+ * Update bld_wheels_and_upload.yml (Earammak)
+
+ * doc update for license error, issue #933 (Bimal Jha)
+
+ * Added isolation level attribute support (#932) (Earammak)
+
+ * doc update to addess issues #907, #926 (Bimal Jha)
+
+ * Update INSTALL.md (#921) (Ankit Kumar)
+
+
 2024-03-13, Version 3.2.3
 =========================
 
