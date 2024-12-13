@@ -1,14 +1,12 @@
 name: Build and upload to PyPI
-# Build on every workflow_dispatch, branch push, tag push, and pull request change
 on:
   workflow_dispatch:
   pull_request:
   push:
     branches:
-      - master
-  # Sequence of patterns matched against refs/tags
+      - update_workflow
     tags:
-      - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+      - 'v*'
 
 jobs:
   build_wheels_windows_64:
@@ -87,6 +85,12 @@ jobs:
         uses: pypa/cibuildwheel@v2.22.0
         env:
           CIBW_SKIP: "cp36-*"
+      - name: Repair macOS wheels with delocate
+        run: |
+          pip install cibuildwheel delocate
+          for wheel in wheelhouse/*.whl; do
+            delocate-wheel --ignore-missing-dependencies --require-archs arm64 -w ./repaired_wheel -v "$wheel"
+          done
       - name: Upload wheels
         uses: actions/upload-artifact@v4.4.3
         with:
@@ -96,17 +100,15 @@ jobs:
   build_wheels_macos_x86:
     name: Build wheels for macOS x86_64
     runs-on: macos-13
-
     strategy:
       matrix:
         architecture: [x86_64]
-
     steps:
       - uses: actions/checkout@v4.2.2
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install cibuildwheel  # Install cibuildwheel to build the wheels
+          pip install cibuildwheel delocate  # Install cibuildwheel and delocate for repairing macOS wheels
 
       - name: Set macOS deployment target
         run: echo "MACOSX_DEPLOYMENT_TARGET=10.15" >> $GITHUB_ENV
@@ -116,11 +118,17 @@ jobs:
           CIBW_ARCHS_MACOS="${{ matrix.architecture }}"
           python -m cibuildwheel --platform macos --output-dir ./wheelhouse
 
+      - name: Repair macOS wheels with delocate
+        run: |
+          for wheel in wheelhouse/*.whl; do
+            delocate-wheel --ignore-missing-dependencies --require-archs x86 -w ./repaired_wheel -v "$wheel"
+          done
+
       - name: Upload wheels as artifacts
         uses: actions/upload-artifact@v4.4.3
         with:
           name: ibmdb-wheelsx86-${{ matrix.os }}
-          path: wheelhouse/*.whl 
+          path: repaired_wheel/*.whl
 
   build_sdist:
     name: Build source distribution
@@ -154,18 +162,11 @@ jobs:
           name: ibmdb-sdist
           path: dist/*.tar.gz
 
-            
   upload_pypi:
-    needs: [build_sdist,build_wheels_linux, build_wheels_windows_64,build_wheels_windows_32, build_macos_arm64_wheels, build_wheels_macos_x86]
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest]
+    needs: [build_sdist, build_wheels_linux, build_wheels_windows_64, build_wheels_windows_32, build_macos_arm64_wheels, build_wheels_macos_x86]
+    runs-on: ubuntu-latest
     permissions:
-      # IMPORTANT: this permission is mandatory for trusted publishing
       id-token: write
-    #upload to PyPI on every tag starting with 'v'
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     steps:
     - uses: actions/download-artifact@v4.1.7
       with:
@@ -183,3 +184,6 @@ jobs:
     - name: Publish distribution to PyPI
       if: startsWith(github.ref, 'refs/tags')
       uses: pypa/gh-action-pypi-publish@release/v1.12
+      with:
+        token: ${{secrets.PYPI_TOKEN}}
+        repository_url: https://pypi.org/legacy/
