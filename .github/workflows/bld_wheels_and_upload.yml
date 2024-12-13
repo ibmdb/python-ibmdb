@@ -117,6 +117,7 @@ jobs:
         run: |
           CIBW_ARCHS_MACOS="${{ matrix.architecture }}"
           python -m cibuildwheel --platform macos --output-dir ./wheelhouse
+          delocate-wheel --ignore-missing-dependencies --require-archs arm64 -w ./repaired_wheel -v *.whl
 
       - name: Repair macOS wheels with delocate
         run: |
