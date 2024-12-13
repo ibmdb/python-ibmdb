@@ -121,7 +121,7 @@ jobs:
       - name: Repair macOS wheels with delocate
         run: |
           for wheel in wheelhouse/*.whl; do
-            delocate-wheel --ignore-missing-dependencies --require-archs x86 -w ./repaired_wheel -v "$wheel"
+            delocate-wheel --ignore-missing-dependencies --require-archs arm64 -w ./repaired_wheel -v "$wheel"
           done
 
       - name: Upload wheels as artifacts
