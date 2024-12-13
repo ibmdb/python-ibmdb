@@ -87,7 +87,7 @@ jobs:
           CIBW_SKIP: "cp36-*"
       - name: Repair macOS wheels with delocate
         run: |
-          pip install cibuildwheel delocate
+          #pip install cibuildwheel delocate
           for wheel in wheelhouse/*.whl; do
             delocate-wheel --ignore-missing-dependencies --require-archs arm64 -w ./repaired_wheel -v "$wheel"
           done
