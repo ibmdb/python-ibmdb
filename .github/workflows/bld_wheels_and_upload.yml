@@ -5,7 +5,8 @@ on:
   pull_request:
   push:
     branches:
-      - update_workflow
+      #- update_workflow
+      - master
   # Sequence of patterns matched against refs/tags
     tags:
       - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
@@ -84,7 +85,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4.2.2
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.22.0
+        uses: pypa/cibuildwheel@v2.16.5
         env:
           CIBW_SKIP: "cp36-*"
       - name: Upload wheels

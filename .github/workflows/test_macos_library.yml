@@ -1,0 +1,35 @@
+name: Build and Repair Wheel
+
+on:
+  push:
+    branches:
+      - update_workflow
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.12'
+
+      - name: Install build dependencies
+        run: |
+          pip install --upgrade pip
+          pip install cibuildwheel delocate
+
+      - name: Build the wheel for macOS
+        env:
+          CIBW_REPAIR_WHEEL_COMMAND_MACOS: "delocate-wheel --verbose"
+        run: |
+          cibuildwheel --platform macos --output-dir wheelhouse
+
+      - name: Verify the wheel
+        run: |
+          pip install --no-index --find-links=wheelhouse ibm_db-3.2.4.9-cp312-cp312-macosx_11_0_arm64.whl
+          python -c "import ibm_db"
