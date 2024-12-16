@@ -31,5 +31,5 @@ jobs:
 
       - name: Verify the wheel
         run: |
-          pip install --no-index --find-links=wheelhouse ibm_db-3.2.4.9-cp312-cp312-macosx_11_0_arm64.whl
+          pip install --no-index --find-links=wheelhouse ibm_db
           python -c "import ibm_db"
