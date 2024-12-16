@@ -161,16 +161,16 @@ if('darwin' in sys.platform):
                 # no IBM_DB_HOME during install, keep current value
                 return
 
-            for so in glob.glob(get_python_lib()+r'/ibm_db*.so'):
-                os.system("install_name_tool -change @loader_path/clidriver/lib/libdb2.dylib {}/lib/libdb2.dylib {}".format(clipath, so))
+            #for so in glob.glob(get_python_lib()+r'/ibm_db*.so'):
+             #   os.system("install_name_tool -change @loader_path/clidriver/lib/libdb2.dylib {}/lib/libdb2.dylib {}".format(clipath, so))
 
     class PostBuildExt(build_ext):
         """ Post build_ext - update db2 dynamic lib to use loader_path on Darwin """
         def run(self):
             build_ext.run(self)
             clipath = os.getenv('IBM_DB_HOME', '@loader_path/clidriver')
-            for so in glob.glob(self.build_lib+r'/ibm_db*.so'):
-                os.system("install_name_tool -change libdb2.dylib {}/lib/libdb2.dylib {}".format(clipath, so))
+            #for so in glob.glob(self.build_lib+r'/ibm_db*.so'):
+             #   os.system("install_name_tool -change libdb2.dylib {}/lib/libdb2.dylib {}".format(clipath, so))
 
     cmd_class = dict(install = PostInstall, build_ext = PostBuildExt)
 
