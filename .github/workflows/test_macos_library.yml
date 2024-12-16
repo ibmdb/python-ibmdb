@@ -29,6 +29,11 @@ jobs:
         run: |
           cibuildwheel --platform macos --output-dir wheelhouse
 
+      - name: Repair the wheel by including libdb2.dylib
+        run: |
+          # If libdb2.dylib is installed or manually copied, you can use delocate to bundle it
+          delocate-wheel --verbose --install-path /usr/local/lib wheelhouse/*.whl
+
       - name: Verify the wheel
         run: |
           pip install --no-index --find-links=wheelhouse ibm_db
