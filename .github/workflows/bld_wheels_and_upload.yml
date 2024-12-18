@@ -5,6 +5,7 @@ on:
   pull_request:
   push:
     branches:
+      #- update_workflow
       - master
   # Sequence of patterns matched against refs/tags
     tags:
@@ -84,7 +85,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4.2.2
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.22.0
+        uses: pypa/cibuildwheel@v2.16.5
         env:
           CIBW_SKIP: "cp36-*"
       - name: Upload wheels
@@ -120,7 +121,7 @@ jobs:
         uses: actions/upload-artifact@v4.4.3
         with:
           name: ibmdb-wheelsx86-${{ matrix.os }}
-          path: wheelhouse/*.whl
+          path: wheelhouse/*.whl 
 
   build_sdist:
     name: Build source distribution
@@ -154,7 +155,6 @@ jobs:
           name: ibmdb-sdist
           path: dist/*.tar.gz
 
-
   upload_pypi:
     needs: [build_sdist,build_wheels_linux, build_wheels_windows_64,build_wheels_windows_32, build_macos_arm64_wheels, build_wheels_macos_x86]
     runs-on: ${{ matrix.os }}
@@ -166,13 +166,20 @@ jobs:
       id-token: write
 
     #upload to PyPI on every tag starting with 'v'
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    #if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     steps:
     - uses: actions/download-artifact@v4.1.7
       with:
         path: dist
         pattern: ibmdb-*
         merge-multiple: true
+
+    - name: Publish to TestPyPI
+      uses: pypa/gh-action-pypi-publish@release/v1.12
+      with:
+        token: ${{secrets.TEST_PYPI_TOKEN}}
+        repository_url: https://test.pypi.org/legacy/
+        password: ${{ secrets.testpypi_token }}
 
     - name: Publish distribution to PyPI
       if: startsWith(github.ref, 'refs/tags')
