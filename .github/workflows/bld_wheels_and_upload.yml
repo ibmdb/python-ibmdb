@@ -64,7 +64,7 @@ jobs:
          CIBW_REPAIR_WHEEL_COMMAND_LINUX:
             auditwheel repair
               --exclude libdb2.so.1
-              --exclude libDB2xml4c.so.58 
+              --exclude libDB2xml4c.so.58
               --exclude libm.so.6
               --exclude libcrypt.so.1
               --exclude libpam.so.0
@@ -138,11 +138,11 @@ jobs:
            cd dist
            pip install ibm_db*
            echo "VERSION=$(python -c 'import ibm_db; print(ibm_db.__version__)')" >> $GITHUB_OUTPUT
-      - name: Build source distribution 
+      - name: Build source distribution
         run: |
           PACKAGE="ibm_db-$VERSION"
           cd dist
-          tar -xzf $PACKAGE.tar.gz 
+          tar -xzf $PACKAGE.tar.gz
           rm -rf $PACKAGE/clidriver*
           rm -rf $PACKAGE.tar.gz
           tar -czf $PACKAGE.tar.gz $PACKAGE
@@ -155,7 +155,6 @@ jobs:
           name: ibmdb-sdist
           path: dist/*.tar.gz
 
-            
   upload_pypi:
     needs: [build_sdist,build_wheels_linux, build_wheels_windows_64,build_wheels_windows_32, build_macos_arm64_wheels, build_wheels_macos_x86]
     runs-on: ${{ matrix.os }}
@@ -165,6 +164,7 @@ jobs:
     permissions:
       # IMPORTANT: this permission is mandatory for trusted publishing
       id-token: write
+
     #upload to PyPI on every tag starting with 'v'
     #if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     steps:
