@@ -1851,7 +1851,8 @@ class Cursor(object):
             raise self.messages[len(self.messages) - 1]
 
         fetch_nrows = self._fetch_helper(size)
-        message = f"Fetched {len(fetch_nrows)} rows successfully."
+        nrows = len(fetch_nrows)
+        message = "Fetched " + nrows + " rows successfully."
         LogMsg(DEBUG, message)
         LogMsg(INFO, "exit fetchmany()")
         return fetch_nrows
