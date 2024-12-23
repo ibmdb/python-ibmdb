@@ -1488,8 +1488,7 @@ class Cursor(object):
         else:
             self.stmt_handler = result
         self._result_set_produced = True
-        LogMsg(DEBUG,
-               f"callproc executed successfully.")
+        LogMsg(DEBUG, "callproc executed successfully.")
         LogMsg(INFO, "exit callproc()")
         return return_value
 
@@ -1864,7 +1863,8 @@ class Cursor(object):
         LogMsg(INFO, "entry fetchall()")
         LogMsg(INFO, "Fetching all remaining rows from the database.")
         rows_fetched = self._fetch_helper()
-        LogMsg(DEBUG, f"Fetched {len(rows_fetched)} rows successfully.")
+        nrows = len(rows_fetched)
+        LogMsg(DEBUG, "Fetched " + nrows + " rows successfully.")
         LogMsg(INFO, "exit fetchall()")
         return rows_fetched
 
