@@ -854,7 +854,6 @@ class Connection(object):
                 raise ProgrammingError("Connection cannot be closed; "
                                        "connection is no longer active.")
             else:
-                LogMsg(DEBUG, f"Closing connection: conn_handler={self.conn_handler}")
                 return_value = ibm_db.close(self.conn_handler)
                 LogMsg(INFO, "Connection closed.")
         except Exception as inst:
@@ -1388,8 +1387,6 @@ class Cursor(object):
         self.messages = []
         self.FIX_RETURN_TYPE = conn_object.FIX_RETURN_TYPE
         LogMsg(INFO, "Cursor object initialized.")
-        LogMsg(DEBUG, f"Connection handler: {self.conn_handler}")
-        LogMsg(DEBUG, f"Connection object: {self.__connection}")
 
     # This method closes the statemente associated with the cursor object.
     # It takes no argument.
@@ -1491,8 +1488,7 @@ class Cursor(object):
         else:
             self.stmt_handler = result
         self._result_set_produced = True
-        LogMsg(DEBUG,
-               f"callproc executed successfully. stmt_handler={self.stmt_handler}, return_value={return_value}")
+        LogMsg(DEBUG, "callproc executed successfully.")
         LogMsg(INFO, "exit callproc()")
         return return_value
 
@@ -1802,6 +1798,8 @@ class Cursor(object):
                 if len(row_list) == 0:
                     raise self.messages[len(self.messages) - 1]
                 else:
+                    LogMsg(DEBUG, f"Returning {row_list} from _fetch_helper()")
+                    LogMsg(INFO, "exit _fetch_helper()")
                     return row_list
 
             if row != False:
@@ -1810,8 +1808,11 @@ class Cursor(object):
                 else:
                     row_list.append(row)
             else:
+                LogMsg(DEBUG, f"Returning {row_list} from _fetch_helper()")
+                LogMsg(INFO, "exit _fetch_helper()")
                 return row_list
             rows_fetched = rows_fetched + 1
+        LogMsg(DEBUG, f"Returning {row_list} from _fetch_helper()")
         LogMsg(INFO, "exit _fetch_helper()")
         return row_list
 
@@ -1854,10 +1855,12 @@ class Cursor(object):
             self.messages.append(ProgrammingError("fetchmany argument size expected to be positive."))
             raise self.messages[len(self.messages) - 1]
 
-        message = f"Fetched {len(self._fetch_helper(size))} rows successfully."
+        fetch_nrows = self._fetch_helper(size)
+        nrows = len(fetch_nrows)
+        message = f"Fetched {nrows} rows successfully."
         LogMsg(DEBUG, message)
         LogMsg(INFO, "exit fetchmany()")
-        return self._fetch_helper(size)
+        return fetch_nrows
 
     def fetchall(self):
         """This method fetches all remaining rows from the database,
@@ -1866,7 +1869,8 @@ class Cursor(object):
         LogMsg(INFO, "entry fetchall()")
         LogMsg(INFO, "Fetching all remaining rows from the database.")
         rows_fetched = self._fetch_helper()
-        LogMsg(DEBUG, f"Fetched {len(rows_fetched)} rows successfully.")
+        nrows = len(rows_fetched)
+        LogMsg(DEBUG, f"Fetched {nrows} rows successfully.")
         LogMsg(INFO, "exit fetchall()")
         return rows_fetched
 
