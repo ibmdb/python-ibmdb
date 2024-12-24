@@ -1798,6 +1798,8 @@ class Cursor(object):
                 if len(row_list) == 0:
                     raise self.messages[len(self.messages) - 1]
                 else:
+                    LogMsg(DEBUG, f"Returning {row_list} from _fetch_helper()")
+                    LogMsg(INFO, "exit _fetch_helper()")
                     return row_list
 
             if row != False:
@@ -1806,8 +1808,11 @@ class Cursor(object):
                 else:
                     row_list.append(row)
             else:
+                LogMsg(DEBUG, f"Returning {row_list} from _fetch_helper()")
+                LogMsg(INFO, "exit _fetch_helper()")
                 return row_list
             rows_fetched = rows_fetched + 1
+        LogMsg(DEBUG, f"Returning {row_list} from _fetch_helper()")
         LogMsg(INFO, "exit _fetch_helper()")
         return row_list
 
@@ -1852,7 +1857,7 @@ class Cursor(object):
 
         fetch_nrows = self._fetch_helper(size)
         nrows = len(fetch_nrows)
-        message = "Fetched " + nrows + " rows successfully."
+        message = f"Fetched {nrows} rows successfully."
         LogMsg(DEBUG, message)
         LogMsg(INFO, "exit fetchmany()")
         return fetch_nrows
@@ -1865,7 +1870,7 @@ class Cursor(object):
         LogMsg(INFO, "Fetching all remaining rows from the database.")
         rows_fetched = self._fetch_helper()
         nrows = len(rows_fetched)
-        LogMsg(DEBUG, "Fetched " + nrows + " rows successfully.")
+        LogMsg(DEBUG, f"Fetched {nrows} rows successfully.")
         LogMsg(INFO, "exit fetchall()")
         return rows_fetched
 
