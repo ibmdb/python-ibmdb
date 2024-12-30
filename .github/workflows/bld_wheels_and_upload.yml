@@ -92,17 +92,9 @@ jobs:
         architecture: [arm64]
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4.2.2
-
-      - name: Set macOS deployment target
-        run: echo "MACOSX_DEPLOYMENT_TARGET=14.0" >> $GITHUB_ENV
-
-      - name: Install build dependencies
-        run: |
-          pip install --upgrade pip
-          pip install cibuildwheel delocate build
-      - name: Build the wheel for macOS
+      - uses: actions/checkout@v4.2.2
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.22.0
         env:
           CIBW_SKIP: "cp36-* cp37-* cp38-* pp*"
           MACOSX_DEPLOYMENT_TARGET: 14.0
@@ -130,7 +122,7 @@ jobs:
       - uses: actions/upload-artifact@v4.4.3
         with:
           name: ibmdb-wheelsx86-${{ matrix.os }}
-          path: dist/*.whl
+          path: wheelhouse/*.whl
 
   build_sdist:
     name: Build source distribution
