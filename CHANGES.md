@@ -1,3 +1,10 @@
+2024-12-30, Version 3.2.5
+=========================
+
+ * update workflow file to fix macarm64 install issue (Bimal Jha)
+
+ * Fix for issue#981 Django showing all migrations as unaplied (#982) (bchoudhary6415)
+
 2024-12-11, Version 3.2.4
 =========================
 
