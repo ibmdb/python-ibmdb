@@ -21,6 +21,7 @@ https://github.com/ibmdb/python-ibmdb/wiki/APIs
 <a name="prereq"></a>
 ## Pre-requisites
 Install Python 3.7 <= 3.13. The minimum python version supported by driver is python 3.7 and the latest version supported is python 3.13.
+MacOS arm64 is supported Python 3.9 onwards.
 
 ### To install ibm_db on z/OS system
 
@@ -30,7 +31,7 @@ Please follow detailed installation instructions as documented here: [ibm_db Ins
 
 ### For MacOS M1/M2/ Apple Silicon chip system
 
-  **MacOS with Silicon Chip** - Supported from v3.2.4 onwards using v12.x clidriver.
+  **MacOS with Silicon Chip** - Supported from v3.2.5 onwards using v12.x clidriver.
   **MacOS with Intel Chip** - Supported using v11.x clidriver only. By default v11.5.9 clidriver will get downloaded.
 
 ### Linux/Unix:
@@ -63,7 +64,7 @@ To install ibm_db from source code after clone from git, or to know the detialed
 <a name="installation"></a> 
 ## Installation
 
-* Python **Wheels** are built for Linux, MacOS and Windows operating systems for multiple python versions (from python version 3.7 to 3.11). For other platforms, package gets installed from source distribution.
+* Python **Wheels** are built for Linux, MacOS and Windows operating systems for multiple python versions (from python version 3.7 to 3.13). For other platforms, package gets installed from source distribution. For MaxOS arm64, python wheels are available from version 3.9 onwards.
 
 You can install the driver using pip as:
 
@@ -191,8 +192,7 @@ conda install -c conda-forge ibm_db
 ## <a name="quick example"></a> Quick Example
 ```python
 $ python
-Python 3.6.5 (default, May 10 2018, 00:54:55)
-[GCC 4.3.4 [gcc-4_3-branch revision 152973]] on linux
+Python 3.13.0 (main, Oct  7 2024, 05:02:14) [Clang 16.0.0 (clang-1600.0.26.4)] on darwin
 Type "help", "copyright", "credits" or "license" for more information.
 >>> import ibm_db
 >>> #For connecting to local database named pydev for user db2inst1 and password secret, use below example
@@ -444,7 +444,7 @@ If you intend to install the clidriver manually, Following are the details of th
 |AIX           |  ppc           |aix32_odbc_cli.tar.gz    |  Yes         | V11.5.9       |
 |              |  others        |aix64_odbc_cli.tar.gz    |  Yes         | V11.5.9       |
 |Darwin        |  x64           |macos64_odbc_cli.tar.gz  |  Yes         | Till V11.5.9  |
-               |  arm64         |macarm64_odbc_cli.tar.gz |  Yes         | From V12.1.0  |
+|              |  arm64         |macarm64_odbc_cli.tar.gz |  Yes         | From V12.1.0  |
 |Linux         |  x64           |linuxx64_odbc_cli.tar.gz |  Yes         | V11.5.9       |
 |              |  s390x         |s390x64_odbc_cli.tar.gz  |  Yes         | V11.5.9       |
 |              |  s390          |s390_odbc_cli.tar.gz     |  Yes         | V11.1         |

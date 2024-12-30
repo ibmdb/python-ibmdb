@@ -44,6 +44,7 @@ or
 pip install git+https://git@github.com/ibmdb/python-ibm_db.git
 ```
 * `pip install ibm_db` installs python wheel images on Linux, Windows and MacOS(x64) for python v>=3.7
+* MacOS(arm64) support python wheel images from python version 3.9 onwards.
 * If wheel image is not available or for AIX and zLiux, native C++ code of ibm_db requires in-system compilation. For such case,
     you should have a C++ compiler installed in the system. Make sure the commands `gcc --version` and `make --version` works
     fine on Linux and MacOS system.
@@ -326,7 +327,7 @@ print('ODBC Test end')
 
 ## <a name="m1chip"></a> 3. ibm_db installation on MacOS M1/M2 Chip System (arm64 architecture)
 **Important:
-> ibm_db@3.2.4 onwards supports native installation on MacOS ARM64(M* Chip/Apple Silicon Chip) system using clidriver/dsdriver version 12.1.0.
+> ibm_db@3.2.5 onwards supports native installation on MacOS ARM64(M* Chip/Apple Silicon Chip) system using clidriver/dsdriver version 12.1.0.
 > You need **db2connect v12.1 license** to connect to z/OS or iSeries server from M1 Chip system.
 
 ### Installation:
