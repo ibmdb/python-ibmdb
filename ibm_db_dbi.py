@@ -1751,7 +1751,7 @@ class Cursor(object):
                     self.messages.append(Error(str(ibm_db.conn_errormsg())))
                     raise self.messages[len(self.messages) - 1]
                 if ibm_db.stmt_errormsg() is not None:
-                    error_msg = f"Statement error: {str(ibm_db.conn_errormsg())}"
+                    error_msg = f"Statement error: {str(ibm_db.stmt_errormsg())}"
                     LogMsg(ERROR, error_msg)
                     self.messages.append(Error(str(ibm_db.stmt_errormsg())))
                     raise self.messages[len(self.messages) - 1]
