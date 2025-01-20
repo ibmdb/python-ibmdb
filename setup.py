@@ -258,10 +258,7 @@ def _downloadClidriver(url):
         shutil.copy('ibm_db.dll', 'clidriver')
 
 def print_exception( e, url):
-    if(os_ == "win"):
-        err = "Error while downloading clidriver from the following URL : " + url + "\n" + str(e)
-    else:
-        err = "Error while downloading clidriver from the following URL : " + url + "\n" + str(e)
+    err = "Error while downloading clidriver from the following URL : " + url + "\n" + str(e)
 
     if "github" in url:
         if(os_ == "win"):

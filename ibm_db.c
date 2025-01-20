@@ -1860,8 +1860,8 @@ static PyObject *_python_ibm_db_connect_helper( PyObject *self, PyObject *args, 
         /* Set Options */
         if ( !NIL_P(options) ) {
             if(!PyDict_Check(options)) {
-            LogMsg(EXCEPTION, "options Parameter must be of type dictionay", fileName);
-                PyErr_SetString(PyExc_Exception, "options Parameter must be of type dictionay");
+                LogMsg(EXCEPTION, "options Parameter must be of type dictionary", fileName);
+                PyErr_SetString(PyExc_Exception, "options Parameter must be of type dictionary");
                 return NULL;
             }
             rc = _python_ibm_db_parse_options( options, SQL_HANDLE_DBC, conn_res );
