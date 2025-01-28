@@ -1792,15 +1792,11 @@ class Cursor(object):
                     error_msg = f"Statement error: {str(ibm_db.stmt_errormsg())}"
                     LogMsg(ERROR, error_msg)
                     self.messages.append(Error(str(ibm_db.stmt_errormsg())))
+                    raise self.messages[len(self.messages) - 1]
                 else:
                     LogMsg(ERROR, f"Error occured : {_get_exception(inst)}")
                     self.messages.append(_get_exception(inst))
-                if len(row_list) == 0:
                     raise self.messages[len(self.messages) - 1]
-                else:
-                    LogMsg(DEBUG, f"Returning {row_list} from _fetch_helper()")
-                    LogMsg(INFO, "exit _fetch_helper()")
-                    return row_list
 
             if row != False:
                 if self.FIX_RETURN_TYPE == 1:
