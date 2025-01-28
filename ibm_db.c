@@ -15505,7 +15505,7 @@ static PyObject* ibm_db_fetchmany(PyObject *self, PyObject *args)
 // Fetch all rows from the result set
 static PyObject *ibm_db_fetchall(PyObject *self, PyObject *args)
 {
-    LogMsg(INFO, "entry fetchmany()", fileName);
+    LogMsg(INFO, "entry fetchall()", fileName);
     PyObject *argsStr = PyObject_Repr(args);  // Get string representation of args
     snprintf(messageStr, sizeof(messageStr), "Received arguments: %s", PyUnicode_AsUTF8(argsStr));
     LogMsg(INFO, messageStr, fileName);
