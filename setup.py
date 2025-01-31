@@ -64,7 +64,7 @@ def _printAndExit(msg):
         sys.stdout.write(msg + "\n")
         sys.stdout.flush()
         os._exit(1)
-      
+
 def _errormessage(option):
     if(option == "downloadFailedWin"):
         message = "\nPlease download the clidriver manually from the above link and unzip the contents into a particular location.\nSet the location of the directory to the system enviroment variable \"IBM_DB_HOME\"\nExample set IBM_DB_HOME=C:/downloads/db2driver/clidriver\nOnce the above settings are done please try installing ibm_db again."
@@ -77,19 +77,18 @@ def _errormessage(option):
     if(option == "noPythonDevel"):
         message = "\nNo Python.h header file detected.\nPlease install python-devel or python3-devel as instructed in \"https://github.com/ibmdb/python-ibmdb/blob/master/README.md#KnownIssues\" and continue with the installation"
     return message
-    
+
 def _printOnly(msg):
     sys.stdout.write(msg + "\n")
     sys.stdout.flush()
-    
+
 def _checkForIncludeFolder(db2path):
     includePath = os.path.join(db2path,'include')
     _includeFlag = False
     if os.path.isdir(includePath):
         _includeFlag = True
-        
     return _includeFlag
-    
+
 def _getinstalledDb2Path():
     status,output = subprocess.getstatusoutput('db2cli validate')
     if(status == 0):
@@ -102,7 +101,7 @@ def _getinstalledDb2Path():
             os.environ["IBM_DB_HOME"]=path
         else:
             _printOnly(_errormessage("includeFolderMissing"))
-            
+
 def _checkGcc():
     status,output = subprocess.getstatusoutput('which gcc')
     gccFound = (status == 0) or os.path.exists('/bin/gcc') or os.path.exists('/usr/bin/gcc')
@@ -112,7 +111,7 @@ def _checkGcc():
     else:
         _printOnly("Pre-requisite check [which gcc] : Failed")
         _printAndExit(_errormessage("noGcc"))
-        
+
 def _checkPythonHeaderFile():
     for _include_dir in _compiler_include_dirs():
         if os.path.exists(os.path.join(_include_dir, "Python.h")):

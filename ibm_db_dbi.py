@@ -65,7 +65,6 @@ def LogMsg(log_level, message):
         elif log_level == EXCEPTION:
             logger.exception(message)
 
-
 PY2 = sys.version_info < (3, )
 
 if not PY2:
@@ -122,8 +121,6 @@ SQL_TXN_NO_COMMIT = ibm_db.SQL_TXN_NO_COMMIT
 apilevel = '2.0'
 threadsafety = 0
 paramstyle = 'qmark'
-
-
 class Error(exception):
     """This is the base class of all other exception thrown by this
     module.  It can be use to catch all exceptions with a single except

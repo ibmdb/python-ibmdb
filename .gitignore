@@ -16,3 +16,5 @@ odbc_diag_trace
 odbc_trace_control
 tests/*_out.jpg
 tests/*_out.png
+.polaris-coverity.zip
+.blackduck

@@ -8,7 +8,6 @@
 |          Saba Kauser                                                 |
 +----------------------------------------------------------------------+
 */
-
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -21,35 +20,35 @@
  */
 #define LONG_BIT 64
 /* defining string methods */
-#if  PY_MAJOR_VERSION < 3
-#define PyBytes_Check               PyString_Check
-#define StringOBJ_FromASCII(str)    PyString_FromString(str)
-#define StringOBJ_FromASCIIAndSize  PyString_FromStringAndSize
-#define StringOBJ_FromStr(str)      PyString_FromString(str)
-#define PyBytes_AsString            PyString_AsString
-#define PyBytes_FromStringAndSize   PyString_FromStringAndSize
-#define StringObj_Format            PyString_Format
-#define StringObj_Size              PyString_Size
-#define PyObject_CheckBuffer        PyObject_CheckReadBuffer
+#if PY_MAJOR_VERSION < 3
+#define PyBytes_Check PyString_Check
+#define StringOBJ_FromASCII(str) PyString_FromString(str)
+#define StringOBJ_FromASCIIAndSize PyString_FromStringAndSize
+#define StringOBJ_FromStr(str) PyString_FromString(str)
+#define PyBytes_AsString PyString_AsString
+#define PyBytes_FromStringAndSize PyString_FromStringAndSize
+#define StringObj_Format PyString_Format
+#define StringObj_Size PyString_Size
+#define PyObject_CheckBuffer PyObject_CheckReadBuffer
 #define PyVarObject_HEAD_INIT(type, size) \
-                    PyObject_HEAD_INIT(type) size,
-#define Py_TYPE(ob)            (((PyObject*)(ob))->ob_type)
+    PyObject_HEAD_INIT(type) size,
+#define Py_TYPE(ob) (((PyObject *)(ob))->ob_type)
 #define MOD_RETURN_ERROR
 #define MOD_RETURN_VAL(mod)
-#define INIT_ibm_db                 initibm_db
+#define INIT_ibm_db initibm_db
 #else
-#define PyInt_Check                 PyLong_Check
-#define PyInt_FromLong              PyLong_FromLong
-#define PyInt_AsLong                PyLong_AsLong
-#define PyInt_AS_LONG               PyLong_AsLong
-#define StringOBJ_FromASCII(str)    PyUnicode_DecodeASCII(str, strlen(str), NULL)
-#define StringOBJ_FromASCIIAndSize  PyUnicode_FromStringAndSize
-#define StringOBJ_FromStr(str)      PyUnicode_DecodeLocale(str, NULL)
-#define PyString_Check              PyUnicode_Check
-#define StringObj_Format            PyUnicode_Format
-#define StringObj_Size              PyUnicode_GET_LENGTH
-#define MOD_RETURN_ERROR            NULL
-#define MOD_RETURN_VAL(mod)         mod
+#define PyInt_Check PyLong_Check
+#define PyInt_FromLong PyLong_FromLong
+#define PyInt_AsLong PyLong_AsLong
+#define PyInt_AS_LONG PyLong_AsLong
+#define StringOBJ_FromASCII(str) PyUnicode_DecodeASCII(str, strlen(str), NULL)
+#define StringOBJ_FromASCIIAndSize PyUnicode_FromStringAndSize
+#define StringOBJ_FromStr(str) PyUnicode_DecodeLocale(str, NULL)
+#define PyString_Check PyUnicode_Check
+#define StringObj_Format PyUnicode_Format
+#define StringObj_Size PyUnicode_GET_LENGTH
+#define MOD_RETURN_ERROR NULL
+#define MOD_RETURN_VAL(mod) mod
 #define INIT_ibm_db PyInit_ibm_db
 #endif
 
@@ -103,8 +102,8 @@
 /* needed for backward compatibility (SQL_ATTR_ROWCOUNT_PREFETCH not defined prior to DB2 9.5.0.3) */
 #ifndef SQL_ATTR_ROWCOUNT_PREFETCH
 #define SQL_ATTR_ROWCOUNT_PREFETCH 2592
-#define SQL_ROWCOUNT_PREFETCH_OFF   0
-#define SQL_ROWCOUNT_PREFETCH_ON    1
+#define SQL_ROWCOUNT_PREFETCH_OFF 0
+#define SQL_ROWCOUNT_PREFETCH_ON 1
 #endif
 
 #ifndef SQL_ATTR_USE_TRUSTED_CONTEXT
@@ -114,15 +113,15 @@
 #endif
 
 /* CLI v9.1 FP3 and below has a SQL_ATTR_REPLACE_QUOTED_LITERALS value of 116
-* We need to support both the new and old values for compatibility with older
-* versions of CLI. CLI v9.1 FP4 and beyond changed this value to 2586
-*/
+ * We need to support both the new and old values for compatibility with older
+ * versions of CLI. CLI v9.1 FP4 and beyond changed this value to 2586
+ */
 #define SQL_ATTR_REPLACE_QUOTED_LITERALS_OLDVALUE 116
 
 /* If using a DB2 CLI version which doesn't support this functionality,
-* explicitly define this. We will rely on DB2 CLI to throw an error when
-* SQLGetStmtAttr is called.
-*/
+ * explicitly define this. We will rely on DB2 CLI to throw an error when
+ * SQLGetStmtAttr is called.
+ */
 
 #ifndef SQL_ATTR_GET_GENERATED_VALUE
 #define SQL_ATTR_GET_GENERATED_VALUE 2578
@@ -140,7 +139,7 @@
 #define DB2_WARNMSG 3
 
 /*Used to decide if LITERAL REPLACEMENT should be turned on or not*/
-#define SET_QUOTED_LITERAL_REPLACEMENT_ON  1
+#define SET_QUOTED_LITERAL_REPLACEMENT_ON 1
 #define SET_QUOTED_LITERAL_REPLACEMENT_OFF 0
 
 /* DB2 instance environment variable */
@@ -164,9 +163,9 @@
 #endif
 
 /* fetch */
-#define FETCH_INDEX    0x01
-#define FETCH_ASSOC    0x02
-#define FETCH_BOTH     0x03
+#define FETCH_INDEX 0x01
+#define FETCH_ASSOC 0x02
+#define FETCH_BOTH 0x03
 
 /* Change column case */
 #define ATTR_CASE 3271982
@@ -177,7 +176,7 @@
 /* data type switch for performance */
 #define USE_WCHAR 100
 #define WCHAR_YES 1
-#define WCHAR_NO  0
+#define WCHAR_NO 0
 
 /* maximum sizes */
 #define USERID_LEN 16
@@ -195,14 +194,15 @@ enum
     ROUND_DOWN,
     ROUND_CEILING,
     ROUND_FLOOR
-}ROUNDING_MODE;
+} ROUNDING_MODE;
 
 /*
-* Declare any global variables you may need between the BEGIN
-* and END macros here:
-*/
-struct _ibm_db_globals {
-    int  bin_mode;
+ * Declare any global variables you may need between the BEGIN
+ * and END macros here:
+ */
+struct _ibm_db_globals
+{
+    int bin_mode;
     char __python_conn_err_msg[DB2_MAX_ERR_MSG_LEN + 1];
     char __python_conn_err_state[SQL_SQLSTATE_SIZE + 1];
     char __python_stmt_err_msg[DB2_MAX_ERR_MSG_LEN + 1];
@@ -217,9 +217,9 @@ struct _ibm_db_globals {
 #endif /* PASE */
 };
 
-typedef struct {
-    PyObject_HEAD
-    PyObject *DRIVER_NAME;
+typedef struct
+{
+    PyObject_HEAD PyObject *DRIVER_NAME;
     PyObject *DRIVER_VER;
     PyObject *DATA_SOURCE_NAME;
     PyObject *DRIVER_ODBC_VER;
@@ -280,10 +280,9 @@ static PyTypeObject client_infoType = {
     /* tp_init           */ 0,
 };
 
-
-typedef struct {
-    PyObject_HEAD
-    PyObject *DBMS_NAME;
+typedef struct
+{
+    PyObject_HEAD PyObject *DBMS_NAME;
     PyObject *DBMS_VER;
     PyObject *DB_CODEPAGE;
     PyObject *DB_NAME;
@@ -306,7 +305,6 @@ typedef struct {
     PyObject *MAX_TABLE_NAME_LEN;
     PyObject *NON_NULLABLE_COLUMNS;
 } le_server_info;
-
 
 static PyMemberDef le_server_info_members[] = {
     {"DBMS_NAME", T_OBJECT_EX, offsetof(le_server_info, DBMS_NAME), 0, "Database Server Name"},
@@ -373,11 +371,9 @@ static PyTypeObject server_infoType = {
     /* tp_init           */ 0,
 };
 
-
-
 /*
-* TODO: make this threadsafe
-*/
+ * TODO: make this threadsafe
+ */
 
 #define IBM_DB_G(v) (ibm_db_globals->v)
 
