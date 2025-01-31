@@ -833,7 +833,7 @@ static void _python_ibm_db_check_sql_errors(SQLHANDLE handle, SQLSMALLINT hType,
 static int _python_ibm_db_assign_options(void *handle, int type, long opt_key, PyObject *data)
 {
     LogMsg(INFO, "entry _python_ibm_db_assign_options()", fileName);
-    int rc = 0;
+    int rc = SQL_SUCCESS;
     long option_num = 0;
     SQLINTEGER value_int = 0;
 #ifdef __MVS__
@@ -841,7 +841,7 @@ static int _python_ibm_db_assign_options(void *handle, int type, long opt_key, P
 #else
     SQLWCHAR *option_str = NULL;
 #endif
-    int isNewBuffer;
+    int isNewBuffer = 0;
     snprintf(messageStr, sizeof(messageStr), "Parameters - Handle: %p, type: %d, opt_key: %ld, data: %p", handle, type, opt_key, data);
     LogMsg(DEBUG, messageStr, fileName);
     /* First check to see if it is a non-cli attribut */
@@ -1813,7 +1813,7 @@ static PyObject *_python_ibm_db_connect_helper(PyObject *self, PyObject *args, i
     PyObject *literal_replacementObj = NULL;
     SQLINTEGER literal_replacement;
     PyObject *equal = StringOBJ_FromASCII("=");
-    int rc = 0;
+    int rc = SQL_SUCCESS;
     SQLINTEGER conn_alive;
     conn_handle *conn_res = NULL;
     int reused = 0;
@@ -2936,8 +2936,8 @@ static int _python_ibm_db_createdb(conn_handle *conn_res, PyObject *dbNameObj, P
     SQLSMALLINT length;
     SQLCHAR msg[SQL_MAX_MESSAGE_LENGTH + 1];
     SQLCHAR sqlstate[SQL_SQLSTATE_SIZE + 1];
-    int isNewBuffer;
-    int rc = 0;
+    int isNewBuffer = 0;
+    int rc = SQL_SUCCESS;
 #ifdef _WIN32
     HINSTANCE cliLib = NULL;
     FARPROC sqlcreatedb;
@@ -3109,8 +3109,8 @@ static int _python_ibm_db_dropdb(conn_handle *conn_res, PyObject *dbNameObj, int
     SQLSMALLINT length;
     SQLCHAR msg[SQL_MAX_MESSAGE_LENGTH + 1];
     SQLCHAR sqlstate[SQL_SQLSTATE_SIZE + 1];
-    int isNewBuffer;
-    int rc = 0;
+    int isNewBuffer = 0;
+    int rc = SQL_SUCCESS;
 #ifdef _WIN32
     FARPROC sqldropdb;
     HINSTANCE cliLib = NULL;
@@ -4395,8 +4395,8 @@ static PyObject *ibm_db_column_privileges(PyObject *self, PyObject *args)
     PyObject *py_conn_res = NULL;
     conn_handle *conn_res;
     stmt_handle *stmt_res;
-    int rc;
-    int isNewBuffer;
+    int rc = SQL_SUCCESS;
+    int isNewBuffer = 0;
 
     if (!PyArg_ParseTuple(args, "O|OOOO", &py_conn_res, &py_qualifier, &py_owner,
                           &py_table_name, &py_column_name))
@@ -4664,7 +4664,7 @@ static PyObject *ibm_db_columns(PyObject *self, PyObject *args)
     PyObject *py_conn_res = NULL;
     conn_handle *conn_res;
     stmt_handle *stmt_res;
-    int rc = 0;
+    int rc = SQL_SUCCESS;
     int isNewBuffer = 0;
 
     if (!PyArg_ParseTuple(args, "O|OOOO", &py_conn_res, &py_qualifier, &py_owner,
@@ -4940,7 +4940,7 @@ static PyObject *ibm_db_foreign_keys(PyObject *self, PyObject *args)
     SQLWCHAR *fk_qualifier = NULL;
     SQLWCHAR *fk_owner = NULL;
     SQLWCHAR *fk_table_name = NULL;
-    int rc;
+    int rc = SQL_SUCCESS;
     conn_handle *conn_res = NULL;
     stmt_handle *stmt_res;
     PyObject *py_conn_res = NULL;
@@ -5239,14 +5239,14 @@ static PyObject *ibm_db_primary_keys(PyObject *self, PyObject *args)
     SQLWCHAR *qualifier = NULL;
     SQLWCHAR *owner = NULL;
     SQLWCHAR *table_name = NULL;
-    int rc;
+    int rc = SQL_SUCCESS;
     conn_handle *conn_res;
     stmt_handle *stmt_res;
     PyObject *py_conn_res = NULL;
     PyObject *py_qualifier = NULL;
     PyObject *py_owner = NULL;
     PyObject *py_table_name = NULL;
-    int isNewBuffer;
+    int isNewBuffer = 0;
 
     if (!PyArg_ParseTuple(args, "OOOO", &py_conn_res, &py_qualifier, &py_owner,
                           &py_table_name))
@@ -5495,10 +5495,10 @@ static PyObject *ibm_db_procedure_columns(PyObject *self, PyObject *args)
     PyObject *py_proc_name = NULL;
     PyObject *py_column_name = NULL;
     PyObject *py_conn_res = NULL;
-    int rc = 0;
+    int rc = SQL_SUCCESS;
     conn_handle *conn_res;
     stmt_handle *stmt_res;
-    int isNewBuffer;
+    int isNewBuffer = 0;
 
     if (!PyArg_ParseTuple(args, "O|OOOO", &py_conn_res, &py_qualifier, &py_owner,
                           &py_proc_name, &py_column_name))
@@ -5739,14 +5739,14 @@ static PyObject *ibm_db_procedures(PyObject *self, PyObject *args)
     SQLWCHAR *qualifier = NULL;
     SQLWCHAR *owner = NULL;
     SQLWCHAR *proc_name = NULL;
-    int rc = 0;
+    int rc = SQL_SUCCESS;
     conn_handle *conn_res;
     stmt_handle *stmt_res;
     PyObject *py_conn_res = NULL;
     PyObject *py_qualifier = NULL;
     PyObject *py_owner = NULL;
     PyObject *py_proc_name = NULL;
-    int isNewBuffer;
+    int isNewBuffer = 0;
 
     if (!PyArg_ParseTuple(args, "OOOO", &py_conn_res, &py_qualifier, &py_owner, &py_proc_name))
     {
@@ -5991,13 +5991,13 @@ static PyObject *ibm_db_special_columns(PyObject *self, PyObject *args)
     int scope = 0;
     conn_handle *conn_res;
     stmt_handle *stmt_res;
-    int rc;
+    int rc = SQL_SUCCESS;
     PyObject *py_conn_res = NULL;
     PyObject *py_scope = NULL;
     PyObject *py_qualifier = NULL;
     PyObject *py_owner = NULL;
     PyObject *py_table_name = NULL;
-    int isNewBuffer;
+    int isNewBuffer = 0;
 
     if (!PyArg_ParseTuple(args, "OOOOO", &py_conn_res, &py_qualifier, &py_owner, &py_table_name, &py_scope))
     {
@@ -6262,7 +6262,7 @@ static PyObject *ibm_db_statistics(PyObject *self, PyObject *args)
     SQLWCHAR *owner = NULL;
     SQLWCHAR *table_name = NULL;
     int unique = 0;
-    int rc = 0;
+    int rc = SQL_SUCCESS;
     SQLUSMALLINT sql_unique;
     conn_handle *conn_res;
     stmt_handle *stmt_res;
@@ -6271,7 +6271,7 @@ static PyObject *ibm_db_statistics(PyObject *self, PyObject *args)
     PyObject *py_owner = NULL;
     PyObject *py_table_name = NULL;
     PyObject *py_unique = NULL;
-    int isNewBuffer;
+    int isNewBuffer = 0;
 
     if (!PyArg_ParseTuple(args, "OOOOO", &py_conn_res, &py_qualifier, &py_owner, &py_table_name, &py_unique))
     {
@@ -6504,12 +6504,12 @@ static PyObject *ibm_db_table_privileges(PyObject *self, PyObject *args)
     SQLWCHAR *table_name = NULL;
     conn_handle *conn_res;
     stmt_handle *stmt_res;
-    int rc;
+    int rc = SQL_SUCCESS;
     PyObject *py_conn_res = NULL;
     PyObject *py_qualifier = NULL;
     PyObject *py_owner = NULL;
     PyObject *py_table_name = NULL;
-    int isNewBuffer;
+    int isNewBuffer = 0;
 
     if (!PyArg_ParseTuple(args, "O|OOO", &py_conn_res, &py_qualifier, &py_owner, &py_table_name))
     {
@@ -6736,8 +6736,8 @@ static PyObject *ibm_db_tables(PyObject *self, PyObject *args)
     PyObject *py_conn_res;
     conn_handle *conn_res;
     stmt_handle *stmt_res;
-    int rc;
-    int isNewBuffer;
+    int rc = SQL_SUCCESS;
+    int isNewBuffer = 0;
 
     if (!PyArg_ParseTuple(args, "O|OOOO", &py_conn_res, &py_qualifier, &py_owner, &py_table_name, &py_table_type))
     {
@@ -7408,7 +7408,7 @@ static PyObject *_python_ibm_db_prepare_helper(conn_handle *conn_res, PyObject *
 {
     LogMsg(INFO, "entry _python_ibm_db_prepare_helper()", fileName);
     stmt_handle *stmt_res;
-    int rc;
+    int rc = SQL_SUCCESS;
     char error[DB2_MAX_ERR_MSG_LEN + 50];
     SQLWCHAR *stmt = NULL;
     int stmt_size = 0;
@@ -8107,7 +8107,7 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
         /* To Bind array of values */
         if (TYPE(bind_data) == PYTHON_LIST)
         {
-            int isNewBuffer, param_size = 0;
+            int isNewBuffer = 0, param_size = 0;
             Py_ssize_t n = PyList_Size(bind_data);
             snprintf(messageStr, sizeof(messageStr), "PYTHON_LIST detected with size: %zd", n);
             LogMsg(DEBUG, messageStr, fileName);
@@ -8345,7 +8345,7 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
         }
         else /* To bind scalar values */
         {
-            int isNewBuffer;
+            int isNewBuffer = 0;
             snprintf(messageStr, sizeof(messageStr), "Binding scalar values: data_type=%d, param_type=%d", curr->data_type, curr->param_type);
             LogMsg(DEBUG, messageStr, fileName);
             if (PyObject_CheckBuffer(bind_data) && (curr->data_type == SQL_BLOB || curr->data_type == SQL_BINARY || curr->data_type == SQL_VARBINARY))
@@ -8591,9 +8591,6 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
                 }
                 else
                 {
-
-                    tmp_svalue = NULL;
-                    dest_svalue = NULL;
                     if (PyObject_CheckBuffer(item) && (curr->data_type == SQL_BLOB ||
                                                        curr->data_type == SQL_BINARY ||
                                                        curr->data_type == SQL_VARBINARY))
@@ -8610,11 +8607,6 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
                     }
                     else
                     {
-                        if (tmp_svalue != NULL)
-                        {
-                            PyMem_Del(tmp_svalue);
-                            tmp_svalue = NULL;
-                        }
                         tmp_svalue = PyBytes_AsString(item); /** It is PyString_AsString() in PY_MAJOR_VERSION<3, and code execution will not come here in PY_MAJOR_VERSION>=3 **/
                         curr->ivalue = strlen(tmp_svalue);
                     }
