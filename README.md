@@ -431,7 +431,7 @@ If you have copied db2con*.lic file under clidriver/license directory, but still
 
   OR
 
-  db2cli validate -database "dbname:hostname:port" -userid dbuser -passwd dbpasswd -connect -displaylic
+  db2cli validate -database "dbname:hostname:port" -user dbuser -passwd dbpasswd -connect -displaylic
 ```
 
 

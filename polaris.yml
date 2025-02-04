@@ -38,7 +38,7 @@ capture:
       files:
       - directory: ${project.projectDir}
     dlls:
-      extensions: [c, cpp, h]
+      extensions: [c, C, cpp, CPP, h, hpp]
       files:
       - directory: ${project.projectDir}
 analyze:

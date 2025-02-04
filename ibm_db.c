@@ -4529,6 +4529,8 @@ static PyObject *ibm_db_column_privileges(PyObject *self, PyObject *args)
             owner = getUnicodeDataAsSQLWCHAR(py_owner, &isNewBuffer);
         if (py_table_name && py_table_name != Py_None)
             table_name = getUnicodeDataAsSQLWCHAR(py_table_name, &isNewBuffer);
+        if (py_column_name && py_column_name != Py_None)
+            column_name = getUnicodeDataAsSQLWCHAR(py_column_name, &isNewBuffer);
 
         snprintf(messageStr, sizeof(messageStr), "Calling SQLColumnPrivilegesW: qualifier=%s, owner=%s, table_name=%s, column_name=%s",
                  qualifier ? (char *)qualifier : "NULL",
@@ -4554,6 +4556,8 @@ static PyObject *ibm_db_column_privileges(PyObject *self, PyObject *args)
                 PyMem_Del(owner);
             if (table_name)
                 PyMem_Del(table_name);
+            if (column_name)
+                PyMem_Del(column_name);
         }
 
         if (rc == SQL_ERROR)
