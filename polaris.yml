@@ -46,4 +46,4 @@ analyze:
 install:
   coverity:
     version: default
-serverUrl: https://rocketsoftware.polaris.synopsys.com
+serverUrl: https://rocketsoftware.cop.blackduck.com

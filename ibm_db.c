@@ -637,7 +637,7 @@ static stmt_handle *_ibm_db_new_stmt_struct(conn_handle *conn_res)
 static void _python_ibm_db_free_stmt_struct(stmt_handle *handle)
 {
     LogMsg(INFO, "entry _python_ibm_db_free_stmt_struct()", fileName);
-    if (handle->hstmt != -1)
+    if (handle != NULL && handle->hstmt != -1)
     {
         snprintf(messageStr, sizeof(messageStr), "handle->hstmt=%p, preparing to call SQLFreeHandle", (void *)handle->hstmt);
         LogMsg(DEBUG, messageStr, fileName);
@@ -646,14 +646,16 @@ static void _python_ibm_db_free_stmt_struct(stmt_handle *handle)
         Py_END_ALLOW_THREADS;
         snprintf(messageStr, sizeof(messageStr), "SQLFreeHandle called with handle=%p", (void *)handle->hstmt);
         LogMsg(DEBUG, messageStr, fileName);
-        if (handle)
+        if (handle != NULL)
         {
             _python_ibm_db_free_result_struct(handle);
         }
     }
     snprintf(messageStr, sizeof(messageStr), "Py_TYPE(handle)->tp_free called for handle=%p", (void *)handle);
     LogMsg(DEBUG, messageStr, fileName);
-    Py_TYPE(handle)->tp_free((PyObject *)handle);
+    if (handle != NULL) {
+        Py_TYPE(handle)->tp_free((PyObject *)handle);
+    }
     LogMsg(INFO, "exit _python_ibm_db_free_stmt_struct()", fileName);
 }
 
@@ -1934,9 +1936,14 @@ static PyObject *_python_ibm_db_connect_helper(PyObject *self, PyObject *args, i
         if (conn_res == NULL)
         {
             conn_res = PyObject_NEW(conn_handle, &conn_handleType);
-            conn_res->henv = 0;
-            conn_res->hdbc = 0;
-            LogMsg(DEBUG, "Created a new connection handle", fileName);
+            if (conn_res != NULL) {
+                conn_res->henv = 0;
+                conn_res->hdbc = 0;
+                LogMsg(DEBUG, "Created a new connection handle", fileName);
+            } else {
+                LogMsg(ERROR, "Failed to allocate memory for connection handle", fileName);
+                return NULL;
+            }
         }
 
         /* We need to set this early, in case we get an error below,
@@ -2610,7 +2617,7 @@ static PyObject *ibm_db_get_sqlcode(PyObject *self, PyObject *args)
     snprintf(messageStr, sizeof(messageStr), "Parsed values: py_conn_res=%p, py_stmt_res=%p", py_conn_res, py_stmt_res);
     LogMsg(DEBUG, messageStr, fileName);
 
-    if ((!NIL_P(py_conn_res)) | (!NIL_P(py_stmt_res)))
+    if ((!NIL_P(py_conn_res)) || (!NIL_P(py_stmt_res)))
     {
         if (!PyObject_TypeCheck(py_conn_res, &conn_handleType))
         {
@@ -2646,8 +2653,7 @@ static PyObject *ibm_db_get_sqlcode(PyObject *self, PyObject *args)
             PyErr_NoMemory();
             return NULL;
         }
-
-        memset(return_str, 0, sizeof(return_str));
+        memset(return_str, 0, sizeof(SQLINTEGER));
         LogMsg(DEBUG, "Initialized return_str with zeros", fileName);
         if (SQL_HANDLE_DBC)
         {
@@ -2657,7 +2663,6 @@ static PyObject *ibm_db_get_sqlcode(PyObject *self, PyObject *args)
             snprintf(messageStr, sizeof(messageStr), "SQL errors checked. return_str: %s", return_str);
             LogMsg(DEBUG, messageStr, fileName);
         }
-
         if (SQL_HANDLE_STMT)
         {
             _python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, -1, 0,
@@ -2666,34 +2671,28 @@ static PyObject *ibm_db_get_sqlcode(PyObject *self, PyObject *args)
             snprintf(messageStr, sizeof(messageStr), "SQL errors checked. return_str: %s", return_str);
             LogMsg(DEBUG, messageStr, fileName);
         }
-
         if (conn_res->error_recno_tracker - conn_res->errormsg_recno_tracker >= 1)
         {
             LogMsg(DEBUG, "Updating errormsg_recno_tracker", fileName);
             conn_res->errormsg_recno_tracker = conn_res->error_recno_tracker;
         }
-
         conn_res->error_recno_tracker++;
         snprintf(messageStr, sizeof(messageStr), "Updated error_recno_tracker: %d, errormsg_recno_tracker: %d", conn_res->error_recno_tracker, stmt_res->errormsg_recno_tracker);
         LogMsg(DEBUG, messageStr, fileName);
-
         if (stmt_res->error_recno_tracker - stmt_res->errormsg_recno_tracker >= 1)
         {
             LogMsg(DEBUG, "Updating errormsg_recno_tracker", fileName);
             stmt_res->errormsg_recno_tracker = stmt_res->error_recno_tracker;
         }
-
         stmt_res->error_recno_tracker++;
         snprintf(messageStr, sizeof(messageStr), "Updated error_recno_tracker: %d, errormsg_recno_tracker: %d", stmt_res->error_recno_tracker, stmt_res->errormsg_recno_tracker);
         LogMsg(DEBUG, messageStr, fileName);
-
-        retVal = StringOBJ_FromASCII(return_str);
         if (return_str != NULL)
         {
+            retVal = StringOBJ_FromASCII(return_str);
             PyMem_Del(return_str);
             return_str = NULL;
         }
-
         snprintf(messageStr, sizeof(messageStr), "Created return value: %p", retVal);
         LogMsg(DEBUG, messageStr, fileName);
         LogMsg(INFO, "exit get_sqlcode()", fileName);
@@ -3265,7 +3264,9 @@ static void _python_ibm_db_debug(PyObject *self, PyObject *args)
         {
             PyErr_SetString(PyExc_IOError, "Failed to open the log file");
         }
-        fclose(log_file);
+        else {
+            fclose(log_file);
+        }
     }
     else
     {
@@ -4093,7 +4094,7 @@ static PyObject *ibm_db_bind_param(PyObject *self, PyObject *args)
         }
         else
         {
-            LogMsg(ERROR, "Invalid parameter number", fileName);
+            LogMsg(ERROR, "Supplied parameter is invalid", fileName);
             PyErr_SetString(PyExc_Exception, "Supplied parameter is invalid");
             return NULL;
         }
@@ -4462,7 +4463,7 @@ static PyObject *ibm_db_column_privileges(PyObject *self, PyObject *args)
 
     if (py_column_name != NULL && py_column_name != Py_None)
     {
-        if (PyString_Check(py_column_name) || PyUnicode_Check(py_table_name))
+        if (PyString_Check(py_column_name) || PyUnicode_Check(py_column_name))
         {
             py_column_name = PyUnicode_FromObject(py_column_name);
             snprintf(messageStr, sizeof(messageStr), "Converted py_column_name to Unicode: %s", PyUnicode_AsUTF8(py_column_name));
@@ -4733,7 +4734,7 @@ static PyObject *ibm_db_columns(PyObject *self, PyObject *args)
 
     if (py_column_name != NULL && py_column_name != Py_None)
     {
-        if (PyString_Check(py_column_name) || PyUnicode_Check(py_table_name))
+        if (PyString_Check(py_column_name) || PyUnicode_Check(py_column_name))
         {
             py_column_name = PyUnicode_FromObject(py_column_name);
             LogMsg(DEBUG, "py_column_name converted to Unicode", fileName);
@@ -6597,14 +6598,6 @@ static PyObject *ibm_db_table_privileges(PyObject *self, PyObject *args)
             Py_XDECREF(py_table_name);
             return NULL;
         }
-
-        if (!conn_res)
-        {
-            LogMsg(ERROR, "Connectin Resource cannot be found", fileName);
-            PyErr_SetString(PyExc_Exception, "Connection Resource cannot be found");
-            Py_RETURN_FALSE;
-        }
-
         stmt_res = _ibm_db_new_stmt_struct(conn_res);
         snprintf(messageStr, sizeof(messageStr), "New statement structure created. stmt_res: %p", (void *)stmt_res);
         LogMsg(DEBUG, messageStr, fileName);
@@ -7426,14 +7419,14 @@ static PyObject *_python_ibm_db_prepare_helper(conn_handle *conn_res, PyObject *
     }
     snprintf(messageStr, sizeof(messageStr), "Connection handle active: %d", conn_res->handle_active);
     LogMsg(DEBUG, messageStr, fileName);
-    if (py_stmt != Py_None && PyUnicode_Check(py_stmt))
+    if (py_stmt != NULL && PyUnicode_Check(py_stmt))
     {
-        snprintf(messageStr, sizeof(messageStr), "Initial py_stmt: %s", py_stmt ? PyUnicode_AsUTF8(py_stmt) : "NULL");
+        snprintf(messageStr, sizeof(messageStr), "Initial py_stmt: %s", PyUnicode_AsUTF8(py_stmt));
         LogMsg(DEBUG, messageStr, fileName);
     }
     if (options != NULL && PyUnicode_Check(options))
     {
-        snprintf(messageStr, sizeof(messageStr), "Options: %s", options ? PyUnicode_AsUTF8(options) : "NULL");
+        snprintf(messageStr, sizeof(messageStr), "Options: %s", PyUnicode_AsUTF8(options));
         LogMsg(DEBUG, messageStr, fileName);
     }
     if (py_stmt != NULL && py_stmt != Py_None)
@@ -7726,8 +7719,8 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
             _python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT,
                                             rc, 1, NULL, -1, 1);
         }
-        return rc;
         LogMsg(INFO, "exit _python_ibm_db_bind_data()", fileName);
+        return rc;
     }
 
     type = TYPE(bind_data);
@@ -9411,12 +9404,7 @@ static int _python_ibm_db_execute_helper2(stmt_handle *stmt_res, PyObject *data,
         while (curr != NULL)
         {
             /* Fetch data from symbol table */
-            if (curr->param_type == PARAM_FILE)
-                bind_data = curr->var_pyvalue;
-            else
-            {
-                bind_data = curr->var_pyvalue;
-            }
+            bind_data = curr->var_pyvalue;
             snprintf(messageStr, sizeof(messageStr), "Processing node: %p, param_type: %d, bind_data: %p",
                      curr, curr->param_type, bind_data);
             LogMsg(DEBUG, messageStr, fileName);
@@ -9783,21 +9771,17 @@ static PyObject *_python_ibm_db_execute_helper1(stmt_handle *stmt_res, PyObject 
             return NULL;
         }
     }
-
     /* cleanup dynamic bindings if present */
     if (bind_params == 1)
     {
         _python_ibm_db_clear_param_cache(stmt_res);
     }
-
     if (rc != SQL_ERROR)
     {
         LogMsg(INFO, "exit _python_ibm_db_execute_helper1()", fileName);
         Py_INCREF(Py_True);
         return Py_True;
     }
-    LogMsg(INFO, "exit _python_ibm_db_execute_helper1()", fileName);
-    return NULL;
 }
 
 /*!# ibm_db.execute
@@ -9940,20 +9924,21 @@ static PyObject *ibm_db_conn_errormsg(PyObject *self, PyObject *args)
             snprintf(messageStr, sizeof(messageStr), "Connection handle is valid. conn_res: %p", (void *)conn_res);
             LogMsg(DEBUG, messageStr, fileName);
         }
-
         if (!conn_res->handle_active)
         {
             LogMsg(ERROR, "Connection is not active", fileName);
             PyErr_SetString(PyExc_Exception, "Connection is not active");
         }
-
         return_str = ALLOC_N(char, DB2_MAX_ERR_MSG_LEN);
-        snprintf(messageStr, sizeof(messageStr), "Allocated return_str: %p, size: %d", return_str, DB2_MAX_ERR_MSG_LEN);
-        LogMsg(DEBUG, messageStr, fileName);
-
-        memset(return_str, 0, DB2_MAX_ERR_MSG_LEN);
-        LogMsg(DEBUG, "Initialized return_str with zeros", fileName);
-
+        if (return_str != NULL) {
+            snprintf(messageStr, sizeof(messageStr), "Allocated return_str: %p, size: %d", return_str, DB2_MAX_ERR_MSG_LEN);
+            LogMsg(DEBUG, messageStr, fileName);
+            memset(return_str, 0, DB2_MAX_ERR_MSG_LEN);
+            LogMsg(DEBUG, "Initialized return_str with zeros", fileName);
+        } else {
+            LogMsg(ERROR, "Memory allocation for return_str failed", fileName);
+            return NULL;
+        }
         _python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, -1, 0,
                                         return_str, DB2_ERRMSG,
                                         conn_res->errormsg_recno_tracker);
@@ -9967,10 +9952,9 @@ static PyObject *ibm_db_conn_errormsg(PyObject *self, PyObject *args)
         conn_res->errormsg_recno_tracker++;
         snprintf(messageStr, sizeof(messageStr), "Updated error_recno_tracker: %d, errormsg_recno_tracker: %d", conn_res->error_recno_tracker, conn_res->errormsg_recno_tracker);
         LogMsg(DEBUG, messageStr, fileName);
-
-        retVal = StringOBJ_FromASCII(return_str);
         if (return_str != NULL)
         {
+            retVal = StringOBJ_FromASCII(return_str);
             PyMem_Del(return_str);
             return_str = NULL;
         }
@@ -10049,9 +10033,10 @@ static PyObject *ibm_db_conn_warn(PyObject *self, PyObject *args)
             LogMsg(DEBUG, messageStr, fileName);
         }
         return_str = ALLOC_N(char, DB2_MAX_ERR_MSG_LEN);
-        PyErr_Clear();
-        memset(return_str, 0, SQL_SQLSTATE_SIZE + 1);
-
+        if (return_str != NULL) {
+            PyErr_Clear();
+            memset(return_str, 0, SQL_SQLSTATE_SIZE + 1);
+        }
         _python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, 1, 0,
                                         return_str, DB2_WARNMSG,
                                         conn_res->error_recno_tracker);
@@ -10062,14 +10047,13 @@ static PyObject *ibm_db_conn_warn(PyObject *self, PyObject *args)
             LogMsg(DEBUG, messageStr, fileName);
         }
         conn_res->error_recno_tracker++;
-        retVal = StringOBJ_FromASCII(return_str);
-        if (return_str != NULL)
-        {
+        if (return_str != NULL) {
+            retVal = StringOBJ_FromASCII(return_str);
+            snprintf(messageStr, sizeof(messageStr), "Returning warning message: %s", return_str);
+            LogMsg(INFO, messageStr, fileName);
             PyMem_Del(return_str);
             return_str = NULL;
         }
-        snprintf(messageStr, sizeof(messageStr), "Returning warning message: %s", return_str);
-        LogMsg(INFO, messageStr, fileName);
         LogMsg(INFO, "exit conn_warn()", fileName);
         return retVal;
     }
@@ -10141,8 +10125,12 @@ static PyObject *ibm_db_stmt_warn(PyObject *self, PyObject *args)
             LogMsg(DEBUG, messageStr, fileName);
         }
         return_str = ALLOC_N(char, DB2_MAX_ERR_MSG_LEN);
-
-        memset(return_str, 0, DB2_MAX_ERR_MSG_LEN);
+        if (return_str != NULL) {
+            memset(return_str, 0, DB2_MAX_ERR_MSG_LEN);
+        } else {
+            LogMsg(ERROR, "Memory allocation for return_str failed", fileName);
+            return NULL;
+        }
         snprintf(messageStr, sizeof(messageStr), "Calling _python_ibm_db_check_sql_errors with parameters: "
                                                  "hstmt=%p, handle_type=%d, recno_tracker=%d",
                  stmt_res->hstmt, SQL_HANDLE_STMT, stmt_res->errormsg_recno_tracker);
@@ -10160,10 +10148,9 @@ static PyObject *ibm_db_stmt_warn(PyObject *self, PyObject *args)
         snprintf(messageStr, sizeof(messageStr), "Updated error_recno_tracker=%d, errormsg_recno_tracker=%d",
                  stmt_res->error_recno_tracker, stmt_res->errormsg_recno_tracker);
         LogMsg(DEBUG, messageStr, fileName);
-
-        retVal = StringOBJ_FromASCII(return_str);
         if (return_str != NULL)
         {
+            retVal = StringOBJ_FromASCII(return_str);
             PyMem_Del(return_str);
             return_str = NULL;
         }
@@ -10238,12 +10225,15 @@ static PyObject *ibm_db_stmt_errormsg(PyObject *self, PyObject *args)
             LogMsg(DEBUG, messageStr, fileName);
         }
         return_str = ALLOC_N(char, DB2_MAX_ERR_MSG_LEN);
-        snprintf(messageStr, sizeof(messageStr), "Allocated return_str: %p, size: %d", return_str, DB2_MAX_ERR_MSG_LEN);
-        LogMsg(DEBUG, messageStr, fileName);
-
-        memset(return_str, 0, DB2_MAX_ERR_MSG_LEN);
-        LogMsg(DEBUG, "Initialized return_str with zeros", fileName);
-
+        if (return_str != NULL) {
+            snprintf(messageStr, sizeof(messageStr), "Allocated return_str: %p, size: %d", return_str, DB2_MAX_ERR_MSG_LEN);
+            LogMsg(DEBUG, messageStr, fileName);
+            memset(return_str, 0, DB2_MAX_ERR_MSG_LEN);
+            LogMsg(DEBUG, "Initialized return_str with zeros", fileName);
+        } else {
+            LogMsg(ERROR, "Memory allocation for return_str failed", fileName);
+            return NULL;
+        }
         _python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, -1, 0,
                                         return_str, DB2_ERRMSG,
                                         stmt_res->errormsg_recno_tracker);
@@ -10346,12 +10336,15 @@ static PyObject *ibm_db_conn_error(PyObject *self, PyObject *args)
             LogMsg(DEBUG, messageStr, fileName);
         }
         return_str = ALLOC_N(char, SQL_SQLSTATE_SIZE + 1);
-        snprintf(messageStr, sizeof(messageStr), "Allocated return_str: %p, size: %d", return_str, SQL_SQLSTATE_SIZE + 1);
-        LogMsg(DEBUG, messageStr, fileName);
-
-        memset(return_str, 0, SQL_SQLSTATE_SIZE + 1);
-        LogMsg(DEBUG, "Initialized return_str with zeros", fileName);
-
+        if (return_str != NULL) {
+            snprintf(messageStr, sizeof(messageStr), "Allocated return_str: %p, size: %d", return_str, SQL_SQLSTATE_SIZE + 1);
+            LogMsg(DEBUG, messageStr, fileName);
+            memset(return_str, 0, SQL_SQLSTATE_SIZE + 1);
+            LogMsg(DEBUG, "Initialized return_str with zeros", fileName);
+        } else {
+            LogMsg(ERROR, "Memory allocation for return_str failed", fileName);
+            return NULL;
+        }
         _python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, -1, 0,
                                         return_str, DB2_ERR,
                                         conn_res->error_recno_tracker);
@@ -10365,10 +10358,9 @@ static PyObject *ibm_db_conn_error(PyObject *self, PyObject *args)
         conn_res->error_recno_tracker++;
         snprintf(messageStr, sizeof(messageStr), "Updated error_recno_tracker: %d, errormsg_recno_tracker: %d", conn_res->error_recno_tracker, conn_res->errormsg_recno_tracker);
         LogMsg(DEBUG, messageStr, fileName);
-
-        retVal = StringOBJ_FromASCII(return_str);
         if (return_str != NULL)
         {
+            retVal = StringOBJ_FromASCII(return_str);
             PyMem_Del(return_str);
             return_str = NULL;
         }
@@ -10451,10 +10443,14 @@ static PyObject *ibm_db_stmt_error(PyObject *self, PyObject *args)
         return_str = ALLOC_N(char, DB2_MAX_ERR_MSG_LEN);
         snprintf(messageStr, sizeof(messageStr), "Allocated return_str: %p, size: %d", return_str, DB2_MAX_ERR_MSG_LEN);
         LogMsg(DEBUG, messageStr, fileName);
-
-        memset(return_str, 0, DB2_MAX_ERR_MSG_LEN);
-        LogMsg(DEBUG, "Initialized return_str with zeros", fileName);
-
+        if (return_str != NULL) {
+            memset(return_str, 0, DB2_MAX_ERR_MSG_LEN);
+            LogMsg(DEBUG, "Initialized return_str with zeros", fileName);
+        } else {
+            LogMsg(ERROR, "Failed to allocate memory for return_str", fileName);
+            PyErr_SetString(PyExc_MemoryError, "Failed to allocate memory for error message string.");
+            return NULL;
+        }
         _python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, -1, 0,
                                         return_str, DB2_ERR,
                                         stmt_res->error_recno_tracker);
@@ -10469,10 +10465,9 @@ static PyObject *ibm_db_stmt_error(PyObject *self, PyObject *args)
         stmt_res->error_recno_tracker++;
         snprintf(messageStr, sizeof(messageStr), "Updated error_recno_tracker: %d, errormsg_recno_tracker: %d", stmt_res->error_recno_tracker, stmt_res->errormsg_recno_tracker);
         LogMsg(DEBUG, messageStr, fileName);
-
-        retVal = StringOBJ_FromASCII(return_str);
         if (return_str != NULL)
         {
+            retVal = StringOBJ_FromASCII(return_str);
             PyMem_Del(return_str);
             return_str = NULL;
         }
@@ -10725,9 +10720,6 @@ static PyObject *ibm_db_num_fields(PyObject *self, PyObject *args)
         PyErr_SetString(PyExc_Exception, "Supplied parameter is invalid");
         return NULL;
     }
-    Py_INCREF(Py_False);
-    LogMsg(INFO, "exit num_fields()", fileName);
-    return Py_False;
 }
 
 /*!# ibm_db.num_rows
@@ -10824,8 +10816,6 @@ static PyObject *ibm_db_num_rows(PyObject *self, PyObject *args)
         PyErr_SetString(PyExc_Exception, "Supplied parameter is invalid");
         return NULL;
     }
-    Py_INCREF(Py_False);
-    return Py_False;
 }
 
 /*!# ibm_db.get_num_result
@@ -10916,11 +10906,9 @@ static PyObject *ibm_db_get_num_result(PyObject *self, PyObject *args)
     {
         LogMsg(ERROR, "Supplied parameter is invalid", fileName);
         PyErr_SetString(PyExc_Exception, "Supplied parameter is invalid");
+        LogMsg(INFO, "exit get_num_result()", fileName);
         return NULL;
     }
-    LogMsg(INFO, "exit get_num_result()", fileName);
-    Py_INCREF(Py_False);
-    return Py_False;
 }
 
 /* static int _python_ibm_db_get_column_by_name(stmt_handle *stmt_res, char *col_name, int col)
@@ -12680,6 +12668,7 @@ static PyObject *ibm_db_result(PyObject *self, PyObject *args)
                 LogMsg(INFO, "exit result()", fileName);
                 Py_RETURN_FALSE;
             }
+            break;
         case SQL_XML:
         case SQL_CLOB:
         case SQL_DBCLOB:
@@ -14004,9 +13993,9 @@ static PyObject *ibm_db_get_db_info(PyObject *self, PyObject *args)
                                                 SQL_HANDLE_DBC, rc, 1,
                                                 NULL, -1, 1);
             }
-            return_value = StringOBJ_FromASCII((char *)value);
             if (value != NULL)
             {
+                return_value = StringOBJ_FromASCII((char *)value);
                 PyMem_Del(value);
                 value = NULL;
             }
@@ -15810,36 +15799,42 @@ static int _ibm_db_chaining_flag(stmt_handle *stmt_res, SQLINTEGER flag, error_m
             errTuple = PyTuple_New(err_cnt + client_err_cnt);
             /* Allocate enough space for largest possible int value. */
             err_fmt = (char *)PyMem_Malloc(strlen("Error 2147483647: %s\n") * (err_cnt + client_err_cnt) + 1);
-            err_fmt[0] = '\0';
-            errNo = 1;
-            while (error_list != NULL)
-            {
-                snprintf(messageStr, sizeof(messageStr), "Adding error to tuple: Error %d: %s", errNo, error_list->err_msg);
-                LogMsg(DEBUG, messageStr, fileName);
-                err_fmt_offset += sprintf(err_fmt + err_fmt_offset, "Error %d: %s\n", (int)errNo, "%s");
-                PyTuple_SetItem(errTuple, errNo - 1, StringOBJ_FromASCII(error_list->err_msg));
-                error_list = error_list->next;
-                errNo++;
+            if (err_fmt != NULL) {
+                err_fmt[0] = '\0';
+                errNo = 1;
+                while (error_list != NULL)
+                {
+                    snprintf(messageStr, sizeof(messageStr), "Adding error to tuple: Error %d: %s", errNo, error_list->err_msg);
+                    LogMsg(DEBUG, messageStr, fileName);
+                    err_fmt_offset += sprintf(err_fmt + err_fmt_offset, "Error %d: %s\n", (int)errNo, "%s");
+                    PyTuple_SetItem(errTuple, errNo - 1, StringOBJ_FromASCII(error_list->err_msg));
+                    error_list = error_list->next;
+                    errNo++;
+                }
+                for (errNo = client_err_cnt + 1; errNo <= (err_cnt + client_err_cnt); errNo++)
+                {
+                    snprintf(messageStr, sizeof(messageStr), "Adding SQL error to tuple: Error %d", errNo);
+                    LogMsg(DEBUG, messageStr, fileName);
+                    err_fmt_offset += sprintf(err_fmt + err_fmt_offset, "Error %d: %s\n", (int)errNo, "%s");
+                    _python_ibm_db_check_sql_errors((SQLHSTMT)stmt_res->hstmt, SQL_HANDLE_STMT, SQL_ERROR, 1, NULL, -1, (errNo - client_err_cnt));
+                    PyTuple_SetItem(errTuple, errNo - 1, StringOBJ_FromASCII(IBM_DB_G(__python_stmt_err_msg)));
+                }
+                err_fmtObj = StringOBJ_FromASCII(err_fmt);
+                err_msg = StringObj_Format(err_fmtObj, errTuple);
+                if (err_fmtObj != NULL)
+                {
+                    Py_XDECREF(err_fmtObj);
+                }
+                if (err_fmt != NULL)
+                {
+                    PyMem_Free(err_fmt);
+                }
+                PyErr_SetObject(PyExc_Exception, err_msg);
+            } else {
+                LogMsg(EXCEPTION, "Failed to allocate memory for error message format.", fileName);
+                PyErr_SetString(PyExc_MemoryError, "Failed to allocate memory for error message format.");
+                return -1;
             }
-            for (errNo = client_err_cnt + 1; errNo <= (err_cnt + client_err_cnt); errNo++)
-            {
-                snprintf(messageStr, sizeof(messageStr), "Adding SQL error to tuple: Error %d", errNo);
-                LogMsg(DEBUG, messageStr, fileName);
-                err_fmt_offset += sprintf(err_fmt + err_fmt_offset, "Error %d: %s\n", (int)errNo, "%s");
-                _python_ibm_db_check_sql_errors((SQLHSTMT)stmt_res->hstmt, SQL_HANDLE_STMT, SQL_ERROR, 1, NULL, -1, (errNo - client_err_cnt));
-                PyTuple_SetItem(errTuple, errNo - 1, StringOBJ_FromASCII(IBM_DB_G(__python_stmt_err_msg)));
-            }
-            err_fmtObj = StringOBJ_FromASCII(err_fmt);
-            err_msg = StringObj_Format(err_fmtObj, errTuple);
-            if (err_fmtObj != NULL)
-            {
-                Py_XDECREF(err_fmtObj);
-            }
-            if (err_fmt != NULL)
-            {
-                PyMem_Free(err_fmt);
-            }
-            PyErr_SetObject(PyExc_Exception, err_msg);
         }
     }
     LogMsg(INFO, "exit _ibm_db_chaining_flag()", fileName);
@@ -15994,8 +15989,13 @@ static PyObject *ibm_db_execute_many(PyObject *self, PyObject *args)
         /* Execute SQL for all set of parameters */
         numOfRows = PyTuple_Size(params);
         head_error_list = ALLOC(error_msg_node);
-        memset(head_error_list, 0, sizeof(error_msg_node));
-        head_error_list->next = NULL;
+        if (head_error_list != NULL) {
+            memset(head_error_list, 0, sizeof(error_msg_node));
+            head_error_list->next = NULL;
+        }
+        else {
+            LogMsg(ERROR, "Memory allocation for head_error_list failed", fileName);
+        }
         if (numOfRows > 0)
         {
             for (i = 0; i < numOfRows; i++)
@@ -16007,8 +16007,12 @@ static PyObject *ibm_db_execute_many(PyObject *self, PyObject *args)
                 if (!PyTuple_Check(param))
                 {
                     sprintf(error, "Value parameter %d is not a tuple", i + 1);
-                    _build_client_err_list(head_error_list, error);
-                    err_count++;
+                    if (head_error_list != NULL) {
+                        _build_client_err_list(head_error_list, error);
+                        err_count++;
+                    } else {
+                        LogMsg(ERROR, "head_error_list is NULL, cannot build client error list", fileName);
+                    }
                     continue;
                 }
 
@@ -16017,8 +16021,12 @@ static PyObject *ibm_db_execute_many(PyObject *self, PyObject *args)
                 {
                     /* More are passed in -- Warning - Use the max number present */
                     sprintf(error, "Value parameter tuple %d has more parameters than previous tuple", i + 1);
-                    _build_client_err_list(head_error_list, error);
-                    err_count++;
+                    if (head_error_list != NULL) {
+                        _build_client_err_list(head_error_list, error);
+                        err_count++;
+                    } else {
+                        LogMsg(ERROR, "head_error_list is NULL, cannot build client error list", fileName);
+                    }
                     continue;
                 }
                 else if (numOpts > numOfParam)
@@ -16027,8 +16035,12 @@ static PyObject *ibm_db_execute_many(PyObject *self, PyObject *args)
                      * -- Error
                      */
                     sprintf(error, "Value parameter tuple %d has fewer parameters than previous tuple", i + 1);
-                    _build_client_err_list(head_error_list, error);
-                    err_count++;
+                    if (head_error_list != NULL) {
+                        _build_client_err_list(head_error_list, error);
+                        err_count++;
+                    } else {
+                        LogMsg(ERROR, "head_error_list is NULL, cannot build client error list", fileName);
+                    }
                     continue;
                 }
 
@@ -16041,8 +16053,12 @@ static PyObject *ibm_db_execute_many(PyObject *self, PyObject *args)
                     if (data == NULL)
                     {
                         sprintf(error, "NULL value passed for value parameter: %d", i + 1);
-                        _build_client_err_list(head_error_list, error);
-                        err_count++;
+                        if (head_error_list != NULL) {
+                            _build_client_err_list(head_error_list, error);
+                            err_count++;
+                        } else {
+                            LogMsg(ERROR, "head_error_list is NULL, cannot build client error list", fileName);
+                        }
                         break;
                     }
 
@@ -16052,8 +16068,12 @@ static PyObject *ibm_db_execute_many(PyObject *self, PyObject *args)
                         if ((TYPE(data) != PYTHON_NIL) && (TYPE(data) != PYTHON_TRUE) && (TYPE(data) != PYTHON_FALSE) && (ref_data_type[curr->param_num - 1] != TYPE(data)) && (ref_data_type[curr->param_num - 1] != PYTHON_NIL))
                         {
                             sprintf(error, "Value parameter tuple %d has types that are not homogeneous with previous tuple", i + 1);
-                            _build_client_err_list(head_error_list, error);
-                            err_count++;
+                            if (head_error_list != NULL) {
+                                _build_client_err_list(head_error_list, error);
+                                err_count++;
+                            } else {
+                                LogMsg(ERROR, "head_error_list is NULL, cannot build client error list", fileName);
+                            }
                             break;
                         }
                     }
@@ -16184,8 +16204,12 @@ static PyObject *ibm_db_execute_many(PyObject *self, PyObject *args)
                         sprintf(error, "Binding Error 1: %s",
                                 IBM_DB_G(__python_stmt_err_msg));
                         LogMsg(ERROR, error, fileName);
-                        _build_client_err_list(head_error_list, error);
-                        err_count++;
+                        if (head_error_list != NULL) {
+                            _build_client_err_list(head_error_list, error);
+                            err_count++;
+                        } else {
+                            LogMsg(ERROR, "head_error_list is NULL, cannot build client error list", fileName);
+                        }
                         break;
                     }
                     curr = curr->next;
@@ -16242,8 +16266,12 @@ static PyObject *ibm_db_execute_many(PyObject *self, PyObject *args)
                                 _python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
                                 sprintf(error, "Sending data failed: %s", IBM_DB_G(__python_stmt_err_msg));
                                 LogMsg(ERROR, error, fileName);
-                                _build_client_err_list(head_error_list, error);
-                                err_count++;
+                                if (head_error_list != NULL) {
+                                    _build_client_err_list(head_error_list, error);
+                                    err_count++;
+                                } else {
+                                    LogMsg(ERROR, "head_error_list is NULL, cannot build client error list", fileName);
+                                }
                                 break;
                             }
                             Py_BEGIN_ALLOW_THREADS;
@@ -16259,8 +16287,12 @@ static PyObject *ibm_db_execute_many(PyObject *self, PyObject *args)
                         sprintf(error, "SQLExecute failed: %s", IBM_DB_G(__python_stmt_err_msg));
                         LogMsg(ERROR, error, fileName);
                         PyErr_SetString(PyExc_Exception, error);
-                        _build_client_err_list(head_error_list, error);
-                        err_count++;
+                        if (head_error_list != NULL) {
+                            _build_client_err_list(head_error_list, error);
+                            err_count++;
+                        } else {
+                            LogMsg(ERROR, "head_error_list is NULL, cannot build client error list", fileName);
+                        }
                         break;
                     }
                 }
@@ -16274,9 +16306,13 @@ static PyObject *ibm_db_execute_many(PyObject *self, PyObject *args)
         }
 
         /* Set statement attribute SQL_ATTR_CHAINING_END */
-        rc = _ibm_db_chaining_flag(stmt_res, SQL_ATTR_CHAINING_END, head_error_list->next, err_count);
-        snprintf(messageStr, sizeof(messageStr), "SQL_ATTR_CHAINING_END flag set. rc: %d", rc);
-        LogMsg(DEBUG, messageStr, fileName);
+        if (head_error_list != NULL) {
+            rc = _ibm_db_chaining_flag(stmt_res, SQL_ATTR_CHAINING_END, head_error_list->next, err_count);
+            snprintf(messageStr, sizeof(messageStr), "SQL_ATTR_CHAINING_END flag set. rc: %d", rc);
+            LogMsg(DEBUG, messageStr, fileName);
+        } else {
+            LogMsg(ERROR, "head_error_list is NULL, cannot process the error list", fileName);
+        }
         if (head_error_list != NULL)
         {
             error_msg_node *tmp_err = NULL;
