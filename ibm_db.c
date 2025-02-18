@@ -132,6 +132,14 @@ static void LogMsg(const char *log_level, const char *message, const char *file_
     }
 }
 
+static void LogUTF8Msg(PyObject *args, const char *fileName)
+{
+    PyObject *argsStr = PyObject_Repr(args);
+    snprintf(messageStr, sizeof(messageStr), "Received arguments: %s", PyUnicode_AsUTF8(argsStr));
+    LogMsg(INFO, messageStr, fileName);
+    Py_XDECREF(argsStr);
+}
+
 /* Defines a linked list structure for error messages */
 typedef struct _error_msg_node
 {
@@ -1803,10 +1811,7 @@ static PyObject *_python_ibm_db_connect_helper(PyObject *self, PyObject *args, i
 {
     LogMsg(INFO, "entry _python_ibm_db_connect_helper()", fileName);
     LogMsg(DEBUG, "In process of connection", fileName);
-    PyObject *argsStr = PyObject_Repr(args); // Get string representation of args
-    snprintf(messageStr, sizeof(messageStr), "Received connection arguments: %s", PyUnicode_AsUTF8(argsStr));
-    LogMsg(INFO, messageStr, fileName);
-    Py_XDECREF(argsStr);
+    LogUTF8Msg(args, fileName);
     PyObject *databaseObj = NULL;
     PyObject *uidObj = NULL;
     PyObject *passwordObj = NULL;
@@ -3309,10 +3314,7 @@ static void _python_ibm_db_debug(PyObject *self, PyObject *args)
 PyObject *ibm_db_createdb(PyObject *self, PyObject *args)
 {
     LogMsg(INFO, "entry createdb()", fileName);
-    PyObject *argsStr = PyObject_Repr(args); // Get string representation of args
-    snprintf(messageStr, sizeof(messageStr), "Received arguments: %s", PyUnicode_AsUTF8(argsStr));
-    LogMsg(INFO, messageStr, fileName);
-    Py_XDECREF(argsStr);
+    LogUTF8Msg(args, fileName);
     PyObject *py_conn_res = NULL;
     PyObject *dbNameObj = NULL;
     PyObject *codesetObj = NULL;
@@ -3371,10 +3373,7 @@ PyObject *ibm_db_createdb(PyObject *self, PyObject *args)
 PyObject *ibm_db_dropdb(PyObject *self, PyObject *args)
 {
     LogMsg(INFO, "entry dropdb()", fileName);
-    PyObject *argsStr = PyObject_Repr(args); // Get string representation of args
-    snprintf(messageStr, sizeof(messageStr), "Received arguments: %s", PyUnicode_AsUTF8(argsStr));
-    LogMsg(INFO, messageStr, fileName);
-    Py_XDECREF(argsStr);
+    LogUTF8Msg(args, fileName);
     PyObject *py_conn_res = NULL;
     PyObject *dbNameObj = NULL;
     int rc = -1;
@@ -3436,10 +3435,7 @@ PyObject *ibm_db_dropdb(PyObject *self, PyObject *args)
 PyObject *ibm_db_recreatedb(PyObject *self, PyObject *args)
 {
     LogMsg(INFO, "entry recreatedb()", fileName);
-    PyObject *argsStr = PyObject_Repr(args); // Get string representation of args
-    snprintf(messageStr, sizeof(messageStr), "Received arguments: %s", PyUnicode_AsUTF8(argsStr));
-    LogMsg(INFO, messageStr, fileName);
-    Py_XDECREF(argsStr);
+    LogUTF8Msg(args, fileName);
     PyObject *py_conn_res = NULL;
     PyObject *dbNameObj = NULL;
     PyObject *codesetObj = NULL;
@@ -3524,10 +3520,7 @@ PyObject *ibm_db_recreatedb(PyObject *self, PyObject *args)
 PyObject *ibm_db_createdbNX(PyObject *self, PyObject *args)
 {
     LogMsg(INFO, "entry createdbNX()", fileName);
-    PyObject *argsStr = PyObject_Repr(args); // Get string representation of args
-    snprintf(messageStr, sizeof(messageStr), "Received arguments: %s", PyUnicode_AsUTF8(argsStr));
-    LogMsg(INFO, messageStr, fileName);
-    Py_XDECREF(argsStr);
+    LogUTF8Msg(args, fileName);
     PyObject *py_conn_res = NULL;
     PyObject *dbNameObj = NULL;
     PyObject *codesetObj = NULL;
@@ -3602,10 +3595,7 @@ PyObject *ibm_db_createdbNX(PyObject *self, PyObject *args)
 static PyObject *ibm_db_autocommit(PyObject *self, PyObject *args)
 {
     LogMsg(INFO, "entry autocommt()", fileName);
-    PyObject *argsStr = PyObject_Repr(args); // Get string representation of args
-    snprintf(messageStr, sizeof(messageStr), "Received arguments: %s", PyUnicode_AsUTF8(argsStr));
-    LogMsg(INFO, messageStr, fileName);
-    Py_XDECREF(argsStr);
+    LogUTF8Msg(args, fileName);
     PyObject *py_autocommit = NULL;
     PyObject *py_conn_res = NULL;
     conn_handle *conn_res = NULL;
@@ -4062,10 +4052,7 @@ static PyObject *_python_ibm_db_bind_param_helper(int argc, stmt_handle *stmt_re
 static PyObject *ibm_db_bind_param(PyObject *self, PyObject *args)
 {
     LogMsg(INFO, "entry bind_param()", fileName);
-    PyObject *argsStr = PyObject_Repr(args); // Get string representation of args
-    snprintf(messageStr, sizeof(messageStr), "Received arguments: %s", PyUnicode_AsUTF8(argsStr));
-    LogMsg(INFO, messageStr, fileName);
-    Py_XDECREF(argsStr);
+    LogUTF8Msg(args, fileName);
     PyObject *var_pyvalue = NULL;
     PyObject *py_param_type = NULL;
     PyObject *py_data_type = NULL;
@@ -4200,10 +4187,7 @@ static PyObject *ibm_db_bind_param(PyObject *self, PyObject *args)
 static PyObject *ibm_db_close(PyObject *self, PyObject *args)
 {
     LogMsg(INFO, "entry close()", fileName);
-    PyObject *argsStr = PyObject_Repr(args); // Get string representation of args
-    snprintf(messageStr, sizeof(messageStr), "Received arguments: %s", PyUnicode_AsUTF8(argsStr));
-    LogMsg(INFO, messageStr, fileName);
-    Py_XDECREF(argsStr);
+    LogUTF8Msg(args, fileName);
     PyObject *py_conn_res = NULL;
     conn_handle *conn_res = NULL;
     int rc;
@@ -4395,10 +4379,7 @@ static PyObject *ibm_db_close(PyObject *self, PyObject *args)
 static PyObject *ibm_db_column_privileges(PyObject *self, PyObject *args)
 {
     LogMsg(INFO, "entry column_privileges()", fileName);
-    PyObject *argsStr = PyObject_Repr(args); // Get string representation of args
-    snprintf(messageStr, sizeof(messageStr), "Received arguments: %s", PyUnicode_AsUTF8(argsStr));
-    LogMsg(INFO, messageStr, fileName);
-    Py_XDECREF(argsStr);
+    LogUTF8Msg(args, fileName);
     SQLWCHAR *qualifier = NULL;
     SQLWCHAR *owner = NULL;
     SQLWCHAR *table_name = NULL;
@@ -4669,10 +4650,7 @@ static PyObject *ibm_db_column_privileges(PyObject *self, PyObject *args)
 static PyObject *ibm_db_columns(PyObject *self, PyObject *args)
 {
     LogMsg(INFO, "entry columns()", fileName);
-    PyObject *argsStr = PyObject_Repr(args); // Get string representation of args
-    snprintf(messageStr, sizeof(messageStr), "Received arguments: %s", PyUnicode_AsUTF8(argsStr));
-    LogMsg(INFO, messageStr, fileName);
-    Py_XDECREF(argsStr);
+    LogUTF8Msg(args, fileName);
     SQLWCHAR *qualifier = NULL;
     SQLWCHAR *owner = NULL;
     SQLWCHAR *table_name = NULL;
@@ -4951,10 +4929,7 @@ static PyObject *ibm_db_columns(PyObject *self, PyObject *args)
 static PyObject *ibm_db_foreign_keys(PyObject *self, PyObject *args)
 {
     LogMsg(INFO, "entry foreign_keys()", fileName);
-    PyObject *argsStr = PyObject_Repr(args); // Get string representation of args
-    snprintf(messageStr, sizeof(messageStr), "Received arguments: %s", PyUnicode_AsUTF8(argsStr));
-    LogMsg(INFO, messageStr, fileName);
-    Py_XDECREF(argsStr);
+    LogUTF8Msg(args, fileName);
     SQLWCHAR *pk_qualifier = NULL;
     SQLWCHAR *pk_owner = NULL;
     SQLWCHAR *pk_table_name = NULL;
@@ -5254,10 +5229,7 @@ static PyObject *ibm_db_foreign_keys(PyObject *self, PyObject *args)
 static PyObject *ibm_db_primary_keys(PyObject *self, PyObject *args)
 {
     LogMsg(INFO, "entry primary_keys()", fileName);
-    PyObject *argsStr = PyObject_Repr(args); // Get string representation of args
-    snprintf(messageStr, sizeof(messageStr), "Received arguments: %s", PyUnicode_AsUTF8(argsStr));
-    LogMsg(INFO, messageStr, fileName);
-    Py_XDECREF(argsStr);
+    LogUTF8Msg(args, fileName);
     SQLWCHAR *qualifier = NULL;
     SQLWCHAR *owner = NULL;
     SQLWCHAR *table_name = NULL;
@@ -5505,10 +5477,7 @@ static PyObject *ibm_db_primary_keys(PyObject *self, PyObject *args)
 static PyObject *ibm_db_procedure_columns(PyObject *self, PyObject *args)
 {
     LogMsg(INFO, "entry procedure_columns()", fileName);
-    PyObject *argsStr = PyObject_Repr(args); // Get string representation of args
-    snprintf(messageStr, sizeof(messageStr), "Received arguments: %s", PyUnicode_AsUTF8(argsStr));
-    LogMsg(INFO, messageStr, fileName);
-    Py_XDECREF(argsStr);
+    LogUTF8Msg(args, fileName);
     SQLWCHAR *qualifier = NULL;
     SQLWCHAR *owner = NULL;
     SQLWCHAR *proc_name = NULL;
@@ -5756,10 +5725,7 @@ static PyObject *ibm_db_procedure_columns(PyObject *self, PyObject *args)
 static PyObject *ibm_db_procedures(PyObject *self, PyObject *args)
 {
     LogMsg(INFO, "entry procedures()", fileName);
-    PyObject *argsStr = PyObject_Repr(args); // Get string representation of args
-    snprintf(messageStr, sizeof(messageStr), "Received arguments: %s", PyUnicode_AsUTF8(argsStr));
-    LogMsg(INFO, messageStr, fileName);
-    Py_XDECREF(argsStr);
+    LogUTF8Msg(args, fileName);
     SQLWCHAR *qualifier = NULL;
     SQLWCHAR *owner = NULL;
     SQLWCHAR *proc_name = NULL;
@@ -6006,10 +5972,7 @@ static PyObject *ibm_db_procedures(PyObject *self, PyObject *args)
 static PyObject *ibm_db_special_columns(PyObject *self, PyObject *args)
 {
     LogMsg(INFO, "entry special_columns()", fileName);
-    PyObject *argsStr = PyObject_Repr(args); // Get string representation of args
-    snprintf(messageStr, sizeof(messageStr), "Received arguments: %s", PyUnicode_AsUTF8(argsStr));
-    LogMsg(INFO, messageStr, fileName);
-    Py_XDECREF(argsStr);
+    LogUTF8Msg(args, fileName);
     SQLWCHAR *qualifier = NULL;
     SQLWCHAR *owner = NULL;
     SQLWCHAR *table_name = NULL;
@@ -6280,10 +6243,7 @@ static PyObject *ibm_db_special_columns(PyObject *self, PyObject *args)
 static PyObject *ibm_db_statistics(PyObject *self, PyObject *args)
 {
     LogMsg(INFO, "entry statistics()", fileName);
-    PyObject *argsStr = PyObject_Repr(args); // Get string representation of args
-    snprintf(messageStr, sizeof(messageStr), "Received arguments: %s", PyUnicode_AsUTF8(argsStr));
-    LogMsg(INFO, messageStr, fileName);
-    Py_XDECREF(argsStr);
+    LogUTF8Msg(args, fileName);
     SQLWCHAR *qualifier = NULL;
     SQLWCHAR *owner = NULL;
     SQLWCHAR *table_name = NULL;
@@ -6522,10 +6482,7 @@ static PyObject *ibm_db_statistics(PyObject *self, PyObject *args)
 static PyObject *ibm_db_table_privileges(PyObject *self, PyObject *args)
 {
     LogMsg(INFO, "entry table_privileges()", fileName);
-    PyObject *argsStr = PyObject_Repr(args); // Get string representation of args
-    snprintf(messageStr, sizeof(messageStr), "Received arguments: %s", PyUnicode_AsUTF8(argsStr));
-    LogMsg(INFO, messageStr, fileName);
-    Py_XDECREF(argsStr);
+    LogUTF8Msg(args, fileName);
     SQLWCHAR *qualifier = NULL;
     SQLWCHAR *owner = NULL;
     SQLWCHAR *table_name = NULL;
@@ -6741,10 +6698,7 @@ static PyObject *ibm_db_table_privileges(PyObject *self, PyObject *args)
 static PyObject *ibm_db_tables(PyObject *self, PyObject *args)
 {
     LogMsg(INFO, "entry tables()", fileName);
-    PyObject *argsStr = PyObject_Repr(args); // Get string representation of args
-    snprintf(messageStr, sizeof(messageStr), "Received arguments: %s", PyUnicode_AsUTF8(argsStr));
-    LogMsg(INFO, messageStr, fileName);
-    Py_XDECREF(argsStr);
+    LogUTF8Msg(args, fileName);
     SQLWCHAR *qualifier = NULL;
     SQLWCHAR *owner = NULL;
     SQLWCHAR *table_name = NULL;
@@ -6969,10 +6923,7 @@ static PyObject *ibm_db_tables(PyObject *self, PyObject *args)
 static PyObject *ibm_db_commit(PyObject *self, PyObject *args)
 {
     LogMsg(INFO, "entry commit()", fileName);
-    PyObject *argsStr = PyObject_Repr(args); // Get string representation of args
-    snprintf(messageStr, sizeof(messageStr), "Received arguments: %s", PyUnicode_AsUTF8(argsStr));
-    LogMsg(INFO, messageStr, fileName);
-    Py_XDECREF(argsStr);
+    LogUTF8Msg(args, fileName);
     PyObject *py_conn_res = NULL;
     conn_handle *conn_res;
     int rc;
@@ -7166,10 +7117,7 @@ static int _python_ibm_db_do_prepare(SQLHANDLE hdbc, SQLWCHAR *stmt, int stmt_si
 static PyObject *ibm_db_exec(PyObject *self, PyObject *args)
 {
     LogMsg(INFO, "entry exec_immediate()", fileName);
-    PyObject *argsStr = PyObject_Repr(args); // Get string representation of args
-    snprintf(messageStr, sizeof(messageStr), "Received argument: %s", PyUnicode_AsUTF8(argsStr));
-    LogMsg(INFO, messageStr, fileName);
-    Py_XDECREF(argsStr);
+    LogUTF8Msg(args, fileName);
     PyObject *options = NULL;
     PyObject *py_conn_res = NULL;
     stmt_handle *stmt_res;
@@ -7359,10 +7307,7 @@ static PyObject *ibm_db_exec(PyObject *self, PyObject *args)
 static PyObject *ibm_db_free_result(PyObject *self, PyObject *args)
 {
     LogMsg(INFO, "entry free_result()", fileName);
-    PyObject *argsStr = PyObject_Repr(args); // Get string representation of args
-    snprintf(messageStr, sizeof(messageStr), "Received arguments: %s", PyUnicode_AsUTF8(argsStr));
-    LogMsg(INFO, messageStr, fileName);
-    Py_XDECREF(argsStr);
+    LogUTF8Msg(args, fileName);
     PyObject *py_stmt_res = NULL;
     stmt_handle *stmt_res;
     int rc = 0;
@@ -7587,10 +7532,7 @@ static PyObject *_python_ibm_db_prepare_helper(conn_handle *conn_res, PyObject *
 static PyObject *ibm_db_prepare(PyObject *self, PyObject *args)
 {
     LogMsg(INFO, "entry prepare()", fileName);
-    PyObject *argsStr = PyObject_Repr(args); // Get string representation of args
-    snprintf(messageStr, sizeof(messageStr), "Received arguments: %s", PyUnicode_AsUTF8(argsStr));
-    LogMsg(INFO, messageStr, fileName);
-    Py_XDECREF(argsStr);
+    LogUTF8Msg(args, fileName);
     PyObject *py_conn_res = NULL;
     PyObject *options = NULL;
     conn_handle *conn_res;
@@ -9847,10 +9789,7 @@ static PyObject *_python_ibm_db_execute_helper1(stmt_handle *stmt_res, PyObject 
 static PyObject *ibm_db_execute(PyObject *self, PyObject *args)
 {
     LogMsg(INFO, "entry execute()", fileName);
-    PyObject *argsStr = PyObject_Repr(args); // Get string representation of args
-    snprintf(messageStr, sizeof(messageStr), "Received arguments: %s", PyUnicode_AsUTF8(argsStr));
-    LogMsg(INFO, messageStr, fileName);
-    Py_XDECREF(argsStr);
+    LogUTF8Msg(args, fileName);
     PyObject *py_stmt_res = NULL;
     PyObject *parameters_tuple = NULL;
     stmt_handle *stmt_res;
@@ -9918,10 +9857,7 @@ static PyObject *ibm_db_execute(PyObject *self, PyObject *args)
 static PyObject *ibm_db_conn_errormsg(PyObject *self, PyObject *args)
 {
     LogMsg(INFO, "entry conn_errormsg()", fileName);
-    PyObject *argsStr = PyObject_Repr(args); // Get string representation of args
-    snprintf(messageStr, sizeof(messageStr), "Received arguments: %s", PyUnicode_AsUTF8(argsStr));
-    LogMsg(INFO, messageStr, fileName);
-    Py_XDECREF(argsStr);
+    LogUTF8Msg(args, fileName);
     conn_handle *conn_res = NULL;
     PyObject *py_conn_res = NULL;
     PyObject *retVal = NULL;
@@ -10033,10 +9969,7 @@ static PyObject *ibm_db_conn_errormsg(PyObject *self, PyObject *args)
 static PyObject *ibm_db_conn_warn(PyObject *self, PyObject *args)
 {
     LogMsg(INFO, "entry conn_warn()", fileName);
-    PyObject *argsStr = PyObject_Repr(args); // Get string representation of args
-    snprintf(messageStr, sizeof(messageStr), "Received arguments: %s", PyUnicode_AsUTF8(argsStr));
-    LogMsg(INFO, messageStr, fileName);
-    Py_XDECREF(argsStr);
+    LogUTF8Msg(args, fileName);
     conn_handle *conn_res = NULL;
     PyObject *py_conn_res = NULL;
     PyObject *retVal = NULL;
@@ -10127,10 +10060,7 @@ static PyObject *ibm_db_conn_warn(PyObject *self, PyObject *args)
 static PyObject *ibm_db_stmt_warn(PyObject *self, PyObject *args)
 {
     LogMsg(INFO, "entry stmt_warn()", fileName);
-    PyObject *argsStr = PyObject_Repr(args); // Get string representation of args
-    snprintf(messageStr, sizeof(messageStr), "Received arguments: %s", PyUnicode_AsUTF8(argsStr));
-    LogMsg(INFO, messageStr, fileName);
-    Py_XDECREF(argsStr);
+    LogUTF8Msg(args, fileName);
     stmt_handle *stmt_res = NULL;
     PyObject *py_stmt_res = NULL;
     PyObject *retVal = NULL;
@@ -10231,10 +10161,7 @@ static PyObject *ibm_db_stmt_warn(PyObject *self, PyObject *args)
 static PyObject *ibm_db_stmt_errormsg(PyObject *self, PyObject *args)
 {
     LogMsg(INFO, "entry stmt_errormsg()", fileName);
-    PyObject *argsStr = PyObject_Repr(args); // Get string representation of args
-    snprintf(messageStr, sizeof(messageStr), "Received arguments: %s", PyUnicode_AsUTF8(argsStr));
-    LogMsg(INFO, messageStr, fileName);
-    Py_XDECREF(argsStr);
+    LogUTF8Msg(args, fileName);
     stmt_handle *stmt_res = NULL;
     PyObject *py_stmt_res = NULL;
     PyObject *retVal = NULL;
@@ -10345,10 +10272,7 @@ static PyObject *ibm_db_stmt_errormsg(PyObject *self, PyObject *args)
 static PyObject *ibm_db_conn_error(PyObject *self, PyObject *args)
 {
     LogMsg(INFO, "entry conn_error()", fileName);
-    PyObject *argsStr = PyObject_Repr(args); // Get string representation of args
-    snprintf(messageStr, sizeof(messageStr), "Received arguments: %s", PyUnicode_AsUTF8(argsStr));
-    LogMsg(INFO, messageStr, fileName);
-    Py_XDECREF(argsStr);
+    LogUTF8Msg(args, fileName);
     conn_handle *conn_res = NULL;
     PyObject *py_conn_res = NULL;
     PyObject *retVal = NULL;
@@ -10455,10 +10379,7 @@ static PyObject *ibm_db_conn_error(PyObject *self, PyObject *args)
 static PyObject *ibm_db_stmt_error(PyObject *self, PyObject *args)
 {
     LogMsg(INFO, "entry stmt_error()", fileName);
-    PyObject *argsStr = PyObject_Repr(args); // Get string representation of args
-    snprintf(messageStr, sizeof(messageStr), "Received arguments: %s", PyUnicode_AsUTF8(argsStr));
-    LogMsg(INFO, messageStr, fileName);
-    Py_XDECREF(argsStr);
+    LogUTF8Msg(args, fileName);
     stmt_handle *stmt_res = NULL;
     PyObject *py_stmt_res = NULL;
     PyObject *retVal = NULL;
@@ -10563,10 +10484,7 @@ static PyObject *ibm_db_stmt_error(PyObject *self, PyObject *args)
 static PyObject *ibm_db_next_result(PyObject *self, PyObject *args)
 {
     LogMsg(INFO, "entry next_result()", fileName);
-    PyObject *argsStr = PyObject_Repr(args); // Get string representation of args
-    snprintf(messageStr, sizeof(messageStr), "Received arguments: %s", PyUnicode_AsUTF8(argsStr));
-    LogMsg(INFO, messageStr, fileName);
-    Py_XDECREF(argsStr);
+    LogUTF8Msg(args, fileName);
     PyObject *py_stmt_res = NULL;
     stmt_handle *stmt_res, *new_stmt_res = NULL;
     int rc = 0;
@@ -10714,10 +10632,7 @@ static PyObject *ibm_db_next_result(PyObject *self, PyObject *args)
 static PyObject *ibm_db_num_fields(PyObject *self, PyObject *args)
 {
     LogMsg(INFO, "entry num_fields()", fileName);
-    PyObject *argsStr = PyObject_Repr(args); // Get string representation of args
-    snprintf(messageStr, sizeof(messageStr), "Received arguments: %s", PyUnicode_AsUTF8(argsStr));
-    LogMsg(INFO, messageStr, fileName);
-    Py_XDECREF(argsStr);
+    LogUTF8Msg(args, fileName);
     PyObject *py_stmt_res = NULL;
     stmt_handle *stmt_res;
     int rc = 0;
@@ -10812,10 +10727,7 @@ static PyObject *ibm_db_num_fields(PyObject *self, PyObject *args)
 static PyObject *ibm_db_num_rows(PyObject *self, PyObject *args)
 {
     LogMsg(INFO, "entry num_rows()", fileName);
-    PyObject *argsStr = PyObject_Repr(args); // Get string representation of args
-    snprintf(messageStr, sizeof(messageStr), "Received arguments: %s", PyUnicode_AsUTF8(argsStr));
-    LogMsg(INFO, messageStr, fileName);
-    Py_XDECREF(argsStr);
+    LogUTF8Msg(args, fileName);
     PyObject *py_stmt_res = NULL;
     stmt_handle *stmt_res;
     int rc = 0;
@@ -10891,10 +10803,7 @@ static PyObject *ibm_db_num_rows(PyObject *self, PyObject *args)
 static PyObject *ibm_db_get_num_result(PyObject *self, PyObject *args)
 {
     LogMsg(INFO, "entry get_num_result()", fileName);
-    PyObject *argsStr = PyObject_Repr(args); // Get string representation of args
-    snprintf(messageStr, sizeof(messageStr), "Received arguments: %s", PyUnicode_AsUTF8(argsStr));
-    LogMsg(INFO, messageStr, fileName);
-    Py_XDECREF(argsStr);
+    LogUTF8Msg(args, fileName);
     PyObject *py_stmt_res = NULL;
     stmt_handle *stmt_res;
     int rc = 0;
@@ -11061,10 +10970,7 @@ static int _python_ibm_db_get_column_by_name(stmt_handle *stmt_res, char *col_na
 static PyObject *ibm_db_field_name(PyObject *self, PyObject *args)
 {
     LogMsg(INFO, "entry field_name()", fileName);
-    PyObject *argsStr = PyObject_Repr(args); // Get string representation of args
-    snprintf(messageStr, sizeof(messageStr), "Received arguments: %s", PyUnicode_AsUTF8(argsStr));
-    LogMsg(INFO, messageStr, fileName);
-    Py_XDECREF(argsStr);
+    LogUTF8Msg(args, fileName);
     PyObject *column = NULL;
     PyObject *result = NULL;
 #if PY_MAJOR_VERSION >= 3
@@ -11201,10 +11107,7 @@ static PyObject *ibm_db_field_name(PyObject *self, PyObject *args)
 static PyObject *ibm_db_field_display_size(PyObject *self, PyObject *args)
 {
     LogMsg(INFO, "entry field_display_size()", fileName);
-    PyObject *argsStr = PyObject_Repr(args); // Get string representation of args
-    snprintf(messageStr, sizeof(messageStr), "Received arguments: %s", PyUnicode_AsUTF8(argsStr));
-    LogMsg(INFO, messageStr, fileName);
-    Py_XDECREF(argsStr);
+    LogUTF8Msg(args, fileName);
     PyObject *py_stmt_res = NULL;
     PyObject *column = NULL;
 #if PY_MAJOR_VERSION >= 3
@@ -11329,10 +11232,7 @@ static PyObject *ibm_db_field_display_size(PyObject *self, PyObject *args)
 static PyObject *ibm_db_field_nullable(PyObject *self, PyObject *args)
 {
     LogMsg(INFO, "entry field_nullable()", fileName);
-    PyObject *argsStr = PyObject_Repr(args); // Get string representation of args
-    snprintf(messageStr, sizeof(messageStr), "Received arguments: %s", PyUnicode_AsUTF8(argsStr));
-    LogMsg(INFO, messageStr, fileName);
-    Py_XDECREF(argsStr);
+    LogUTF8Msg(args, fileName);
     PyObject *py_stmt_res = NULL;
     PyObject *column = NULL;
 #if PY_MAJOR_VERSION >= 3
@@ -11468,10 +11368,7 @@ static PyObject *ibm_db_field_nullable(PyObject *self, PyObject *args)
 static PyObject *ibm_db_field_num(PyObject *self, PyObject *args)
 {
     LogMsg(INFO, "entry field_num()", fileName);
-    PyObject *argsStr = PyObject_Repr(args); // Get string representation of args
-    snprintf(messageStr, sizeof(messageStr), "Received arguments: %s", PyUnicode_AsUTF8(argsStr));
-    LogMsg(INFO, messageStr, fileName);
-    Py_XDECREF(argsStr);
+    LogUTF8Msg(args, fileName);
     PyObject *py_stmt_res = NULL;
     PyObject *column = NULL;
 #if PY_MAJOR_VERSION >= 3
@@ -11574,10 +11471,7 @@ static PyObject *ibm_db_field_num(PyObject *self, PyObject *args)
 static PyObject *ibm_db_field_precision(PyObject *self, PyObject *args)
 {
     LogMsg(INFO, "entry field_precision()", fileName);
-    PyObject *argsStr = PyObject_Repr(args); // Get string representation of args
-    snprintf(messageStr, sizeof(messageStr), "Received arguments: %s", PyUnicode_AsUTF8(argsStr));
-    LogMsg(INFO, messageStr, fileName);
-    Py_XDECREF(argsStr);
+    LogUTF8Msg(args, fileName);
     PyObject *py_stmt_res = NULL;
     PyObject *column = NULL;
 #if PY_MAJOR_VERSION >= 3
@@ -11681,10 +11575,7 @@ static PyObject *ibm_db_field_precision(PyObject *self, PyObject *args)
 static PyObject *ibm_db_field_scale(PyObject *self, PyObject *args)
 {
     LogMsg(INFO, "entry field_scale()", fileName);
-    PyObject *argsStr = PyObject_Repr(args); // Get string representation of args
-    snprintf(messageStr, sizeof(messageStr), "Received arguments: %s", PyUnicode_AsUTF8(argsStr));
-    LogMsg(INFO, messageStr, fileName);
-    Py_XDECREF(argsStr);
+    LogUTF8Msg(args, fileName);
     PyObject *py_stmt_res = NULL;
     PyObject *column = NULL;
 #if PY_MAJOR_VERSION >= 3
@@ -11787,10 +11678,7 @@ static PyObject *ibm_db_field_scale(PyObject *self, PyObject *args)
 static PyObject *ibm_db_field_type(PyObject *self, PyObject *args)
 {
     LogMsg(INFO, "entry field_type()", fileName);
-    PyObject *argsStr = PyObject_Repr(args); // Get string representation of args
-    snprintf(messageStr, sizeof(messageStr), "Received arguments: %s", PyUnicode_AsUTF8(argsStr));
-    LogMsg(INFO, messageStr, fileName);
-    Py_XDECREF(argsStr);
+    LogUTF8Msg(args, fileName);
     PyObject *py_stmt_res = NULL;
     PyObject *column = NULL;
 #if PY_MAJOR_VERSION >= 3
@@ -11945,10 +11833,7 @@ static PyObject *ibm_db_field_type(PyObject *self, PyObject *args)
 static PyObject *ibm_db_field_width(PyObject *self, PyObject *args)
 {
     LogMsg(INFO, "entry field_width()", fileName);
-    PyObject *argsStr = PyObject_Repr(args); // Get string representation of args
-    snprintf(messageStr, sizeof(messageStr), "Received arguments: %s", PyUnicode_AsUTF8(argsStr));
-    LogMsg(INFO, messageStr, fileName);
-    Py_XDECREF(argsStr);
+    LogUTF8Msg(args, fileName);
     PyObject *py_stmt_res = NULL;
     PyObject *column = NULL;
 #if PY_MAJOR_VERSION >= 3
@@ -12063,10 +11948,7 @@ static PyObject *ibm_db_field_width(PyObject *self, PyObject *args)
 static PyObject *ibm_db_cursor_type(PyObject *self, PyObject *args)
 {
     LogMsg(INFO, "entry cursor_type()", fileName);
-    PyObject *argsStr = PyObject_Repr(args); // Get string representation of args
-    snprintf(messageStr, sizeof(messageStr), "Received arguments: %s", PyUnicode_AsUTF8(argsStr));
-    LogMsg(INFO, messageStr, fileName);
-    Py_XDECREF(argsStr);
+    LogUTF8Msg(args, fileName);
     PyObject *py_stmt_res = NULL;
     stmt_handle *stmt_res = NULL;
 
@@ -12125,10 +12007,7 @@ static PyObject *ibm_db_cursor_type(PyObject *self, PyObject *args)
 static PyObject *ibm_db_rollback(PyObject *self, PyObject *args)
 {
     LogMsg(INFO, "entry rollback()", fileName);
-    PyObject *argsStr = PyObject_Repr(args); // Get string representation of args
-    snprintf(messageStr, sizeof(messageStr), "Received arguments: %s", PyUnicode_AsUTF8(argsStr));
-    LogMsg(INFO, messageStr, fileName);
-    Py_XDECREF(argsStr);
+    LogUTF8Msg(args, fileName);
     PyObject *py_conn_res = NULL;
     conn_handle *conn_res;
     int rc;
@@ -12208,10 +12087,7 @@ static PyObject *ibm_db_rollback(PyObject *self, PyObject *args)
 static PyObject *ibm_db_free_stmt(PyObject *self, PyObject *args)
 {
     LogMsg(INFO, "entry free_stmt()", fileName);
-    PyObject *argsStr = PyObject_Repr(args); // Get string representation of args
-    snprintf(messageStr, sizeof(messageStr), "Received arguments: %s", PyUnicode_AsUTF8(argsStr));
-    LogMsg(INFO, messageStr, fileName);
-    Py_XDECREF(argsStr);
+    LogUTF8Msg(args, fileName);
     PyObject *py_stmt_res = NULL;
     stmt_handle *handle;
     SQLRETURN rc;
@@ -12309,10 +12185,7 @@ static RETCODE _python_ibm_db_get_data(stmt_handle *stmt_res, int col_num, short
 static PyObject *ibm_db_result(PyObject *self, PyObject *args)
 {
     LogMsg(INFO, "entry result()", fileName);
-    PyObject *argsStr = PyObject_Repr(args); // Get string representation of args
-    snprintf(messageStr, sizeof(messageStr), "Received arguments: %s", PyUnicode_AsUTF8(argsStr));
-    LogMsg(INFO, messageStr, fileName);
-    Py_XDECREF(argsStr);
+    LogUTF8Msg(args, fileName);
     PyObject *py_stmt_res = NULL;
     PyObject *column = NULL;
 #if PY_MAJOR_VERSION >= 3
@@ -13531,10 +13404,7 @@ static PyObject *_python_ibm_db_bind_fetch_helper(PyObject *args, int op)
 static PyObject *ibm_db_fetch_row(PyObject *self, PyObject *args)
 {
     LogMsg(INFO, "entry fetch_row()", fileName);
-    PyObject *argsStr = PyObject_Repr(args); // Get string representation of args
-    snprintf(messageStr, sizeof(messageStr), "Received arguments: %s", PyUnicode_AsUTF8(argsStr));
-    LogMsg(INFO, messageStr, fileName);
-    Py_XDECREF(argsStr);
+    LogUTF8Msg(args, fileName);
     PyObject *py_stmt_res = NULL;
     PyObject *py_row_number = NULL;
     SQLINTEGER row_number = -1;
@@ -13866,10 +13736,7 @@ static PyObject *ibm_db_fetch_both(PyObject *self, PyObject *args)
 static PyObject *ibm_db_set_option(PyObject *self, PyObject *args)
 {
     LogMsg(INFO, "entry set_option()", fileName);
-    PyObject *argsStr = PyObject_Repr(args); // Get string representation of args
-    snprintf(messageStr, sizeof(messageStr), "Received arguments: %s", PyUnicode_AsUTF8(argsStr));
-    LogMsg(INFO, messageStr, fileName);
-    Py_XDECREF(argsStr);
+    LogUTF8Msg(args, fileName);
     PyObject *conn_or_stmt = NULL;
     PyObject *options = NULL;
     PyObject *py_type = NULL;
@@ -13976,10 +13843,7 @@ static PyObject *ibm_db_set_option(PyObject *self, PyObject *args)
 static PyObject *ibm_db_get_db_info(PyObject *self, PyObject *args)
 {
     LogMsg(INFO, "entry get_db_info()", fileName);
-    PyObject *argsStr = PyObject_Repr(args); // Get string representation of args
-    snprintf(messageStr, sizeof(messageStr), "Received arguments: %s", PyUnicode_AsUTF8(argsStr));
-    LogMsg(INFO, messageStr, fileName);
-    Py_XDECREF(argsStr);
+    LogUTF8Msg(args, fileName);
     PyObject *py_conn_res = NULL;
     PyObject *return_value = NULL;
     PyObject *py_option = NULL;
@@ -14195,10 +14059,7 @@ static PyObject *ibm_db_get_db_info(PyObject *self, PyObject *args)
 static PyObject *ibm_db_server_info(PyObject *self, PyObject *args)
 {
     LogMsg(INFO, "entry server_info()", fileName);
-    PyObject *argsStr = PyObject_Repr(args); // Get string representation of args
-    snprintf(messageStr, sizeof(messageStr), "Received arguments: %s", PyUnicode_AsUTF8(argsStr));
-    LogMsg(INFO, messageStr, fileName);
-    Py_XDECREF(argsStr);
+    LogUTF8Msg(args, fileName);
     PyObject *py_conn_res = NULL;
     conn_handle *conn_res;
     int rc = 0;
@@ -15120,10 +14981,7 @@ static PyObject *ibm_db_server_info(PyObject *self, PyObject *args)
 static PyObject *ibm_db_client_info(PyObject *self, PyObject *args)
 {
     LogMsg(INFO, "entry client_info()", fileName);
-    PyObject *argsStr = PyObject_Repr(args); // Get string representation of args
-    snprintf(messageStr, sizeof(messageStr), "Received arguments: %s", PyUnicode_AsUTF8(argsStr));
-    LogMsg(INFO, messageStr, fileName);
-    Py_XDECREF(argsStr);
+    LogUTF8Msg(args, fileName);
     PyObject *py_conn_res = NULL;
     conn_handle *conn_res = NULL;
     int rc = 0;
@@ -15446,10 +15304,7 @@ static PyObject *ibm_db_client_info(PyObject *self, PyObject *args)
 static PyObject *ibm_db_active(PyObject *self, PyObject *args)
 {
     LogMsg(INFO, "entry active()", fileName);
-    PyObject *argsStr = PyObject_Repr(args); // Get string representation of args
-    snprintf(messageStr, sizeof(messageStr), "Received arguments: %s", PyUnicode_AsUTF8(argsStr));
-    LogMsg(INFO, messageStr, fileName);
-    Py_XDECREF(argsStr);
+    LogUTF8Msg(args, fileName);
     PyObject *py_conn_res = NULL;
     int rc;
     conn_handle *conn_res = NULL;
@@ -15540,10 +15395,7 @@ static PyObject *ibm_db_active(PyObject *self, PyObject *args)
 static PyObject *ibm_db_get_option(PyObject *self, PyObject *args)
 {
     LogMsg(INFO, "entry get_option()", fileName);
-    PyObject *argsStr = PyObject_Repr(args); // Get string representation of args
-    snprintf(messageStr, sizeof(messageStr), "Received arguments: %s", PyUnicode_AsUTF8(argsStr));
-    LogMsg(INFO, messageStr, fileName);
-    Py_XDECREF(argsStr);
+    LogUTF8Msg(args, fileName);
     PyObject *conn_or_stmt = NULL;
     PyObject *retVal = NULL;
     PyObject *py_op_integer = NULL;
@@ -15952,10 +15804,7 @@ static void _build_client_err_list(error_msg_node *head_error_list, char *err_ms
 static PyObject *ibm_db_execute_many(PyObject *self, PyObject *args)
 {
     LogMsg(INFO, "entry execute_many()", fileName);
-    PyObject *argsStr = PyObject_Repr(args); // Get string representation of args
-    snprintf(messageStr, sizeof(messageStr), "Received arguments: %s", PyUnicode_AsUTF8(argsStr));
-    LogMsg(INFO, messageStr, fileName);
-    Py_XDECREF(argsStr);
+    LogUTF8Msg(args, fileName);
     PyObject *options = NULL;
     PyObject *params = NULL;
     PyObject *py_stmt_res = NULL;
@@ -16487,10 +16336,7 @@ static PyObject *ibm_db_execute_many(PyObject *self, PyObject *args)
 static PyObject *ibm_db_callproc(PyObject *self, PyObject *args)
 {
     LogMsg(INFO, "entry callproc()", fileName);
-    PyObject *argsStr = PyObject_Repr(args); // Get string representation of args
-    snprintf(messageStr, sizeof(messageStr), "Received arguments: %s", PyUnicode_AsUTF8(argsStr));
-    LogMsg(INFO, messageStr, fileName);
-    Py_XDECREF(argsStr);
+    LogUTF8Msg(args, fileName);
     PyObject *py_conn_res = NULL;
     PyObject *parameters_tuple = NULL;
     PyObject *outTuple = NULL, *pyprocName = NULL, *data = NULL;
@@ -16821,10 +16667,7 @@ static PyObject *ibm_db_callproc(PyObject *self, PyObject *args)
 static PyObject *ibm_db_check_function_support(PyObject *self, PyObject *args)
 {
     LogMsg(INFO, "entry check_function_support()", fileName);
-    PyObject *argsStr = PyObject_Repr(args); // Get string representation of args
-    snprintf(messageStr, sizeof(messageStr), "Received arguments: %s", PyUnicode_AsUTF8(argsStr));
-    LogMsg(INFO, messageStr, fileName);
-    Py_XDECREF(argsStr);
+    LogUTF8Msg(args, fileName);
     PyObject *py_conn_res = NULL;
     PyObject *py_funtion_id = NULL;
     int funtion_id = 0;
@@ -16928,10 +16771,7 @@ static PyObject *ibm_db_check_function_support(PyObject *self, PyObject *args)
 PyObject *ibm_db_get_last_serial_value(int argc, PyObject *args, PyObject *self)
 {
     LogMsg(INFO, "entry get_last_serial_value()", fileName);
-    PyObject *argsStr = PyObject_Repr(args); // Get string representation of args
-    snprintf(messageStr, sizeof(messageStr), "Received arguments: %s", PyUnicode_AsUTF8(argsStr));
-    LogMsg(INFO, messageStr, fileName);
-    Py_XDECREF(argsStr);
+    LogUTF8Msg(args, fileName);
     SQLCHAR *value = NULL;
     SQLINTEGER pcbValue = 0;
     stmt_handle *stmt_res;
@@ -17108,10 +16948,7 @@ static PyObject *ibm_db_debug(PyObject *self, PyObject *args)
 static PyObject *ibm_db_fetchone(PyObject *self, PyObject *args)
 {
     LogMsg(INFO, "entry fetchone()", fileName);
-    PyObject *argsStr = PyObject_Repr(args); // Get string representation of args
-    snprintf(messageStr, sizeof(messageStr), "Received arguments: %s", PyUnicode_AsUTF8(argsStr));
-    LogMsg(INFO, messageStr, fileName);
-    Py_XDECREF(argsStr);
+    LogUTF8Msg(args, fileName);
     PyObject *return_value = NULL;
     LogMsg(DEBUG, "calling _python_ibm_db_bind_fetch_helper with FETCH_INDEX", fileName);
     return_value = _python_ibm_db_bind_fetch_helper(args, FETCH_INDEX);
@@ -17139,10 +16976,7 @@ static PyObject *ibm_db_fetchone(PyObject *self, PyObject *args)
 static PyObject *ibm_db_fetchmany(PyObject *self, PyObject *args)
 {
     LogMsg(INFO, "entry fetchmany()", fileName);
-    PyObject *argsStr = PyObject_Repr(args); // Get string representation of args
-    snprintf(messageStr, sizeof(messageStr), "Received arguments: %s", PyUnicode_AsUTF8(argsStr));
-    LogMsg(INFO, messageStr, fileName);
-    Py_XDECREF(argsStr);
+    LogUTF8Msg(args, fileName);
     PyObject *return_value = NULL;
     PyObject *result_list = NULL;
     int num_rows = 0;
@@ -17213,10 +17047,7 @@ static PyObject *ibm_db_fetchmany(PyObject *self, PyObject *args)
 static PyObject *ibm_db_fetchall(PyObject *self, PyObject *args)
 {
     LogMsg(INFO, "entry fetchall()", fileName);
-    PyObject *argsStr = PyObject_Repr(args); // Get string representation of args
-    snprintf(messageStr, sizeof(messageStr), "Received arguments: %s", PyUnicode_AsUTF8(argsStr));
-    LogMsg(INFO, messageStr, fileName);
-    Py_XDECREF(argsStr);
+    LogUTF8Msg(args, fileName);
     PyObject *return_value = NULL;
     PyObject *result_list = NULL;
     result_list = PyList_New(0);
