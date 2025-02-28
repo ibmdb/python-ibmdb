@@ -139,7 +139,7 @@ class IbmDbTestFunctions(unittest.TestCase):
             else:
                 pattern = self.expected_LUW(callstack[1][1])
 
-            sym = ['\[','\]','\(','\)']
+            sym = [r'\[',r'\]',r'\(',r'\)']
             for chr in sym:
                 pattern = re.sub(chr, '\\' + chr, pattern)
 
