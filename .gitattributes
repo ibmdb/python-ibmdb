@@ -1,20 +1,2 @@
-# This .gitattributes file will cause all text files EXCEPT for
-# git's .gitattributes and .gitignore files to be encoded as EBCDIC.
-# Selected binary files will not be translated at all.
-# The default for text files
-*       git-encoding=iso8859-1 zos-working-tree-encoding=ibm-1047
-# git's files (which MUST be ASCII)
-.gitattributes   git-encoding=iso8859-1 zos-working-tree-encoding=iso8859-1
-.gitignore       git-encoding=iso8859-1 zos-working-tree-encoding=iso8859-1
-# Binary files, selected by file extension.
-
-# Other platforms don't use the BINARY term, But do recognize "binary" macro
-*.jpg   git-encoding=BINARY    zos-working-tree-encoding=BINARY binary
-*.jar   git-encoding=BINARY    zos-working-tree-encoding=BINARY binary
-*.jpg   git-encoding=BINARY    zos-working-tree-encoding=BINARY binary
-*.node  git-encoding=BINARY    zos-working-tree-encoding=BINARY binary
-*.png   git-encoding=BINARY    zos-working-tree-encoding=BINARY binary
-*.PNG   git-encoding=BINARY    zos-working-tree-encoding=BINARY binary
-*.tar   git-encoding=BINARY    zos-working-tree-encoding=BINARY binary
-*.tgz   git-encoding=BINARY    zos-working-tree-encoding=BINARY binary
-*.zip   git-encoding=BINARY    zos-working-tree-encoding=BINARY binary
+.gitattributes   zos-working-tree-encoding=iso8859-1
+.gitignore       zos-working-tree-encoding=iso8859-1
