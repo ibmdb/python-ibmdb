@@ -281,27 +281,76 @@ Now that the Python and ODBC is ready, for connecting to Db2 you need a Db2 Pyth
 
 Follow the standard steps for the same i.e. pip3 install ibm_db
 
-### 2.5 Install python-ibm_db
+### 2.5 Install python-ibmdb
 
-Below are the steps to install [*python-ibm_db*](https://github.com/ibmdb/python-ibm_db) from github or pip.
+Below are the steps to install [*python-ibmdb*](https://github.com/ibmdb/python-ibmdb) from github or pip.
 
 #### 2.5.1 Direct Installation.
 ```
 pip install ibm_db
+or
+pip install --no-build-isolation ibm_db
 ```
 or
 ```
 pip install git+https://git@github.com/ibmdb/python-ibm_db.git
 ```
+In case you encounter the following error during the installation process:
+```
+error: command '/usr/lpp/IBM/oelcpp/v2r0/bin/clang' failed: EDC5129I No such file or directory.
+```
+This issue may arise due to the absence of the required clang compiler. To resolve this, you can use the following alternative commands:
+```
+CC="ibm-clang64" pip install ibm_db
+```
+or
+```
+CC="ibm-clang64" pip install --no-build-isolation ibm_db
+```
 
 #### 2.5.2 Manual Installation by using git clone.
 
+Before starting the manual installation, ensure you have the latest versions of the required modules installed. Run the following command to install them:
 ```
-git clone https://github.com/ibmdb/python-ibm_db/
+pip install setuptools build wheel
+```
+Next, clone the python-ibm_db repository from GitHub:
+```
+git clone https://github.com/ibmdb/python-ibm_db.git
+```
+After cloning the repository, navigate to the python-ibmdb directory and tag all the files with the ASCII tag:
+```
 cd python-ibmdb
-python setup.py build
-python setup.py install
+chtag -Rtc 819 .
 ````
+Now, you can build the package using the following command:
+```
+python -m build
+````
+In case you encounter the following error during the installation process:
+```
+error: command '/usr/lpp/IBM/oelcpp/v2r0/bin/clang' failed: EDC5129I No such file or directory.
+```
+This issue occurs due to the absence of the required clang compiler. To resolve it, use the following alternative command to build the package with the ibm-clang64 compiler:
+```
+CC="ibm-clang64" python -m build
+````
+After building the package, navigate to the dist directory where the .whl file is generated:
+```
+cd dist
+````
+Now, install the .whl file (the wheel file) using pip. Replace nameofwheelfile.whl with the actual name of the wheel file generated:
+```
+pip install nameofwheelfile.whl
+
+for example:
+pip install ibm_db-3.2.5-cp313-cp313-os390_29_00_3931.whl
+````
+Finally, verify that the installation was successful by running:
+```
+pip list
+````
+This will show the installed packages, and you should see ibm_db listed among them.
 
 Now assuming everything went fine. You can run a test program i.e. **odbc\_test.py** with below content to validate if the setup has been done perfectly i.e. bash-4.3$ python3 odbc\_test.py:
 
