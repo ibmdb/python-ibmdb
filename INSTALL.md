@@ -126,7 +126,7 @@ Below steps were followed for the same:
 1. Tested under below:
 ```
 -- zODBC(64 bit) installed with z/OS 2.3
--- IBM Python 3.11.3 64 bit
+-- IBM Python 3.13.0 64 bit
 -- Install the below PTFs(If not installed):
     -- UI72588 (v11)
     -- UI72589 (v12)
