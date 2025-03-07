@@ -376,9 +376,17 @@ conn = ibm_db.connect(connStr,'','')
 
 * **Jupyter Notebook** examples can be found here -> [Other Examples](https://github.com/IBM/db2-python/tree/master/Jupyter_Notebooks)
 
-## <a name="Licenserequirements"></a>For z/OS and iSeries Connectivity and SQL1598N error
+## <a name="Licenserequirements"></a>For z/OS and iSeries Connectivity and SQL1598N and SQL0805N error
 
-- Connection to `Db2 for z/OS` or `Db2 for i`(AS400) Server using `ibm_db` driver from distributed platforms (Linux, Unix, Windows and MacOS) is not free. It requires either client side or server side license.
+- Connection to `Db2 for z/OS` or `Db2 for i`(AS400) Server using `ibm_db` driver from distributed platforms (Linux, Unix, Windows and MacOS) is not free. It requires either client side or server side license. See note below about license activation. 
+- Connecting for the first time to `Db2 for z/OS` from other platforms will result in **SQL0805N** Package "_location_.NULLID.SYSSH200.___" or variation of package name. <br>
+   To solve this, the bind packages are available within the ibm_db python install. Do the following:
+  ```
+   # Change directory to where your pip package was installed locally, e.g.:
+    cd .local/lib/python3.10/site-packages/clidriver/bin
+   # Run the bind command using db2cli utility from there, e.g: 
+   ./db2cli bind ../bnd/@db2cli.lst -database _location_ : _hostname_: _port_ -user _userid_  -passwd _password_ -options "grant public action replace blocking no"
+  ```
 
 - Connection to `Db2 for LUW` Server using `ibm_db` driver is free.
 
