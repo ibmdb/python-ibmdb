@@ -286,6 +286,10 @@ if('win32' in sys.platform):
         shutil.copy(prebuildPYDname, os.path.join(dllDir, 'ibm_db.dll'))
         prebuildIbmdbPYD = True
 
+# Get version of clidriver for autodownload from environment variable CLIDRIVER_VERSION
+# Default version is v11.5.9
+clidriver_version = os.getenv("CLIDRIVER_VERSION", "v11.5.9")
+
 if ((ibm_db_home == '') and (ibm_db_dir == '') and (ibm_db_lib == '')):
     if('win32' not in sys.platform):
         sys.stdout.write("Detected platform = " + sys.platform + ", uname = " + os.uname()[4] + "\n")
@@ -360,6 +364,11 @@ if ((ibm_db_home == '') and (ibm_db_dir == '') and (ibm_db_lib == '')):
             os_ = 'mac'
             cliFileName = 'macarm64_odbc_cli.tar.gz'
             arch_ = 'arm64'
+            if(clidriver_version.startswith("v11")):
+                clidriver_version = "v12.1.0"
+        else:
+            if(clidriver_version.startswith("v12")):
+                clidriver_version = "v11.5.9"
     else:
         _printAndExit("Not a known platform for python ibm_db.")
 
@@ -369,12 +378,13 @@ if ((ibm_db_home == '') and (ibm_db_dir == '') and (ibm_db_lib == '')):
     ibm_db_lib_runtime = os.path.join('$ORIGIN', 'clidriver', 'lib')
     ibm_db_dir = 'clidriver'
     ibm_db_lib = os.path.join(ibm_db_dir, 'lib')
+    clidriver_version = clidriver_version + "/"
 
     if not os.path.isdir('clidriver'):
         if 'IBM_DB_INSTALLER_URL' in os.environ:
             url = os.getenv('IBM_DB_INSTALLER_URL') + cliFileName
         else:
-            url = 'https://public.dhe.ibm.com/ibmdl/export/pub/software/data/db2/drivers/odbc_cli/' + cliFileName
+            url = 'https://public.dhe.ibm.com/ibmdl/export/pub/software/data/db2/drivers/odbc_cli/' + clidriver_version + cliFileName
         sys.stdout.write("Downloading %s\n" % (url))
         sys.stdout.flush()
         try:
@@ -382,7 +392,7 @@ if ((ibm_db_home == '') and (ibm_db_dir == '') and (ibm_db_lib == '')):
         except Exception as e:
             print_exception(e, url)
             try:
-                git_url= 'https://github.com/ibmdb/db2drivers/raw/main/clidriver/' + cliFileName
+                git_url= 'https://github.com/ibmdb/db2drivers/raw/main/clidriver/' + clidriver_version + cliFileName
                 _downloadClidriver(git_url)
             except Exception as e:
                 print_exception(e, git_url)

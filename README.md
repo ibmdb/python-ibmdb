@@ -77,27 +77,45 @@ pip install ibm_db
 
 This will install ibm_db and ibm_db_dbi module.
 
-**Note:**
-When we install ibm_db package on Linux, MacOS and Windows, `pip install ibm_db` command install
-prebuilt Wheel package that includes clidriver too and ignores `IBM_DB_HOME` or `IBM_DB_INSTALLER_URL`
-environment variables if set. Also, auto downloading of clidriver does not happen as clidriver is
-already present inside wheel package.
+- When we install ibm_db package on Linux, MacOS and Windows, `pip install ibm_db` command install
+  prebuilt Wheel package that includes clidriver too and ignores `IBM_DB_HOME` or `IBM_DB_INSTALLER_URL`
+  or `CLIDRIVER_VERSION` environment variables if set. Also, auto downloading of clidriver does not happen
+  as clidriver is already present inside wheel package.
 
-To inforce auto downloading of clidriver or to make setting of environment variable `IBM_DB_HOME`
-effective, install ibm_db from source distribution using below command:
+- For platforms not supported by python-wheel, ibm_db will get installed from souce distribution.
+  GCC compiler is required on non-windows platform and VC++ compiler on Windows platform to
+  install `ibm_db` from souce distribution.
+
+- If `db2cli validate` command works in your system and installed db2 client/server
+  has `include` directory, ibm_db installation from souce distribution will not download clidriver, but
+  it will use the existing client/server from the system.
+
+- To inforce auto downloading of clidriver _OR_ to make setting of environment variable `IBM_DB_HOME` or
+  `IBM_DB_INSTALLER_URL` or `CLIDRIVER_VERSION` effective; install ibm_db from source distribution
+  using below command:
 
 ```
 pip install ibm_db --no-binary :all: --no-cache-dir
 ```
 
-If you have to use your own URL for clidriver.tar.gz/.zip please set environment variable
+- If you want to use your own URL for clidriver.tar.gz/.zip please set below environment variable:
 
 ```
-IBM_DB_INSTALLER_URL=full_path_of_clidriver.tar.gz/.zip
+export IBM_DB_INSTALLER_URL=full_path_of_clidriver.tar.gz/.zip
+pip install ibm_db --no-binary :all: --no-cache-dir
 ```
 
-When ibm_db get installed from wheel package, you can find clidriver under site_packages directory
-of Python. You need to copy license file under `site_packages/clidriver/license` to be effective, if any.
+- To install using specific version of clidriver from https://public.dhe.ibm.com/ibmdl/export/pub/software/data/db2/drivers/odbc_cli/:
+
+```
+export CLIDRIVER_VERSION=v11.5.9
+pip install ibm_db --no-binary :all: --no-cache-dir
+```
+
+- ibm_db will override value of CLIDRIVER_VERSION to v12.1.0 for MacARM64 and to v11.5.9 for Macx64 platform.
+
+- When ibm_db get installed from wheel package, you can find clidriver under site_packages directory
+  of Python. You need to copy license file under `site_packages/clidriver/license` to be effective, if any.
 
 **Note:** For windows after installing ibm_db, recieves the below error when we try to import ibm_db :
 
@@ -135,7 +153,7 @@ if pip or pip3 does not exist, install it as:
 wget https://bootstrap.pypa.io/get-pip.py
 docker cp get-pip.py /root:<containerid>
 cd root
-python2 get-pip.py or python3 get-pip.py
+python3 get-pip.py
 
 Install python ibm_db as:
 pip install ibm_db
