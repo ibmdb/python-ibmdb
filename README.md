@@ -1,25 +1,27 @@
-Python support for IBM Db2 for LUW and IBM Db2 for z/OS
-=========
+# Python support for IBM Db2 for LUW and IBM Db2 for z/OS
 
 ## Python, DB-API components for IBM Db2 for LUW and IBM Db2 for z/OS
 
 Provides Python interface for connecting to IBM Db2 for LUW and IBM Db2 for z/OS
 
 <a name='components'></a>
+
 ## Components
 
 1. The **ibm_db** contains:
-   * **ibm_db** driver: Python driver for IBM Db2 for LUW and IBM Db2 for z/OS databases. Uses the IBM Data Server Driver for ODBC and CLI APIs to connect to IBM Db2 for LUW.
-   * **ibm_db_dbi**: Python driver for IBM Db2 for LUW that complies to the DB-API 2.0 specification.
-   
+   - **ibm_db** driver: Python driver for IBM Db2 for LUW and IBM Db2 for z/OS databases. Uses the IBM Data Server Driver for ODBC and CLI APIs to connect to IBM Db2 for LUW.
+   - **ibm_db_dbi**: Python driver for IBM Db2 for LUW that complies to the DB-API 2.0 specification.
 
 ## <a name="api"></a> API Documentation
+
 For more information on the APIs supported by ibm_db, please refer to below link:
 
 https://github.com/ibmdb/python-ibmdb/wiki/APIs
 
 <a name="prereq"></a>
+
 ## Pre-requisites
+
 Install Python 3.7 <= 3.13. The minimum python version supported by driver is python 3.7 and the latest version supported is python 3.13.
 MacOS arm64 is supported Python 3.9 onwards.
 
@@ -28,11 +30,12 @@ MacOS arm64 is supported Python 3.9 onwards.
 Please follow detailed installation instructions as documented here: [ibm_db Installation on z/OS](INSTALL.md#inszos)
 
 - **SQL1598N Error** - It is expected in absence of valid db2connect license. Please click [here](#Licenserequirements) and read instructions.
+- **SQL0805N Error** - You need to rebind CLI packages to fix this error. Please read detailed instructions [here](#SQL0805NError).
 
 ### For MacOS M1/M2/ Apple Silicon chip system
 
-  **MacOS with Silicon Chip** - Supported from v3.2.5 onwards using v12.x clidriver.
-  **MacOS with Intel Chip** - Supported using v11.x clidriver only. By default v11.5.9 clidriver will get downloaded.
+**MacOS with Silicon Chip** - Supported from v3.2.5 onwards using v12.x clidriver.
+**MacOS with Intel Chip** - Supported using v11.x clidriver only. By default v11.5.9 clidriver will get downloaded.
 
 ### Linux/Unix:
 
@@ -46,31 +49,32 @@ If you face problems due to missing python header files while installing the dri
 
 ### Windows:
 
-* If a db2 client or server or dsdriver or clidriver is already installed in the system and user has already set installed path to `PATH` environment variable, then user need to set [environment variable](#envvar) `IBM_DB_HOME` manaully to the installed path before installing `ibm_db`.
+- If a db2 client or server or dsdriver or clidriver is already installed in the system and user has already set installed path to `PATH` environment variable, then user need to set [environment variable](#envvar) `IBM_DB_HOME` manaully to the installed path before installing `ibm_db`.
 
-* To verify it, just execute `db2level` command before installation of `ibm_db`. If it works, note down the install directory path and set system level environment variable `IBM_DB_HOME` as install path shown in output of `db2level` command.
+- To verify it, just execute `db2level` command before installation of `ibm_db`. If it works, note down the install directory path and set system level environment variable `IBM_DB_HOME` as install path shown in output of `db2level` command.
 
-* If user has installed clidriver in `F:\DSDRIVER` and if the "PATH" environment variable has `F:\DSDRIVER\bin`, then user should also set `IBM_DB_HOME` to `F:\DSDRIVER`.
-
+- If user has installed clidriver in `F:\DSDRIVER` and if the "PATH" environment variable has `F:\DSDRIVER\bin`, then user should also set `IBM_DB_HOME` to `F:\DSDRIVER`.
 
 ### Docker Linux containers:
 
-* You may need to install **gcc, python, pip, python-devel, libxml2 and pam** if not already installed. Refer to [Installation](#docker) for more details.
+- You may need to install **gcc, python, pip, python-devel, libxml2 and pam** if not already installed. Refer to [Installation](#docker) for more details.
 
 ### Manual Installation
 
 To install ibm_db from source code after clone from git, or to know the detialed installation steps for various platforms, please check [INSTALL document](https://github.com/ibmdb/python-ibmdb/blob/master/INSTALL.md#inslnx).
 
-<a name="installation"></a> 
+<a name="installation"></a>
+
 ## Installation
 
-* Python **Wheels** are built for Linux, MacOS and Windows operating systems for multiple python versions (from python version 3.7 to 3.13). For other platforms, package gets installed from source distribution. For MaxOS arm64, python wheels are available from version 3.9 onwards.
+- Python **Wheels** are built for Linux, MacOS and Windows operating systems for multiple python versions (from python version 3.7 to 3.13). For other platforms, package gets installed from source distribution. For MaxOS arm64, python wheels are available from version 3.9 onwards.
 
 You can install the driver using pip as:
 
 ```
 pip install ibm_db
 ```
+
 This will install ibm_db and ibm_db_dbi module.
 
 **Note:**
@@ -81,18 +85,22 @@ already present inside wheel package.
 
 To inforce auto downloading of clidriver or to make setting of environment variable `IBM_DB_HOME`
 effective, install ibm_db from source distribution using below command:
+
 ```
 pip install ibm_db --no-binary :all: --no-cache-dir
 ```
 
 If you have to use your own URL for clidriver.tar.gz/.zip please set environment variable
+
 ```
 IBM_DB_INSTALLER_URL=full_path_of_clidriver.tar.gz/.zip
 ```
+
 When ibm_db get installed from wheel package, you can find clidriver under site_packages directory
 of Python. You need to copy license file under `site_packages/clidriver/license` to be effective, if any.
 
 **Note:** For windows after installing ibm_db, recieves the below error when we try to import ibm_db :
+
 ```>python
 Python 3.11.4 (tags/v3.11.4:d2340ef, Jun  7 2023, 05:45:37) [MSC v.1934 64 bit (AMD64)] on win32
 Type "help", "copyright", "credits" or "license" for more information.
@@ -102,6 +110,7 @@ Traceback (most recent call last):
 ImportError: DLL load failed while importing ibm_db: The specified module could not be found.
 >>>
 ```
+
 We need to make sure to set dll path of dependent library of clidriver before importing the module as:
 
 ```
@@ -113,9 +122,11 @@ e.g:
 os.add_dll_directory('C:\\Program Files\\IBM\\CLIDRIVER\\bin')
 import ibm_db
 ```
+
 Refer https://bugs.python.org/issue36085 for more details.
 
-* <a name="docker"></a>For installing ibm_db on docker Linux container, you can refer as below:
+- <a name="docker"></a>For installing ibm_db on docker Linux container, you can refer as below:
+
 ```
 yum install python gcc pam wget python-devel.x86_64 libxml2
 use, `yum install python3` to install python 3.x
@@ -133,18 +144,20 @@ pip3 install ibm_db
 
 ```
 
-* Uninstalling the ibm_db driver :
+- Uninstalling the ibm_db driver :
+
 ```python
 pip uninstall ibm_db
 ```
 
 > The ODBC and CLI Driver(clidriver) is automatically downloaded at the time of installation and it is recommended to use this driver. However, if you wish to use an existing installation of clidriver or install the clidriver manually and use it, you can set IBM_DB_HOME environment variable as documented below:
 
-* <a name="envvar"></a>Environment Variables:
+- <a name="envvar"></a>Environment Variables:
   `IBM_DB_HOME :`
 
   Set this environment variable to avoid automatic downloading of the clidriver during installation. You could set this to the installation path of ODBC and CLI driver in your environment.<br>
   e.g:
+
   ```
   Windows :
   set IBM_DB_HOME=C:/Users/userid/clidriver
@@ -152,11 +165,13 @@ pip uninstall ibm_db
   Other platforms:
   export IBM_DB_HOME=/home/userid/clidriver
   ```
-**Note:** You must need to install ibm_db using command `pip install ibm_db --no-binary :all: --no-cache-dir`
-on Linux, Windows and MacOS to make setting of `IBM_DB_HOME` effective.
- 
+
+  **Note:** You must need to install ibm_db using command `pip install ibm_db --no-binary :all: --no-cache-dir`
+  on Linux, Windows and MacOS to make setting of `IBM_DB_HOME` effective.
+
   You are required to set the library path to the clidriver under IBM_DB_HOME to pick this version of the ODBC and CLI Driver.<br>
   e.g:
+
   ```
   Windows:
   set LIB=%IBM_DB_HOME%/lib;%LIB%
@@ -172,24 +187,27 @@ on Linux, Windows and MacOS to make setting of `IBM_DB_HOME` effective.
   ```
 
   The ODBC and CLI driver is available for download at [Db2 LUW ODBC and CLI Driver](https://public.dhe.ibm.com/ibmdl/export/pub/software/data/db2/drivers/odbc_cli/).
-Refer to ([License requirements](#Licenserequirements)) for more details on the CLI driver for manual download and installation.
+  Refer to ([License requirements](#Licenserequirements)) for more details on the CLI driver for manual download and installation.
 
-* Installing using Anaconda distribution of python
+- Installing using Anaconda distribution of python
+
 ```
 conda install -c conda-forge ibm_db
 ```
 
-* Supported Platform for Anaconda Installation
+- Supported Platform for Anaconda Installation
 
-|Platform      |Architecture    |Supported     |Version      |
-| :---:        |  :---:         |  :---:       | :--:
-|Linux         |  amd64 (x86_64)|  Yes         | Latest    |
-|Linux         |  ppc64le       |  Yes         | Latest    |
-|Darwin        |  Mac OS x64    |  Yes         | Latest    |
-|Windows       |  x64           |  Yes         | Latest    |
-|Windows       |  x32           |  Yes         | Latest    |
+| Platform |  Architecture  | Supported | Version |
+| :------: | :------------: | :-------: | :-----: |
+|  Linux   | amd64 (x86_64) |    Yes    | Latest  |
+|  Linux   |    ppc64le     |    Yes    | Latest  |
+|  Darwin  |   Mac OS x64   |    Yes    | Latest  |
+|  Darwin  |  Mac OS arm64  |    Yes    | Latest  |
+| Windows  |      x64       |    Yes    | Latest  |
+| Windows  |      x32       |    Yes    | Latest  |
 
 ## <a name="quick example"></a> Quick Example
+
 ```python
 $ python
 Python 3.13.0 (main, Oct  7 2024, 05:02:14) [Clang 16.0.0 (clang-1600.0.26.4)] on darwin
@@ -263,10 +281,12 @@ True
 ## Logging
 
 ### Logging in ibm_db Module
+
 You can enable logging in the ibm_db module to debug and trace activities.
 Logging can be directed to the console or a specified file.
 
 To enable logging:
+
 ```
 import ibm_db
 
@@ -279,6 +299,7 @@ ibm_db.debug("log.txt")
 # stop logging
 ibm_db.debug(False)
 ```
+
 Calling ibm_db.debug(True) with boolean True argument will output logs to the console.
 
 Calling ibm_db.debug("log.txt") will log messages to the specified file (log.txt in this example).
@@ -286,10 +307,12 @@ Calling ibm_db.debug("log.txt") will log messages to the specified file (log.txt
 Calling ibm_db.debug(False) with boolean False argument will stop logging.
 
 ### Logging in ibm_db_dbi Module
+
 You can enable logging in the ibm_db_dbi module to debug and trace activities.
 Logging can be directed to the console or a specified file.
 
 To enable logging:
+
 ```
 import ibm_db_dbi as dbi
 
@@ -302,6 +325,7 @@ dbi.debug("log.txt")
 # stop logging
 dbi.debug(False)
 ```
+
 Calling dbi.debug(True) with boolean True argument will output logs to the console.
 
 Calling dbi.debug("log.txt") will log messages to the specified file (log.txt in this example).
@@ -309,81 +333,98 @@ Calling dbi.debug("log.txt") will log messages to the specified file (log.txt in
 Calling dbi.debug(False) with boolean False argument will stop logging.
 
 ## Example of SSL Connection String
- 
-* **Secure Database Connection using SSL/TSL** - ibm_db supports secure connection to Database Server over SSL same as ODBC/CLI driver. If you have SSL Certificate from server or an CA signed certificate, just use it in connection string as below:
+
+- **Secure Database Connection using SSL/TSL** - ibm_db supports secure connection to Database Server over SSL same as ODBC/CLI driver. If you have SSL Certificate from server or an CA signed certificate, just use it in connection string as below:
+
 ```
 Using SSLServerCertificate keyword
- 
+
 connStr = "DATABASE=<DATABASE_NAME>;HOSTNAME=<HOSTNAME>;PORT=<SSL_PORT>;UID=<USER_ID>;PWD=<PASSWORD>;" +
           "SECURITY=SSL;SSLServerCertificate=<FULL_PATH_TO_SERVER_CERTIFICATE>;"
 conn = ibm_db.connect(connStr,'','')
 ```
- 
+
 > Note the two extra keywords **Security** and **SSLServerCertificate** used in connection string. `SSLServerCertificate` should point to the SSL Certificate from server or an CA signed certificate. Also, `PORT` must be `SSL` port and not the TCPI/IP port. Make sure Db2 server is configured to accept connection on SSL port else `ibm_db` will throw SQL30081N error.
 
 > Value of `SSLServerCertificate` keyword must be full path of a certificate file generated for client authentication.
- It normally has `*.arm` or `*.cert` or `*.pem` extension. `ibm_db` do not support `*.jks` format file as it is not a
- certificate file but a Java KeyStore file, extract certificate from it using keytool and then use the *.cert file.
+> It normally has `*.arm` or `*.cert` or `*.pem` extension. `ibm_db` do not support `*.jks` format file as it is not a
+> certificate file but a Java KeyStore file, extract certificate from it using keytool and then use the \*.cert file.
 
 > `ibm_db` uses IBM ODBC/CLI Driver for connectivity and it do not support a `*.jks` file as keystoredb as `keystore.jks` is meant for Java applications.
- Note that `*.jks` file is a `Java Key Store` file and it is not an SSL Certificate file. You can extract SSL certificate from JKS file using below `keytool` command:
- ```
- keytool -exportcert -alias your_certificate_alias -file client_cert.cert -keystore  keystore.jks
- ```
- Now, you can use the generated `client_cert.cert` as the value of `SSLServerCertificate` in connection string.
+> Note that `*.jks` file is a `Java Key Store` file and it is not an SSL Certificate file. You can extract SSL certificate from JKS file using below `keytool` command:
+
+```
+keytool -exportcert -alias your_certificate_alias -file client_cert.cert -keystore  keystore.jks
+```
+
+Now, you can use the generated `client_cert.cert` as the value of `SSLServerCertificate` in connection string.
 
 > Do not use keyworkds like `sslConnection=true` in connection string as it is a JDBC connection keyword and ibm_db
- ignores it. Corresponding ibm_db connection keyword for `sslConnection` is `Security` hence, use `Security=SSL;` in
- connection string instead.
+> ignores it. Corresponding ibm_db connection keyword for `sslConnection` is `Security` hence, use `Security=SSL;` in
+> connection string instead.
 
 > `ibm_db` supports only ODBC/CLI Driver keywords in connection string: https://www.ibm.com/docs/en/db2/11.5?topic=odbc-cliodbc-configuration-keywords
 
-* To connect to dashDB in IBM Cloud, use below connection string:
+- To connect to dashDB in IBM Cloud, use below connection string:
 
 ```
 connStr = "DATABASE=database;HOSTNAME=hostname;PORT=port;PROTOCOL=TCPIP;UID=username;PWD=passwd;Security=SSL";
 ```
+
 > We just need to add **Security=SSL** in connection string to have a secure connection against Db2 server in IBM Cloud.
 
 **Note:** You can also create a KeyStore DB using GSKit command line tool and use it in connection string along with other keywords as documented in [DB2 Infocenter](http://www.ibm.com/support/knowledgecenter/en/SSEPGG_11.5.0/com.ibm.db2.luw.admin.sec.doc/doc/t0053518.html).
 
-* If you have created a KeyStore DB using GSKit using password or you have got *.kdb file with *.sth file:
+- If you have created a KeyStore DB using GSKit using password or you have got _.kdb file with _.sth file:
+
 ```
 Using SSLClientKeyStoreDB and SSLClientKeyStoreDBPassword keyword
- 
+
 connStr = "DATABASE=<DATABASE_NAME>;HOSTNAME=<HOSTNAME>;PORT=<SSL_PORT>;UID=<USER_ID>;PWD=<PASSWORD>;" +
           "SECURITY=SSL;SSLClientKeyStoreDB=<FULL_PATH_TO_KEY_STORE_DB>;SSLClientKeyStoreDBPassword=<KEYSTORE_PASSWD>;"
 conn = ibm_db.connect(connStr,'','')
 ```
- 
+
 ```
 Using SSLClientKeyStoreDB and SSLClientKeyStash keyword
- 
+
 connStr = "DATABASE=<DATABASE_NAME>;HOSTNAME=<HOSTNAME>;PORT=<SSL_PORT>;UID=<USER_ID>;PWD=<PASSWORD>;" +
           "SECURITY=SSL;SSLClientKeyStoreDB=<FULL_PATH_TO_KEY_STORE_DB>;" +
           "SSLClientKeyStash=<FULL_PATH_TO_CLIENT_KEY_STASH>;"
 conn = ibm_db.connect(connStr,'','')
 ```
 
-> If you have downloaded `IBMCertTrustStore` from IBM site, ibm_db will not work with it; you need to
- download `Secure Connection Certificates.zip` file that comes for IBM DB2 Command line tool(CLP).
- `Secure Connection Certificates.zip` has *.kdb and *.sth files that should be used as the value of
- `SSLClientKeystoreDB` and `SSLClientKeystash` in connection string.
+> If you have downloaded `IBMCertTrustStore` from IBM site, ibm*db will not work with it; you need to
+> download `Secure Connection Certificates.zip` file that comes for IBM DB2 Command line tool(CLP).
+> `Secure Connection Certificates.zip` has *.kdb and \_.sth files that should be used as the value of
+> `SSLClientKeystoreDB` and `SSLClientKeystash` in connection string.
 
-* More examples can be found under ['ibm_db_tests'](https://github.com/ibmdb/python-ibmdb/tree/master/IBM_DB/ibm_db/ibm_db_tests) folder.
+- More examples can be found under ['ibm_db_tests'](https://github.com/ibmdb/python-ibmdb/tree/master/IBM_DB/ibm_db/ibm_db_tests) folder.
 
-* [API Documentation](https://github.com/ibmdb/python-ibmdb/wiki/APIs) has examples for each API.
+- [API Documentation](https://github.com/ibmdb/python-ibmdb/wiki/APIs) has examples for each API.
 
-* **Jupyter Notebook** examples can be found here -> [Other Examples](https://github.com/IBM/db2-python/tree/master/Jupyter_Notebooks)
+- **Jupyter Notebook** examples can be found here -> [Other Examples](https://github.com/IBM/db2-python/tree/master/Jupyter_Notebooks)
+
+## <a name="SQL0805NError"></a>SQL0805N Error - Rebind packages
+
+- Connecting first time to `Db2 for z/OS` from distributed platforms will result in error **SQL0805N** Package "_location_.NULLID.SYSSH200.\_\_\_" or variation of package name.
+- To solve it, the bind packages are available within the `ibm_db` python install. Do the following:
+
+  ```
+   # Change directory to where your pip package was installed locally, e.g.:
+    cd .local/lib/python3.10/site-packages/clidriver/bin
+   # Run the bind command using db2cli utility from there, e.g:
+   ./db2cli bind ../bnd/@db2cli.lst -database _dbname_ : _hostname_ : _port_ -user _userid_  -passwd _password_ -options "grant public action replace blocking no"
+  ```
 
 ## <a name="Licenserequirements"></a>For z/OS and iSeries Connectivity and SQL1598N error
 
-- Connection to `Db2 for z/OS` or `Db2 for i`(AS400) Server using `ibm_db` driver from distributed platforms (Linux, Unix, Windows and MacOS) is not free. It requires either client side or server side license.
+- Connection to `Db2 for z/OS` or `Db2 for i`(AS400) Server using `ibm_db` driver from distributed platforms (Linux, Unix, Windows and MacOS) is not free. It requires either client side or server side license. See note below about license activation.
 
 - Connection to `Db2 for LUW` Server using `ibm_db` driver is free.
 
 - `ibm_db` returns SQL1598N error in absence of a valid db2connect license. SQL1598N error is returned by the Db2 Server to client.
-To suppress this error, Db2 server must be activated with db2connectactivate utility OR a client side db2connect license file must exist.
+  To suppress this error, Db2 server must be activated with db2connectactivate utility OR a client side db2connect license file must exist.
 
 - Db2connect license can be applied on database server or client side. A **db2connect license of version 11.5** is required for ibm_db.
 
@@ -412,20 +453,22 @@ To suppress this error, Db2 server must be activated with db2connectactivate uti
 - To know more about license and purchasing cost, please contact [IBM Customer Support](https://www.ibm.com/mysupport/s/?language=en_US).
 
 - To know more about server based licensing viz db2connectactivate, follow below links:
+
 * [Activating the license certificate file for Db2 Connect Unlimited Edition](https://www.ibm.com/docs/en/db2/11.5?topic=li-activating-license-certificate-file-db2-connect-unlimited-edition).
 * [Unlimited licensing using db2connectactivate utility](https://www.ibm.com/docs/en/db2/11.1?topic=edition-db2connectactivate-server-license-activation-utility).
 
 #### Troubleshooting SQL1598N Error:
 
-If you have copied db2con*.lic file under clidriver/license directory, but still getting SQL1598N Error; try below options:
+If you have copied db2con\*.lic file under clidriver/license directory, but still getting SQL1598N Error; try below options:
 
-* `cd clidriver/bin` directory and run `./db2level` command. Make sure you have the db2connect license of same major and minor version as of clidriver.
+- `cd clidriver/bin` directory and run `./db2level` command. Make sure you have the db2connect license of same major and minor version as of clidriver.
 
-* Make sure the user running python program has read permission for license file.
+- Make sure the user running python program has read permission for license file.
 
-* Make sure the user running python program has read-write permission for `clidriver/license` and `clidriver/cfgcache` directories as license check utility need to create some cache files under `cfgcache` and `license` directories.
+- Make sure the user running python program has read-write permission for `clidriver/license` and `clidriver/cfgcache` directories as license check utility need to create some cache files under `cfgcache` and `license` directories.
 
-* Validate your license file and connectivity using below db2cli command:
+- Validate your license file and connectivity using below db2cli command:
+
 ```
   db2cli validate -connstring "connection string as used in python program" -displaylic
 
@@ -434,52 +477,55 @@ If you have copied db2con*.lic file under clidriver/license directory, but still
   db2cli validate -database "dbname:hostname:port" -user dbuser -passwd dbpasswd -connect -displaylic
 ```
 
-
 If you intend to install the clidriver manually, Following are the details of the client driver versions that you can download from [CLIDRIVER](https://public.dhe.ibm.com/ibmdl/export/pub/software/data/db2/drivers/odbc_cli/) to be able to connect to databases on non-LUW servers. You would need the client side license file as per Version for corresponding installation.:
 
 #### <a name="LicenseDetails"></a> CLIDriver and Client license versions for Specific Platform and Architecture
 
-|Platform      |Architecture    |Cli Driver               |Supported     |Version        |
-| :---:        |  :---:         |  :---:                  |  :---:       | :--:
-|AIX           |  ppc           |aix32_odbc_cli.tar.gz    |  Yes         | V11.5.9       |
-|              |  others        |aix64_odbc_cli.tar.gz    |  Yes         | V11.5.9       |
-|Darwin        |  x64           |macos64_odbc_cli.tar.gz  |  Yes         | Till V11.5.9  |
-|              |  arm64         |macarm64_odbc_cli.tar.gz |  Yes         | From V12.1.0  |
-|Linux         |  x64           |linuxx64_odbc_cli.tar.gz |  Yes         | V11.5.9       |
-|              |  s390x         |s390x64_odbc_cli.tar.gz  |  Yes         | V11.5.9       |
-|              |  s390          |s390_odbc_cli.tar.gz     |  Yes         | V11.1         |
-|              |  ppc64  (LE)   |ppc64le_odbc_cli.tar.gz  |  Yes         | V11.5.9       |
-|              |  ppc64         |ppc64_odbc_cli.tar.gz    |  Yes         | V10.5         |
-|              |  ppc32         |ppc32_odbc_cli.tar.gz    |  Yes         | V10.5         |
-|              |  others        |linuxia32_odbc_cli.tar.gz|  Yes         | V11.5.9       |
-|Windows       |  x64           |ntx64_odbc_cli.zip       |  Yes         | V11.5.9       |
-|              |  x32           |nt32_odbc_cli.zip        |  Yes         | V11.5.9       |
-|Sun           | i86pc          |sunamd64_odbc_cli.tar.gz |  Yes         | V10.5         |
-|              |                |sunamd32_odbc_cli.tar.gz |  Yes         | V10.5         |
-|              | sparc          |sun64_odbc_cli.tar.gz    |  Yes         | V11.1         |
-|              | sparc          |sun32_odbc_cli.tar.gz    |  Yes         | V11.1         |
+| Platform | Architecture |        Cli Driver         | Supported |   Version    |
+| :------: | :----------: | :-----------------------: | :-------: | :----------: |
+|   AIX    |     ppc      |   aix32_odbc_cli.tar.gz   |    Yes    |   V11.5.9    |
+|          |    others    |   aix64_odbc_cli.tar.gz   |    Yes    |   V11.5.9    |
+|  Darwin  |     x64      |  macos64_odbc_cli.tar.gz  |    Yes    | Till V11.5.9 |
+|          |    arm64     | macarm64_odbc_cli.tar.gz  |    Yes    | From V12.1.0 |
+|  Linux   |     x64      | linuxx64_odbc_cli.tar.gz  |    Yes    |   V11.5.9    |
+|          |    s390x     |  s390x64_odbc_cli.tar.gz  |    Yes    |   V11.5.9    |
+|          |     s390     |   s390_odbc_cli.tar.gz    |    Yes    |    V11.1     |
+|          |  ppc64 (LE)  |  ppc64le_odbc_cli.tar.gz  |    Yes    |   V11.5.9    |
+|          |    ppc64     |   ppc64_odbc_cli.tar.gz   |    Yes    |    V10.5     |
+|          |    ppc32     |   ppc32_odbc_cli.tar.gz   |    Yes    |    V10.5     |
+|          |    others    | linuxia32_odbc_cli.tar.gz |    Yes    |   V11.5.9    |
+| Windows  |     x64      |    ntx64_odbc_cli.zip     |    Yes    |   V11.5.9    |
+|          |     x32      |     nt32_odbc_cli.zip     |    Yes    |   V11.5.9    |
+|   Sun    |    i86pc     | sunamd64_odbc_cli.tar.gz  |    Yes    |    V10.5     |
+|          |              | sunamd32_odbc_cli.tar.gz  |    Yes    |    V10.5     |
+|          |    sparc     |   sun64_odbc_cli.tar.gz   |    Yes    |    V11.1     |
+|          |    sparc     |   sun32_odbc_cli.tar.gz   |    Yes    |    V11.1     |
 
 You can refer to [ODBC and CLI Driver installation](http://www-01.ibm.com/support/docview.wss?uid=swg21418043) for details on how to install the driver manually.
 
-
 <a name='downloads'></a>
+
 ## Downloads
 
 Use following pypi web location for downloading source code and binaries
 **ibm_db**: https://pypi.python.org/pypi/ibm_db .
 You can also get the source code by cloning the ibm_db github repository as :
+
 ```
 git clone git@github.com:ibmdb/python-ibmdb.git
 ```
 
 <a name='support'></a>
-## Support & feedback
-**Your feedback is very much appreciated and expected through project ibm-db:**
-  * ibm-db issues reports: **https://github.com/ibmdb/python-ibmdb/issues**
-  * ibm_db discuss: **http://groups.google.com/group/ibm_db**
 
+## Support & feedback
+
+**Your feedback is very much appreciated and expected through project ibm-db:**
+
+- ibm-db issues reports: **https://github.com/ibmdb/python-ibmdb/issues**
+- ibm_db discuss: **http://groups.google.com/group/ibm_db**
 
 <a name='contributing-to-the-ibm_db-python-project'></a>
+
 ## Contributing to the ibm_db python project
 
 See [CONTRIBUTING](https://github.com/ibmdb/python-ibmdb/blob/master/contributing/CONTRIBUTING.md)
@@ -490,24 +536,28 @@ DCO 1.1 Signed-off-by: Random J Developer <random@developer.org>
 ```
 
 <a name='KnownIssues'></a>
+
 ## Some common issues
 
 ## 1. Installation Issues for missing python.h file
 
 ### Always use the latest pip
-```python3 -m pip install --upgrade pip```
+
+`python3 -m pip install --upgrade pip`
 
 ### Install the package python3-devel that delivers the python.h header file
+
 ```
 For RHEL use
 sudo yum install python3-devel
 ```
+
 ```
 For Ubuntu use
 sudo apt-get install python3-devel
 ```
 
-* Once the above steps works fine, try re-installing ibm_db.
+- Once the above steps works fine, try re-installing ibm_db.
 
 ## 2. SQL30081N Error
 
@@ -515,9 +565,9 @@ If connection fails with SQL30081N error - means `ibm_db` installation is correc
 
 ## 3. Issues with MAC OS X
 
-* If `import ibm_db` fails with `Symbol not found: ___cxa_throw_bad_array_new_length` error or `malloc` error: Please follow instructions as documented [here](INSTALL.md#symbolerror).
+- If `import ibm_db` fails with `Symbol not found: ___cxa_throw_bad_array_new_length` error or `malloc` error: Please follow instructions as documented [here](INSTALL.md#symbolerror).
 
-* If you run into errors for libdb2.dylib as below:
+- If you run into errors for libdb2.dylib as below:
 
 ```python
 >>> import ibm_db
@@ -535,6 +585,7 @@ You would need to set DYLD_LIBRARY_PATH to point to lib folder as per the instal
 export DYLD_LIBRARY_PATH=/usr/local/lib/python3.5/site-packages/clidriver/lib:$DYLD_LIBRARY_PATH
 
 ```
+
 If the issue is not resolved even after setting DYLD_LIBRARY_PATH, you could refer:
 [MAC OS Hints and Tips](https://medium.com/@sudhanvalp/overcome-ibm-db-import-error-image-not-found-on-macos-578f07b70762)
 
@@ -549,6 +600,7 @@ If you hit following error while attempting to connect to a database:
    File "<stdin>", line 1, in <module>
  Exception: [IBM][CLI Driver] SQL1042C An unexpected system error occurred. SQLSTATE=58004 SQLCODE=-1042
 ```
+
 Set DYLD_LIBRARY_PATH to point to icc folder as per the installation location of clidriver in your environment.
 
 ```
@@ -574,11 +626,12 @@ pip3 install ibm_db --no-build-isolation
 
 ## 5. For Issues on IBM iSeries System (AS400)
 
-* If you have installed `ibm_db` on IBM i and need help, please open an issue [here](https://github.com/kadler/python-ibmdb/issues).
+- If you have installed `ibm_db` on IBM i and need help, please open an issue [here](https://github.com/kadler/python-ibmdb/issues).
 
-* If you have installed `ibm_db` on distributed platform and want to connect to AS400 server, you must have to use db2connect license. `ibm_db` do not work with `IBM i Access` driver.
+- If you have installed `ibm_db` on distributed platform and want to connect to AS400 server, you must have to use db2connect license. `ibm_db` do not work with `IBM i Access` driver.
 
 <a name='testing'></a>
+
 # Testing
 
 Tests displaying Python ibm_db driver code examples are located in the ibm_db_tests
@@ -586,7 +639,8 @@ directory. A valid config.py will need to be created to configure your Db2
 settings. A config.py.sample exists that can be copied and modified for your
 environment.
 
-* Set Environment Variables DB2_USER, DB2_PASSWD accordingly.
+- Set Environment Variables DB2_USER, DB2_PASSWD accordingly.
+
 ```
 For example, by sourcing the following ENV variables:
 For Linux
@@ -598,13 +652,17 @@ set DB2_USER=<Username>
 set DB2_PASSWD=<Password>
 
 ```
-* OR
+
+- OR
+
 ```
 If not using environment variables, update user and password information in
 config.json file.
 
 ```
+
 The config.py should look like this:
+
 ```python
 test_dir =      'ibm_db_tests'         # Location of testsuite file (relative to current directory)
 file_path = 'config.json'
@@ -636,34 +694,41 @@ if env_not_set == True:
 
 Point the database to mydatabase as created by the following command.
 
-The tests that ibm_db driver uses depends on a UTF-8 database.  This can be
+The tests that ibm_db driver uses depends on a UTF-8 database. This can be
 created by running:
+
 ```
   CREATE DATABASE mydatabase USING CODESET UTF-8 TERRITORY US
 ```
+
 Some of the tests utilize XML functionality only available in version 9 or
-later of Db2.  While Db2 v8.x is fully supported, two of the tests
-(test_195.py and test_52949.py) utilize XML functionality.  These tests will
+later of Db2. While Db2 v8.x is fully supported, two of the tests
+(test_195.py and test_52949.py) utilize XML functionality. These tests will
 fail on version 8.x of Db2.
 
 ## Running the driver testsuite on Linux
-  In order to run the entire python driver testsuite on Linux, run this
-  command at the command prompt:
-  ```
-    python ibmdb_tests.py
-  ```
-  To run a single test, set the environment variable, **SINGLE_PYTHON_TEST**, to
-  the test filename you would like to run, followed by the previous command.
+
+In order to run the entire python driver testsuite on Linux, run this
+command at the command prompt:
+
+```
+  python ibmdb_tests.py
+```
+
+To run a single test, set the environment variable, **SINGLE_PYTHON_TEST**, to
+the test filename you would like to run, followed by the previous command.
 
 ## Running the driver testsuite on Windows
-  In order to run the entire python driver testsuite on Windows, run this
-  command at the command prompt:
-  ```
-    python ibmdb_tests.py
-  ```
-  To run a single test, set the environment variable, **SINGLE_PYTHON_TEST**, to
-  the test filename you would like to run, followed by the previous command.
 
+In order to run the entire python driver testsuite on Windows, run this
+command at the command prompt:
+
+```
+  python ibmdb_tests.py
+```
+
+To run a single test, set the environment variable, **SINGLE_PYTHON_TEST**, to
+the test filename you would like to run, followed by the previous command.
 
 ## Known Limitations for the Python driver
 
