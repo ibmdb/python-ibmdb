@@ -1,3 +1,30 @@
+2025-03-09, Version 3.2.6
+=========================
+
+ * fea: add support for env var CLIDRIVER_VERSION for autodownload (Bimal Jha)
+
+ * update README file for SQL0805N error, #996 (Bimal Jha)
+
+ * Update Installation Instructions for Python ibm_db on z/OS (#995) (bchoudhary6415)
+
+ * Update .gitattributes file to fix unicode decode error on z/OS (bchoudhary6415)
+
+ * Fix for memory leak issue (#991) (bchoudhary6415)
+
+ * fix formatting and indentation issues (Bimal Jha)
+
+ * Fix Polaris code scan issues (#990) (bchoudhary6415)
+
+ * add support for column_name in ibm_db_column_privileges & issue #988 (Bimal Jha)
+
+ * fix high severity code scan issues (Bimal Jha)
+
+ * Add polaris.yml file for code scan (Bimal Jha)
+
+ * Return error from fetchall() if any fetch get error (#987) (bchoudhary6415)
+
+ * Polaris scan fix (#985) (bchoudhary6415)
+
 2024-12-30, Version 3.2.5
 =========================
 
