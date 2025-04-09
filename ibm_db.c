@@ -16304,6 +16304,8 @@ static PyObject *ibm_db_execute_many(PyObject *self, PyObject *args)
         PyErr_SetString(PyExc_Exception, error);
         return NULL;
     }
+    PyMem_Del(data_type);
+    PyMem_Del(ref_data_type);
     LogMsg(INFO, "exit execute_many()");
     return PyInt_FromLong(row_cnt);
 }
