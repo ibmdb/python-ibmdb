@@ -1242,7 +1242,7 @@ class Connection(object):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        return self.close()
+        self.close()
 
 
 # Defines a cursor for the driver connection
@@ -1761,95 +1761,67 @@ class Cursor(object):
         LogMsg(INFO, "exit executemany()")
         return True
 
-    def _fetch_helper(self, fetch_size=-1):
-        """
-        This method is a helper function for fetching fetch_size number of
-        rows, after executing an SQL statement which produces a result set.
-        It takes the number of rows to fetch as an argument.
-        If this is not provided it fetches all the remaining rows.
-        """
-        LogMsg(INFO, "entry _fetch_helper()")
-        if self.stmt_handler is None:
-            LogMsg(ERROR, "Please execute an SQL statement in order to get a row from result set.")
-            self.messages.append(
-                ProgrammingError("Please execute an SQL statement in order to get a row from result set."))
-            raise self.messages[len(self.messages) - 1]
-        if not self._result_set_produced:
-            LogMsg(ERROR, "The last call to execute did not produce any result set.")
-            self.messages.append(ProgrammingError("The last call to execute did not produce any result set."))
-            raise self.messages[len(self.messages) - 1]
-        row_list = []
-        rows_fetched = 0
-        while (fetch_size == -1) or \
-                (fetch_size != -1 and rows_fetched < fetch_size):
-            try:
-                row = ibm_db.fetch_tuple(self.stmt_handler)
-            except Exception as inst:
-                if ibm_db.stmt_errormsg() is not None:
-                    error_msg = f"Statement error: {str(ibm_db.stmt_errormsg())}"
-                    LogMsg(ERROR, error_msg)
-                    self.messages.append(Error(str(ibm_db.stmt_errormsg())))
-                    raise self.messages[len(self.messages) - 1]
-                else:
-                    LogMsg(ERROR, f"Error occured : {_get_exception(inst)}")
-                    self.messages.append(_get_exception(inst))
-                    raise self.messages[len(self.messages) - 1]
-
-            if row != False:
-                if self.FIX_RETURN_TYPE == 1:
-                    row_list.append(self._fix_return_data_type(row))
-                else:
-                    row_list.append(row)
-            else:
-                LogMsg(DEBUG, f"Returning {row_list} from _fetch_helper()")
-                LogMsg(INFO, "exit _fetch_helper()")
-                return row_list
-            rows_fetched = rows_fetched + 1
-        LogMsg(DEBUG, f"Returning {row_list} from _fetch_helper()")
-        LogMsg(INFO, "exit _fetch_helper()")
-        return row_list
-
     def fetchone(self):
-        """This method fetches one row from the database, after
-        executing an SQL statement which produces a result set.
+        """This method fetches one row from the database using the ibm_db.fetchone() API."""
+        LogMsg("INFO", "entry fetchone()")
+        if self.stmt_handler is None:
+            LogMsg("ERROR", "Please execute an SQL statement in order to get a row from result set.")
+            self.messages.append(
+                ProgrammingError("Please execute an SQL statement in order to get a row from result set.")
+            )
+            raise self.messages[-1]  # Raise the last error message
 
-        """
-        LogMsg(INFO, "entry fetchone()")
-        LogMsg(INFO, "Fetching one row from the database.")
-        row_list = self._fetch_helper(1)
-        if len(row_list) == 0:
-            LogMsg(DEBUG, "No rows fetched.")
+        if not self._result_set_produced:
+            LogMsg("ERROR", "The last call to execute did not produce any result set.")
+            self.messages.append(
+                ProgrammingError("The last call to execute did not produce any result set.")
+            )
+            raise self.messages[-1]  # Raise the last error message
+
+        row = ibm_db.fetchone(self.stmt_handler)
+        if row is None:
+            LogMsg("DEBUG", "No rows fetched.")
         else:
-            LogMsg(DEBUG, "Row fetched successfully.")
-        if len(row_list) == 0:
-            LogMsg(INFO, "exit fetchone()")
-            return None
-        else:
-            LogMsg(INFO, "exit fetchone()")
-            return row_list[0]
+            LogMsg("DEBUG", "Row fetched successfully.")
+
+        LogMsg("INFO", "exit fetchone()")
+        return row
 
     def fetchmany(self, size=0):
         """This method fetches size number of rows from the database,
         after executing an SQL statement which produces a result set.
-        It takes the number of rows to fetch as an argument.  If this
-        is not provided it fetches self.arraysize number of rows.
+        It takes the number of rows to fetch as an argument. If this
+        is not provided, it fetches self.arraysize number of rows.
         """
         LogMsg(INFO, "entry fetchmany()")
         message = f"Fetching {size} rows from the database."
         LogMsg(DEBUG, message)
+
         if not isinstance(size, int_types):
             LogMsg(EXCEPTION, "fetchmany expects argument type int or long.")
             self.messages.append(InterfaceError("fetchmany expects argument type int or long."))
-            raise self.messages[len(self.messages) - 1]
+            raise self.messages[-1]
+
         if size == 0:
             size = self.arraysize
         if size < -1:
             LogMsg(ERROR, "fetchmany argument size expected to be positive")
             self.messages.append(ProgrammingError("fetchmany argument size expected to be positive."))
-            raise self.messages[len(self.messages) - 1]
+            raise self.messages[-1]
 
-        fetch_nrows = self._fetch_helper(size)
-        nrows = len(fetch_nrows)
+        if self.stmt_handler is None:
+            LogMsg(ERROR, "Please execute an SQL statement in order to get rows from result set.")
+            self.messages.append(ProgrammingError("Please execute an SQL statement in order to get rows from result set."))
+            raise self.messages[-1]
+
+        if not self._result_set_produced:
+            LogMsg(ERROR, "The last call to execute did not produce any result set.")
+            self.messages.append(ProgrammingError("The last call to execute did not produce any result set."))
+            raise self.messages[-1]
+
+        # Use ibm_db.fetch_many
+        fetch_nrows = ibm_db.fetchmany(self.stmt_handler, size)
+        nrows = len(fetch_nrows) if fetch_nrows else 0
         message = f"Fetched {nrows} rows successfully."
         LogMsg(DEBUG, message)
         LogMsg(INFO, "exit fetchmany()")
@@ -1861,8 +1833,20 @@ class Cursor(object):
         """
         LogMsg(INFO, "entry fetchall()")
         LogMsg(INFO, "Fetching all remaining rows from the database.")
-        rows_fetched = self._fetch_helper()
-        nrows = len(rows_fetched)
+
+        if self.stmt_handler is None:
+            LogMsg(ERROR, "Please execute an SQL statement in order to get rows from result set.")
+            self.messages.append(ProgrammingError("Please execute an SQL statement in order to get rows from result set."))
+            raise self.messages[-1]
+
+        if not self._result_set_produced:
+            LogMsg(ERROR, "The last call to execute did not produce any result set.")
+            self.messages.append(ProgrammingError("The last call to execute did not produce any result set."))
+            raise self.messages[-1]
+
+        # Use ibm_db.fetch_all
+        rows_fetched = ibm_db.fetchall(self.stmt_handler)
+        nrows = len(rows_fetched) if rows_fetched else 0
         LogMsg(DEBUG, f"Fetched {nrows} rows successfully.")
         LogMsg(INFO, "exit fetchall()")
         return rows_fetched
@@ -1951,4 +1935,4 @@ class Cursor(object):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        return self.close()
+        self.close()

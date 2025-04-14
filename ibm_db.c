@@ -1324,7 +1324,7 @@ static int _python_ibm_db_get_result_set_info(stmt_handle *stmt_res)
         }
     }
     LogMsg(DEBUG, "Successfully completed _python_ibm_db_get_result_set_info()");
-    LogMsg(INFO, "entry _python_ibm_db_get_result_set_info()");
+    LogMsg(INFO, "exit _python_ibm_db_get_result_set_info()");
     return 0;
 }
 
