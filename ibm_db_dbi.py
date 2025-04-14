@@ -1769,14 +1769,14 @@ class Cursor(object):
             self.messages.append(
                 ProgrammingError("Please execute an SQL statement in order to get a row from result set.")
             )
-            raise self.messages[-1]  # Raise the last error message
+            raise self.messages[-1]
 
         if not self._result_set_produced:
             LogMsg("ERROR", "The last call to execute did not produce any result set.")
             self.messages.append(
                 ProgrammingError("The last call to execute did not produce any result set.")
             )
-            raise self.messages[-1]  # Raise the last error message
+            raise self.messages[-1]
 
         row = ibm_db.fetchone(self.stmt_handler)
         if row is None:
@@ -1819,7 +1819,6 @@ class Cursor(object):
             self.messages.append(ProgrammingError("The last call to execute did not produce any result set."))
             raise self.messages[-1]
 
-        # Use ibm_db.fetch_many
         fetch_nrows = ibm_db.fetchmany(self.stmt_handler, size)
         nrows = len(fetch_nrows) if fetch_nrows else 0
         message = f"Fetched {nrows} rows successfully."
@@ -1844,7 +1843,6 @@ class Cursor(object):
             self.messages.append(ProgrammingError("The last call to execute did not produce any result set."))
             raise self.messages[-1]
 
-        # Use ibm_db.fetch_all
         rows_fetched = ibm_db.fetchall(self.stmt_handler)
         nrows = len(rows_fetched) if rows_fetched else 0
         LogMsg(DEBUG, f"Fetched {nrows} rows successfully.")
