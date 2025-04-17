@@ -2380,13 +2380,16 @@ static SQLWCHAR *getUnicodeDataAsSQLWCHAR(PyObject *pyobj, int *isNewBuffer)
     if (maxuniValue <= 65536)
     {
         *isNewBuffer = 0;
-        PyObject *result = (SQLWCHAR *)PyUnicode_AsWideCharString(pyobj, &maxuniValue);
+        SQLWCHAR *result = (SQLWCHAR *)PyUnicode_AsWideCharString(pyobj, &maxuniValue);
+        if (result == NULL) {
+            LogMsg(ERROR, "PyUnicode_AsWideCharString() failed");
+            return NULL;
+        }
         snprintf(messageStr, sizeof(messageStr), " result obtained: %p", (void *)result);
         LogMsg(DEBUG, "UCS2 case:");
         LogMsg(INFO, "exit getUnicodeDataAsSQLWCHAR()");
-        return (SQLWCHAR *)PyUnicode_AsWideCharString(pyobj, &maxuniValue);
+        return result;
     }
-
     *isNewBuffer = 1;
     pNewBuffer = (SQLWCHAR *)ALLOC_N(SQLWCHAR, nCharLen + 1);
     snprintf(messageStr, sizeof(messageStr), "Allocated new buffer: pNewBuffer=%p, size=%d", (void *)pNewBuffer, nCharLen + 1);
@@ -2608,6 +2611,8 @@ static void _python_ibm_db_clear_conn_err_cache(void)
 
 static PyObject *ibm_db_get_sqlcode(PyObject *self, PyObject *args)
 {
+    LogMsg(INFO, "entry get_sqlcode()");
+    LogUTF8Msg(args);
     conn_handle *conn_res = NULL;
     PyObject *py_conn_res = NULL;
     stmt_handle *stmt_res = NULL;
@@ -2616,7 +2621,6 @@ static PyObject *ibm_db_get_sqlcode(PyObject *self, PyObject *args)
     char *return_str = NULL; /* This variable is used by
                               * _python_ibm_db_check_sql_errors to return err
                               * strings */
-    LogMsg(INFO, "entry get_sqlcode()");
     if (!PyArg_ParseTuple(args, "|O", &py_conn_res) | (!PyArg_ParseTuple(args, "|O", &py_stmt_res)))
     {
         LogMsg(ERROR, "Failed to parse arguments");
@@ -2653,23 +2657,21 @@ static PyObject *ibm_db_get_sqlcode(PyObject *self, PyObject *args)
             LogMsg(DEBUG, messageStr);
         }
 
-        return_str = (SQLINTEGER *)PyMem_New(SQLINTEGER, 1);
-        snprintf(messageStr, sizeof(messageStr), "Allocated return_str: %p, size: %d", return_str, DB2_MAX_ERR_MSG_LEN);
-        LogMsg(DEBUG, messageStr);
-
+        return_str = PyMem_New(char, DB2_MAX_ERR_MSG_LEN);
         if (return_str == NULL)
         {
             PyErr_NoMemory();
             return NULL;
         }
-        memset(return_str, 0, sizeof(SQLINTEGER));
-        LogMsg(DEBUG, "Initialized return_str with zeros");
+        memset(return_str, 0, DB2_MAX_ERR_MSG_LEN);
+        snprintf(messageStr, sizeof(messageStr), "Allocated return_str: %p, size: %d", (void *)return_str, DB2_MAX_ERR_MSG_LEN);
+        LogMsg(DEBUG, messageStr);
         if (SQL_HANDLE_DBC)
         {
             _python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, -1, 0,
                                             return_str, DB2_ERR,
                                             conn_res->error_recno_tracker);
-            snprintf(messageStr, sizeof(messageStr), "SQL errors checked. return_str: %s", return_str);
+            snprintf(messageStr, sizeof(messageStr), "SQL errors checked for DBC. return_str: %s", return_str);
             LogMsg(DEBUG, messageStr);
         }
         if (SQL_HANDLE_STMT)
@@ -2677,24 +2679,24 @@ static PyObject *ibm_db_get_sqlcode(PyObject *self, PyObject *args)
             _python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, -1, 0,
                                             return_str, DB2_ERR,
                                             stmt_res->error_recno_tracker);
-            snprintf(messageStr, sizeof(messageStr), "SQL errors checked. return_str: %s", return_str);
+            snprintf(messageStr, sizeof(messageStr), "SQL errors checked for STMT. return_str: %s", return_str);
             LogMsg(DEBUG, messageStr);
         }
         if (conn_res->error_recno_tracker - conn_res->errormsg_recno_tracker >= 1)
         {
-            LogMsg(DEBUG, "Updating errormsg_recno_tracker");
+            LogMsg(DEBUG, "Updating conn_res->errormsg_recno_tracker");
             conn_res->errormsg_recno_tracker = conn_res->error_recno_tracker;
         }
         conn_res->error_recno_tracker++;
-        snprintf(messageStr, sizeof(messageStr), "Updated error_recno_tracker: %d, errormsg_recno_tracker: %d", conn_res->error_recno_tracker, stmt_res->errormsg_recno_tracker);
+        snprintf(messageStr, sizeof(messageStr), "Updated conn error_recno_tracker: %d, errormsg_recno_tracker: %d", conn_res->error_recno_tracker, stmt_res->errormsg_recno_tracker);
         LogMsg(DEBUG, messageStr);
         if (stmt_res->error_recno_tracker - stmt_res->errormsg_recno_tracker >= 1)
         {
-            LogMsg(DEBUG, "Updating errormsg_recno_tracker");
+            LogMsg(DEBUG, "Updating stmt_res->errormsg_recno_tracker");
             stmt_res->errormsg_recno_tracker = stmt_res->error_recno_tracker;
         }
         stmt_res->error_recno_tracker++;
-        snprintf(messageStr, sizeof(messageStr), "Updated error_recno_tracker: %d, errormsg_recno_tracker: %d", stmt_res->error_recno_tracker, stmt_res->errormsg_recno_tracker);
+        snprintf(messageStr, sizeof(messageStr), "Updated stmt error_recno_tracker: %d, errormsg_recno_tracker: %d", stmt_res->error_recno_tracker, stmt_res->errormsg_recno_tracker);
         LogMsg(DEBUG, messageStr);
         if (return_str != NULL)
         {
@@ -2702,7 +2704,7 @@ static PyObject *ibm_db_get_sqlcode(PyObject *self, PyObject *args)
             PyMem_Del(return_str);
             return_str = NULL;
         }
-        snprintf(messageStr, sizeof(messageStr), "Created return value: %p", retVal);
+        snprintf(messageStr, sizeof(messageStr), "Created return value: %p", (void *)retVal);
         LogMsg(DEBUG, messageStr);
         LogMsg(INFO, "exit get_sqlcode()");
         return retVal;
@@ -2710,10 +2712,10 @@ static PyObject *ibm_db_get_sqlcode(PyObject *self, PyObject *args)
     else
     {
         PyObject *defaultErrorCode = StringOBJ_FromASCII(IBM_DB_G(__python_err_code));
-        snprintf(messageStr, sizeof(messageStr), "No Statement object provided. Returning default error sqlcode: %s", PyUnicode_AsUTF8(defaultErrorCode));
+        snprintf(messageStr, sizeof(messageStr), "Connection or Statement object is not provided. Returning default error sqlcode: %s", PyUnicode_AsUTF8(defaultErrorCode));
         LogMsg(DEBUG, messageStr);
-        LogMsg(INFO, "exit conn_error()");
-        return StringOBJ_FromASCII(IBM_DB_G(__python_err_code));
+        LogMsg(INFO, "exit get_sqlcode()");
+        return defaultErrorCode;
     }
 }
 
@@ -8151,22 +8153,16 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
                         }
                     }
 
-                    if (isNewBuffer == 0)
+                    if (isNewBuffer == 0 || param_length <= curr->param_size)
                     {
-                        dest_uvalue = (char *)&curr->uvalue[0] + (curr->param_size * i);
-                        dest_uvalue = memcpy(dest_uvalue, tmp_uvalue, (param_length + sizeof(SQLWCHAR)));
-                        param_size = curr->param_size;
-                    }
-                    else if (param_length <= curr->param_size)
-                    {
-                        dest_uvalue = (char *)&curr->uvalue[0] + (curr->param_size * i);
-                        dest_uvalue = memcpy(dest_uvalue, tmp_uvalue, (param_length + sizeof(SQLWCHAR)));
+                        dest_uvalue = &curr->uvalue[(curr->param_size / sizeof(SQLWCHAR)) * i];
+                        memcpy(dest_uvalue, tmp_uvalue, param_length);
                         param_size = curr->param_size;
                     }
                     else if (curr->data_type == SQL_TYPE_TIMESTAMP)
                     {
-                        dest_uvalue = (char *)&curr->uvalue[0] + (param_length * i);
-                        dest_uvalue = memcpy(dest_uvalue, tmp_uvalue, param_length);
+                        dest_uvalue = &curr->uvalue[(param_length / sizeof(SQLWCHAR)) * i];
+                        memcpy(dest_uvalue, tmp_uvalue, param_length);
                         param_size = param_length;
                     }
                     PyMem_Del(tmp_uvalue);
