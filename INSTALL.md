@@ -283,12 +283,21 @@ Follow the standard steps for the same i.e. pip3 install ibm_db
 
 ### 2.5 Install python-ibmdb
 
-Below are the steps to install [*python-ibmdb*](https://github.com/ibmdb/python-ibmdb) from github or pip.
+#### 2.5.1 Install ibm_db from IBM Python AI Toolkit for z/OS
 
-#### 2.5.1 Direct Installation.
+IBM provides a precompiled version of ibm_db as part of IBM Python AI Toolkit for z/OS, see https://ibm-z-oss-oda.github.io/python_ai_toolkit_zos/.
+
+Install command:
+```
+pip3 install --index-url https://downloads.pyaitoolkit.ibm.net/repository/python_ai_toolkit_zos/simple --trusted-host downloads.pyaitoolkit.ibm.net --only-binary :all: ibm_db
+```
+
+#### 2.5.2 Direct Installation: Using pip from pypi or github
 ```
 pip install ibm_db
+```
 or
+```
 pip install --no-build-isolation ibm_db
 ```
 or
@@ -308,7 +317,7 @@ or
 CC="ibm-clang64" pip install --no-build-isolation ibm_db
 ```
 
-#### 2.5.2 Manual Installation by using git clone.
+#### 2.5.3 Manual Installation by using git clone.
 
 Before starting the manual installation, ensure you have the latest versions of the required modules installed. Run the following command to install them:
 ```
