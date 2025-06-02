@@ -49,7 +49,7 @@ If you face problems due to missing python header files while installing the dri
 
 ### Windows:
 
-- If a db2 client or server or dsdriver or clidriver is already installed in the system and user has already set installed path to `PATH` environment variable, then user need to set [environment variable](#envvar) `IBM_DB_HOME` manually to the installed path before installing `ibm_db`.
+- If a db2 client or server or dsdriver or clidriver is already installed in the system and user has already set installed path to `PATH` environment variable, then user needs to set [environment variable](#envvar) `IBM_DB_HOME` manually to the installed path before installing `ibm_db`.
 
 - To verify it, just execute `db2level` command before installation of `ibm_db`. If it works, note down the install directory path and set system level environment variable `IBM_DB_HOME` as install path shown in output of `db2level` command.
 
