@@ -810,6 +810,8 @@ static void _python_ibm_db_check_sql_errors(SQLHANDLE handle, SQLSMALLINT hType,
                             (char *)sqlstate, SQL_SQLSTATE_SIZE + 1);
                     strncpy(IBM_DB_G(__python_conn_warn_msg),
                             (char *)errMsg, DB2_MAX_ERR_MSG_LEN);
+                    strncpy(IBM_DB_G(__python_err_code),
+                            (char *)errcode, SQL_SQLCODE_SIZE);
                     break;
 
                 case SQL_HANDLE_STMT:
@@ -821,6 +823,8 @@ static void _python_ibm_db_check_sql_errors(SQLHANDLE handle, SQLSMALLINT hType,
                             (char *)sqlstate, SQL_SQLSTATE_SIZE + 1);
                     strncpy(IBM_DB_G(__python_stmt_warn_msg),
                             (char *)errMsg, DB2_MAX_ERR_MSG_LEN);
+                    strncpy(IBM_DB_G(__python_err_code),
+                            (char *)errcode, SQL_SQLCODE_SIZE);
                     break;
                 }
             }
