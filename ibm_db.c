@@ -700,23 +700,19 @@ static void _python_ibm_db_check_sql_errors(SQLHANDLE handle, SQLSMALLINT hType,
     snprintf(messageStr, sizeof(messageStr), "handle=%p, hType=%d, rc=%d, cpy_to_global=%d, API=%d, recno=%d",
              handle, hType, rc, cpy_to_global, API, recno);
     LogMsg(DEBUG, messageStr);
-
-    memset(errMsg, '\0', DB2_MAX_ERR_MSG_LEN);
-    memset(msg, '\0', SQL_MAX_MESSAGE_LENGTH + 1);
     rc1 = SQLGetDiagRec(hType, handle, recno, sqlstate, &sqlcode, msg,
                         SQL_MAX_MESSAGE_LENGTH + 1, &length);
-    snprintf(messageStr, sizeof(messageStr), "SQLGetDiagRec returned rc1=%d, sqlstate=%s, sqlcode=%d, msg=%s, length=%d",
-             rc1, sqlstate, sqlcode, msg, length);
+    snprintf(messageStr, sizeof(messageStr), "SQLGetDiagRec returned rc1=%d, sqlstate=%s, sqlcode=%d, length=%d",
+             rc1, sqlstate, sqlcode, length);
     sprintf((char *)errcode, "SQLCODE=%d", (int)sqlcode);
     LogMsg(DEBUG, messageStr);
-
     if (rc1 == SQL_SUCCESS)
     {
         while ((p = strchr((char *)msg, '\n')))
         {
             *p = '\0';
         }
-        sprintf((char *)errMsg, "%s SQLCODE=%d", (char *)msg, (int)sqlcode);
+        snprintf((char *)errMsg, DB2_MAX_ERR_MSG_LEN, "%s SQLCODE=%d", (char *)msg, (int)sqlcode);
 #ifdef _WIN32
         for (i = 0; i < strlen(errMsg); i++)
         {
@@ -727,7 +723,8 @@ static void _python_ibm_db_check_sql_errors(SQLHANDLE handle, SQLSMALLINT hType,
         }
 #endif
 
-        LogMsg(ERROR, errMsg);
+        snprintf(messageStr, sizeof(messageStr), "Final error message (UTF-8): %s", errMsg);
+        LogMsg(ERROR, messageStr);
         if (cpy_to_global != 0 && rc != 1)
         {
             PyErr_SetString(PyExc_Exception, (char *)errMsg);
@@ -747,12 +744,15 @@ static void _python_ibm_db_check_sql_errors(SQLHANDLE handle, SQLSMALLINT hType,
                              "Copying to global: SQL_HANDLE_DBC, sqlstate=%s, errMsg=%s",
                              sqlstate, errMsg);
                     LogMsg(DEBUG, messageStr);
-                    strncpy(IBM_DB_G(__python_conn_err_state),
-                            (char *)sqlstate, SQL_SQLSTATE_SIZE + 1);
-                    strncpy(IBM_DB_G(__python_conn_err_msg),
-                            (char *)errMsg, DB2_MAX_ERR_MSG_LEN);
-                    strncpy(IBM_DB_G(__python_err_code),
-                            (char *)errcode, SQL_SQLCODE_SIZE);
+                    strncpy(IBM_DB_G(__python_conn_err_state), (char *)sqlstate, SQL_SQLSTATE_SIZE);
+                    IBM_DB_G(__python_conn_err_state)[SQL_SQLSTATE_SIZE] = '\0';
+
+                    strncpy(IBM_DB_G(__python_conn_err_msg), (char *)errMsg, DB2_MAX_ERR_MSG_LEN - 1);
+                    IBM_DB_G(__python_conn_err_msg)[DB2_MAX_ERR_MSG_LEN - 1] = '\0';
+
+                    strncpy(IBM_DB_G(__python_err_code), (char *)errcode, SQL_SQLCODE_SIZE - 1);
+                    IBM_DB_G(__python_err_code)[SQL_SQLCODE_SIZE - 1] = '\0';
+
                     break;
 
                 case SQL_HANDLE_STMT:
@@ -760,12 +760,14 @@ static void _python_ibm_db_check_sql_errors(SQLHANDLE handle, SQLSMALLINT hType,
                              "Copying to global: SQL_HANDLE_STMT, sqlstate=%s, errMsg=%s",
                              sqlstate, errMsg);
                     LogMsg(DEBUG, messageStr);
-                    strncpy(IBM_DB_G(__python_stmt_err_state),
-                            (char *)sqlstate, SQL_SQLSTATE_SIZE + 1);
-                    strncpy(IBM_DB_G(__python_stmt_err_msg),
-                            (char *)errMsg, DB2_MAX_ERR_MSG_LEN);
-                    strncpy(IBM_DB_G(__python_err_code),
-                            (char *)errcode, SQL_SQLCODE_SIZE);
+                    strncpy(IBM_DB_G(__python_stmt_err_state), (char *)sqlstate, SQL_SQLSTATE_SIZE);
+                    IBM_DB_G(__python_stmt_err_state)[SQL_SQLSTATE_SIZE] = '\0';
+
+                    strncpy(IBM_DB_G(__python_stmt_err_msg), (char *)errMsg, DB2_MAX_ERR_MSG_LEN - 1);
+                    IBM_DB_G(__python_stmt_err_msg)[DB2_MAX_ERR_MSG_LEN - 1] = '\0';
+
+                    strncpy(IBM_DB_G(__python_err_code), (char *)errcode, SQL_SQLCODE_SIZE - 1);
+                    IBM_DB_G(__python_err_code)[SQL_SQLCODE_SIZE - 1] = '\0';
 
                     break;
                 }
@@ -779,7 +781,8 @@ static void _python_ibm_db_check_sql_errors(SQLHANDLE handle, SQLSMALLINT hType,
                 {
                     snprintf(messageStr, sizeof(messageStr), "Returning SQLSTATE for DB2_ERR: %s", sqlstate);
                     LogMsg(DEBUG, messageStr);
-                    strncpy(ret_str, (char *)sqlstate, SQL_SQLSTATE_SIZE + 1);
+                    strncpy(ret_str, (char *)sqlstate, SQL_SQLSTATE_SIZE);
+                    ret_str[SQL_SQLSTATE_SIZE] = '\0';
                 }
                 return;
             case DB2_ERRMSG:
@@ -787,7 +790,8 @@ static void _python_ibm_db_check_sql_errors(SQLHANDLE handle, SQLSMALLINT hType,
                 {
                     snprintf(messageStr, sizeof(messageStr), "Returning error message for DB2_ERRMSG: %s", errMsg);
                     LogMsg(DEBUG, messageStr);
-                    strncpy(ret_str, (char *)errMsg, DB2_MAX_ERR_MSG_LEN);
+                    strncpy(ret_str, (char *)errMsg, DB2_MAX_ERR_MSG_LEN - 1);
+                    ret_str[DB2_MAX_ERR_MSG_LEN - 1] = '\0';
                 }
                 return;
             default:
@@ -806,10 +810,11 @@ static void _python_ibm_db_check_sql_errors(SQLHANDLE handle, SQLSMALLINT hType,
                              "Copying warning to global: SQL_HANDLE_DBC, sqlstate=%s, errMsg=%s",
                              sqlstate, errMsg);
                     LogMsg(DEBUG, messageStr);
-                    strncpy(IBM_DB_G(__python_conn_warn_state),
-                            (char *)sqlstate, SQL_SQLSTATE_SIZE + 1);
-                    strncpy(IBM_DB_G(__python_conn_warn_msg),
-                            (char *)errMsg, DB2_MAX_ERR_MSG_LEN);
+                    strncpy(IBM_DB_G(__python_conn_warn_state), (char *)sqlstate, SQL_SQLSTATE_SIZE);
+                    IBM_DB_G(__python_conn_warn_state)[SQL_SQLSTATE_SIZE] = '\0';
+
+                    strncpy(IBM_DB_G(__python_conn_warn_msg), (char *)errMsg, DB2_MAX_ERR_MSG_LEN - 1);
+                    IBM_DB_G(__python_conn_warn_msg)[DB2_MAX_ERR_MSG_LEN - 1] = '\0';
                     break;
 
                 case SQL_HANDLE_STMT:
@@ -817,10 +822,11 @@ static void _python_ibm_db_check_sql_errors(SQLHANDLE handle, SQLSMALLINT hType,
                              "Copying warning to global: SQL_HANDLE_STMT, sqlstate=%s, errMsg=%s",
                              sqlstate, errMsg);
                     LogMsg(DEBUG, messageStr);
-                    strncpy(IBM_DB_G(__python_stmt_warn_state),
-                            (char *)sqlstate, SQL_SQLSTATE_SIZE + 1);
-                    strncpy(IBM_DB_G(__python_stmt_warn_msg),
-                            (char *)errMsg, DB2_MAX_ERR_MSG_LEN);
+                    strncpy(IBM_DB_G(__python_stmt_warn_state), (char *)sqlstate, SQL_SQLSTATE_SIZE);
+                    IBM_DB_G(__python_stmt_warn_state)[SQL_SQLSTATE_SIZE] = '\0';
+
+                    strncpy(IBM_DB_G(__python_stmt_warn_msg), (char *)errMsg, DB2_MAX_ERR_MSG_LEN - 1);
+                    IBM_DB_G(__python_stmt_warn_msg)[DB2_MAX_ERR_MSG_LEN - 1] = '\0';
                     break;
                 }
             }
@@ -830,7 +836,8 @@ static void _python_ibm_db_check_sql_errors(SQLHANDLE handle, SQLSMALLINT hType,
             {
                 snprintf(messageStr, sizeof(messageStr), "Returning warning message for DB2_WARNMSG: %s", errMsg);
                 LogMsg(DEBUG, messageStr);
-                strncpy(ret_str, (char *)errMsg, DB2_MAX_ERR_MSG_LEN);
+                strncpy(ret_str, (char *)errMsg, DB2_MAX_ERR_MSG_LEN - 1);
+                ret_str[DB2_MAX_ERR_MSG_LEN - 1] = '\0';
             }
             return;
         default:
@@ -9928,11 +9935,20 @@ static PyObject *ibm_db_conn_errormsg(PyObject *self, PyObject *args)
     }
     else
     {
-        PyObject *defaultErrorMsg = StringOBJ_FromASCII(IBM_DB_G(__python_conn_err_msg));
-        snprintf(messageStr, sizeof(messageStr), "No connection object provided. Returning default error message: %s", PyUnicode_AsUTF8(defaultErrorMsg));
+        PyObject *defaultErrorMsg = PyUnicode_DecodeUTF8(
+            (const char *)IBM_DB_G(__python_conn_err_msg),
+            strlen((const char *)IBM_DB_G(__python_conn_err_msg)),
+            "replace"
+        );
+        snprintf(messageStr, sizeof(messageStr), "No statement object provided. Returning default error message: %s", PyUnicode_AsUTF8(defaultErrorMsg));
+        Py_DECREF(defaultErrorMsg);
         LogMsg(INFO, messageStr);
         LogMsg(INFO, "exit conn_errormsg()");
-        return StringOBJ_FromASCII(IBM_DB_G(__python_conn_err_msg));
+        return PyUnicode_DecodeUTF8(
+            (const char *)IBM_DB_G(__python_conn_err_msg),
+            strlen((const char *)IBM_DB_G(__python_conn_err_msg)),
+            "replace"
+        );
     }
 }
 /*!# ibm_db_conn_warn
@@ -10226,11 +10242,20 @@ static PyObject *ibm_db_stmt_errormsg(PyObject *self, PyObject *args)
     }
     else
     {
-        PyObject *defaultErrorMsg = StringOBJ_FromASCII(IBM_DB_G(__python_stmt_err_msg));
+        PyObject *defaultErrorMsg = PyUnicode_DecodeUTF8(
+            (const char *)IBM_DB_G(__python_stmt_err_msg),
+            strlen((const char *)IBM_DB_G(__python_stmt_err_msg)),
+            "replace"
+        );
         snprintf(messageStr, sizeof(messageStr), "No statement object provided. Returning default error message: %s", PyUnicode_AsUTF8(defaultErrorMsg));
+        Py_DECREF(defaultErrorMsg);
         LogMsg(INFO, messageStr);
         LogMsg(INFO, "exit stmt_errormsg()");
-        return StringOBJ_FromStr(IBM_DB_G(__python_stmt_err_msg));
+        return PyUnicode_DecodeUTF8(
+            (const char *)IBM_DB_G(__python_stmt_err_msg),
+            strlen((const char *)IBM_DB_G(__python_stmt_err_msg)),
+            "replace"
+        );
     }
 }
 
