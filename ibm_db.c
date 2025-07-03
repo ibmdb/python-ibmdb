@@ -806,12 +806,15 @@ static void _python_ibm_db_check_sql_errors(SQLHANDLE handle, SQLSMALLINT hType,
                              "Copying warning to global: SQL_HANDLE_DBC, sqlstate=%s, errMsg=%s",
                              sqlstate, errMsg);
                     LogMsg(DEBUG, messageStr);
-                    strncpy(IBM_DB_G(__python_conn_warn_state),
-                            (char *)sqlstate, SQL_SQLSTATE_SIZE + 1);
-                    strncpy(IBM_DB_G(__python_conn_warn_msg),
-                            (char *)errMsg, DB2_MAX_ERR_MSG_LEN);
-                    strncpy(IBM_DB_G(__python_err_code),
-                            (char *)errcode, SQL_SQLCODE_SIZE);
+                    strncpy(IBM_DB_G(__python_conn_warn_state), (char *)sqlstate, SQL_SQLSTATE_SIZE);
+                    IBM_DB_G(__python_conn_warn_state)[SQL_SQLSTATE_SIZE] = '\0';
+
+                    strncpy(IBM_DB_G(__python_conn_warn_msg), (char *)errMsg, DB2_MAX_ERR_MSG_LEN - 1);
+                    IBM_DB_G(__python_conn_warn_msg)[DB2_MAX_ERR_MSG_LEN - 1] = '\0';
+
+                    strncpy(IBM_DB_G(__python_err_code), (char *)errcode, SQL_SQLCODE_SIZE);
+                   IBM_DB_G(__python_err_code)[SQL_SQLCODE_SIZE] = '\0';
+
                     break;
 
                 case SQL_HANDLE_STMT:
@@ -819,12 +822,15 @@ static void _python_ibm_db_check_sql_errors(SQLHANDLE handle, SQLSMALLINT hType,
                              "Copying warning to global: SQL_HANDLE_STMT, sqlstate=%s, errMsg=%s",
                              sqlstate, errMsg);
                     LogMsg(DEBUG, messageStr);
-                    strncpy(IBM_DB_G(__python_stmt_warn_state),
-                            (char *)sqlstate, SQL_SQLSTATE_SIZE + 1);
-                    strncpy(IBM_DB_G(__python_stmt_warn_msg),
-                            (char *)errMsg, DB2_MAX_ERR_MSG_LEN);
-                    strncpy(IBM_DB_G(__python_err_code),
-                            (char *)errcode, SQL_SQLCODE_SIZE);
+                    strncpy(IBM_DB_G(__python_stmt_warn_state), (char *)sqlstate, SQL_SQLSTATE_SIZE);
+                    IBM_DB_G(__python_stmt_warn_state)[SQL_SQLSTATE_SIZE] = '\0';
+
+                    strncpy(IBM_DB_G(__python_stmt_warn_msg), (char *)errMsg, DB2_MAX_ERR_MSG_LEN - 1);
+                    IBM_DB_G(__python_stmt_warn_msg)[DB2_MAX_ERR_MSG_LEN - 1] = '\0';
+
+                    strncpy(IBM_DB_G(__python_err_code), (char *)errcode, SQL_SQLCODE_SIZE);
+                    IBM_DB_G(__python_err_code)[SQL_SQLCODE_SIZE] = '\0';
+
                     break;
                 }
             }
