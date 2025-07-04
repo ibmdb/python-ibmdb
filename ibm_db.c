@@ -817,7 +817,7 @@ static void _python_ibm_db_check_sql_errors(SQLHANDLE handle, SQLSMALLINT hType,
                     IBM_DB_G(__python_conn_warn_msg)[DB2_MAX_ERR_MSG_LEN - 1] = '\0';
 
                     strncpy(IBM_DB_G(__python_err_code), (char *)errcode, SQL_SQLCODE_SIZE);
-                   IBM_DB_G(__python_err_code)[SQL_SQLCODE_SIZE] = '\0';
+                    IBM_DB_G(__python_err_code)[SQL_SQLCODE_SIZE] = '\0';
 
                  break;
 
