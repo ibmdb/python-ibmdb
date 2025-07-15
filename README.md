@@ -46,6 +46,7 @@ If you face problems due to missing python header files while installing the dri
      or
     yum install python-devel
 ```
+If you have installed `DB2_RTC*` i.e. **DB2 Runtime Client** and want `ibm_db` to use it instead of clidriver, please read [this comment](https://github.com/ibmdb/python-ibmdb/issues/1023#issuecomment-3062805368) and take action.
 
 ### Windows:
 
@@ -185,7 +186,7 @@ pip uninstall ibm_db
   ```
 
   **Note:** You must need to install ibm_db using command `pip install ibm_db --no-binary :all: --no-cache-dir`
-  on Linux, Windows and MacOS to make setting of `IBM_DB_HOME` effective.
+  on Linux, Windows and MacOS to make setting of `IBM_DB_HOME` effective. If you want to use Runtime Client or clidriver downloaded from fix central which do not have `include` file, please read [this comment](https://github.com/ibmdb/python-ibmdb/issues/1023#issuecomment-3062805368).
 
   You are required to set the library path to the clidriver under IBM_DB_HOME to pick this version of the ODBC and CLI Driver.<br>
   e.g:
@@ -458,7 +459,7 @@ conn = ibm_db.connect(connStr,'','')
 
 - db2connectactivate utility and client side db2connect license both comes together from IBM in a single zip file.
 
-- Client side db2connect license is a `db2con*.lic` file that must be copied under `clidriver\license` directory.
+- Client side db2connect license is a `db2con*.lic` file that must be copied under `clidriver\license` directory and it must not be a **symlink** [file](https://github.com/ibmdb/python-ibmdb/issues/1019#issuecomment-3072461389).
 
 - If you have a `db2jcc_license_cisuz.jar` file, it will not work for ibm_db. `db2jcc_license_cisuz.jar` is a db2connect license file for Java Driver. For non-Java Driver, client side db2connect license comes as a file name `db2con*.lic`.
 
@@ -494,6 +495,8 @@ If you have copied db2con\*.lic file under clidriver/license directory, but stil
 
   db2cli validate -database "dbname:hostname:port" -user dbuser -passwd dbpasswd -connect -displaylic
 ```
+
+- Installed license file under your `DB2_RTC*` client, but it is not working, please read [this comment](https://github.com/ibmdb/python-ibmdb/issues/1023#issuecomment-3062805368).
 
 If you intend to install the clidriver manually, Following are the details of the client driver versions that you can download from [CLIDRIVER](https://public.dhe.ibm.com/ibmdl/export/pub/software/data/db2/drivers/odbc_cli/) to be able to connect to databases on non-LUW servers. You would need the client side license file as per Version for corresponding installation.:
 
