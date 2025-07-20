@@ -382,7 +382,7 @@ Now, you can use the generated `client_cert.cert` as the value of `SSLServerCert
 > ignores it. Corresponding ibm_db connection keyword for `sslConnection` is `Security` hence, use `Security=SSL;` in
 > connection string instead.
 
-> `ibm_db` supports only ODBC/CLI Driver keywords in connection string: https://www.ibm.com/docs/en/db2/11.5?topic=odbc-cliodbc-configuration-keywords
+> `ibm_db` supports only ODBC/CLI Driver keywords in connection string: https://www.ibm.com/docs/en/db2/12.1?topic=odbc-cliodbc-configuration-keywords
 
 - To connect to dashDB in IBM Cloud, use below connection string:
 
@@ -392,7 +392,7 @@ connStr = "DATABASE=database;HOSTNAME=hostname;PORT=port;PROTOCOL=TCPIP;UID=user
 
 > We just need to add **Security=SSL** in connection string to have a secure connection against Db2 server in IBM Cloud.
 
-**Note:** You can also create a KeyStore DB using GSKit command line tool and use it in connection string along with other keywords as documented in [DB2 Infocenter](http://www.ibm.com/support/knowledgecenter/en/SSEPGG_11.5.0/com.ibm.db2.luw.admin.sec.doc/doc/t0053518.html).
+**Note:** You can also create a KeyStore DB using GSKit command line tool and use it in connection string along with other keywords as documented in [DB2 Documentation](https://www.ibm.com/docs/en/db2/12.1.0?topic=ctsidc-configuring-tls-support-in-non-java-db2-clients).
 
 - If you have created a KeyStore DB using GSKit using password or you have got _.kdb file with _.sth file:
 
@@ -445,7 +445,7 @@ conn = ibm_db.connect(connStr,'','')
 - `ibm_db` returns SQL1598N error in absence of a valid db2connect license. SQL1598N error is returned by the Db2 Server to client.
   To suppress this error, Db2 server must be activated with db2connectactivate utility OR a client side db2connect license file must exist.
 
-- Db2connect license can be applied on database server or client side. A **db2connect license of version 11.5** is required for ibm_db.
+- Db2connect license can be applied on database server or client side. A **db2connect license of version 12.1** is required for ibm_db.
 
 - For MacOS M1/M2/M3 Chip System (ARM64 processor), **db2connect license of version 12.1** is required.
 
@@ -473,8 +473,8 @@ conn = ibm_db.connect(connStr,'','')
 
 - To know more about server based licensing viz db2connectactivate, follow below links:
 
-* [Activating the license certificate file for Db2 Connect Unlimited Edition](https://www.ibm.com/docs/en/db2/11.5?topic=li-activating-license-certificate-file-db2-connect-unlimited-edition).
-* [Unlimited licensing using db2connectactivate utility](https://www.ibm.com/docs/en/db2/11.1?topic=edition-db2connectactivate-server-license-activation-utility).
+* [Activating the license certificate file for Db2 Connect Unlimited Edition](https://www.ibm.com/docs/en/db2/12.1.0?topic=dswnls-activating-license-key-db2-connect-unlimited-edition-system-z).
+* [Unlimited licensing using db2connectactivate utility](https://www.ibm.com/docs/en/db2/12.1.0?topic=z-db2connectactivate-server-license-activation-utility).
 
 #### Troubleshooting SQL1598N Error:
 
@@ -504,25 +504,24 @@ If you intend to install the clidriver manually, Following are the details of th
 
 | Platform | Architecture |        Cli Driver         | Supported |   Version    |
 | :------: | :----------: | :-----------------------: | :-------: | :----------: |
-|   AIX    |     ppc      |   aix32_odbc_cli.tar.gz   |    Yes    |   V11.5.9    |
-|          |    others    |   aix64_odbc_cli.tar.gz   |    Yes    |   V11.5.9    |
+|   AIX    |     ppc      |   aix32_odbc_cli.tar.gz   |    Yes    |   V12.1.0    |
+|          |    others    |   aix64_odbc_cli.tar.gz   |    Yes    |   V12.1.0    |
 |  Darwin  |     x64      |  macos64_odbc_cli.tar.gz  |    Yes    | Till V11.5.9 |
 |          |    arm64     | macarm64_odbc_cli.tar.gz  |    Yes    | From V12.1.0 |
-|  Linux   |     x64      | linuxx64_odbc_cli.tar.gz  |    Yes    |   V11.5.9    |
-|          |    s390x     |  s390x64_odbc_cli.tar.gz  |    Yes    |   V11.5.9    |
+|  Linux   |     x64      | linuxx64_odbc_cli.tar.gz  |    Yes    |   V12.1.0    |
+|          |    s390x     |  s390x64_odbc_cli.tar.gz  |    Yes    |   V12.1.0    |
 |          |     s390     |   s390_odbc_cli.tar.gz    |    Yes    |    V11.1     |
-|          |  ppc64 (LE)  |  ppc64le_odbc_cli.tar.gz  |    Yes    |   V11.5.9    |
+|          |  ppc64 (LE)  |  ppc64le_odbc_cli.tar.gz  |    Yes    |   V12.1.0    |
 |          |    ppc64     |   ppc64_odbc_cli.tar.gz   |    Yes    |    V10.5     |
 |          |    ppc32     |   ppc32_odbc_cli.tar.gz   |    Yes    |    V10.5     |
-|          |    others    | linuxia32_odbc_cli.tar.gz |    Yes    |   V11.5.9    |
-| Windows  |     x64      |    ntx64_odbc_cli.zip     |    Yes    |   V11.5.9    |
-|          |     x32      |     nt32_odbc_cli.zip     |    Yes    |   V11.5.9    |
+|          |    others    | linuxia32_odbc_cli.tar.gz |    Yes    |   V12.1.0    |
+| Windows  |     x64      |    ntx64_odbc_cli.zip     |    Yes    |   V12.1.0    |
+|          |     x32      |     nt32_odbc_cli.zip     |    Yes    |   V12.1.0    |
 |   Sun    |    i86pc     | sunamd64_odbc_cli.tar.gz  |    Yes    |    V10.5     |
 |          |              | sunamd32_odbc_cli.tar.gz  |    Yes    |    V10.5     |
 |          |    sparc     |   sun64_odbc_cli.tar.gz   |    Yes    |    V11.1     |
 |          |    sparc     |   sun32_odbc_cli.tar.gz   |    Yes    |    V11.1     |
 
-You can refer to [ODBC and CLI Driver installation](http://www-01.ibm.com/support/docview.wss?uid=swg21418043) for details on how to install the driver manually.
 
 <a name='downloads'></a>
 

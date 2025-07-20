@@ -246,7 +246,7 @@ def _downloadClidriver(url):
             sys.stdout.write("Auto installation of clidriver for Python Version %i.%i on Window platform is currently not supported \n" % (sys.version_info[0:2]))
             sys.stdout.write("Environment variable IBM_DB_HOME is not set. Set it to your DB2/IBM_Data_Server_Driver installation directory and retry ibm_db module install.\n")
             sys.stdout.flush()
-            sys.exit()
+            sys.exit(1)
         cliDriver_zip =  zipfile.ZipFile(file_stream)
         cliDriver_zip.extractall()
     else:
@@ -287,8 +287,8 @@ if('win32' in sys.platform):
         prebuildIbmdbPYD = True
 
 # Get version of clidriver for autodownload from environment variable CLIDRIVER_VERSION
-# Default version is v11.5.9
-clidriver_version = os.getenv("CLIDRIVER_VERSION", "v11.5.9")
+# Default version is v12.1.0
+clidriver_version = os.getenv("CLIDRIVER_VERSION", "v12.1.0")
 
 if ((ibm_db_home == '') and (ibm_db_dir == '') and (ibm_db_lib == '')):
     if('win32' not in sys.platform):
@@ -432,13 +432,14 @@ if ibm_db_dir == '':
             ibm_db_lib = os.path.join(ibm_db_dir, libDir)
         except (KeyError):
             sys.stdout.write("Environment variable IBM_DB_HOME is not set. Set it to your DB2/IBM_Data_Server_Driver installation directory and retry ibm_db module install.\n")
-            sys.exit()
+            sys.exit(1)
 
 if not os.path.isdir(ibm_db_lib) and 'zos' != sys.platform:
     ibm_db_lib = os.path.join(ibm_db_dir, 'lib')
     if not os.path.isdir(ibm_db_lib):
         sys.stdout.write("Cannot find %s directory. Check if you have set the IBM_DB_HOME environment variable's value correctly\n " %(ibm_db_lib))
-        sys.exit()
+        sys.stdout.write("IBM_DB_HOME=%s, IBM_DB_DIR=%s, IBM_DB_LIB=%s\n" %(os.getenv('IBM_DB_HOME'), os.getenv('IBM_DB_DIR'), os.getenv('IBM_DB_LIB')))
+        sys.exit(1)
     notifyString  = "Detected usage of IBM Data Server Driver package. Ensure you have downloaded "
     if is64Bit:
         notifyString = notifyString + "64-bit package "
@@ -449,7 +450,9 @@ if not os.path.isdir(ibm_db_lib) and 'zos' != sys.platform:
 ibm_db_include = os.path.join(ibm_db_dir, 'include')
 if not prebuildIbmdbPYD and not os.path.isdir(ibm_db_include) and 'zos' != sys.platform:
     sys.stdout.write(" %s/include folder not found. Check if you have set the IBM_DB_HOME environment variable's value correctly\n " %(ibm_db_dir))
-    sys.exit()
+    sys.stdout.write("IBM_DB_HOME=%s, IBM_DB_DIR=%s, IBM_DB_LIB=%s\n" %(os.getenv('IBM_DB_HOME'), os.getenv('IBM_DB_DIR'), os.getenv('IBM_DB_LIB')))
+    sys.stdout.write("If you have install Db2 Runtime Client, check this comment for solution: https://github.com/ibmdb/python-ibmdb/issues/1023#issuecomment-3062805368\n")
+    sys.exit(1)
 
 if 'zos' == sys.platform:
     #ibm_db_include = "//'%s.SDSNC.H'" % ibm_db_home
