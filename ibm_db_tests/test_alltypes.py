@@ -35,15 +35,15 @@ class IbmDbTestCase(unittest.TestCase):
             # Create the table of all data types
             if (serverinfo.DBMS_NAME[0:3] == 'IDS'):
                 create = "CREATE TABLE TESTTYPES(C1 BIGINT, C2 BOOLEAN, C3 BOOLEAN, C4 DATE, C5 DECIMAL(16), C6 DECIMAL(34), C7 DECIMAL(16,2), C8 DECIMAL(16,2), C9 DECIMAL(16,2), C10 INTEGER, C11 BINARY(30), C12 BLOB(30), C13 Char(30), C14 CLOB(30), C15 DBCLOB(30), C16 TIMESTAMP, C17 VARBINARY(30), C18 VARChar(30), C19 TIME, C20 TIMESTAMP, C21 BINARY(40), C22 BLOB(40), C23 Char(40), C24 CLOB(40), C25 DBCLOB(40), C26 TIMESTAMP, C27 VARBINARY(40), C28 VARChar(40))"
-            elif (serverinfo.DBMS_NAME =="DB2" or serverinfo.DBMS_NAME =="DSN12015"):
-                create = "CREATE TABLE TESTTYPES(C1 BIGINT, C2 DATE, C3 DECFLOAT(16), C4 DECFLOAT(34), C5 DECIMAL(16,2), C6 DECIMAL(16,2), C7 DECIMAL(16,2), C8 INTEGER, C9 BINARY(30), C10 BLOB(30), C11 Char(30), C12 CLOB(30), C13 TIMESTAMP, C14 VARChar(30), C15 TIME, C16 TIMESTAMP, C17 BINARY(40), C18 BLOB(40), C19 Char(40), C20 CLOB(40), C21 TIMESTAMP, C22 VARBINARY(40), C23 VARChar(40))"
+            elif (serverinfo.DBMS_NAME =="DB2" or serverinfo.DBMS_NAME =="DSN12015" or serverinfo.DBMS_NAME =="DSN13015" ):
+                create = "CREATE TABLE TESTTYPES(C1 BIGINT, C2 DATE, C3 DECFLOAT(16), C4 DECFLOAT(34), C5 DECIMAL(16,2), C6 DECIMAL(16,2), C7 DECIMAL(16,2), C8 INTEGER, C9 BINARY(30), C10 BLOB(30), C11 Char(30), C12 CLOB(30), C13 TIMESTAMP, C14 VARChar(30), C15 TIME, C16 TIMESTAMP, C17 BINARY(40), C18 BLOB(40), C19 Char(40), C20 CLOB(40), C21 TIMESTAMP, C22 VARBINARY(40), C23 VARChar(40),C24 TIMESTAMP WITH TIMEZONE)"
             else:
                 create = "CREATE TABLE TESTTYPES(C1 BIGINT, C2 BOOLEAN, C3 BOOLEAN, C4 DATE, C5 DECFLOAT(16), C6 DECFLOAT(34), C7 DECIMAL(16,2), C8 DECIMAL(16,2), C9 DECIMAL(16,2), C10 INTEGER, C11 BINARY(30), C12 BLOB(30), C13 Char(30), C14 CLOB(30), C15 DBCLOB(30), C16 TIMESTAMP, C17 VARBINARY(30), C18 VARChar(30), C19 TIME, C20 TIMESTAMP, C21 BINARY(40), C22 BLOB(40), C23 Char(40), C24 CLOB(40), C25 DBCLOB(40), C26 TIMESTAMP, C27 VARBINARY(40), C28 VARChar(40))"
 
             result = ibm_db.exec_immediate(conn, create)
 
             if(not serverinfo.DBMS_NAME.startswith("DB2/")):
-                insert = "insert into TESTTYPES values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+                insert = "insert into TESTTYPES values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
             else:
                 insert = "insert into TESTTYPES values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
             stmt = ibm_db.prepare(conn,insert)
@@ -76,6 +76,7 @@ class IbmDbTestCase(unittest.TestCase):
                     ibm_db.bind_param(stmt, 21, '1981-07-08 10:42:34.000010', ibm_db.SQL_PARAM_INPUT)	#Unicode Timestamp
                     ibm_db.bind_param(stmt, 22, 'To Test UniVARBINARY', ibm_db.SQL_PARAM_INPUT)
                     ibm_db.bind_param(stmt, 23, 'To Test UniVARChar', 	ibm_db.SQL_PARAM_INPUT)
+                    ibm_db.bind_param(stmt, 24, '1981-07-08 10:42:34.000010 -05:45', ibm_db.SQL_PARAM_INPUT)
                 else:
                     ibm_db.bind_param(stmt, 1,  870000, 				ibm_db.SQL_PARAM_INPUT)
                     ibm_db.bind_param(stmt, 2,  True, 					ibm_db.SQL_PARAM_INPUT)
@@ -184,6 +185,7 @@ class IbmDbTestCase(unittest.TestCase):
 #Column:21 1981-07-08 10:42:34.000010
 #Column:22 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00U\x00n\x00i\x00V\x00A\x00R\x00B\x00I\x00N\x00A\x00R\x00Y\x00'
 #Column:23 To Test UniVARChar
+#Column:24 1981-07-08-10.42.34.000010000000 -05:45
 #-------------------
 #__SYSTEMI_EXPECTED__
 #Boolean is not supported

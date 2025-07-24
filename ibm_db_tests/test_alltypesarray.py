@@ -36,14 +36,14 @@ class IbmDbTestCase(unittest.TestCase):
             if (serverinfo.DBMS_NAME[0:3] == 'IDS'):
                 create = "CREATE TABLE TESTTYPES(C1 BIGINT, C2 BOOLEAN, C3 BOOLEAN, C4 DATE, C5 DECIMAL(16), C6 DECIMAL(34), C7 DECIMAL(16,2), C8 DECIMAL(16,2), C9 DECIMAL(16,2), C10 INTEGER, C11 BINARY(30), C12 BLOB(30), C13 Char(30), C14 CLOB(30), C15 DBCLOB(30), C16 TIMESTAMP, C17 VARBINARY(30), C18 VARChar(30), C19 TIME, C20 TIMESTAMP, C21 BINARY(40), C22 BLOB(40), C23 Char(40), C24 CLOB(40), C25 DBCLOB(40), C26 TIMESTAMP, C27 VARBINARY(40), C28 VARChar(40))"
             elif (serverinfo.DBMS_NAME =="DB2" or serverinfo.DBMS_NAME =="DSN12015"):
-                create = "CREATE TABLE TESTTYPES(C1 BIGINT, C2 DATE, C3 DECFLOAT(16), C4 DECFLOAT(34), C5 DECIMAL(16,2), C6 DECIMAL(16,2), C7 DECIMAL(16,2), C8 INTEGER, C9 BINARY(30), C10 BLOB(30), C11 Char(30), C12 CLOB(30), C13 TIMESTAMP, C14 VARChar(30), C15 TIME, C16 TIMESTAMP, C17 BINARY(40), C18 BLOB(40), C19 Char(40), C20 CLOB(40), C21 TIMESTAMP, C22 VARBINARY(40), C23 VARChar(40))"
+                create = "CREATE TABLE TESTTYPES(C1 BIGINT, C2 DATE, C3 DECFLOAT(16), C4 DECFLOAT(34), C5 DECIMAL(16,2), C6 DECIMAL(16,2), C7 DECIMAL(16,2), C8 INTEGER, C9 BINARY(30), C10 BLOB(30), C11 Char(30), C12 CLOB(30), C13 TIMESTAMP, C14 VARChar(30), C15 TIME, C16 TIMESTAMP, C17 BINARY(40), C18 BLOB(40), C19 Char(40), C20 CLOB(40), C21 TIMESTAMP, C22 VARBINARY(40), C23 VARChar(40), C24 TIMESTAMP WITH TIMEZONE)"
             else:                
                 create = "CREATE TABLE TESTTYPES(C1 BIGINT, C2 BOOLEAN, C3 BOOLEAN, C4 DATE, C5 DECFLOAT(16), C6 DECFLOAT(34), C7 DECIMAL(16,2), C8 DECIMAL(16,2), C9 DECIMAL(16,2), C10 INTEGER, C11 BINARY(30), C12 BLOB(30), C13 Char(30), C14 CLOB(30), C15 DBCLOB(30), C16 TIMESTAMP, C17 VARBINARY(30), C18 VARChar(30), C19 TIME, C20 TIMESTAMP, C21 BINARY(40), C22 BLOB(40), C23 Char(40), C24 CLOB(40), C25 DBCLOB(40), C26 TIMESTAMP, C27 VARBINARY(40), C28 VARChar(40))"
 
             result = ibm_db.exec_immediate(conn, create)
 
             if(not serverinfo.DBMS_NAME.startswith("DB2/")):
-                insert = "insert into TESTTYPES values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+                insert = "insert into TESTTYPES values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
             else:
                 insert = "insert into TESTTYPES values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
             stmt = ibm_db.prepare(conn,insert)
@@ -81,7 +81,9 @@ class IbmDbTestCase(unittest.TestCase):
             arr26 = ['1981-07-08 10:42:34.000010', '1982-07-08 10:42:34.000010', '1983-07-08 10:42:34.000010', '1984-07-08 10:42:34.000010', '1985-07-08 10:42:34.000010', '1986-07-08 10:42:34.000010', '1987-07-08 10:42:34.000010', '1988-07-08 10:42:34.000010', '1989-07-08 10:42:34.000010', '1990-07-08 10:42:34.000010']
             arr27 = ['To Test VarBinary1', 'To Test VarBinary2', 'To Test VarBinary3', 'To Test VarBinary4', 'To Test VarBinary5', 'To Test VarBinary6', 'To Test VarBinary7', 'To Test VarBinary8', 'To Test VarBinary9', 'To Test VarBinary10']
             arr28 = ['To Test VARChar1', 'To Test VARChar2', 'To Test VARChar3', 'To Test VARChar4', 'To Test VARChar5', 'To Test VARChar6', 'To Test VARChar7', 'To Test VARChar8', 'To Test VARChar9', 'To Test VARChar10']
-
+            arr29 = ['1991-03-13 09:28:56+02:30', '1992-03-13 09:28:56+03:45', '1993-03-13 09:28:56-00:30', '1994-03-13 09:28:56+03:30',
+ '1996-03-13 09:28:56+04:45', '1997-03-13 09:28:56-01:30', '1998-03-13 09:28:56+07:30', '1999-03-13 09:28:56+09:45', '2000-03-13 09:28:56-00:30',
+ '2001-03-13 09:28:56+10:30']       # timestamp with timezone
             try:
                 if(not serverinfo.DBMS_NAME.startswith("DB2/")):
                     ibm_db.bind_param(stmt, 1,  arr1, ibm_db.SQL_PARAM_INPUT)
@@ -107,6 +109,7 @@ class IbmDbTestCase(unittest.TestCase):
                     ibm_db.bind_param(stmt, 21, arr26,ibm_db.SQL_PARAM_INPUT)		#Unicode Timestamp
                     ibm_db.bind_param(stmt, 22, arr27,ibm_db.SQL_PARAM_INPUT)
                     ibm_db.bind_param(stmt, 23, arr28,ibm_db.SQL_PARAM_INPUT)
+                    ibm_db.bind_param(stmt, 24, arr29,ibm_db.SQL_PARAM_INPUT)          #Timestamp with timezone
                 else:
                     ibm_db.bind_param(stmt, 1,  arr1, ibm_db.SQL_PARAM_INPUT)
                     ibm_db.bind_param(stmt, 2,  arr2, ibm_db.SQL_PARAM_INPUT)
@@ -489,6 +492,7 @@ class IbmDbTestCase(unittest.TestCase):
 #Column:21 1981-07-08 10:42:34.000010
 #Column:22 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00V\x00a\x00r\x00B\x00i\x00n\x00a\x00r\x00y\x001\x00'
 #Column:23 To Test VARChar1
+#Column:24 1991-03-13-09.28.56.000000000000 +02:30
 #-------------------
 #ROW:2
 #Column:1 2000000
@@ -514,6 +518,7 @@ class IbmDbTestCase(unittest.TestCase):
 #Column:21 1982-07-08 10:42:34.000010
 #Column:22 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00V\x00a\x00r\x00B\x00i\x00n\x00a\x00r\x00y\x002\x00'
 #Column:23 To Test VARChar2
+#Column:24 1992-03-13-09.28.56.000000000000 +03:45
 #-------------------
 #ROW:3
 #Column:1 3000000
@@ -539,6 +544,7 @@ class IbmDbTestCase(unittest.TestCase):
 #Column:21 1983-07-08 10:42:34.000010
 #Column:22 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00V\x00a\x00r\x00B\x00i\x00n\x00a\x00r\x00y\x003\x00'
 #Column:23 To Test VARChar3
+#Column:24 1993-03-13-09.28.56.000000000000 +00:30
 #-------------------
 #ROW:4
 #Column:1 4000000
@@ -564,6 +570,7 @@ class IbmDbTestCase(unittest.TestCase):
 #Column:21 1984-07-08 10:42:34.000010
 #Column:22 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00V\x00a\x00r\x00B\x00i\x00n\x00a\x00r\x00y\x004\x00'
 #Column:23 To Test VARChar4
+#Column:24 1994-03-13-09.28.56.000000000000 +03:30
 #-------------------
 #ROW:5
 #Column:1 5000000
@@ -589,6 +596,7 @@ class IbmDbTestCase(unittest.TestCase):
 #Column:21 1985-07-08 10:42:34.000010
 #Column:22 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00V\x00a\x00r\x00B\x00i\x00n\x00a\x00r\x00y\x005\x00'
 #Column:23 To Test VARChar5
+#Column:24 1996-03-13-09.28.56.000000000000 +04:45
 #-------------------
 #ROW:6
 #Column:1 6000000
@@ -614,6 +622,7 @@ class IbmDbTestCase(unittest.TestCase):
 #Column:21 1986-07-08 10:42:34.000010
 #Column:22 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00V\x00a\x00r\x00B\x00i\x00n\x00a\x00r\x00y\x006\x00'
 #Column:23 To Test VARChar6
+#Column:24 1997-03-13-09.28.56.000000000000 -01:30
 #-------------------
 #ROW:7
 #Column:1 7000000
@@ -639,6 +648,7 @@ class IbmDbTestCase(unittest.TestCase):
 #Column:21 1987-07-08 10:42:34.000010
 #Column:22 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00V\x00a\x00r\x00B\x00i\x00n\x00a\x00r\x00y\x007\x00'
 #Column:23 To Test VARChar7
+#Column:24 1998-03-13-09.28.56.000000000000 +07:30
 #-------------------
 #ROW:8
 #Column:1 80000000
@@ -664,6 +674,7 @@ class IbmDbTestCase(unittest.TestCase):
 #Column:21 1988-07-08 10:42:34.000010
 #Column:22 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00V\x00a\x00r\x00B\x00i\x00n\x00a\x00r\x00y\x008\x00'
 #Column:23 To Test VARChar8
+#Column:24 1999-03-13-09.28.56.000000000000 +09:45
 #-------------------
 #ROW:9
 #Column:1 9000000
@@ -689,6 +700,7 @@ class IbmDbTestCase(unittest.TestCase):
 #Column:21 1989-07-08 10:42:34.000010
 #Column:22 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00V\x00a\x00r\x00B\x00i\x00n\x00a\x00r\x00y\x009\x00'
 #Column:23 To Test VARChar9
+#Column:24 2000-03-13-09.28.56.000000000000 +00:30
 #-------------------
 #ROW:10
 #Column:1 1000000
@@ -714,4 +726,5 @@ class IbmDbTestCase(unittest.TestCase):
 #Column:21 1990-07-08 10:42:34.000010
 #Column:22 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00V\x00a\x00r\x00B\x00i\x00n\x00a\x00r\x00y\x001\x000\x00'
 #Column:23 To Test VARChar10
+#Column:24 2001-03-13-09.28.56.000000000000 +10:30
 #-------------------
