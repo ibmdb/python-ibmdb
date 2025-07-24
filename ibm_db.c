@@ -9399,7 +9399,11 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
                     ts->second = PyDateTime_DATE_GET_SECOND(item);
                     ts->fraction = PyDateTime_DATE_GET_MICROSECOND(item) * 1000;
                     curr->bind_indicator_array[i] = SQL_NTS;
+#if PY_VERSION_HEX >= 0x030A0000  /* Python 3.10+ */
                     PyObject *tzinfo = PyDateTime_DATE_GET_TZINFO(item);
+#else
+                    PyObject *tzinfo = NULL;  /* Not available in Python < 3.10 */
+#endif
                     snprintf(messageStr, sizeof(messageStr), "tzinfo pointer: %p", (void *)tzinfo);
                     LogMsg(DEBUG, messageStr);
 
@@ -9474,7 +9478,13 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
         PyObject *total_seconds_obj = NULL;
         PyObject *result = NULL;
         double total_seconds;
+
+#if PY_VERSION_HEX >= 0x030A0000  /* Python 3.10+ */
         PyObject* tzinfo = PyDateTime_DATE_GET_TZINFO(bind_data);
+#else
+        PyObject* tzinfo = NULL;  /* Not supported in Python < 3.10 */
+#endif
+
         if (!tzinfo || tzinfo == Py_None) {
             LogMsg(EXCEPTION, "No tzinfo provided on datetime object");
             PyErr_SetString(PyExc_ValueError, "No tzinfo provided on datetime object");
