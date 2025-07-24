@@ -17,7 +17,6 @@ class IbmDbTestCase(unittest.TestCase):
         obj = IbmDbTestFunctions()
         obj.assert_expectf(self.run_test_stmt_get_sqlcode)
 
-    @unittest.skipIf(sys.platform == 'zos',"Test fails with z/OS ODBC driver")
     def run_test_stmt_get_sqlcode(self):
         conn = ibm_db.connect(config.database, config.user, config.password)
         if conn:
