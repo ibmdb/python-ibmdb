@@ -35,7 +35,7 @@ class IbmDbTestCase(unittest.TestCase):
             # Create the table of all data types
             if (serverinfo.DBMS_NAME[0:3] == 'IDS'):
                 create = "CREATE TABLE TESTTYPES(C1 BIGINT, C2 BOOLEAN, C3 BOOLEAN, C4 DATE, C5 DECIMAL(16), C6 DECIMAL(34), C7 DECIMAL(16,2), C8 DECIMAL(16,2), C9 DECIMAL(16,2), C10 INTEGER, C11 BINARY(30), C12 BLOB(30), C13 Char(30), C14 CLOB(30), C15 DBCLOB(30), C16 TIMESTAMP, C17 VARBINARY(30), C18 VARChar(30), C19 TIME, C20 TIMESTAMP, C21 BINARY(40), C22 BLOB(40), C23 Char(40), C24 CLOB(40), C25 DBCLOB(40), C26 TIMESTAMP, C27 VARBINARY(40), C28 VARChar(40))"
-            elif (serverinfo.DBMS_NAME =="DB2" or serverinfo.DBMS_NAME =="DSN12015" or serverinfo.DBMS_NAME =="DSN13015"):
+            elif (serverinfo.DBMS_NAME =="DB2" or serverinfo.DBMS_NAME =="DSN"):
                 create = "CREATE TABLE TESTTYPES(C1 BIGINT, C2 DATE, C3 DECFLOAT(16), C4 DECFLOAT(34), C5 DECIMAL(16,2), C6 DECIMAL(16,2), C7 DECIMAL(16,2), C8 INTEGER, C9 BINARY(30), C10 BLOB(30), C11 Char(30), C12 CLOB(30), C13 TIMESTAMP, C14 VARChar(30), C15 TIME, C16 TIMESTAMP, C17 BINARY(40), C18 BLOB(40), C19 Char(40), C20 CLOB(40), C21 TIMESTAMP, C22 VARBINARY(40), C23 VARChar(40), C24 TIMESTAMP WITH TIMEZONE)"
             else:                
                 create = "CREATE TABLE TESTTYPES(C1 BIGINT, C2 BOOLEAN, C3 BOOLEAN, C4 DATE, C5 DECFLOAT(16), C6 DECFLOAT(34), C7 DECIMAL(16,2), C8 DECIMAL(16,2), C9 DECIMAL(16,2), C10 INTEGER, C11 BINARY(30), C12 BLOB(30), C13 Char(30), C14 CLOB(30), C15 DBCLOB(30), C16 TIMESTAMP, C17 VARBINARY(30), C18 VARChar(30), C19 TIME, C20 TIMESTAMP, C21 BINARY(40), C22 BLOB(40), C23 Char(40), C24 CLOB(40), C25 DBCLOB(40), C26 TIMESTAMP, C27 VARBINARY(40), C28 VARChar(40))"
@@ -48,7 +48,7 @@ class IbmDbTestCase(unittest.TestCase):
                 insert = "insert into TESTTYPES values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
             stmt = ibm_db.prepare(conn,insert)
 
-            if(serverinfo.DBMS_NAME != "DSN12015"):
+            if(serverinfo.DBMS_NAME != "DSN"):
                 rc = ibm_db.set_option(stmt, {ibm_db.SQL_ATTR_PARAM_BIND_TYPE : ibm_db.SQL_PARAM_BIND_BY_COLUMN}, 0)
                 rc = ibm_db.set_option(stmt, {ibm_db.SQL_ATTR_QUERY_TIMEOUT : 10}, 0)
             rc = ibm_db.set_option(stmt, {ibm_db.SQL_ATTR_PARAMSET_SIZE : 10}, 0)
