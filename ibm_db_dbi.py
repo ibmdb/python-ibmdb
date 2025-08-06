@@ -492,6 +492,87 @@ def _get_exception(inst):
         return NotSupportedError(message)
     return DatabaseError(message)
 
+def conn_errormsg(connection=None):
+    """
+    Module-level wrapper for ibm_db.conn_errormsg().
+
+    When no connection handle is passed, returns the last global connection error message.
+    When a valid IBM_DBConnection handle is passed, returns the error for that connection.
+
+    Args:
+        connection: Optional IBM_DBConnection handle (default None).
+
+    Returns:
+        str: SQLCODE and error message describing the last connection error,
+             or empty string if no error.
+    """
+    LogMsg(INFO, "entry conn_errormsg()")
+    if connection is not None:
+        LogMsg(DEBUG, f"Getting connection error message for connection handle: {connection}")
+        err_msg = ibm_db.conn_errormsg(connection)
+    else:
+        LogMsg(DEBUG, "Getting global last connection error message (no handle passed)")
+        err_msg = ibm_db.conn_errormsg()
+    LogMsg(DEBUG, f"conn_errormsg result: {err_msg!r}")
+    LogMsg(INFO, "exit conn_errormsg()")
+    return err_msg
+
+def conn_error(connection=None):
+    """
+    Module-level wrapper for ibm_db.conn_error().
+
+    When no connection handle is passed, returns the last global SQLSTATE for a connection error.
+    When a valid IBM_DBConnection handle is passed, returns the SQLSTATE for that connection.
+
+    Args:
+        connection: Optional IBM_DBConnection handle (default None).
+
+    Returns:
+        str: SQLSTATE string representing the reason the last connection operation failed,
+             or an empty string if no error occurred.
+    """
+    LogMsg(INFO, "entry conn_error()")
+    if connection is not None:
+        LogMsg(DEBUG, f"Getting connection SQLSTATE for connection handle: {connection}")
+        sqlstate = ibm_db.conn_error(connection)
+    else:
+        LogMsg(DEBUG, "Getting global last connection SQLSTATE (no handle passed)")
+        sqlstate = ibm_db.conn_error()
+    LogMsg(DEBUG, f"conn_error result: {sqlstate!r}")
+    LogMsg(INFO, "exit conn_error()")
+    return sqlstate
+
+
+def get_sqlcode(handle=None):
+    """
+    Retrieve the SQLCODE of the last operation performed.
+
+    When no handle is passed, returns the SQLCODE for the last global operation.
+
+    When a valid IBM_DBConnection or IBM_DBStatement handle is passed, returns
+    the SQLCODE for the last operation using that resource.
+
+    Args:
+        handle (optional): IBM_DBConnection or IBM_DBStatement handle.
+
+    Returns:
+        str: SQLCODE string representing the last error code,
+             or empty string if no error occurred.
+    """
+    LogMsg(INFO, "entry get_sqlcode()")
+
+    if handle is not None:
+        LogMsg(DEBUG, f"Getting SQLCODE for handle: {handle}")
+        sqlcode = ibm_db.get_sqlcode(handle)
+    else:
+        LogMsg(DEBUG, "Getting global last SQLCODE (no handle passed)")
+        sqlcode = ibm_db.get_sqlcode()
+
+    LogMsg(DEBUG, f"get_sqlcode result: {sqlcode}")
+    LogMsg(INFO, "exit get_sqlcode()")
+
+    return sqlcode
+
 
 def _retrieve_current_schema(dsn):
     """This method retrieve the value of ODBC keyword CURRENTSCHEMA from DSN
@@ -1656,6 +1737,51 @@ class Cursor(object):
         return identity_val
 
     last_identity_val = property(_get_last_identity_val, None, None, "")
+
+    def stmt_errormsg(self):
+        """
+        Retrieve the SQLCODE and error message for the last operation performed
+        using this cursor's statement handle.
+
+        If `self.stmt_handler` is set (not None), returns the error specific to that statement.
+        Otherwise, returns the last global error message.
+
+        Returns:
+            str: SQLCODE and error message describing why the last operation failed,
+                 or an empty string if no error occurred.
+        """
+        LogMsg(INFO, "entry stmt_errormsg()")
+        if self.stmt_handler is not None:
+            LogMsg(DEBUG, f"Getting statement error message for stmt_handler: {self.stmt_handler}")
+            err_msg = ibm_db.stmt_errormsg(self.stmt_handler)
+        else:
+            LogMsg(DEBUG, "Getting global last statement error message (no stmt_handler set)")
+            err_msg = ibm_db.stmt_errormsg()
+        LogMsg(DEBUG, f"stmt_errormsg result: {err_msg!r}")
+        LogMsg(INFO, "exit stmt_errormsg()")
+        return err_msg
+
+    def stmt_error(self):
+        """
+        Retrieve the SQLSTATE code for the last operation performed using this cursor's statement handle.
+
+        If `self.stmt_handler` is set (not None), returns the SQLSTATE specific to that statement.
+        Otherwise, returns the last global SQLSTATE from ibm_db.stmt_error().
+
+        Returns:
+            str: SQLSTATE code representing the reason the last operation failed,
+                 or an empty string if there was no error.
+        """
+        LogMsg(INFO, "entry stmt_error()")
+        if self.stmt_handler is not None:
+            LogMsg(DEBUG, f"Getting statement SQLSTATE for stmt_handler: {self.stmt_handler}")
+            sqlstate = ibm_db.stmt_error(self.stmt_handler)
+        else:
+            LogMsg(DEBUG, "Getting global last statement SQLSTATE (no stmt_handler set)")
+            sqlstate = ibm_db.stmt_error()
+        LogMsg(DEBUG, f"stmt_error result: {sqlstate!r}")
+        LogMsg(INFO, "exit stmt_error()")
+        return sqlstate
 
     def execute(self, operation, parameters=None):
         """

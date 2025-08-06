@@ -383,6 +383,12 @@ else:
 print('ODBC Test end')
 ```
 
+#### Troubleshooting
+
+**Important:** When working with `ibm_db` or `ibm_db_dbi` on z/OS environments such as USS and BPXBATCH, always use the provided APIs — `conn_errormsg()`, `conn_error()`, `stmt_errormsg()`, `stmt_error()`, and `get_sqlcode()` — to retrieve error messages, SQLSTATE and SQLCODE values for connection or statement failures.
+Avoid using direct `print()` statements or relying on raw exception output, as this may result in missing or unreadable error messages, or `UnicodeDecodeError` due to encoding limitations on these platforms.
+These APIs ensure consistent and reliable error handling across all supported environments.
+
 ## <a name="m1chip"></a> 3. ibm_db installation on MacOS M1/M2 Chip System (arm64 architecture)
 **Important:
 > ibm_db@3.2.5 onwards supports native installation on MacOS ARM64(M* Chip/Apple Silicon Chip) system using clidriver/dsdriver version 12.1.0.
