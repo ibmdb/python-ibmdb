@@ -1,3 +1,27 @@
+2025-09-07, Version 3.2.7
+=========================
+
+ * Support error reporting APIs in ibm_db_dbi: conn_errormsg, conn_error, stmt_errormsg, stmt_error, get_sqlcode (#1025) (bchoudhary6415)
+
+ * Add support for TIMESTAMP AT TIME ZONE in SQL statements for python-ibmdb on zos  (#1024) (Earammak)
+
+ * feat!: upgrade default clidriver version to 12.1 (Bimal Jha)
+
+ * update readme to fix db2connect license errors (Bimal Jha)
+
+ * Fix to get the sqlcode from ibm_db.get_sqlcode api for warnings (#1020) (Earammak)
+
+ * Fixes: UnicodeDecodeError: 'utf-8' codec can't decode byte 0xfc #1015 (#1018) (bchoudhary6415)
+
+ * Update install docs for z/OS #1013 (Bimal Jha)
+
+ * Fix: Build failure on IBM z15 (s390x) (Issue #1005) (#1009) (bchoudhary6415)
+
+ * Improve fetch performance and fix exception handling in ibm_db_dbi (#1008) (bchoudhary6415)
+
+ * fix for memory leak in execute_many (#1003) (Earammak)
+
+
 2025-03-09, Version 3.2.6
 =========================
 
@@ -25,12 +49,14 @@
 
  * Polaris scan fix (#985) (bchoudhary6415)
 
+
 2024-12-30, Version 3.2.5
 =========================
 
  * update workflow file to fix macarm64 install issue (Bimal Jha)
 
  * Fix for issue#981 Django showing all migrations as unaplied (#982) (bchoudhary6415)
+
 
 2024-12-11, Version 3.2.4
 =========================

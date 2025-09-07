@@ -63,7 +63,7 @@ jobs:
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.22.0
         env:
-         CIBW_MANYLINUX_X86_64_IMAGE: manylinux_2_28
+         CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
          CIBW_SKIP: "cp36-* *-musllinux_* pp* *-*linux_{aarch64,ppc64le}"
          CIBW_REPAIR_WHEEL_COMMAND_LINUX:
             auditwheel repair

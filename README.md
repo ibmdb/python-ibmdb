@@ -48,6 +48,14 @@ If you face problems due to missing python header files while installing the dri
 ```
 If you have installed `DB2_RTC*` i.e. **DB2 Runtime Client** and want `ibm_db` to use it instead of clidriver, please read [this comment](https://github.com/ibmdb/python-ibmdb/issues/1023#issuecomment-3062805368) and take action.
 
+- clidriver v12.1 on Linux uses x86_64_v2 instruction set which is not supported by cibuildwheel and wheel image creation [fails](https://github.com/pypa/manylinux/issues/1725) using v12.1 clidriver. So, default version of clidriver on Linux platform is v11.5.9 only.
+
+- You can force installation of ibm_db on Linux with clidriver v12.1 using below commands:
+```
+export CLIDRIVER_VERSION=v12.1.0
+pip install ibm_db --no-binary :all: --no-cache-dir
+```
+
 ### Windows:
 
 - If a db2 client or server or dsdriver or clidriver is already installed in the system and user has already set installed path to `PATH` environment variable, then user needs to set [environment variable](#envvar) `IBM_DB_HOME` manually to the installed path before installing `ibm_db`.
@@ -447,7 +455,9 @@ conn = ibm_db.connect(connStr,'','')
 
 - Db2connect license can be applied on database server or client side. A **db2connect license of version 12.1** is required for ibm_db.
 
-- For MacOS M1/M2/M3 Chip System (ARM64 processor), **db2connect license of version 12.1** is required.
+- For MacOSx64(Intel processor) and Linuxx64, **db2connect license of version 11.5** is required.
+
+- clidriver v12.1 on Linux uses x86_64_v2 instruction set which is not supported by `cibuildwheel` and wheel image creation [fails](https://github.com/pypa/manylinux/issues/1725) using v12.1 clidriver. So, default version of clidriver on Linux platform is v11.5.9 only.
 
 - For activating server side license, you can purchase either `Db2 Connect Unlimited Edition for System z®` or `Db2 Connect Unlimited Edition for System i®` license from IBM.
 
