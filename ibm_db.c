@@ -17328,9 +17328,9 @@ static PyObject *ibm_db_fetchmany(PyObject *self, PyObject *args)
     }
     if (PyList_Size(result_list) == 0)
     {
-        LogMsg(DEBUG, "No rows fetched, returning None");
-        Py_XDECREF(result_list);
-        Py_RETURN_NONE;
+        LogMsg(DEBUG, "No rows fetched, returning empty list");
+        LogMsg(INFO, "exit fetchmany()");
+        return result_list;
     }
     snprintf(messageStr, sizeof(messageStr), "Returning %zd rows", PyList_Size(result_list));
     LogMsg(DEBUG, messageStr);
@@ -17376,9 +17376,9 @@ static PyObject *ibm_db_fetchall(PyObject *self, PyObject *args)
     }
     if (PyList_Size(result_list) == 0)
     {
-        LogMsg(DEBUG, "No rows fetched, returning None");
-        Py_XDECREF(result_list);
-        Py_RETURN_NONE;
+        LogMsg(DEBUG, "No rows fetched, returning empty list");
+        LogMsg(INFO, "exit fetchall()");
+        return result_list;
     }
     snprintf(messageStr, sizeof(messageStr), "Returning %zd rows", PyList_Size(result_list));
     LogMsg(DEBUG, messageStr);
