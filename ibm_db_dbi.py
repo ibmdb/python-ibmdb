@@ -1889,7 +1889,7 @@ class Cursor(object):
 
     def fetchone(self):
         """This method fetches one row from the database using the ibm_db.fetchone() API."""
-        LogMsg("INFO", "entry fetchone()")
+        LogMsg(INFO, "entry fetchone()")
         if self.stmt_handler is None:
             LogMsg("ERROR", "Please execute an SQL statement in order to get a row from result set.")
             self.messages.append(
@@ -1898,7 +1898,7 @@ class Cursor(object):
             raise self.messages[-1]
 
         if not self._result_set_produced:
-            LogMsg("ERROR", "The last call to execute did not produce any result set.")
+            LogMsg(ERROR, "The last call to execute did not produce any result set.")
             self.messages.append(
                 ProgrammingError("The last call to execute did not produce any result set.")
             )
@@ -1906,11 +1906,15 @@ class Cursor(object):
 
         row = ibm_db.fetchone(self.stmt_handler)
         if row is None:
-            LogMsg("DEBUG", "No rows fetched.")
-        else:
-            LogMsg("DEBUG", "Row fetched successfully.")
+            LogMsg(DEBUG, "No row fetched.")
+            LogMsg(INFO, "exit fetchone()")
+            return None
 
-        LogMsg("INFO", "exit fetchone()")
+        if self.FIX_RETURN_TYPE == 1:
+            row = self._fix_return_data_type(row)
+
+        LogMsg(DEBUG, "Row fetched successfully.")
+        LogMsg(INFO, "exit fetchone()")
         return row
 
     def fetchmany(self, size=0):
@@ -1946,9 +1950,13 @@ class Cursor(object):
             raise self.messages[-1]
 
         fetch_nrows = ibm_db.fetchmany(self.stmt_handler, size)
-        nrows = len(fetch_nrows) if fetch_nrows else 0
+        nrows = len(fetch_nrows)
         message = f"Fetched {nrows} rows successfully."
         LogMsg(DEBUG, message)
+
+        if self.FIX_RETURN_TYPE == 1 and fetch_nrows:
+            fetch_nrows = self._fix_return_data_type_batch(fetch_nrows)
+
         LogMsg(INFO, "exit fetchmany()")
         return fetch_nrows
 
@@ -1970,8 +1978,12 @@ class Cursor(object):
             raise self.messages[-1]
 
         rows_fetched = ibm_db.fetchall(self.stmt_handler)
-        nrows = len(rows_fetched) if rows_fetched else 0
+        nrows = len(rows_fetched)
         LogMsg(DEBUG, f"Fetched {nrows} rows successfully.")
+
+        if self.FIX_RETURN_TYPE == 1 and rows_fetched:
+            rows_fetched = self._fix_return_data_type_batch(rows_fetched)
+
         LogMsg(INFO, "exit fetchall()")
         return rows_fetched
 
@@ -2030,13 +2042,13 @@ class Cursor(object):
         for index in range(len(row)):
             if row[index] is not None:
                 type = ibm_db.field_type(self.stmt_handler, index)
-                type = type.upper()
+                type = type.upper() if type else ""
 
                 try:
                     if type == 'BLOB':
                         if row_list is None:
                             row_list = list(row)
-                        row_list[index] = buffer(row[index])
+                        row_list[index] = memoryview(row[index])
 
                     elif type == 'DECIMAL':
                         if row_list is None:
@@ -2054,6 +2066,12 @@ class Cursor(object):
             LogMsg(DEBUG, f"Fixed return data types: {row_list}")
             LogMsg(INFO, "exit _fix_return_data_type()")
             return tuple(row_list)
+
+    def _fix_return_data_type_batch(self, rows):
+        LogMsg(INFO, "entry _fix_return_data_type_batch()")
+        fixed_rows = [self._fix_return_data_type(row) for row in rows] if self.FIX_RETURN_TYPE == 1 else rows
+        LogMsg(INFO, "exit _fix_return_data_type_batch()")
+        return fixed_rows
 
     def __enter__(self):
         return self
