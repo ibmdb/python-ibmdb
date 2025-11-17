@@ -17181,17 +17181,25 @@ static int _python_get_variable_type(PyObject *variable_value)
 	{
         LogMsg(INFO, "variable_value is a datetime object");
         PyObject *tzinfo = PyObject_GetAttrString(variable_value, "tzinfo");
+
+#if defined(__MVS__)
         if (tzinfo && tzinfo != Py_None) {
             Py_DECREF(tzinfo);
-            LogMsg(INFO, "variable_value is a datetime object");
+            LogMsg(INFO, "datetime object has tzinfo on z/OS");
             LogMsg(INFO, "exit _python_get_variable_type() with PYTHON_TIMESTAMP_TSTZ");
             return PYTHON_TIMESTAMP_TSTZ;
         } else {
             Py_XDECREF(tzinfo);
-            LogMsg(INFO, "variable_value is a datetime object");
+            LogMsg(INFO, "datetime object has no tzinfo on z/OS");
             LogMsg(INFO, "exit _python_get_variable_type() with PYTHON_TIMESTAMP");
             return PYTHON_TIMESTAMP;
         }
+#else
+        Py_XDECREF(tzinfo);
+        LogMsg(INFO, "datetime object on LUW (tzinfo ignored)");
+        LogMsg(INFO, "exit _python_get_variable_type() with PYTHON_TIMESTAMP");
+        return PYTHON_TIMESTAMP;
+#endif
     }
     else if (PyTime_Check(variable_value))
     {
