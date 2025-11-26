@@ -86,7 +86,7 @@ jobs:
 
   build_wheels_macos_arm64:
     name: Build wheels on macOS ARM64
-    runs-on: macos-14
+    runs-on: macos-latest
     strategy:
       matrix:
         architecture: [arm64]
@@ -106,7 +106,7 @@ jobs:
 
   build_wheels_macos_x86:
     name: Build wheels for macOS x86_64
-    runs-on: macos-13
+    runs-on: macos-latest
     strategy:
       matrix:
         architecture: [x86_64]
