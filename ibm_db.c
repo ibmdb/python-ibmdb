@@ -7881,9 +7881,9 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
 #endif
                 curr->svalue = PyBytes_AsString(tempobj);
                 curr->ivalue = strlen(curr->svalue);
-                curr->svalue = memcpy(PyMem_Malloc((sizeof(char)) * (curr->ivalue + 1)), curr->svalue, curr->ivalue);
+                size_t alloc_size = (curr->param_size > curr->ivalue) ? curr->param_size : curr->ivalue;
+                curr->svalue = memcpy(PyMem_Malloc((sizeof(char)) * (alloc_size + 1)), curr->svalue, curr->ivalue);
                 curr->svalue[curr->ivalue] = '\0';
-                curr->bind_indicator = curr->ivalue;
                 snprintf(messageStr, sizeof(messageStr),
                          "Processing single value: svalue=%s, ivalue=%d, bind_indicator=%d", curr->svalue, curr->ivalue, curr->bind_indicator);
                 LogMsg(DEBUG, messageStr);
