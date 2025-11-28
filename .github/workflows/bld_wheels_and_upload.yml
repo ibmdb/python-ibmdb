@@ -96,7 +96,7 @@ jobs:
       - name: Build wheels
         uses: pypa/cibuildwheel@v3.1.4
         env:
-          CIBW_SKIP: "pp*"
+          CIBW_SKIP: "cp38-* pp*"
           MACOSX_DEPLOYMENT_TARGET: 14.0
 
       - uses: actions/upload-artifact@v4.4.3
