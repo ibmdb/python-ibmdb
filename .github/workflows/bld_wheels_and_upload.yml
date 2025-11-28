@@ -64,6 +64,7 @@ jobs:
         uses: pypa/cibuildwheel@v3.1.4
         env:
          CIBW_ARCHS_LINUX: "x86_64 i686"
+         CIBW_MANYLINUX_I686_IMAGE: manylinux2014
          CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
          CIBW_SKIP: "cp38-* *-musllinux_* pp* *-*linux_{aarch64,ppc64le}"
          CIBW_REPAIR_WHEEL_COMMAND_LINUX:
