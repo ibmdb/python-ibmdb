@@ -120,7 +120,7 @@ jobs:
         env:
           CIBW_ARCHS: "x86_64"
           CIBW_SKIP: "cp38-* pp*"
-          MACOSX_DEPLOYMENT_TARGET: 14
+          MACOSX_DEPLOYMENT_TARGET: 10.15
 
       - uses: actions/upload-artifact@v4.4.3
         with:
