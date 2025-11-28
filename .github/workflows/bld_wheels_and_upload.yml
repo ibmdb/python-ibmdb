@@ -116,6 +116,7 @@ jobs:
       - name: Build wheels
         uses: pypa/cibuildwheel@v3.1.4
         env:
+          CIBW_ARCHS: "x86_64"
           CIBW_SKIP: "cp38-* pp*"
           MACOSX_DEPLOYMENT_TARGET: 14
 
