@@ -108,7 +108,7 @@ jobs:
 
   build_wheels_macos_x86:
     name: Build wheels for macOS x86_64
-    runs-on: macos-latest
+    runs-on: macos-15-intel
     strategy:
       matrix:
         architecture: [x86_64]
@@ -121,7 +121,6 @@ jobs:
           CIBW_ARCHS: "x86_64"
           CIBW_SKIP: "cp38-* pp*"
           MACOSX_DEPLOYMENT_TARGET: 10.15
-          CIBW_ENVIRONMENT: "_PYTHON_HOST_PLATFORM=macosx-10.15-x86_64"
 
       - uses: actions/upload-artifact@v4.4.3
         with:
