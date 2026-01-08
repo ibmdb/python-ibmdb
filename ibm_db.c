@@ -9440,15 +9440,15 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
                         ts->timezone_minute = -ts->timezone_minute;
 
                     if (ts->timezone_hour < -14 || ts->timezone_hour > 14) {
-                        snprintf(messageStr, sizeof(messageStr),"Item %zd: timezone hour out of range:%d", i, ts->timezone_hour);
+                        snprintf(messageStr, sizeof(messageStr),"Item %d: timezone hour out of range:%d", i, (int)ts->timezone_hour);
                         LogMsg(EXCEPTION, messageStr);
-                        PyErr_Format(PyExc_ValueError, "Item %zd: timezone hour out of range:%d", i, ts->timezone_hour);
+                        PyErr_Format(PyExc_ValueError, "Item %d: timezone hour out of range:%d", i, (int)ts->timezone_hour);
                     }
 
                     if (abs(ts->timezone_minute) > 59) {
-                        snprintf(messageStr, sizeof(messageStr),"Item %zd: timezone hour out of range:%d", i, ts->timezone_minute);
+                        snprintf(messageStr, sizeof(messageStr),"Item %d: timezone minute out of range:%d", i, (int)ts->timezone_minute);
                         LogMsg(EXCEPTION, messageStr);
-                        PyErr_Format(PyExc_ValueError, "Item %zd: timezone minute out of range:%d", i, ts->timezone_minute);
+                        PyErr_Format(PyExc_ValueError, "Item %zd: timezone minute out of range:%d", i, (int)ts->timezone_minute);
                     }
                 snprintf(messageStr, sizeof(messageStr), "List item index %d: year=%d, month=%d, day=%d, hour=%d, minute=%d, second=%d, fraction=%d, timezone_hour=%d, timezone_minute=%d, curr->bind_indicator_array[%d] = SQL_NTS;", i,
                         ts->year, ts->month, ts->day, ts->hour, ts->minute, ts->second, ts->fraction, ts->timezone_hour, ts->timezone_minute,i);
