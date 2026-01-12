@@ -57,28 +57,35 @@ pip install git+https://git@github.com/ibmdb/python-ibmdb.git
 - For other pre-requisite and non-wheel installation, please check [here](https://github.com/ibmdb/python-ibmdb?tab=readme-ov-file#installation).
 
 **Note:**
-When we install ibm_db package on Linux, MacOS and Windows, `pip install ibm_db` command install
-prebuilt Wheel package that includes clidriver too and ignores `IBM_DB_HOME` or `IBM_DB_INSTALLER_URL`
-environment variables if set. Also, auto downloading of clidriver does not happen as clidriver is
-already present inside wheel package.
 
-To inforce auto downloading of clidriver or to make setting of environment variable `IBM_DB_HOME`
-effective, install ibm_db from source distribution using below command:
+- When we install ibm_db package on Linux, MacOS and Windows, `pip install ibm_db` command install prebuilt Wheel package that includes clidriver too and ignores `IBM_DB_HOME` or `IBM_DB_INSTALLER_URL` environment variables if set. Also, auto downloading of clidriver does not happen as clidriver is already present inside wheel package.
+
+- If `db2cli validate` command works in your system and installed db2 client/server
+  has `include` directory, ibm_db installation from souce distribution will not download clidriver, but it will use the existing client/server from the system. But, installation using wheel image will not use existing clidriver.
+
+- To inforce auto downloading of clidriver _OR_ to make setting of environment variable `IBM_DB_HOME` or `IBM_DB_INSTALLER_URL` or `CLIDRIVER_VERSION` effective; install ibm_db from source distribution using below command:
 
 ```
 pip install ibm_db --no-binary :all: --no-cache-dir
 ```
 
-If you have to use your own URL for clidriver.tar.gz/.zip please set environment variable
+- If you have to use your own URL for clidriver.tar.gz/.zip please set environment variable
 
 ```
 IBM_DB_INSTALLER_URL=full_path_of_clidriver.tar.gz/.zip
+pip install ibm_db --no-binary :all: --no-cache-dir
 ```
 
-When ibm_db get installed from wheel package, you can find clidriver under site_packages directory
-of Python. You need to copy license file under `site_packages/clidriver/license` to be effective, if any.
+- To install using specific version of clidriver from https://public.dhe.ibm.com/ibmdl/export/pub/software/data/db2/drivers/odbc_cli/:
 
-**Note:** For windows after installing ibm_db, recieves the below error when we try to import ibm_db :
+```
+export CLIDRIVER_VERSION=v11.5.9
+pip install ibm_db --no-binary :all: --no-cache-dir
+```
+
+- When ibm_db get installed from wheel package, you can find clidriver under site_packages directory of Python. You need to copy license file under `site_packages/clidriver/license` to be effective, if any.
+
+**Note:** For windows after installing `ibm_db`, recieves the below error when we try to import ibm_db :
 
 ```>python
 Python 3.11.4 (tags/v3.11.4:d2340ef, Jun  7 2023, 05:45:37) [MSC v.1934 64 bit (AMD64)] on win32
@@ -106,9 +113,13 @@ Refer https://bugs.python.org/issue36085 for more details.
 
 #### 1.2 Manual Installation
 
+Make sure you have Python, pip and git installed in your system.
+
 ```
+python -m pip --version => Make sure it works, else install pip first.
 git clone https://github.com/ibmdb/python-ibmdb/
 cd python-ibmdb
+python -m pip install -U pip setuptools wheel build
 python -m build
 pip install dist/ibm_db-3.2.8-cp313-cp313-win_amd64.whl
 pip list
@@ -122,6 +133,7 @@ pip list
 ```
 git clone https://github.com/ibmdb/python-ibmdb/
 cd python-ibmdb
+python -m pip install -U pip setuptools wheel build
 python setup.py bdist_egg => It generates egg file under dist directory.
 python setup.py install
 pip list
@@ -140,6 +152,7 @@ To install ibm_db as python wheel, use below commands(recommended):
 ```
 git clone https://github.com/ibmdb/python-ibmdb/
 cd python-ibmdb
+python -m pip install -U pip setuptools wheel build
 python -m build  => Note down the path of generated *.whl file to use below
 pip install dist/ibm_db-3.2.8-cp313-cp313-win_amd64.whl
 pip list  => You can see ibm_db in the output
@@ -466,7 +479,7 @@ These APIs ensure consistent and reliable error handling across all supported en
 
 ### Installation:
 
-    Follow same steps as documented for [ibm_db Installation on Linux, AIX, zLinux, Widnows and MacOS.](#inslnx)
+Follow same steps as documented for [ibm_db Installation on Linux, AIX, zLinux, Widnows and MacOS.](#inslnx)
 
 ## <a name="troubleshooting"></a> 4. Troubleshooting Post Install Errors on MacOS
 

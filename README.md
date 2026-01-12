@@ -46,11 +46,13 @@ If you face problems due to missing python header files while installing the dri
      or
     yum install python-devel
 ```
+
 If you have installed `DB2_RTC*` i.e. **DB2 Runtime Client** and want `ibm_db` to use it instead of clidriver, please read [this comment](https://github.com/ibmdb/python-ibmdb/issues/1023#issuecomment-3062805368) and take action.
 
 - clidriver v12.1 on Linux uses x86_64_v2 instruction set which is not supported by cibuildwheel and wheel image creation [fails](https://github.com/pypa/manylinux/issues/1725) using v12.1 clidriver. So, default version of clidriver on Linux platform is v11.5.9 only.
 
 - You can force installation of ibm_db on Linux with clidriver v12.1 using below commands:
+
 ```
 export CLIDRIVER_VERSION=v12.1.0
 pip install ibm_db --no-binary :all: --no-cache-dir
@@ -86,22 +88,14 @@ pip install ibm_db
 
 This will install ibm_db and ibm_db_dbi module.
 
-- When we install ibm_db package on Linux, MacOS and Windows, `pip install ibm_db` command install
-  prebuilt Wheel package that includes clidriver too and ignores `IBM_DB_HOME` or `IBM_DB_INSTALLER_URL`
-  or `CLIDRIVER_VERSION` environment variables if set. Also, auto downloading of clidriver does not happen
-  as clidriver is already present inside wheel package.
+- When we install ibm_db package on Linux, MacOS and Windows, `pip install ibm_db` command install prebuilt Wheel package that includes clidriver too and ignores `IBM_DB_HOME` or `IBM_DB_INSTALLER_URL` or `CLIDRIVER_VERSION` environment variables if set. Also, auto downloading of clidriver does not happen as clidriver is already present inside wheel package.
 
-- For platforms not supported by python-wheel, ibm_db will get installed from souce distribution.
-  GCC compiler is required on non-windows platform and VC++ compiler on Windows platform to
-  install `ibm_db` from souce distribution.
+- For platforms not supported by python-wheel, ibm_db will get installed from souce distribution, GCC compiler is required on non-windows platform and VC++ compiler on Windows platform to install `ibm_db` from souce distribution.
 
 - If `db2cli validate` command works in your system and installed db2 client/server
-  has `include` directory, ibm_db installation from souce distribution will not download clidriver, but
-  it will use the existing client/server from the system.
+  has `include` directory, ibm_db installation from souce distribution will not download clidriver, but it will use the existing client/server from the system.
 
-- To inforce auto downloading of clidriver _OR_ to make setting of environment variable `IBM_DB_HOME` or
-  `IBM_DB_INSTALLER_URL` or `CLIDRIVER_VERSION` effective; install ibm_db from source distribution
-  using below command:
+- To inforce auto downloading of clidriver _OR_ to make setting of environment variable `IBM_DB_HOME` or `IBM_DB_INSTALLER_URL` or `CLIDRIVER_VERSION` effective; install ibm_db from source distribution usin below command:
 
 ```
 pip install ibm_db --no-binary :all: --no-cache-dir
@@ -123,8 +117,7 @@ pip install ibm_db --no-binary :all: --no-cache-dir
 
 - ibm_db will override value of CLIDRIVER_VERSION to v12.1.0 for MacARM64 and to v11.5.9 for Macx64 platform.
 
-- When ibm_db get installed from wheel package, you can find clidriver under site_packages directory
-  of Python. You need to copy license file under `site_packages/clidriver/license` to be effective, if any.
+- When ibm_db get installed from wheel package, you can find clidriver under site_packages directory of Python. You need to copy license file under `site_packages/clidriver/license` to be effective, if any.
 
 **Note:** For windows after installing ibm_db, recieves the below error when we try to import ibm_db :
 
@@ -531,7 +524,6 @@ If you intend to install the clidriver manually, Following are the details of th
 |          |              | sunamd32_odbc_cli.tar.gz  |    Yes    |    V10.5     |
 |          |    sparc     |   sun64_odbc_cli.tar.gz   |    Yes    |    V11.1     |
 |          |    sparc     |   sun32_odbc_cli.tar.gz   |    Yes    |    V11.1     |
-
 
 <a name='downloads'></a>
 
