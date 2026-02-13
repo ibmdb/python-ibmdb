@@ -1980,6 +1980,8 @@ static PyObject *_python_ibm_db_connect_helper(PyObject *self, PyObject *args, i
             hKey = PyUnicode_Concat(hKey, PyUnicode_FromFormat("%ld", PyLong_AsLong(pid)));
             Py_DECREF(pid);
 
+            hKey = PyUnicode_Concat(hKey, PyUnicode_FromFormat("%ld", (long)PyThread_get_thread_ident()));
+
             entry = PyDict_GetItem(persistent_list, hKey);
 
             if (entry != NULL)
