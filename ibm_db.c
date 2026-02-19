@@ -12885,9 +12885,26 @@ static PyObject *ibm_db_result(PyObject *self, PyObject *args)
         case SQL_VARBINARY:
         {
             LogMsg(DEBUG, "Processing SQL_BLOB/SQL_BINARY/SQL_LONGVARBINARY/SQL_VARBINARY");
-            targetCType = SQL_C_BINARY;
-            len_terChar = 0;
-            /* Initial buffer allocation */
+            /* Respect binary mode */
+            switch (stmt_res->s_bin_mode)
+            {
+                case PASSTHRU:
+                    LogMsg(DEBUG, "BLOB mode: PASSTHRU");
+                    targetCType = SQL_C_BINARY;
+                    break;
+                case CONVERT:
+                    LogMsg(DEBUG, "BLOB mode: CONVERT");
+                    targetCType = SQL_C_CHAR;
+                    break;
+                case BINARY:
+                    LogMsg(DEBUG, "BLOB mode: BINARY");
+                    targetCType = SQL_C_BINARY;
+                    break;
+                default:
+                    LogMsg(ERROR, "Unknown BLOB mode");
+                    Py_RETURN_FALSE;
+            }
+            /* Initial allocation */
             out_ptr = ALLOC_N(char, INIT_BUFSIZ);
             if (out_ptr == NULL)
             {
@@ -12910,7 +12927,8 @@ static PyObject *ibm_db_result(PyObject *self, PyObject *args)
             {
                 LogMsg(DEBUG, "BLOB larger than INIT_BUFSIZ, reallocating buffer");
                 void *tmp_out_ptr = NULL;
-                tmp_out_ptr = ALLOC_N(char, INIT_BUFSIZ + out_length);
+                SQLINTEGER total_length = INIT_BUFSIZ + out_length;
+                tmp_out_ptr = ALLOC_N(char, total_length);
                 if (tmp_out_ptr == NULL)
                 {
                     LogMsg(ERROR, "Failed to reallocate memory for large BLOB");
@@ -12926,7 +12944,7 @@ static PyObject *ibm_db_result(PyObject *self, PyObject *args)
                                                 col_num + 1,
                                                 targetCType,
                                                 (char *)out_ptr + INIT_BUFSIZ,
-                                                INIT_BUFSIZ + out_length,
+                                                total_length,
             &out_length);
                 snprintf(messageStr, sizeof(messageStr),
                             "SQL_Get_Data (BLOB continuation) rc: %d, out_length: %d",
@@ -12938,8 +12956,22 @@ static PyObject *ibm_db_result(PyObject *self, PyObject *args)
                     PyMem_Del(out_ptr);
                     return NULL;
                 }
-                retVal = PyBytes_FromStringAndSize((char *)out_ptr,
-                                                    INIT_BUFSIZ + out_length);
+                if (stmt_res->s_bin_mode == CONVERT)
+                {
+                    retVal = PyUnicode_FromStringAndSize((char *)out_ptr,
+                                                            total_length);
+                }
+                else
+                {
+                    retVal = PyBytes_FromStringAndSize((char *)out_ptr,
+                                                        total_length);
+                }
+                if (retVal == NULL)
+                {
+                    LogMsg(ERROR, "Failed to create Python object for large BLOB");
+                    PyMem_Del(out_ptr);
+                    return NULL;
+                }
             }
             else if (rc == SQL_ERROR)
             {
@@ -12956,8 +12988,22 @@ static PyObject *ibm_db_result(PyObject *self, PyObject *args)
                     PyMem_Del(out_ptr);
                     Py_RETURN_NONE;
                 }
-                retVal = PyBytes_FromStringAndSize((char *)out_ptr,
-                                                    out_length);
+                if (stmt_res->s_bin_mode == CONVERT)
+                {
+                    retVal = PyUnicode_FromStringAndSize((char *)out_ptr,
+                                                            out_length);
+                }
+                else
+                {
+                    retVal = PyBytes_FromStringAndSize((char *)out_ptr,
+                                                        out_length);
+                }
+                if (retVal == NULL)
+                {
+                    LogMsg(ERROR, "Failed to create Python object for BLOB");
+                    PyMem_Del(out_ptr);
+                    return NULL;
+                }
                 snprintf(messageStr, sizeof(messageStr),
                             "Returning BLOB data of length: %d",
                             out_length);
