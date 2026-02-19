@@ -12883,27 +12883,89 @@ static PyObject *ibm_db_result(PyObject *self, PyObject *args)
         case SQL_LONGVARBINARY:
 #endif /* PASE */
         case SQL_VARBINARY:
-            switch (stmt_res->s_bin_mode)
+        {
+            LogMsg(DEBUG, "Processing SQL_BLOB/SQL_BINARY/SQL_LONGVARBINARY/SQL_VARBINARY");
+            targetCType = SQL_C_BINARY;
+            len_terChar = 0;
+            /* Initial buffer allocation */
+            out_ptr = ALLOC_N(char, INIT_BUFSIZ);
+            if (out_ptr == NULL)
             {
-            case PASSTHRU:
-                LogMsg(DEBUG, "SQL_BLOB/SQL_BINARY/SQL_LONGVARBINARY/SQL_VARBINARY - PASSTHRU mode, returning empty bytes");
-                LogMsg(INFO, "exit result()");
-                return PyBytes_FromStringAndSize("", 0);
-                break;
-                /* returns here */
-            case CONVERT:
-                targetCType = SQL_C_CHAR;
-                len_terChar = sizeof(char);
-                LogMsg(DEBUG, "SQL_BLOB/SQL_BINARY/SQL_LONGVARBINARY/SQL_VARBINARY - CONVERT mode, using SQL_C_CHAR");
-                break;
-            case BINARY:
-                targetCType = SQL_C_BINARY;
-                len_terChar = 0;
-                LogMsg(DEBUG, "SQL_BLOB/SQL_BINARY/SQL_LONGVARBINARY/SQL_VARBINARY - BINARY mode, using SQL_C_BINARY");
-                break;
-            default:
-                LogMsg(INFO, "exit result()");
+                LogMsg(ERROR, "Failed to allocate memory for BLOB data");
+                PyErr_SetString(PyExc_Exception,
+                                "Failed to Allocate Memory for BLOB Data");
+                return NULL;
+            }
+            rc = _python_ibm_db_get_data(stmt_res,
+                                            col_num + 1,
+                                            targetCType,
+                                            out_ptr,
+                                            INIT_BUFSIZ,
+            &out_length);
+            snprintf(messageStr, sizeof(messageStr),
+                        "SQL_Get_Data (BLOB first call) rc: %d, out_length: %d",
+                        rc, out_length);
+            LogMsg(DEBUG, messageStr);
+            if (rc == SQL_SUCCESS_WITH_INFO)
+            {
+                LogMsg(DEBUG, "BLOB larger than INIT_BUFSIZ, reallocating buffer");
+                void *tmp_out_ptr = NULL;
+                tmp_out_ptr = ALLOC_N(char, INIT_BUFSIZ + out_length);
+                if (tmp_out_ptr == NULL)
+                {
+                    LogMsg(ERROR, "Failed to reallocate memory for large BLOB");
+                    PyMem_Del(out_ptr);
+                    PyErr_SetString(PyExc_Exception,
+                                    "Failed to Reallocate Memory for Large BLOB");
+                    return NULL;
+                }
+                memcpy(tmp_out_ptr, out_ptr, INIT_BUFSIZ);
+                PyMem_Del(out_ptr);
+                out_ptr = tmp_out_ptr;
+                rc = _python_ibm_db_get_data(stmt_res,
+                                                col_num + 1,
+                                                targetCType,
+                                                (char *)out_ptr + INIT_BUFSIZ,
+                                                INIT_BUFSIZ + out_length,
+            &out_length);
+                snprintf(messageStr, sizeof(messageStr),
+                            "SQL_Get_Data (BLOB continuation) rc: %d, out_length: %d",
+                            rc, out_length);
+                LogMsg(DEBUG, messageStr);
+                if (rc == SQL_ERROR)
+                {
+                    LogMsg(ERROR, "Error retrieving extended BLOB data");
+                    PyMem_Del(out_ptr);
+                    return NULL;
+                }
+                retVal = PyBytes_FromStringAndSize((char *)out_ptr,
+                                                    INIT_BUFSIZ + out_length);
+            }
+            else if (rc == SQL_ERROR)
+            {
+                LogMsg(ERROR, "Error retrieving BLOB data");
+                PyMem_Del(out_ptr);
+                PyErr_Clear();
                 Py_RETURN_FALSE;
+            }
+            else
+            {
+                if (out_length == SQL_NULL_DATA)
+                {
+                    LogMsg(DEBUG, "BLOB column is NULL");
+                    PyMem_Del(out_ptr);
+                    Py_RETURN_NONE;
+                }
+                retVal = PyBytes_FromStringAndSize((char *)out_ptr,
+                                                    out_length);
+                snprintf(messageStr, sizeof(messageStr),
+                            "Returning BLOB data of length: %d",
+                            out_length);
+                LogMsg(DEBUG, messageStr);
+            }
+            PyMem_Del(out_ptr);
+            LogMsg(INFO, "exit result()");
+            return retVal;
             }
             break;
         case SQL_XML:
