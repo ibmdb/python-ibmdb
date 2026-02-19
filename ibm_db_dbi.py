@@ -923,20 +923,22 @@ class Connection(object):
         """This method closes the Database connection associated with
         the Connection object.  It takes no arguments.
 
+        If the connection is already closed, this method is a no-op and
+        returns True.
+
         """
         LogMsg(INFO, "entry close()")
-        self.rollback()
-        try:
-            if self.conn_handler is None:
-                LogMsg(ERROR, "Connection cannot be closed; connection is no longer active.")
-                raise ProgrammingError("Connection cannot be closed; "
-                                       "connection is no longer active.")
-            else:
+        if self.conn_handler is None:
+            return_value = True
+            LogMsg(INFO, "Connection already closed; no action required.")
+        else:
+            self.rollback()
+            try:
                 return_value = ibm_db.close(self.conn_handler)
                 LogMsg(INFO, "Connection closed.")
-        except Exception as inst:
-            LogMsg(EXCEPTION, f"An exception occurred while closing connection: {inst}")
-            raise _get_exception(inst)
+            except Exception as inst:
+                LogMsg(EXCEPTION, f"An exception occurred while closing connection: {inst}")
+                raise _get_exception(inst)
         self.conn_handler = None
         for index in range(len(self._cursor_list)):
             if (self._cursor_list[index]() != None):
