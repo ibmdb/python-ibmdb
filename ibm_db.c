@@ -171,6 +171,8 @@ typedef struct _param_cache_node
     SQLINTEGER *ivalueArray;          /* Temp storage array of values */
     double *fvalueArray;              /* Temp storage array of values */
     SQLINTEGER *bind_indicator_array; /* Temp storage array of values */
+    SQLSMALLINT cardinality;
+    SQLSMALLINT actual_cardinality;
     struct _param_cache_node *next;   /* Pointer to next node */
 } param_node;
 
@@ -288,6 +290,7 @@ typedef struct _stmt_handle_struct
     int num_columns;
     ibm_db_result_set_info *column_info;
     ibm_db_row_type *row_data;
+    int is_stored_procedure;
 } stmt_handle;
 
 static void _python_ibm_db_free_stmt_struct(stmt_handle *handle);
@@ -400,6 +403,171 @@ char *strtoupper(char *data, int max)
         data[max] = toupper(data[max]);
     }
     return data;
+}
+/*
+ * This function sets the cardinality fields in the parameter descriptors so DB2
+ * CLI knows how many elements are in each array and where to find the actual
+ * cardinality.
+ *
+ * Cardinality and buffer allocation are applied using SQLSetDescField() with:
+ *   - SQL_DESC_CARDINALITY     : maximum cardinality of the array
+ *   - SQL_DESC_CARDINALITY_PTR : pointer to a variable containing the actual
+ *                                cardinality at runtime
+ *
+ * Descriptor handles are chosen based on the stored procedure argument type:
+ *   - INPUT arguments   : Implementation Parameter Descriptor (hIPD)
+ *   - OUTPUT arguments  : Application Parameter Descriptor (hAPD)
+ *   - INOUT arguments   : both hIPD and hAPD
+ *
+ * For each array parameter, SQLSetDescField() is called on the appropriate
+ * descriptor(s) to set both SQL_DESC_CARDINALITY and SQL_DESC_CARDINALITY_PTR.
+ * This ensures DB2 CLI correctly interprets array parameter cardinality when
+ * executing the stored procedure.
+ */
+
+#ifndef __MVS__
+static void _python_ibm_db_set_array_param_cardinality(stmt_handle *stmt_res,
+                                                       param_node *curr,
+                                                       SQLSMALLINT cardinality)
+{
+
+    SQLHDESC hIPD = (SQLHDESC)0;
+    SQLHDESC hAPD = (SQLHDESC)0;
+    SQLRETURN rc;
+    curr->cardinality = cardinality;
+    curr->actual_cardinality = cardinality;
+
+    LogMsg(INFO, "entry _python_ibm_db_set_array_param_cardinality()");
+
+    snprintf(messageStr, sizeof(messageStr),
+             "Setting array param descriptor fields: param_num=%d, param_type=%d, cardinality=%d",
+             curr->param_num, curr->param_type, cardinality);
+    LogMsg(DEBUG, messageStr);
+
+    rc = SQLGetStmtAttr(stmt_res->hstmt, SQL_ATTR_IMP_PARAM_DESC, &hIPD, 0, NULL);
+    if (rc != SQL_SUCCESS || hIPD == NULL) {
+        LogMsg(ERROR, "Failed to get implicit parameter descriptor handle (hIPD)");
+    } else {
+        snprintf(messageStr, sizeof(messageStr),
+                 "Set hIPD descriptor handle=%p", (void*)hIPD);
+        LogMsg(DEBUG, messageStr);
+    }
+
+    rc = SQLGetStmtAttr(stmt_res->hstmt, SQL_ATTR_APP_PARAM_DESC, &hAPD, 0, NULL);
+    if (rc != SQL_SUCCESS || hAPD == NULL) {
+        LogMsg(ERROR, "Failed to get application parameter descriptor handle (hAPD)");
+    } else {
+        snprintf(messageStr, sizeof(messageStr),
+                 "Set hAPD descriptor handle=%p", (void*)hAPD);
+        LogMsg(DEBUG, messageStr);
+    }
+
+    if (curr->param_type == SQL_PARAM_INPUT && hIPD != NULL) {
+        rc = SQLSetDescField(hIPD, curr->param_num, SQL_DESC_CARDINALITY,
+                             (SQLPOINTER)(intptr_t)cardinality, SQL_IS_SMALLINT);
+        if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
+            LogMsg(ERROR, "Failed to set SQL_DESC_CARDINALITY on hIPD(INPUT)");
+        } else {
+            LogMsg(DEBUG, "Set SQL_DESC_CARDINALITY on hIPD(INPUT)");
+        }
+
+        rc = SQLSetDescField(hAPD, curr->param_num, SQL_DESC_CARDINALITY_PTR,
+                             (SQLPOINTER)&curr->actual_cardinality, SQL_IS_POINTER);
+        if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
+            LogMsg(ERROR, "Failed to set SQL_DESC_CARDINALITY_PTR on hAPD(INPUT)");
+        } else {
+            LogMsg(DEBUG, "Set SQL_DESC_CARDINALITY_PTR on hAPD(INPUT)");
+        }
+    }
+
+    else if (curr->param_type == SQL_PARAM_OUTPUT && hAPD != NULL) {
+        rc = SQLSetDescField(hAPD, curr->param_num, SQL_DESC_CARDINALITY,
+                             (SQLPOINTER)(intptr_t)cardinality, SQL_IS_SMALLINT);
+        if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
+            LogMsg(ERROR, "Failed to set SQL_DESC_CARDINALITY on hAPD(OUTPUT)");
+        } else {
+            LogMsg(DEBUG, "Set SQL_DESC_CARDINALITY on hAPD(OUTPUT)");
+        }
+
+        rc = SQLSetDescField(hAPD, curr->param_num, SQL_DESC_CARDINALITY_PTR,
+                             (SQLPOINTER)&curr->actual_cardinality, SQL_IS_POINTER);
+        if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
+            LogMsg(ERROR, "Failed to set SQL_DESC_CARDINALITY_PTR on hAPD(OUTPUT)");
+        } else {
+            LogMsg(DEBUG, "Set SQL_DESC_CARDINALITY_PTR on hAPD(OUTPUT)");
+        }
+    }
+
+    else if (curr->param_type == SQL_PARAM_INPUT_OUTPUT) {
+        if (hIPD != NULL) {
+            rc = SQLSetDescField(hIPD, curr->param_num, SQL_DESC_CARDINALITY,
+                                 (SQLPOINTER)(intptr_t)cardinality, SQL_IS_SMALLINT);
+            if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
+                LogMsg(ERROR, "Failed to set SQL_DESC_CARDINALITY on hIPD(INOUT)");
+            } else {
+                LogMsg(DEBUG, "Set SQL_DESC_CARDINALITY on hIPD(INOUT)");
+            }
+
+            rc = SQLSetDescField(hIPD, curr->param_num, SQL_DESC_CARDINALITY_PTR,
+                                 (SQLPOINTER)&curr->actual_cardinality, SQL_IS_POINTER);
+            if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
+                LogMsg(ERROR, "Failed to set SQL_DESC_CARDINALITY_PTR on hIPD(INOUT)");
+            } else {
+                LogMsg(DEBUG, "Set SQL_DESC_CARDINALITY_PTR on hIPD(INOUT)");
+            }
+        }
+
+        if (hAPD != NULL) {
+            rc = SQLSetDescField(hAPD, curr->param_num, SQL_DESC_CARDINALITY,
+                                 (SQLPOINTER)(intptr_t)cardinality, SQL_IS_SMALLINT);
+            if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
+                LogMsg(ERROR, "Failed to set SQL_DESC_CARDINALITY on hAPD(INOUT)");
+            } else {
+                LogMsg(DEBUG, "Set SQL_DESC_CARDINALITY on hAPD(INOUT)");
+            }
+
+            rc = SQLSetDescField(hAPD, curr->param_num, SQL_DESC_CARDINALITY_PTR,
+                                 (SQLPOINTER)&curr->actual_cardinality, SQL_IS_POINTER);
+            if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
+                LogMsg(ERROR, "Failed to set SQL_DESC_CARDINALITY_PTR on hAPD(INOUT)");
+            } else {
+                LogMsg(DEBUG, "Set SQL_DESC_CARDINALITY_PTR on hAPD(INOUT)");
+            }
+        }
+    }
+
+    LogMsg(INFO, "exit _python_ibm_db_set_array_param_cardinality()");
+}
+#endif
+
+int sp_starts_with_call(SQLWCHAR *sql)
+{
+    LogMsg(INFO, "entry sp_starts_with_call()");
+    while (*sql == L' ' || *sql == L'\t' || *sql == L'\n') {
+        sql++;
+    }
+    // Compare with "CALL " (case-insensitive)
+    if (towupper(sql[0]) == L'C' &&
+        towupper(sql[1]) == L'A' &&
+        towupper(sql[2]) == L'L' &&
+        towupper(sql[3]) == L'L' &&
+        (sql[4] == L' ' || sql[4] == L'\0')) {
+        LogMsg(DEBUG, "sp_starts_with_call: matched 'CALL'");
+        return 1;
+    }
+
+    // Compare with "{CALL" (case-insensitive)
+    if (sql[0] == L'{' &&
+        towupper(sql[1]) == L'C' &&
+        towupper(sql[2]) == L'A' &&
+        towupper(sql[3]) == L'L' &&
+        towupper(sql[4]) == L'L') {
+        LogMsg(DEBUG, "sp_starts_with_call: matched '{CALL'");
+        return 1;
+    }
+    LogMsg(DEBUG, "sp_starts_with_call: no match");
+    return 0;
+    LogMsg(INFO, "exit sp_starts_with_call()");
 }
 
 PyObject* format_timestamp_pystr(const TIMESTAMP_STRUCT_EXT_TZ* ts) {
@@ -7166,6 +7334,14 @@ static int _python_ibm_db_do_prepare(SQLHANDLE hdbc, SQLWCHAR *stmt, int stmt_si
 #endif
     Py_END_ALLOW_THREADS;
 
+    if (sp_starts_with_call(stmt)) {
+        stmt_res->is_stored_procedure = 1;
+        LogMsg(DEBUG, "Statement starts with CALL: marked as stored procedure");
+    } else {
+        stmt_res->is_stored_procedure = 0;
+        LogMsg(DEBUG, "Statement does not start with CALL: not a stored procedure");
+    }
+
     if (rc == SQL_ERROR)
     {
         _python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, rc,
@@ -7886,6 +8062,19 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
                 snprintf(messageStr, sizeof(messageStr), "Called SQLBindParameter with parameters: hstmt=%p, param_num=%d, param_type=%d, c_type=%d, data_type=%d, precision=%lu, scale=%d, svalue=%s, buffer_length=%lu, bind_indicator_array=%p and returned rc:%d",
                          (void *)stmt_res->hstmt, curr->param_num, curr->param_type, SQL_C_CHAR, curr->data_type, (unsigned long)MAX_PRECISION, curr->scale, curr->svalue, (unsigned long)MAX_PRECISION, (void *)&curr->bind_indicator_array[0], rc);
                 LogMsg(DEBUG, messageStr);
+#ifndef __MVS__
+                if (stmt_res->is_stored_procedure) {
+                    snprintf(messageStr, sizeof(messageStr),
+                        "Before set_array_param_cardinality: param_num=%d, param_type=%d, cardinality=%d, actual_cardinality=%d, n(array size)=%d",
+                         curr->param_num, curr->param_type, curr->cardinality, curr->actual_cardinality, (int)n);
+                    LogMsg(DEBUG, messageStr);
+                    _python_ibm_db_set_array_param_cardinality(stmt_res, curr, (SQLSMALLINT)n);
+                    snprintf(messageStr, sizeof(messageStr),
+                        "After set_array_param_cardinality: param_num=%d, param_type=%d, cardinality=%d, actual_cardinality=%d",
+                         curr->param_num, curr->param_type, curr->cardinality, curr->actual_cardinality);
+                    LogMsg(DEBUG, messageStr);
+                }
+#endif
             }
             else
             {
@@ -7957,6 +8146,21 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
                 snprintf(messageStr, sizeof(messageStr), "Called SQLBindParameter with hstmt=%p, param_num=%d, param_type=%d, c_type=%d, data_type=%d, param_size=%lu, scale=%d, ivalueArray=%p, buffer_length=%lu, bind_indicator_array=%p, rc=%d", (void *)stmt_res->hstmt, curr->param_num, curr->param_type, SQL_C_LONG, curr->data_type,
                          (unsigned long)curr->param_size, curr->scale, (void *)curr->ivalueArray, (unsigned long)0, (void *)&curr->bind_indicator_array[0], rc);
                 LogMsg(DEBUG, messageStr);
+
+#ifndef __MVS__
+                if (stmt_res->is_stored_procedure) {
+                    snprintf(messageStr, sizeof(messageStr),
+                        "Before set_array_param_cardinality: param_num=%d, param_type=%d, cardinality=%d, actual_cardinality=%d, n(array size)=%d",
+                         curr->param_num, curr->param_type, curr->cardinality, curr->actual_cardinality, (int)n);
+                    LogMsg(DEBUG, messageStr);
+                    _python_ibm_db_set_array_param_cardinality(stmt_res, curr, (SQLSMALLINT)n);
+                    snprintf(messageStr, sizeof(messageStr),
+                        "After set_array_param_cardinality: param_num=%d, param_type=%d, cardinality=%d, actual_cardinality=%d",
+                         curr->param_num, curr->param_type, curr->cardinality, curr->actual_cardinality);
+                    LogMsg(DEBUG, messageStr);
+                }
+#endif
+
             }
             else
             {
@@ -8021,6 +8225,21 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
             snprintf(messageStr, sizeof(messageStr), "Called SQLBindParameter with parameters: hstmt=%p, param_num=%d, param_type=%d, c_type=%d, data_type=%d, param_size=%lu, scale=%d, ivalueArray=%p, bind_indicator_array=%p, and returned rc=%d",
                      stmt_res->hstmt, curr->param_num, curr->param_type, SQL_C_LONG, curr->data_type, curr->param_size, curr->scale, curr->ivalueArray, curr->bind_indicator_array, rc);
             LogMsg(DEBUG, messageStr);
+
+#ifndef __MVS__
+            if (stmt_res->is_stored_procedure) {
+                snprintf(messageStr, sizeof(messageStr),"Before set_array_param_cardinality: param_num=%d, param_type=%d,"
+                    " cardinality=%d, actual_cardinality=%d, n(array size)=%d",
+                    curr->param_num, curr->param_type, curr->cardinality, curr->actual_cardinality, (int)n);
+                LogMsg(DEBUG, messageStr);
+                _python_ibm_db_set_array_param_cardinality(stmt_res, curr, (SQLSMALLINT)n);
+                snprintf(messageStr, sizeof(messageStr),
+                    "After set_array_param_cardinality: param_num=%d, param_type=%d, cardinality=%d, actual_cardinality=%d",
+                    curr->param_num, curr->param_type, curr->cardinality, curr->actual_cardinality);
+                LogMsg(DEBUG, messageStr);
+            }
+#endif
+
         }
         else
         {
@@ -8088,6 +8307,21 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
             snprintf(messageStr, sizeof(messageStr), "Called SQLBindParameter with parameters: hstmt=%p, param_num=%d, param_type=%d, c_type=%d, data_type=%d, param_size=%lu, scale=%d, ivalueArray=%p, bind_indicator_array=%p, and returned rc=%d",
                      stmt_res->hstmt, curr->param_num, curr->param_type, SQL_C_LONG, curr->data_type, curr->param_size, curr->scale, curr->ivalueArray, curr->bind_indicator_array, rc);
             LogMsg(DEBUG, messageStr);
+
+#ifndef __MVS__
+            if (stmt_res->is_stored_procedure) {
+                snprintf(messageStr, sizeof(messageStr),"Before set_array_param_cardinality: param_num=%d, param_type=%d,"
+                    " cardinality=%d, actual_cardinality=%d, n(array size)=%d",
+                    curr->param_num, curr->param_type, curr->cardinality, curr->actual_cardinality, (int)n);
+                LogMsg(DEBUG, messageStr);
+                _python_ibm_db_set_array_param_cardinality(stmt_res, curr, (SQLSMALLINT)n);
+                snprintf(messageStr, sizeof(messageStr),
+                    "After set_array_param_cardinality: param_num=%d, param_type=%d, cardinality=%d, actual_cardinality=%d",
+                    curr->param_num, curr->param_type, curr->cardinality, curr->actual_cardinality);
+                LogMsg(DEBUG, messageStr);
+            }
+#endif
+
         }
         else
         {
@@ -8152,6 +8386,21 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
             snprintf(messageStr, sizeof(messageStr), "Called SQLBindParameter with parameters: hstmt=%p, param_num=%d, param_type=%d, c_type=%d, data_type=%d, param_size=%lu, scale=%d, fvalueArray=%p, bind_indicator_array=%p, and returned rc=%d",
                      stmt_res->hstmt, curr->param_num, curr->param_type, SQL_C_DOUBLE, curr->data_type, curr->param_size, curr->scale, curr->fvalueArray, curr->bind_indicator_array, rc);
             LogMsg(DEBUG, messageStr);
+
+#ifndef __MVS__
+            if (stmt_res->is_stored_procedure) {
+                snprintf(messageStr, sizeof(messageStr),"Before set_array_param_cardinality: param_num=%d, param_type=%d,"
+                    " cardinality=%d, actual_cardinality=%d, n(array size)=%d",
+                    curr->param_num, curr->param_type, curr->cardinality, curr->actual_cardinality, (int)n);
+                LogMsg(DEBUG, messageStr);
+                _python_ibm_db_set_array_param_cardinality(stmt_res, curr, (SQLSMALLINT)n);
+                snprintf(messageStr, sizeof(messageStr),
+                    "After set_array_param_cardinality: param_num=%d, param_type=%d, cardinality=%d, actual_cardinality=%d",
+                    curr->param_num, curr->param_type, curr->cardinality, curr->actual_cardinality);
+                LogMsg(DEBUG, messageStr);
+            }
+#endif
+
         }
         else
         {
@@ -8188,6 +8437,9 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
             Py_ssize_t n = PyList_Size(bind_data);
             snprintf(messageStr, sizeof(messageStr), "PYTHON_LIST detected with size: %zd", n);
             LogMsg(DEBUG, messageStr);
+            //For Null terminator
+            if (curr->data_type == SQL_TYPE_TIMESTAMP)
+               curr->param_size = curr->param_size + sizeof(SQLWCHAR);
             curr->uvalue = (SQLWCHAR *)ALLOC_N(SQLWCHAR, curr->param_size * (n));
             curr->bind_indicator_array = (SQLINTEGER *)ALLOC_N(SQLINTEGER, n);
             memset(curr->uvalue, 0, sizeof(SQLWCHAR) * curr->param_size * n);
@@ -8389,7 +8641,24 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
                         snprintf(messageStr, sizeof(messageStr), "Default case for data_type: %d", curr->data_type);
                         LogMsg(DEBUG, messageStr);
                         valueType = SQL_C_WCHAR;
-                        curr->bind_indicator_array[i] = param_length;
+                        if (curr->param_type == SQL_PARAM_OUTPUT || curr->param_type == SQL_PARAM_INPUT_OUTPUT){
+                            curr->bind_indicator_array[i] = param_length;
+                            paramValuePtr = (SQLPOINTER)curr->uvalue;
+                            snprintf(messageStr, sizeof(messageStr), "SQL_PARAM_OUTPUT or SQL_PARAM_INPUT_OUTPUT:"
+                                " bind_indicator_array[%d]=%d, paramValuePtr=%p",
+                                i, curr->bind_indicator_array[i], (void *)paramValuePtr);
+                            LogMsg(DEBUG, messageStr);
+                        } else {
+                            curr->bind_indicator_array[i] = curr->ivalue;
+#ifndef PASE
+                            paramValuePtr = (SQLPOINTER)(curr->uvalue);
+#else
+                            paramValuePtr = (SQLPOINTER) & (curr->uvalue);
+#endif
+                            snprintf(messageStr, sizeof(messageStr), "Non SQL_PARAM_OUTPUT/SQL_PARAM_INPUT_OUTPUT: "
+							    "bind_indicator_array[%d]=%d, paramValuePtr=%p", i, curr->bind_indicator_array[i], (void *)paramValuePtr);
+                            LogMsg(DEBUG, messageStr);
+                        }
                         paramValuePtr = (SQLPOINTER)(curr->uvalue);
                         snprintf(messageStr, sizeof(messageStr),
                                  "Set bind_indicator_array[%d]=%d, valueType=%d, paramValuePtr=%p", i, curr->bind_indicator_array[i], valueType, (void *)paramValuePtr);
@@ -8407,13 +8676,25 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
                      stmt_res->hstmt, curr->param_num, curr->param_type, valueType, curr->data_type, curr->param_size, curr->scale, paramValuePtr, param_size, curr->bind_indicator_array, rc);
             LogMsg(DEBUG, messageStr);
 
+#ifndef __MVS__
+            if (stmt_res->is_stored_procedure) {
+                snprintf(messageStr, sizeof(messageStr),"Before set_array_param_cardinality: param_num=%d, param_type=%d,"
+                    " cardinality=%d, actual_cardinality=%d, n(array size)=%d",
+                    curr->param_num, curr->param_type, curr->cardinality, curr->actual_cardinality, (int)n);
+                LogMsg(DEBUG, messageStr);
+                _python_ibm_db_set_array_param_cardinality(stmt_res, curr, (SQLSMALLINT)n);
+                snprintf(messageStr, sizeof(messageStr),
+                    "After set_array_param_cardinality: param_num=%d, param_type=%d, cardinality=%d, actual_cardinality=%d",
+                    curr->param_num, curr->param_type, curr->cardinality, curr->actual_cardinality);
+                LogMsg(DEBUG, messageStr);
+            }
+#endif
+
+
             if (rc == SQL_ERROR || rc == SQL_SUCCESS_WITH_INFO)
             {
                 _python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
             }
-            snprintf(messageStr, sizeof(messageStr), "Updated curr->data_type to %d", curr->data_type);
-            LogMsg(DEBUG, messageStr);
-            curr->data_type = valueType;
         }
         else /* To bind scalar values */
         {
@@ -8632,9 +8913,6 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
             {
                 _python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
             }
-            curr->data_type = valueType;
-            snprintf(messageStr, sizeof(messageStr), "Updated curr->data_type to %d", curr->data_type);
-            LogMsg(DEBUG, messageStr);
         }
     }
     break;
@@ -8649,6 +8927,9 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
             Py_ssize_t n = PyList_Size(bind_data);
             snprintf(messageStr, sizeof(messageStr), "Binding array of values: n=%zd", n);
             LogMsg(DEBUG, messageStr);
+            //For Null terminator
+            if (curr->data_type == SQL_TYPE_TIMESTAMP)
+               curr->param_size = curr->param_size + 1;
             curr->svalue = (char *)ALLOC_N(char, curr->param_size *(n));
             curr->bind_indicator_array = (SQLINTEGER *)ALLOC_N(SQLINTEGER, n);
             memset(curr->svalue, 0, curr->param_size * n);
@@ -8856,6 +9137,21 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
                      (void *)stmt_res->hstmt, curr->param_num, curr->param_type, valueType, curr->data_type,
                      curr->param_size, curr->scale, (void *)paramValuePtr, curr->param_size, curr->bind_indicator_array[0], rc);
             LogMsg(DEBUG, messageStr);
+
+#ifndef __MVS__
+            if (stmt_res->is_stored_procedure) {
+                snprintf(messageStr, sizeof(messageStr),"Before set_array_param_cardinality: param_num=%d, param_type=%d,"
+                    " cardinality=%d, actual_cardinality=%d, n(array size)=%d",
+                    curr->param_num, curr->param_type, curr->cardinality, curr->actual_cardinality, (int)n);
+                LogMsg(DEBUG, messageStr);
+                _python_ibm_db_set_array_param_cardinality(stmt_res, curr, (SQLSMALLINT)n);
+                snprintf(messageStr, sizeof(messageStr),
+                    "After set_array_param_cardinality: param_num=%d, param_type=%d, cardinality=%d, actual_cardinality=%d",
+                    curr->param_num, curr->param_type, curr->cardinality, curr->actual_cardinality);
+                LogMsg(DEBUG, messageStr);
+            }
+#endif
+
             if (rc == SQL_ERROR || rc == SQL_SUCCESS_WITH_INFO)
             {
                 _python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT,
@@ -9144,6 +9440,21 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
                 snprintf(messageStr, sizeof(messageStr), "Called SQLBindParameter for PYTHON_LIST with parameters: hstmt=%p, param_num=%d, param_type=%d, valueType=%d, data_type=%d, param_size=%d, scale=%d, paramValuePtr=%p, max_precn=%d, bind_indicator_array=%p and returned rc=%d",
                          stmt_res->hstmt, curr->param_num, curr->param_type, valueType, curr->data_type, curr->param_size, curr->scale, paramValuePtr, max_precn, curr->bind_indicator_array, rc);
                 LogMsg(DEBUG, messageStr);
+
+#ifndef __MVS__
+                if (stmt_res->is_stored_procedure) {
+                    snprintf(messageStr, sizeof(messageStr),"Before set_array_param_cardinality: param_num=%d, param_type=%d,"
+                        " cardinality=%d, actual_cardinality=%d, n(array size)=%d",
+                        curr->param_num, curr->param_type, curr->cardinality, curr->actual_cardinality, (int)n);
+                    LogMsg(DEBUG, messageStr);
+                    _python_ibm_db_set_array_param_cardinality(stmt_res, curr, (SQLSMALLINT)n);
+                    snprintf(messageStr, sizeof(messageStr),
+                        "After set_array_param_cardinality: param_num=%d, param_type=%d, cardinality=%d, actual_cardinality=%d",
+                        curr->param_num, curr->param_type, curr->cardinality, curr->actual_cardinality);
+                    LogMsg(DEBUG, messageStr);
+                }
+#endif
+
                 if (rc == SQL_ERROR || rc == SQL_SUCCESS_WITH_INFO)
                 {
                     _python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
@@ -9235,6 +9546,21 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
             snprintf(messageStr, sizeof(messageStr), "Called SQLBindParameter for PYTHON_LIST with parameters: hstmt=%p, param_num=%d, param_type=%d, data_type=%d, param_size=%d, scale=%d, date_value=%p, ivalue=%d, bind_indicator_array=%p and returned rc=%d",
                      stmt_res->hstmt, curr->param_num, curr->param_type, curr->data_type, curr->param_size, curr->scale, curr->date_value, curr->ivalue, curr->bind_indicator_array, rc);
             LogMsg(DEBUG, messageStr);
+
+#ifndef __MVS__
+            if (stmt_res->is_stored_procedure) {
+                snprintf(messageStr, sizeof(messageStr),"Before set_array_param_cardinality: param_num=%d, param_type=%d,"
+                    " cardinality=%d, actual_cardinality=%d, n(array size)=%d",
+                    curr->param_num, curr->param_type, curr->cardinality, curr->actual_cardinality, (int)n);
+                LogMsg(DEBUG, messageStr);
+                _python_ibm_db_set_array_param_cardinality(stmt_res, curr, (SQLSMALLINT)n);
+                snprintf(messageStr, sizeof(messageStr),
+                    "After set_array_param_cardinality: param_num=%d, param_type=%d, cardinality=%d, actual_cardinality=%d",
+                    curr->param_num, curr->param_type, curr->cardinality, curr->actual_cardinality);
+                LogMsg(DEBUG, messageStr);
+            }
+#endif
+
         }
         else
         {
@@ -9296,6 +9622,21 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
             snprintf(messageStr, sizeof(messageStr), "Called SQLBindParameter for PYTHON_LIST with parameters: hstmt=%p, param_num=%d, param_type=%d, data_type=%d, param_size=%d, scale=%d, time_value=%p, ivalue=%d, bind_indicator_array=%p and returned rc=%d",
                      stmt_res->hstmt, curr->param_num, curr->param_type, curr->data_type, curr->param_size, curr->scale, curr->time_value, curr->ivalue, curr->bind_indicator_array, rc);
             LogMsg(DEBUG, messageStr);
+
+#ifndef __MVS__
+            if (stmt_res->is_stored_procedure) {
+                snprintf(messageStr, sizeof(messageStr),"Before set_array_param_cardinality: param_num=%d, param_type=%d,"
+                    " cardinality=%d, actual_cardinality=%d, n(array size)=%d",
+                    curr->param_num, curr->param_type, curr->cardinality, curr->actual_cardinality, (int)n);
+                LogMsg(DEBUG, messageStr);
+                _python_ibm_db_set_array_param_cardinality(stmt_res, curr, (SQLSMALLINT)n);
+                snprintf(messageStr, sizeof(messageStr),
+                    "After set_array_param_cardinality: param_num=%d, param_type=%d, cardinality=%d, actual_cardinality=%d",
+                    curr->param_num, curr->param_type, curr->cardinality, curr->actual_cardinality);
+                LogMsg(DEBUG, messageStr);
+            }
+#endif
+
         }
         else
         {
@@ -9365,6 +9706,21 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
             snprintf(messageStr, sizeof(messageStr), "Called SQLBindParameter for PYTHON_LIST with parameters: hstmt=%p, param_num=%d, param_type=%d, data_type=%d, param_size=%d, scale=%d, ts_value=%p, ivalue=%d, bind_indicator_array=%p and returned rc=%d",
                      (void *)stmt_res->hstmt, curr->param_num, curr->param_type, curr->data_type, curr->param_size, curr->scale, (void *)curr->ts_value, curr->ivalue, (void *)curr->bind_indicator_array, rc);
             LogMsg(DEBUG, messageStr);
+
+#ifndef __MVS__
+            if (stmt_res->is_stored_procedure) {
+                snprintf(messageStr, sizeof(messageStr),"Before set_array_param_cardinality: param_num=%d, param_type=%d,"
+                    " cardinality=%d, actual_cardinality=%d, n(array size)=%d",
+                    curr->param_num, curr->param_type, curr->cardinality, curr->actual_cardinality, (int)n);
+                LogMsg(DEBUG, messageStr);
+                _python_ibm_db_set_array_param_cardinality(stmt_res, curr, (SQLSMALLINT)n);
+                snprintf(messageStr, sizeof(messageStr),
+                    "After set_array_param_cardinality: param_num=%d, param_type=%d, cardinality=%d, actual_cardinality=%d",
+                    curr->param_num, curr->param_type, curr->cardinality, curr->actual_cardinality);
+                LogMsg(DEBUG, messageStr);
+            }
+#endif
+
         }
         else
         {
@@ -9482,6 +9838,20 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
                      (void *)stmt_res->hstmt, curr->param_num, curr->param_type, curr->data_type, curr->param_size, curr->scale, (void *)curr->tstz_value, curr->ivalue, (void *)curr->bind_indicator_array, rc);
         LogMsg(DEBUG, messageStr);
 
+#ifndef __MVS__
+        if (stmt_res->is_stored_procedure) {
+            snprintf(messageStr, sizeof(messageStr),"Before set_array_param_cardinality: param_num=%d, param_type=%d,"
+                " cardinality=%d, actual_cardinality=%d, n(array size)=%d",
+                curr->param_num, curr->param_type, curr->cardinality, curr->actual_cardinality, (int)n);
+            LogMsg(DEBUG, messageStr);
+            _python_ibm_db_set_array_param_cardinality(stmt_res, curr, (SQLSMALLINT)n);
+            snprintf(messageStr, sizeof(messageStr),
+                "After set_array_param_cardinality: param_num=%d, param_type=%d, cardinality=%d, actual_cardinality=%d",
+                curr->param_num, curr->param_type, curr->cardinality, curr->actual_cardinality);
+            LogMsg(DEBUG, messageStr);
+        }
+#endif
+
     }
     else
     {
@@ -9587,6 +9957,21 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
                      (void *)stmt_res->hstmt, curr->param_num, curr->param_type, curr->data_type, curr->param_size, curr->scale,
                      (void *)curr->ivalueArray, (void *)curr->bind_indicator_array, rc);
             LogMsg(DEBUG, messageStr);
+
+#ifndef __MVS__
+            if (stmt_res->is_stored_procedure) {
+                snprintf(messageStr, sizeof(messageStr),"Before set_array_param_cardinality: param_num=%d, param_type=%d,"
+                    " cardinality=%d, actual_cardinality=%d, n(array size)=%d",
+                    curr->param_num, curr->param_type, curr->cardinality, curr->actual_cardinality, (int)n);
+                LogMsg(DEBUG, messageStr);
+                _python_ibm_db_set_array_param_cardinality(stmt_res, curr, (SQLSMALLINT)n);
+                snprintf(messageStr, sizeof(messageStr),
+                    "After set_array_param_cardinality: param_num=%d, param_type=%d, cardinality=%d, actual_cardinality=%d",
+                    curr->param_num, curr->param_type, curr->cardinality, curr->actual_cardinality);
+                LogMsg(DEBUG, messageStr);
+            }
+#endif
+
         }
         else
         {
@@ -17521,6 +17906,809 @@ static PyObject *ibm_db_fetchall(PyObject *self, PyObject *args)
     return result_list;
 }
 
+static PyObject* ibm_db_fetch_callproc(PyObject* self, PyObject* args)
+{
+    LogMsg(INFO, "entry ibm_db_fetch_callproc");
+    PyObject *py_stmt_res;
+	int len_terChar = 0;
+    SQLSMALLINT targetCType = SQL_C_CHAR;
+
+    if (!PyArg_ParseTuple(args, "O", &py_stmt_res)) {
+        LogMsg(ERROR, "ibm_db_fetch_callproc: failed to parse arguments");
+        return NULL;
+    }
+
+    stmt_handle *stmt_res = (stmt_handle*)py_stmt_res;
+    int numOfParam = stmt_res->num_params;
+
+        if (numOfParam == 0) {
+        Py_INCREF(py_stmt_res);
+        LogMsg(DEBUG, "ibm_db_fetch_callproc: no parameters to process");
+        Py_INCREF(py_stmt_res);
+        return py_stmt_res;
+    }
+
+    param_node *curr = stmt_res->head_cache_list;
+    curr->cardinality = curr->actual_cardinality;
+    snprintf(messageStr, sizeof(messageStr), "ibm_db_fetch_callproc: num_params=%d", numOfParam);
+    LogMsg(DEBUG, messageStr);
+
+    PyObject *outTuple = PyTuple_New(numOfParam + 1);
+    if (!outTuple) {
+        LogMsg(ERROR, "ibm_db_fetch_callproc: failed to allocate output tuple");
+        return NULL;
+    }
+
+    Py_INCREF(py_stmt_res);
+    PyTuple_SET_ITEM(outTuple, 0, py_stmt_res);
+
+    int idx = 1;
+    while (curr && idx <= numOfParam) {
+        snprintf(messageStr, sizeof(messageStr), "Processing parameter %d (param_type=%d, data_type=%d, cardinality=%d)",
+                curr->param_num, curr->param_type, curr->data_type, curr->cardinality);
+        LogMsg(DEBUG, messageStr);
+        PyObject *pyVal = Py_None;
+        Py_INCREF(pyVal);
+
+        if (curr->bind_indicator != SQL_NULL_DATA &&
+            curr->bind_indicator != SQL_NO_TOTAL) {
+
+            if (curr->cardinality > 1 && curr->actual_cardinality > 0) {
+                int len = curr->actual_cardinality;
+                PyObject *pyList = PyList_New(len);
+                if (!pyList) {
+                    Py_DECREF(outTuple);
+                    LogMsg(ERROR, "ibm_db_fetch_callproc: failed to allocate PyList for array output");
+                    return NULL;
+                }
+
+                for (int i = 0; i < len; i++) {
+                    PyObject *elem = Py_None;
+                    Py_INCREF(elem);
+
+                    if (curr->bind_indicator_array &&
+                        curr->bind_indicator_array[i] != SQL_NULL_DATA &&
+                        curr->bind_indicator_array[i] != SQL_NO_TOTAL) {
+                        int max_precn = (curr->data_type == SQL_DECIMAL) ? MAX_PRECISION : curr->param_size;
+
+                        switch (curr->data_type) {
+							case SQL_CHAR: {
+                                if (curr->uvalue) {
+                                    LogMsg(DEBUG, "Processing SQL_CHAR array element using uvalue");
+                                    SQLLEN ind_len = curr->bind_indicator_array[i];
+                                    SQLWCHAR *elem_ptr = (SQLWCHAR *)((char *)curr->uvalue + i * curr->param_size);
+                                    snprintf(messageStr, sizeof(messageStr),
+                                            "Fetch loop: index=%d, ind_len=%ld, elem_ptr=%p, param_size=%d",
+                                            i, (long)ind_len, (void*)elem_ptr, curr->param_size);
+                                    LogMsg(DEBUG, messageStr);
+                                    LogMsg(DEBUG, "Convert SQLWCHAR buffer to Python Unicode");
+                                    elem = getSQLWCharAsPyUnicodeObject(elem_ptr, ind_len);
+                                    if (!elem) {
+                                        LogMsg(DEBUG, "Conversion failed, falling back to raw bytes");
+                                        PyErr_Clear();
+                                        elem = PyBytes_FromStringAndSize((const char *)elem_ptr, ind_len);
+                                    } else {
+                                        LogMsg(DEBUG, "Conversion succeeded, attempting to clean output");
+                                        if (PyUnicode_Check(elem)) {
+                                            PyObject *parts = PyObject_CallMethod(elem, "split", "s", "\x00");
+                                            if (parts && PyList_Check(parts) && PyList_Size(parts) > 0) {
+                                                PyObject *first = PyList_GetItem(parts, 0);  // borrowed ref
+                                                Py_INCREF(first);
+                                                Py_DECREF(parts);
+                                                PyObject *trimmed = PyObject_CallMethod(first, "rstrip", "s", " ");
+                                                Py_DECREF(first);
+                                                if (trimmed) {
+                                                    Py_DECREF(elem);
+                                                    elem = trimmed;
+                                                    LogMsg(DEBUG, "split+rstrip succeeded, updated elem");
+                                                } else {
+                                                    PyErr_Clear();
+                                                    LogMsg(DEBUG, "rstrip failed, keeping original elem");
+                                                }
+                                            } else {
+                                                PyErr_Clear();
+                                                LogMsg(DEBUG, "split failed, keeping original elem");
+                                            }
+                                        }
+                                    }
+                                    snprintf(messageStr, sizeof(messageStr),"Fetch loop exit: index=%d, elem=%p", i, (void*)elem);
+                                    LogMsg(DEBUG, messageStr);
+                                }
+
+                                if (curr->svalue) {
+                                    LogMsg(DEBUG, "Processing SQL_CHAR array element using svalue");
+                                    char *elem_ptr = curr->svalue + i * curr->param_size;
+                                    size_t max_len = curr->param_size;
+#ifndef __MVS__
+                                    size_t actual_len = strnlen(elem_ptr, max_len);
+#endif	
+                                    elem = PyBytes_FromStringAndSize(elem_ptr, actual_len);
+                                    if (!elem) {
+                                        LogMsg(DEBUG, "Failed to create PyBytes object");
+                                        PyErr_Clear();
+                                    } else {
+                                        snprintf(messageStr, sizeof(messageStr), "SQL_CHAR element final value (bytes): %.100s", elem_ptr);
+                                        LogMsg(DEBUG, messageStr);
+                                    }
+                                }
+                                if (curr->ts_value) {
+                                    LogMsg(DEBUG, "Processing SQL_CHAR timestamp  array element using ts_value");
+                                    elem = PyDateTime_FromDateAndTime(
+                                        curr->ts_value[i].year,
+                                        curr->ts_value[i].month,
+                                        curr->ts_value[i].day,
+                                        curr->ts_value[i].hour % 24,
+                                        curr->ts_value[i].minute,
+                                        curr->ts_value[i].second,
+                                        curr->ts_value[i].fraction / 1000);
+                                }
+                                if (curr->tstz_value){
+                                    LogMsg(DEBUG,"Processing SQL_CHAR timestamp with timezone  array element using tstz_value");
+                                    elem = format_timestamp_pystr(curr->tstz_value);
+                                }
+                               break;
+                            }
+
+                            case SQL_VARCHAR: {
+                                if (curr->uvalue) {
+                                    LogMsg(DEBUG, "Processing SQL_VARCHAR array element using uvalue");
+                                    SQLWCHAR *elem_ptr = curr->uvalue + i * (curr->param_size / sizeof(SQLWCHAR));
+                                    SQLLEN actual_len;
+                                    if (curr->bind_indicator_array && curr->bind_indicator_array[i] > 0) {
+                                        actual_len = curr->bind_indicator_array[i];
+                                    } else {
+                                        size_t max_chars = curr->param_size / sizeof(SQLWCHAR);
+                                        size_t len = 0;
+                                        while (len < max_chars && elem_ptr[len] != 0) {
+                                            len++;
+                                        }
+                                        actual_len = len * sizeof(SQLWCHAR);
+                                    }
+                                    PyObject *tmp = PyUnicode_DecodeUTF16((const char *)elem_ptr, actual_len, "strict", NULL);
+                                    if (tmp) {
+                                        PyObject *stripped = PyObject_CallMethod(tmp, "rstrip", NULL);
+                                        if (stripped) {
+                                            elem = stripped;
+                                            Py_DECREF(tmp);
+                                        } else {
+                                            elem = tmp;
+                                        }
+                                    } else {
+                                        PyErr_Clear();
+                                        elem = PyBytes_FromStringAndSize((const char *)elem_ptr, actual_len);
+                                    }
+                               } else if (curr->svalue) {
+                                     LogMsg(DEBUG, "Processing SQL_VARCHAR array element using svalue");
+                                     char *elem_ptr = curr->svalue + i * curr->param_size;
+                                     size_t max_len = curr->param_size;
+#ifndef __MVS__
+                                     size_t actual_len = strnlen(elem_ptr, max_len);
+#endif
+                                     elem = PyBytes_FromStringAndSize(elem_ptr, actual_len);
+                                } else if (curr->ts_value) {
+                                    LogMsg(DEBUG, "Processing SQLVARCHAR array element using ts_value");
+                                    elem = PyDateTime_FromDateAndTime(
+                                        curr->ts_value[i].year,
+                                        curr->ts_value[i].month,
+                                        curr->ts_value[i].day,
+                                        curr->ts_value[i].hour % 24,
+                                        curr->ts_value[i].minute,
+                                        curr->ts_value[i].second,
+                                        curr->ts_value[i].fraction / 1000);
+                                } else if (curr->tstz_value){
+                                    LogMsg(DEBUG,"Processing SQLVARCHAR array element using tstz_value");
+                                    elem = format_timestamp_pystr(curr->tstz_value);
+                                } else {
+                                    Py_INCREF(Py_None);
+                                    elem = Py_None;
+                                }
+                                Py_XINCREF(elem);
+                                break;
+                            }
+
+                            case SQL_BINARY:
+                            case SQL_VARBINARY:
+                            case SQL_LONGVARBINARY:{
+                                if (curr->uvalue) {
+                                    LogMsg(DEBUG, "Processing SQL_BINARY/SQL_VARBINARY/SQL_LONGVARBINARY array element using uvalue");
+                                    char *elem_ptr = curr->uvalue + i * curr->param_size;
+                                    SQLLEN actual_len = (curr->bind_indicator_array && curr->bind_indicator_array[i] > 0) 
+                                    ? curr->bind_indicator_array[i] : curr->param_size;
+                                    elem = PyBytes_FromStringAndSize(elem_ptr, actual_len);
+                                    if (!elem) {
+                                        PyErr_Clear();
+                                        Py_INCREF(Py_None);
+                                        elem = Py_None;
+                                    } else {
+                                        snprintf(messageStr, sizeof(messageStr),
+                                        "Converted SQL_BINARY/SQL_VARBINARY/SQL_LONGVARBINARY element of length %ld to Python bytes", (long)actual_len);
+                                        LogMsg(DEBUG, messageStr);
+                                    }
+                                } else if(curr->svalue){
+                                    LogMsg(DEBUG, "Processing SQL_BINARY/SQL_VARBINARY/SQL_LONGVARBINARY array element using svalue");
+                                    char *elem_ptr = curr->svalue + i * curr->param_size;
+#ifndef __MVS__
+                                    size_t actual_len = strnlen(elem_ptr, curr->param_size);
+#endif
+                                    elem = PyBytes_FromStringAndSize(elem_ptr, actual_len);
+                                    if (!elem) {
+                                        LogMsg(ERROR, "Failed to convert SQL_BINARY/SQL_VARBINARY/SQL_LONGVARBINARY element to Python bytes");
+                                        PyErr_Clear();
+                                        Py_INCREF(Py_None);
+                                        elem = Py_None;
+                                    } else {
+                                        snprintf(messageStr, sizeof(messageStr),"Converted VARBINARY element of length %zu to Python bytes", actual_len);
+                                        LogMsg(DEBUG, messageStr);
+                                    }
+                                } else {
+                                    Py_INCREF(Py_None);
+                                    elem = Py_None;
+                                }
+                                Py_XINCREF(elem);
+                                break;
+                            }
+
+                            case SQL_CLOB:
+                            case SQL_BLOB:{
+                                SQLLEN ind_len = (curr->bind_indicator_array && curr->bind_indicator_array[i] > 0) ? curr->bind_indicator_array[i] : curr->param_size;
+                                if (curr->uvalue) {
+                                    LogMsg(DEBUG, " Processing SQL_BLOB/SQL_CLOB array element using uvalue");
+                                    SQLWCHAR *elem_ptr = (SQLWCHAR *)((char*)curr->uvalue + i * curr->param_size);
+                                    int num_wchars = ind_len / sizeof(SQLWCHAR);
+                                    elem = getSQLWCharAsPyUnicodeObject(elem_ptr, num_wchars);
+                                    if (!elem) {
+                                        LogMsg(DEBUG, "getSQLWCharAsPyUnicodeObject failed, trying UTF16 decode");
+                                        PyErr_Clear();
+                                        elem = PyUnicode_DecodeUTF16((const char *)elem_ptr, ind_len, "strict", NULL);
+                                        if (!elem) {
+                                            LogMsg(DEBUG, "UTF16 decode failed, falling back to raw bytes");
+                                            PyErr_Clear();
+                                            elem = PyBytes_FromStringAndSize((const char *)elem_ptr, ind_len);
+                                        }
+                                    }
+                                } else if (curr->svalue) {
+                                    LogMsg(DEBUG, "Processing SQL_BLOB/SQL_CLOB array element using svalue");
+                                    char *ptr = curr->svalue + i * curr->param_size;
+                                    elem = PyBytes_FromStringAndSize(ptr, ind_len);
+                                    snprintf(messageStr, sizeof(messageStr), "Array fetch exit: index=%d, elem=%p", i, (void*)elem);
+                                     LogMsg(DEBUG, messageStr);
+                                }
+                                else {
+                                     Py_INCREF(Py_None);
+                                     elem = Py_None;
+                               }
+                               Py_XINCREF(elem);
+                               break;
+                            }
+
+                            case SQL_BIGINT: {
+                                LogMsg(DEBUG, "Processing SQL_BIGINT array element");
+                                char tempStr[64] = {0};
+                                int copy_len = (MAX_PRECISION < sizeof(tempStr) - 1) ? MAX_PRECISION : sizeof(tempStr) - 1;
+                                memcpy(tempStr, curr->svalue + i * MAX_PRECISION, copy_len);
+                                tempStr[copy_len] = '\0';
+                                snprintf(messageStr, sizeof(messageStr),"BIGINT buffer at index %d: '%s' (copy_len=%d)", i, tempStr, copy_len);
+                                LogMsg(DEBUG, messageStr);
+
+                                int len = strlen(tempStr);
+                                while (len > 0 && isspace(tempStr[len - 1])) {
+                                    tempStr[--len] = '\0';
+                                }
+                                snprintf(messageStr, sizeof(messageStr),"Trimmed BIGINT string at index %d: '%s' (length=%d)", i, tempStr, len);
+                                LogMsg(DEBUG, messageStr);
+                                elem = PyLong_FromString(tempStr, NULL, 10);
+                                if (elem == NULL) {
+                                    PyErr_Clear();
+                                    elem = Py_None;
+                                    Py_INCREF(elem);
+                                    snprintf(messageStr, sizeof(messageStr),"BIGINT conversion failed at index %d for value '%s'. Returning Py_None.",i, tempStr);
+                                    LogMsg(DEBUG, messageStr);
+                                } else {
+                                    snprintf(messageStr, sizeof(messageStr),
+                                            "Converted BIGINT string to PyLong at index %d: value=%s",i, tempStr);
+                                    LogMsg(DEBUG, messageStr);
+                                }
+                                break;
+                            }
+
+                            case SQL_DECIMAL:
+                            case SQL_NUMERIC:
+                            case SQL_DECFLOAT:{
+                                LogMsg(DEBUG, "Processing SQL_DECIMAL/SQL_NUMERIC/SQL_DECFLOAT array element");
+                                if (curr->svalue != NULL) {
+                                    char tempStr[128] = {0};
+                                    memcpy(tempStr, curr->svalue + i * max_precn, max_precn);
+                                    tempStr[max_precn - 1] = '\0';
+
+                                    int len = strlen(tempStr);
+                                    while (len > 0 && tempStr[len - 1] == ' ') {
+                                        tempStr[--len] = '\0';
+                                    }
+                                    snprintf(messageStr, sizeof(messageStr),"Trimmed DECIMAL/DECFLOAT string at index %d: '%s' (length=%d)", i, tempStr, len);
+                                    LogMsg(DEBUG, messageStr);
+
+                                    char *dot = strchr(tempStr, '.');
+                                    if (dot) {
+                                        char *end = tempStr + strlen(tempStr) - 1;
+                                        while (end > dot && *end == '0') {
+                                            *end-- = '\0';
+                                        }
+                                        if (end == dot) *end = '\0';
+                                    }
+                                    snprintf(messageStr, sizeof(messageStr), "Converting numeric string to Python Decimal: '%s'", tempStr);
+                                    LogMsg(DEBUG, messageStr);
+                                    PyObject *pyDecModule = PyImport_ImportModule("decimal");
+                                    if (pyDecModule != NULL) {
+                                        PyObject *pyDecClass = PyObject_GetAttrString(pyDecModule, "Decimal");
+                                        if (pyDecClass != NULL) {
+                                            PyObject *pyStr = PyUnicode_FromString(tempStr);
+                                            if (pyStr != NULL) {
+                                                Py_DECREF(elem);
+                                                elem = PyObject_CallFunctionObjArgs(pyDecClass, pyStr, NULL);
+                                                Py_DECREF(pyStr);
+                                            }
+                                            Py_DECREF(pyDecClass);
+                                        }
+                                        Py_DECREF(pyDecModule);
+                                    }
+                                }
+                                break;
+                            }
+
+                            case SQL_INTEGER:
+                            case SQL_SMALLINT:
+                            LogMsg(DEBUG, "Processing SQL_INTEGER/SQL_SMALLINT array element");
+                            if (curr->ivalueArray) {
+                                snprintf(messageStr, sizeof(messageStr), "ivalueArray[%d] = %ld", i, curr->ivalueArray[i]);
+                                LogMsg(DEBUG, messageStr);
+                                elem = PyLong_FromLong(curr->ivalueArray[i]);
+                            }
+                            break;
+
+                            case SQL_REAL:
+                            case SQL_FLOAT:
+                            case SQL_DOUBLE:
+                            LogMsg(DEBUG, "Processing SQL_REAL/SQL_FLOAT/SQL_DOUBLE array element");
+                            if (curr->fvalueArray) {
+                                snprintf(messageStr, sizeof(messageStr), "fvalueArray[%d] = %f", i, curr->fvalueArray[i]);
+                                LogMsg(DEBUG, messageStr);
+                                elem = PyFloat_FromDouble(curr->fvalueArray[i]);
+                            }
+                            break;
+
+                            case SQL_TYPE_DATE:
+                            LogMsg(DEBUG, "Processing SQL_TYPE_DATE array element");
+                            if (curr->date_value) {
+                                snprintf(messageStr, sizeof(messageStr),"date_value[%d] = %04d-%02d-%02d", i,
+                                curr->date_value[i].year, curr->date_value[i].month, curr->date_value[i].day);
+                                LogMsg(DEBUG, messageStr);
+                                elem = PyDate_FromDate(curr->date_value[i].year,
+                                    curr->date_value[i].month,curr->date_value[i].day);
+                            }
+                            break;
+
+                            case SQL_TYPE_TIME:
+                                LogMsg(DEBUG, "Processing SQL_TYPE_TIME array element");
+                                if (curr->time_value) {
+                                    snprintf(messageStr, sizeof(messageStr),
+                                        "time_value[%d] = %02d:%02d:%02d", i,
+                                        curr->time_value[i].hour % 24,
+                                        curr->time_value[i].minute,
+                                        curr->time_value[i].second);
+                                    LogMsg(DEBUG, messageStr);
+                                    elem = PyTime_FromTime(curr->time_value[i].hour % 24,
+                                                          curr->time_value[i].minute,
+                                                          curr->time_value[i].second, 0);
+                                }
+                                break;
+
+                            case SQL_TYPE_TIMESTAMP:
+                            case SQL_TYPE_TIMESTAMP_WITH_TIMEZONE:{
+                            if(curr->svalue){
+                                LogMsg(DEBUG, "Processing SQL_TYPE_TIMESTAMP array element using svalue");
+                                char *elem_ptr = curr->svalue + i * curr->param_size;
+                                size_t max_len = curr->param_size;
+                                SQLLEN ind_len = (curr->bind_indicator_array && curr->bind_indicator_array[0] > 0) ? curr->bind_indicator_array[0] : curr->param_size;
+                                elem = PyBytes_FromStringAndSize(curr->svalue, ind_len);
+                            }
+                            if (curr->uvalue) {
+                                LogMsg(DEBUG, "Processing SQL_TYPE_TIMESTAMP/SQL_TIMESTAMP_WITH_TIMEZONE array element using uvalue");
+                                SQLWCHAR *elem_ptr = curr->uvalue;
+                                SQLLEN actual_len = (curr->bind_indicator > 0) ? curr->bind_indicator : curr->param_size * sizeof(SQLWCHAR);
+                                elem = getSQLWCharAsPyUnicodeObject(elem_ptr, actual_len);
+                                if (!elem) {
+                                    LogMsg(ERROR, "getSQLWCharAsPyUnicodeObject returned NULL");
+                                    PyErr_Clear();
+                                    elem = PyUnicode_DecodeUTF16((const char *)elem_ptr, actual_len, "strict", NULL);
+                                        if (!elem) {
+                                        LogMsg(ERROR, "UTF16 decode failed, falling back to raw bytes");
+                                        PyErr_Clear();
+                                        elem = PyBytes_FromStringAndSize((const char *)elem_ptr, actual_len);
+                                    }
+                                } else {
+                                    LogMsg(DEBUG, "Successfully created PyUnicode object from SQLWCHAR");
+                                    PyObject *trimmed = PyObject_CallMethod(elem, "rstrip", "s", "\x00");
+                                    if (trimmed) {
+                                         Py_DECREF(elem);
+                                            elem = trimmed;
+                                        } else {
+                                            LogMsg(ERROR, "PyObject_CallMethod rstrip failed");
+                                        }
+                                    }
+                                }
+                                if (curr->ts_value) {
+                                   LogMsg(DEBUG, "Processing SQL_TYPE_TIMESTAMP array element using ts_value");
+                                    snprintf(messageStr, sizeof(messageStr),
+                                       "Timestamp values for index %d: year=%d, month=%d, day=%d, hour=%d, minute=%d, second=%d, fraction=%d",i,
+                                        curr->ts_value[i].year,
+                                        curr->ts_value[i].month,
+                                        curr->ts_value[i].day,
+                                        curr->ts_value[i].hour,
+                                        curr->ts_value[i].minute,
+                                        curr->ts_value[i].second,
+                                        curr->ts_value[i].fraction);
+                                    LogMsg(DEBUG, messageStr);
+
+                                    elem = PyDateTime_FromDateAndTime(
+                                        curr->ts_value[i].year,
+                                        curr->ts_value[i].month,
+                                        curr->ts_value[i].day,
+                                        curr->ts_value[i].hour % 24,
+                                        curr->ts_value[i].minute,
+                                        curr->ts_value[i].second,
+                                        curr->ts_value[i].fraction / 1000);
+                                    if (!elem) {
+                                       LogMsg(ERROR, "PyDateTime_FromDateAndTime failed");
+                                    }
+                                }
+                                if (curr->tstz_value) {
+                                    LogMsg(DEBUG, "Processing SQL_TYPE_TIMESTAMP_WITH_TIMEZONE array element");
+                                    elem = format_timestamp_pystr(&curr->tstz_value[i]);
+                                    snprintf(messageStr, sizeof(messageStr),
+                                    "Array timestamp_with_timezone[%d] = %04d-%02d-%02d %02d:%02d:%02d.%03d %+03d:%02d",i,
+                                    curr->tstz_value[i].year, curr->tstz_value[i].month, curr->tstz_value[i].day,
+                                    curr->tstz_value[i].hour % 24, curr->tstz_value[i].minute, curr->tstz_value[i].second,
+                                    (int)(curr->tstz_value[i].fraction / 1000),
+                                    curr->tstz_value[i].timezone_hour, curr->tstz_value[i].timezone_minute);
+                                    LogMsg(DEBUG, messageStr);
+                                    if (!elem) {
+                                        LogMsg(ERROR, "format_timestamp_pystr returned NULL");
+                                    } else {
+                                        LogMsg(DEBUG, "Created Python string for timestamp with timezone");
+                                    }
+                                }
+                                break;
+                            }
+
+                            default:
+                            snprintf(messageStr, sizeof(messageStr),"Handling array parameter: unknown data_type=%d", curr->data_type);
+                            LogMsg(WARNING, messageStr);
+                            Py_INCREF(Py_None);
+                            pyVal = Py_None;
+                            snprintf(messageStr, sizeof(messageStr),"Returning Py_None for unsupported data_type=%d", curr->data_type);
+                            LogMsg(DEBUG, messageStr);
+                            break;
+                        }
+                    }
+                    PyList_SET_ITEM(pyList, i, elem);
+                }
+                PyTuple_SET_ITEM(outTuple, idx++, pyList);
+            } else {
+
+            LogMsg(DEBUG, "Handling scalar parameter");
+            switch (curr->data_type) {
+                case SQL_CHAR: {
+                    if (curr->uvalue) {
+                        LogMsg(DEBUG, "Processing SQL_CHAR scalar parameter using uvalue");
+                        SQLLEN ind_len = curr->bind_indicator;
+                        snprintf(messageStr, sizeof(messageStr),"Scalar fetch: ind_len=%ld, curr->uvalue=%p, param_size=%d",
+                            (long)ind_len, (void*)curr->uvalue, curr->param_size);
+                        LogMsg(DEBUG, messageStr);
+                        LogMsg(DEBUG, "Attempting to convert SQLWCHAR buffer to Python Unicode");
+                        pyVal = getSQLWCharAsPyUnicodeObject(curr->uvalue, ind_len);
+                        if (!pyVal) {
+                            LogMsg(DEBUG, "Conversion failed, falling back to raw bytes");
+                            PyErr_Clear();
+                            pyVal = PyBytes_FromStringAndSize((const char *)curr->uvalue, ind_len);
+                        } else {
+                            LogMsg(DEBUG, "Conversion succeeded, attempting to rstrip spaces");
+                            PyObject *trimmed = PyObject_CallMethod(pyVal, "rstrip", "s", " ");
+                            if (trimmed) {
+                                pyVal = trimmed;
+                                LogMsg(DEBUG, "rstrip succeeded, updated pyVal");
+                            } else {
+                                PyErr_Clear();
+                                LogMsg(DEBUG, "rstrip failed, keeping original pyVal");
+                            }
+                        }
+                        snprintf(messageStr, sizeof(messageStr),"Scalar fetch exit: elem=%p", (void*)pyVal);
+                        LogMsg(DEBUG, messageStr);
+                    }
+
+                    if (curr->svalue) {
+                        LogMsg(DEBUG, "Processing SQL_CHAR scalar parameter using svalue");
+                        pyVal = PyUnicode_Decode(curr->svalue, curr->param_size, "utf-8", "strict");
+                        if (!pyVal) {
+                            PyErr_Clear();
+                            pyVal = PyBytes_FromStringAndSize(curr->svalue, curr->param_size);
+                        }
+                    }
+                    snprintf(messageStr, sizeof(messageStr), "SQL_CHAR scalar fetch exit: pyVal=%p", (void*)pyVal);
+                    LogMsg(DEBUG, messageStr);
+                    break;
+                }
+
+                case SQL_VARCHAR: {
+                    if (curr->uvalue) {
+                        LogMsg(DEBUG, "Processing scalar SQL_VARCHAR using uvalue");
+                        SQLWCHAR *elem_ptr = (SQLWCHAR *)curr->uvalue;
+                        SQLLEN actual_len;
+                        size_t max_chars = curr->param_size / sizeof(SQLWCHAR);
+                        size_t len = 0;
+                        while (len < max_chars && elem_ptr[len] != 0) {
+                           len++;
+                        }
+                        actual_len = (curr->bind_indicator && curr->bind_indicator > 0) ? curr->bind_indicator : len * sizeof(SQLWCHAR);
+                        PyObject *tmp = PyUnicode_DecodeUTF16((const char *)elem_ptr, actual_len, "strict", NULL);
+                        if (tmp) {
+                            pyVal = tmp;
+                        } else {
+                            PyErr_Clear();
+                            pyVal = PyBytes_FromStringAndSize((const char *)elem_ptr, actual_len);
+                        }
+                    } else if (curr->svalue) {
+                        LogMsg(DEBUG, "Processing scalar SQL_VARCHAR using svalue");
+#ifndef __MVS__
+                        size_t actual_len = strnlen(curr->svalue, curr->param_size);
+#endif
+                        pyVal = PyUnicode_Decode(curr->svalue, actual_len, "utf-8", "strict");
+                        if (!pyVal) {
+                            PyErr_Clear();
+                            pyVal = PyBytes_FromStringAndSize(curr->svalue, actual_len);
+                        }
+                    }
+                    snprintf(messageStr, sizeof(messageStr), "SQL_VARCHAR scalar fetch exit: pyVal=%p", (void*)pyVal);
+                    LogMsg(DEBUG, messageStr);
+                    break;
+                }
+
+                case SQL_LONGVARBINARY:
+                case SQL_BINARY:
+                case SQL_VARBINARY:{
+                    if (curr->uvalue) {
+                        LogMsg(DEBUG, "Processing SQL_LONGVARBINARY/SQL_BINARY/SQL_VARBINARY scalar parameter using uvalue");
+                        int num_wchars = curr->param_size / sizeof(SQLWCHAR);
+                        pyVal = getSQLWCharAsPyUnicodeObject(curr->uvalue, num_wchars);
+                        if (!pyVal) {
+                            LogMsg(DEBUG, "getSQLWCharAsPyUnicodeObject failed, trying UTF16 decode");
+                            PyErr_Clear();
+                            pyVal = PyUnicode_DecodeUTF16((const char *)curr->uvalue, curr->param_size, "strict", NULL);
+                            if (!pyVal) {
+                                LogMsg(DEBUG, "UTF16 decode failed, falling back to raw bytes");
+                                PyErr_Clear();
+                                pyVal = PyBytes_FromStringAndSize((char *)curr->uvalue, curr->param_size);
+                            }
+                        }
+                    } else if (curr->svalue) {
+                        LogMsg(DEBUG, "Processing SQL_LONGVARBINARY/SQL_BINARY/SQL_VARBINARY scalar parameter using svalue");
+                        pyVal = PyBytes_FromStringAndSize(curr->svalue, curr->param_size);
+                    }
+                    snprintf(messageStr, sizeof(messageStr), "SQL_LONGVARBINARY/SQL_BINARY/SQL_VARBINARY scalar fetch exit: pyVal=%p", (void*)pyVal);
+                    LogMsg(DEBUG, messageStr);
+                    break;
+                }
+
+                case SQL_BLOB:
+                case SQL_CLOB: {
+                    SQLLEN ind_len = (curr->bind_indicator_array && curr->bind_indicator_array[0] > 0)
+                    ? curr->bind_indicator_array[0] : curr->param_size;
+                    if (curr->uvalue) {
+                        LogMsg(DEBUG, "Processing SQL_BLOB/SQL_CLOB scalar parameter using uvalue");
+                        SQLWCHAR *elem_ptr = curr->uvalue;
+                        int num_wchars = ind_len / sizeof(SQLWCHAR);
+                        pyVal = getSQLWCharAsPyUnicodeObject(elem_ptr, num_wchars);
+                        if (!pyVal) {
+                            LogMsg(DEBUG, "getSQLWCharAsPyUnicodeObject failed, trying UTF16 decode");
+                            PyErr_Clear();
+                            pyVal = PyUnicode_DecodeUTF16((const char *)elem_ptr, ind_len, "strict", NULL);
+                            if (!pyVal) {
+                                LogMsg(DEBUG, "UTF16 decode failed, falling back to raw bytes");
+                                PyErr_Clear();
+                                pyVal = PyBytes_FromStringAndSize((const char *)elem_ptr, ind_len);
+                            }
+                        }
+                    } else if (curr->svalue) {
+                        LogMsg(DEBUG, "Processing SQL_BLOB/SQL_CLOB scalar parameter using svalue");
+                        pyVal = PyUnicode_Decode(curr->svalue, ind_len, "utf-8", "strict");
+                        if (!pyVal) {
+                            LogMsg(DEBUG, "UTF-8 decode failed, falling back to raw bytes");
+                            PyErr_Clear();
+                            pyVal = PyBytes_FromStringAndSize(curr->svalue, ind_len);
+                        }
+                    }
+                    if (pyVal && PyUnicode_Check(pyVal)) {
+                        PyObject *trimmed = PyObject_CallMethod(pyVal, "rstrip", "s", " \x00");
+                        if (trimmed) {
+                            Py_DECREF(pyVal);
+                            pyVal = trimmed;
+                            LogMsg(DEBUG, "SQL_BLOB/SQL_CLOB trimming succeeded");
+                        } else {
+                            PyErr_Clear();
+                        }
+                    }
+                    snprintf(messageStr, sizeof(messageStr),"SQL_BLOB/SQL_CLOB scalar fetch exit: pyVal=%p", (void*)pyVal);
+                    LogMsg(DEBUG, messageStr);
+                    break;
+                }
+
+                case SQL_BIGINT:{
+                    LogMsg(DEBUG, "Processing SQL_BIGINT scalar parameter");
+                   int64_t bigint_val = 0;
+                   if (curr->svalue != NULL) {
+                       bigint_val = strtoll(curr->svalue, NULL, 10);
+                    }
+                    snprintf(messageStr, sizeof(messageStr), "Scalar bigint_val = %lld", (long long)bigint_val);
+                    LogMsg(DEBUG, messageStr);
+                    pyVal = PyLong_FromLongLong(bigint_val);
+                    break;
+                }
+
+                case SQL_DECIMAL:
+                case SQL_NUMERIC:
+                case SQL_DECFLOAT:{
+                LogMsg(DEBUG, "Processing SQL_DECIMAL/SQL_NUMERIC/SQL_DECFLOAT scalar parameter");
+                    if (curr->svalue != NULL) {
+                        char tempStr[128] = {0};
+#ifndef __MVS__
+                        strncpy(tempStr, curr->svalue, sizeof(tempStr) - 1);
+#endif
+                        tempStr[sizeof(tempStr) - 1] = '\0';
+
+                        int len = strlen(tempStr);
+                        while (len > 0 && tempStr[len - 1] == ' ') {
+                            tempStr[--len] = '\0';
+                        }
+                        char *dot = strchr(tempStr, '.');
+                        if (dot) {
+                            char *end = tempStr + strlen(tempStr) - 1;
+                            while (end > dot && *end == '0') {
+                                *end-- = '\0';
+                            }
+                            if (end == dot) *end = '\0';
+                        }
+
+                        PyObject *pyDecModule = PyImport_ImportModule("decimal");
+                        if (pyDecModule != NULL) {
+                            PyObject *pyDecClass = PyObject_GetAttrString(pyDecModule, "Decimal");
+                            if (pyDecClass != NULL) {
+                                PyObject *pyStr = PyUnicode_FromString(tempStr);
+                                if (pyStr != NULL) {
+                                    Py_XDECREF(pyVal);
+                                    pyVal = PyObject_CallFunctionObjArgs(pyDecClass, pyStr, NULL);
+                                    Py_DECREF(pyStr);
+                                }
+                                Py_DECREF(pyDecClass);
+                            }
+                            Py_DECREF(pyDecModule);
+                        }
+                    }
+                    break;
+                }
+
+                case SQL_INTEGER:
+                case SQL_SMALLINT:
+                    LogMsg(DEBUG, "Processing SQL_INTEGER/SQL_SMALLINT scalar parameter");
+                    snprintf(messageStr, sizeof(messageStr), "Scalar ivalue = %ld", curr->ivalue);
+                    LogMsg(DEBUG, messageStr);
+                    pyVal = PyLong_FromLong(curr->ivalue);
+                    break;
+
+                case SQL_REAL:
+                case SQL_FLOAT:
+                case SQL_DOUBLE:
+                    LogMsg(DEBUG, "Processing SQL_REAL/SQL_FLOAT/SQL_DOUBLE scalar parameter");
+                    snprintf(messageStr, sizeof(messageStr), "Scalar fvalue = %f", curr->fvalue);
+                    LogMsg(DEBUG, messageStr);
+                    pyVal = PyFloat_FromDouble(curr->fvalue);
+                    break;
+
+                case SQL_TYPE_DATE:
+                    LogMsg(DEBUG, "Processing SQL_TYPE_DATE scalar parameter");
+                    if (curr->date_value) {
+                        snprintf(messageStr, sizeof(messageStr),
+                            "Scalar date_value = %04d-%02d-%02d",
+                            curr->date_value->year,
+                            curr->date_value->month,
+                            curr->date_value->day);
+                        LogMsg(DEBUG, messageStr);
+                        pyVal = PyDate_FromDate(curr->date_value->year, curr->date_value->month,curr->date_value->day);
+                    }
+                    break;
+
+                case SQL_TYPE_TIME:
+                LogMsg(DEBUG, "Processing SQL_TYPE_TIME scalar parameter");
+                if (curr->time_value) {
+                    snprintf(messageStr, sizeof(messageStr),"Scalar time_value = %02d:%02d:%02d",
+                    curr->time_value->hour % 24,
+                    curr->time_value->minute,
+                    curr->time_value->second);
+                    LogMsg(DEBUG, messageStr);
+                    pyVal = PyTime_FromTime(curr->time_value->hour % 24,curr->time_value->minute,curr->time_value->second, 0);
+                }
+                break;
+
+                case SQL_TYPE_TIMESTAMP:
+                case SQL_TYPE_TIMESTAMP_WITH_TIMEZONE:
+                if (curr->uvalue) {
+                    LogMsg(DEBUG, "Processing SQL_TYPE_TIMESTAMP scalar parameter using uvalue");
+                    SQLWCHAR *ts_wstr = curr->uvalue;
+                    SQLLEN ind_len = curr->bind_indicator;
+                    PyObject *pyStr = getSQLWCharAsPyUnicodeObject(ts_wstr, ind_len);
+                    if (!pyStr) {
+                        PyErr_Clear();
+                        pyStr = PyBytes_FromStringAndSize((const char *)ts_wstr,ind_len * sizeof(SQLWCHAR));
+                    }
+                    snprintf(messageStr, sizeof(messageStr),"Scalar TIMESTAMP parameter using uvalue, length=%ld",(long)ind_len);
+                    LogMsg(DEBUG, messageStr);
+                    const char *ts_str = PyUnicode_AsUTF8(pyStr);
+                    if (ts_str) {
+                        int year, month, day, hour, minute, second, micro = 0;
+                        sscanf(ts_str, "%4d-%2d-%2d %2d:%2d:%2d.%6d",&year, &month, &day,&hour, &minute, &second, &micro);
+                        pyVal = PyDateTime_FromDateAndTime(year, month, day,hour, minute, second, micro);
+                        Py_DECREF(pyStr);
+                    } else {
+                        pyVal = pyStr;
+                    }
+                }
+                if (curr->ts_value) {
+                    snprintf(messageStr, sizeof(messageStr), "Scalar timestamp_value = %04d-%02d-%02d %02d:%02d:%02d.%03d",
+                    curr->ts_value->year, curr->ts_value->month, curr->ts_value->day,
+                    curr->ts_value->hour % 24, curr->ts_value->minute, curr->ts_value->second,
+                    (int)(curr->ts_value->fraction / 1000));
+                    LogMsg(DEBUG, messageStr);
+                    pyVal = PyDateTime_FromDateAndTime(
+                        curr->ts_value->year,
+                        curr->ts_value->month,
+                        curr->ts_value->day,
+                        curr->ts_value->hour % 24,
+                        curr->ts_value->minute,
+                        curr->ts_value->second,
+                        curr->ts_value->fraction / 1000);
+                }
+                if (curr->tstz_value){
+                    LogMsg(DEBUG, "Processing SQL_TYPE_TIMESTAMP_WITH_TIMEZONE scalar parameter using tstz_value");
+                    pyVal = format_timestamp_pystr(curr->tstz_value);
+                    snprintf(messageStr, sizeof(messageStr), "Scalar timestamp_with_timezone = "
+                    "%04d-%02d-%02d %02d:%02d:%02d.%03d %+03d:%02d",
+                    curr->tstz_value->year, curr->tstz_value->month, curr->tstz_value->day,
+                    curr->tstz_value->hour % 24, curr->tstz_value->minute, curr->tstz_value->second,
+                    (int)(curr->tstz_value->fraction / 1000),
+                    curr->tstz_value->timezone_hour, curr->tstz_value->timezone_minute);
+                    LogMsg(DEBUG, messageStr);
+                }
+                break;
+
+                default:
+                snprintf(messageStr, sizeof(messageStr),"Handling scalar parameter: unknown data_type=%d", curr->data_type);
+                LogMsg(WARNING, messageStr);
+                Py_INCREF(Py_None);
+                pyVal = Py_None;
+                snprintf(messageStr, sizeof(messageStr),"Returning Py_None for unsupported data_type=%d", curr->data_type);
+                LogMsg(DEBUG, messageStr);
+                break;
+            }
+                PyTuple_SET_ITEM(outTuple, idx++, pyVal);
+            }
+        } else {
+            snprintf(messageStr, sizeof(messageStr), "Parameter %d is NULL or no total", idx);
+            LogMsg(DEBUG, messageStr);
+            PyTuple_SET_ITEM(outTuple, idx++, pyVal);
+        }
+        curr = curr->next;
+    }
+    LogMsg(INFO, "exit ibm_db_fetch_callproc: returning output tuple");
+    return outTuple;
+}
 /* Listing of ibm_db module functions: */
 static PyMethodDef ibm_db_Methods[] = {
     /* name, function, argument type, docstring */
@@ -17589,6 +18777,7 @@ static PyMethodDef ibm_db_Methods[] = {
     {"fetchone", (PyCFunction)ibm_db_fetchone, METH_VARARGS, "Fetch a single row from the result set."},
     {"fetchall", (PyCFunction)ibm_db_fetchall, METH_VARARGS, "Fetch all rows from the result set."},
     {"fetchmany", (PyCFunction)ibm_db_fetchmany, METH_VARARGS, "Fetch a specified number of rows from the result set."},
+    {"fetch_callproc", (PyCFunction)ibm_db_fetch_callproc, METH_VARARGS, " Fetch the result set from stored procedure."},
     /* An end-of-listing sentinel: */
     {NULL, NULL, 0, NULL}};
 
