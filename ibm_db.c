@@ -18019,8 +18019,9 @@ static PyObject* ibm_db_fetch_callproc(PyObject* self, PyObject* args)
                                     LogMsg(DEBUG, "Processing SQL_CHAR array element using svalue");
                                     char *elem_ptr = curr->svalue + i * curr->param_size;
                                     size_t max_len = curr->param_size;
+                                    size_t actual_len;
 #ifndef __MVS__
-                                    size_t actual_len = strnlen(elem_ptr, max_len);
+                                    actual_len = strnlen(elem_ptr, max_len);
 #endif	
                                     elem = PyBytes_FromStringAndSize(elem_ptr, actual_len);
                                     if (!elem) {
@@ -18081,8 +18082,9 @@ static PyObject* ibm_db_fetch_callproc(PyObject* self, PyObject* args)
                                      LogMsg(DEBUG, "Processing SQL_VARCHAR array element using svalue");
                                      char *elem_ptr = curr->svalue + i * curr->param_size;
                                      size_t max_len = curr->param_size;
+                                     size_t actual_len;
 #ifndef __MVS__
-                                     size_t actual_len = strnlen(elem_ptr, max_len);
+                                     actual_len = strnlen(elem_ptr, max_len);
 #endif
                                      elem = PyBytes_FromStringAndSize(elem_ptr, actual_len);
                                 } else if (curr->ts_value) {
@@ -18127,8 +18129,9 @@ static PyObject* ibm_db_fetch_callproc(PyObject* self, PyObject* args)
                                 } else if(curr->svalue){
                                     LogMsg(DEBUG, "Processing SQL_BINARY/SQL_VARBINARY/SQL_LONGVARBINARY array element using svalue");
                                     char *elem_ptr = curr->svalue + i * curr->param_size;
+                                    size_t actual_len;
 #ifndef __MVS__
-                                    size_t actual_len = strnlen(elem_ptr, curr->param_size);
+                                    actual_len = strnlen(elem_ptr, curr->param_size);
 #endif
                                     elem = PyBytes_FromStringAndSize(elem_ptr, actual_len);
                                     if (!elem) {
@@ -18458,8 +18461,9 @@ static PyObject* ibm_db_fetch_callproc(PyObject* self, PyObject* args)
                         }
                     } else if (curr->svalue) {
                         LogMsg(DEBUG, "Processing scalar SQL_VARCHAR using svalue");
+                        size_t actual_len;
 #ifndef __MVS__
-                        size_t actual_len = strnlen(curr->svalue, curr->param_size);
+                        actual_len = strnlen(curr->svalue, curr->param_size);
 #endif
                         pyVal = PyUnicode_Decode(curr->svalue, actual_len, "utf-8", "strict");
                         if (!pyVal) {
