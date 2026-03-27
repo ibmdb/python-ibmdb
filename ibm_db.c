@@ -7732,7 +7732,7 @@ static PyObject *_python_ibm_db_prepare_helper(conn_handle *conn_res, PyObject *
         LogMsg(DEBUG, messageStr);
     }
 
-    rc = _python_ibm_db_do_prepare(conn_res->hdbc, stmt, stmt_size, stmt_res, options, py_stmt);
+    rc = _python_ibm_db_do_prepare(conn_res->hdbc, stmt, stmt_size, stmt_res, options);
     snprintf(messageStr, sizeof(messageStr), "Prepared statement, return code: %d", rc);
     LogMsg(DEBUG, messageStr);
     if (isNewBuffer)
