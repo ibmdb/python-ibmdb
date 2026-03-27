@@ -2354,8 +2354,8 @@ static PyObject *_python_ibm_db_connect_helper(PyObject *self, PyObject *args, i
                                        database, SQL_NTS, NULL, 0, NULL,
                                        SQL_DRIVER_NOPROMPT);
                 Py_END_ALLOW_THREADS;
-                snprintf(messageStr, sizeof(messageStr), "SQLDriverConnectW called with parameters: conn_res->hdbc=%p, SQLHWND=NULL, database=%ls, SQL_NTS=%d, NULL, 0, NULL, SQL_DRIVER_NOPROMPT=%d and returned rc=%d",
-                         (void *)conn_res->hdbc, database, SQL_NTS, SQL_DRIVER_NOPROMPT, rc);
+                snprintf(messageStr, sizeof(messageStr), "SQLDriverConnectW called with parameters: conn_res->hdbc=%p, SQLHWND=NULL, database=%s, SQL_NTS=%d, NULL, 0, NULL, SQL_DRIVER_NOPROMPT=%d and returned rc=%d",
+                         (void *)conn_res->hdbc, PyUnicode_AsUTF8(databaseObj), SQL_NTS, SQL_DRIVER_NOPROMPT, rc);
                 LogMsg(DEBUG, messageStr);
             }
             else
@@ -2378,10 +2378,10 @@ static PyObject *_python_ibm_db_connect_helper(PyObject *self, PyObject *args, i
                                  PyUnicode_GetLength(uidObj) * 2,
                                  password,
                                  PyUnicode_GetLength(passwordObj) * 2);
-                snprintf(messageStr, sizeof(messageStr), "SQLConnectW called with parameters: conn_res->hdbc=%p, database=%ls, databaseLen=%zd, uid=%ls, uidLen=%zd, password=%ls, passwordLen=%zd and returned rc=%d",
-                         (void *)conn_res->hdbc, database,
-                         PyUnicode_GetLength(databaseObj) * 2, uid,
-                         PyUnicode_GetLength(uidObj) * 2, password,
+                snprintf(messageStr, sizeof(messageStr), "SQLConnectW called with parameters: conn_res->hdbc=%p, database=%s, databaseLen=%zd, uid=%s, uidLen=%zd, password=%s, passwordLen=%zd and returned rc=%d",
+                         (void *)conn_res->hdbc, PyUnicode_AsUTF8(databaseObj),
+                         PyUnicode_GetLength(databaseObj) * 2, PyUnicode_AsUTF8(uidObj),
+                         PyUnicode_GetLength(uidObj) * 2, PyUnicode_AsUTF8(passwordObj),
                          PyUnicode_GetLength(passwordObj) * 2, rc);
                 LogMsg(DEBUG, messageStr);
 #else
@@ -2392,10 +2392,10 @@ static PyObject *_python_ibm_db_connect_helper(PyObject *self, PyObject *args, i
                                  PyUnicode_GetLength(uidObj),
                                  password,
                                  PyUnicode_GetLength(passwordObj));
-                snprintf(messageStr, sizeof(messageStr), "SQLConnectW called with parameters: conn_res->hdbc=%p, database=%ls, databaseLen=%zd, uid=%ls, uidLen=%zd, password=%ls, passwordLen=%zd and returned rc=%d",
-                         (void *)conn_res->hdbc, database,
-                         PyUnicode_GetLength(databaseObj), uid,
-                         PyUnicode_GetLength(uidObj), password,
+                snprintf(messageStr, sizeof(messageStr), "SQLConnectW called with parameters: conn_res->hdbc=%p, database=%s, databaseLen=%zd, uid=%s, uidLen=%zd, password=%s, passwordLen=%zd and returned rc=%d",
+                         (void *)conn_res->hdbc, PyUnicode_AsUTF8(databaseObj),
+                         PyUnicode_GetLength(databaseObj), PyUnicode_AsUTF8(uidObj),
+                         PyUnicode_GetLength(uidObj), PyUnicode_AsUTF8(passwordObj),
                          PyUnicode_GetLength(passwordObj), rc);
                 LogMsg(DEBUG, messageStr);
 #endif
@@ -3261,7 +3261,7 @@ static int _python_ibm_db_createdb(conn_handle *conn_res, PyObject *dbNameObj, P
         if (dbNameObj != NULL && dbNameObj != Py_None)
         {
             dbName = getUnicodeDataAsSQLWCHAR(dbNameObj, &isNewBuffer);
-            snprintf(messageStr, sizeof(messageStr), "dbName obtained, dbName=%ls, isNewBuffer=%d", dbName, isNewBuffer);
+            snprintf(messageStr, sizeof(messageStr), "dbName obtained, dbName=%s, isNewBuffer=%d", PyUnicode_AsUTF8(dbNameObj), isNewBuffer);
             LogMsg(DEBUG, messageStr);
         }
         else
@@ -3276,7 +3276,7 @@ static int _python_ibm_db_createdb(conn_handle *conn_res, PyObject *dbNameObj, P
             if (codesetObj != NULL && codesetObj != Py_None)
             {
                 codeset = getUnicodeDataAsSQLWCHAR(codesetObj, &isNewBuffer);
-                snprintf(messageStr, sizeof(messageStr), "codeset obtained, codeset=%ls, isNewBuffer=%d", codeset, isNewBuffer);
+                snprintf(messageStr, sizeof(messageStr), "codeset obtained, codeset=%s, isNewBuffer=%d", PyUnicode_AsUTF8(codesetObj), isNewBuffer);
                 LogMsg(DEBUG, messageStr);
             }
             else
@@ -3292,7 +3292,7 @@ static int _python_ibm_db_createdb(conn_handle *conn_res, PyObject *dbNameObj, P
             if (codesetObj != NULL && codesetObj != Py_None)
             {
                 mode = getUnicodeDataAsSQLWCHAR(modeObj, &isNewBuffer);
-                snprintf(messageStr, sizeof(messageStr), "mode obtained, mode=%ls, isNewBuffer=%d", mode, isNewBuffer);
+                snprintf(messageStr, sizeof(messageStr), "mode obtained, mode=%s, isNewBuffer=%d", PyUnicode_AsUTF8(modeObj), isNewBuffer);
                 LogMsg(DEBUG, messageStr);
             }
             else
@@ -3434,7 +3434,7 @@ static int _python_ibm_db_dropdb(conn_handle *conn_res, PyObject *dbNameObj, int
         if (dbNameObj != NULL && dbNameObj != Py_None)
         {
             dbName = getUnicodeDataAsSQLWCHAR(dbNameObj, &isNewBuffer);
-            snprintf(messageStr, sizeof(messageStr), "dbName obtained, dbName=%ls, isNewBuffer=%d", dbName, isNewBuffer);
+            snprintf(messageStr, sizeof(messageStr), "dbName obtained, dbName=%s, isNewBuffer=%d", PyUnicode_AsUTF8(dbNameObj), isNewBuffer);
             LogMsg(DEBUG, messageStr);
         }
         else
@@ -7269,7 +7269,7 @@ static PyObject *ibm_db_commit(PyObject *self, PyObject *args)
 
 /* static int _python_ibm_db_do_prepare(SQLHANDLE hdbc, char *stmt_string, stmt_handle *stmt_res, PyObject *options)
  */
-static int _python_ibm_db_do_prepare(SQLHANDLE hdbc, SQLWCHAR *stmt, int stmt_size, stmt_handle *stmt_res, PyObject *options)
+static int _python_ibm_db_do_prepare(SQLHANDLE hdbc, SQLWCHAR *stmt, int stmt_size, stmt_handle *stmt_res, PyObject *options, PyObject *stmtObj)
 {
     LogMsg(INFO, "entry _python_ibm_db_do_prepare()");
     int rc;
@@ -7312,7 +7312,7 @@ static int _python_ibm_db_do_prepare(SQLHANDLE hdbc, SQLWCHAR *stmt, int stmt_si
             return rc;
         }
     }
-    snprintf(messageStr, sizeof(messageStr), "Preparing SQL statement: %ls, size: %d", stmt, stmt_size);
+    snprintf(messageStr, sizeof(messageStr), "Preparing SQL statement: %s, size: %d", stmtObj ? PyUnicode_AsUTF8(stmtObj) : "NULL", stmt_size);
     LogMsg(DEBUG, messageStr);
     /* Prepare the stmt. The cursor type requested has already been set in
      * _python_ibm_db_assign_options
@@ -7732,7 +7732,7 @@ static PyObject *_python_ibm_db_prepare_helper(conn_handle *conn_res, PyObject *
         LogMsg(DEBUG, messageStr);
     }
 
-    rc = _python_ibm_db_do_prepare(conn_res->hdbc, stmt, stmt_size, stmt_res, options);
+    rc = _python_ibm_db_do_prepare(conn_res->hdbc, stmt, stmt_size, stmt_res, options, py_stmt);
     snprintf(messageStr, sizeof(messageStr), "Prepared statement, return code: %d", rc);
     LogMsg(DEBUG, messageStr);
     if (isNewBuffer)
