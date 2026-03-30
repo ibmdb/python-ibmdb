@@ -2354,8 +2354,8 @@ static PyObject *_python_ibm_db_connect_helper(PyObject *self, PyObject *args, i
                                        database, SQL_NTS, NULL, 0, NULL,
                                        SQL_DRIVER_NOPROMPT);
                 Py_END_ALLOW_THREADS;
-                snprintf(messageStr, sizeof(messageStr), "SQLDriverConnectW called with parameters: conn_res->hdbc=%p, SQLHWND=NULL, database=%ls, SQL_NTS=%d, NULL, 0, NULL, SQL_DRIVER_NOPROMPT=%d and returned rc=%d",
-                         (void *)conn_res->hdbc, database, SQL_NTS, SQL_DRIVER_NOPROMPT, rc);
+                snprintf(messageStr, sizeof(messageStr), "SQLDriverConnectW called with parameters: conn_res->hdbc=%p, SQLHWND=NULL, database=%s, SQL_NTS=%d, NULL, 0, NULL, SQL_DRIVER_NOPROMPT=%d and returned rc=%d",
+                         (void *)conn_res->hdbc, PyUnicode_AsUTF8(databaseObj), SQL_NTS, SQL_DRIVER_NOPROMPT, rc);
                 LogMsg(DEBUG, messageStr);
             }
             else
@@ -2378,10 +2378,10 @@ static PyObject *_python_ibm_db_connect_helper(PyObject *self, PyObject *args, i
                                  PyUnicode_GetLength(uidObj) * 2,
                                  password,
                                  PyUnicode_GetLength(passwordObj) * 2);
-                snprintf(messageStr, sizeof(messageStr), "SQLConnectW called with parameters: conn_res->hdbc=%p, database=%ls, databaseLen=%zd, uid=%ls, uidLen=%zd, password=%ls, passwordLen=%zd and returned rc=%d",
-                         (void *)conn_res->hdbc, database,
-                         PyUnicode_GetLength(databaseObj) * 2, uid,
-                         PyUnicode_GetLength(uidObj) * 2, password,
+			    snprintf(messageStr, sizeof(messageStr), "SQLConnectW called with parameters: conn_res->hdbc=%p, database=%s, databaseLen=%zd, uid=%s, uidLen=%zd, password=%s, passwordLen=%zd and returned rc=%d",
+                         (void *)conn_res->hdbc, PyUnicode_AsUTF8(databaseObj),
+                         PyUnicode_GetLength(databaseObj) * 2, PyUnicode_AsUTF8(uidObj),
+                         PyUnicode_GetLength(uidObj) * 2, PyUnicode_AsUTF8(passwordObj),
                          PyUnicode_GetLength(passwordObj) * 2, rc);
                 LogMsg(DEBUG, messageStr);
 #else
@@ -2392,10 +2392,10 @@ static PyObject *_python_ibm_db_connect_helper(PyObject *self, PyObject *args, i
                                  PyUnicode_GetLength(uidObj),
                                  password,
                                  PyUnicode_GetLength(passwordObj));
-                snprintf(messageStr, sizeof(messageStr), "SQLConnectW called with parameters: conn_res->hdbc=%p, database=%ls, databaseLen=%zd, uid=%ls, uidLen=%zd, password=%ls, passwordLen=%zd and returned rc=%d",
-                         (void *)conn_res->hdbc, database,
-                         PyUnicode_GetLength(databaseObj), uid,
-                         PyUnicode_GetLength(uidObj), password,
+                snprintf(messageStr, sizeof(messageStr), "SQLConnectW called with parameters: conn_res->hdbc=%p, database=%s, databaseLen=%zd, uid=%s, uidLen=%zd, password=%s, passwordLen=%zd and returned rc=%d",
+                         (void *)conn_res->hdbc, PyUnicode_AsUTF8(databaseObj),
+                         PyUnicode_GetLength(databaseObj), PyUnicode_AsUTF8(uidObj),
+                         PyUnicode_GetLength(uidObj), PyUnicode_AsUTF8(passwordObj),
                          PyUnicode_GetLength(passwordObj), rc);
                 LogMsg(DEBUG, messageStr);
 #endif
