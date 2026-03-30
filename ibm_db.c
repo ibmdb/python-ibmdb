@@ -3261,7 +3261,7 @@ static int _python_ibm_db_createdb(conn_handle *conn_res, PyObject *dbNameObj, P
         if (dbNameObj != NULL && dbNameObj != Py_None)
         {
             dbName = getUnicodeDataAsSQLWCHAR(dbNameObj, &isNewBuffer);
-            snprintf(messageStr, sizeof(messageStr), "dbName obtained, dbName=%s, isNewBuffer=%d", PyUnicode_AsUTF8(dbNameObj), isNewBuffer);
+            snprintf(messageStr, sizeof(messageStr), "dbName obtained, dbName=%ls, isNewBuffer=%d", dbName, isNewBuffer);
             LogMsg(DEBUG, messageStr);
         }
         else
@@ -3276,7 +3276,7 @@ static int _python_ibm_db_createdb(conn_handle *conn_res, PyObject *dbNameObj, P
             if (codesetObj != NULL && codesetObj != Py_None)
             {
                 codeset = getUnicodeDataAsSQLWCHAR(codesetObj, &isNewBuffer);
-                snprintf(messageStr, sizeof(messageStr), "codeset obtained, codeset=%s, isNewBuffer=%d", PyUnicode_AsUTF8(codesetObj), isNewBuffer);
+                snprintf(messageStr, sizeof(messageStr), "codeset obtained, codeset=%ls, isNewBuffer=%d", codeset, isNewBuffer);
                 LogMsg(DEBUG, messageStr);
             }
             else
@@ -3292,7 +3292,7 @@ static int _python_ibm_db_createdb(conn_handle *conn_res, PyObject *dbNameObj, P
             if (codesetObj != NULL && codesetObj != Py_None)
             {
                 mode = getUnicodeDataAsSQLWCHAR(modeObj, &isNewBuffer);
-                snprintf(messageStr, sizeof(messageStr), "mode obtained, mode=%s, isNewBuffer=%d", PyUnicode_AsUTF8(modeObj), isNewBuffer);
+                snprintf(messageStr, sizeof(messageStr), "mode obtained, mode=%ls, isNewBuffer=%d", mode, isNewBuffer);
                 LogMsg(DEBUG, messageStr);
             }
             else
@@ -3434,7 +3434,7 @@ static int _python_ibm_db_dropdb(conn_handle *conn_res, PyObject *dbNameObj, int
         if (dbNameObj != NULL && dbNameObj != Py_None)
         {
             dbName = getUnicodeDataAsSQLWCHAR(dbNameObj, &isNewBuffer);
-            snprintf(messageStr, sizeof(messageStr), "dbName obtained, dbName=%s, isNewBuffer=%d", PyUnicode_AsUTF8(dbNameObj), isNewBuffer);
+            snprintf(messageStr, sizeof(messageStr), "dbName obtained, dbName=%ls, isNewBuffer=%d", dbName, isNewBuffer);
             LogMsg(DEBUG, messageStr);
         }
         else
