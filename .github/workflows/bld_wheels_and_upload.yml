@@ -22,7 +22,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - name: Build wheels
-        uses: pypa/cibuildwheel@v3.1.4
+        uses: pypa/cibuildwheel@v3.4.1
         env:
           CIBW_BUILD: "*-win_amd64"
           CIBW_SKIP: "cp38-*"
@@ -30,7 +30,7 @@ jobs:
       - name: Inject ibm_db_dll.pth into wheels
         run: python scripts/inject_pth_into_wheel.py wheelhouse
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: ibmdb-wheels64-${{ matrix.os }}
           path: wheelhouse/*.whl
@@ -45,7 +45,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - name: Build wheels
-        uses: pypa/cibuildwheel@v3.1.4
+        uses: pypa/cibuildwheel@v3.4.1
         env:
           CIBW_BUILD: "*-win32"
           CIBW_SKIP: "cp38-*"
@@ -53,7 +53,7 @@ jobs:
       - name: Inject ibm_db_dll.pth into wheels
         run: python scripts/inject_pth_into_wheel.py wheelhouse
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: ibmdb-wheels32-${{ matrix.os }}
           path: wheelhouse/*.whl
@@ -68,7 +68,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - name: Build wheels
-        uses: pypa/cibuildwheel@v3.1.4
+        uses: pypa/cibuildwheel@v3.4.1
         env:
          CIBW_ARCHS_LINUX: "x86_64 i686"
          CIBW_MANYLINUX_I686_IMAGE: manylinux2014
@@ -88,7 +88,7 @@ jobs:
               --wheel-dir {dest_dir}
               {wheel}
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: ibmdb-wheels-${{ matrix.os }}
           path: wheelhouse/*.whl
@@ -103,12 +103,12 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - name: Build wheels
-        uses: pypa/cibuildwheel@v3.1.4
+        uses: pypa/cibuildwheel@v3.4.1
         env:
           CIBW_SKIP: "cp38-*"
           MACOSX_DEPLOYMENT_TARGET: 14.0
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: ibmdb-wheelsarm64
           path: wheelhouse/*.whl
@@ -123,13 +123,13 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - name: Build wheels
-        uses: pypa/cibuildwheel@v3.1.4
+        uses: pypa/cibuildwheel@v3.4.1
         env:
           CIBW_ARCHS: "x86_64"
           CIBW_SKIP: "cp38-*"
           MACOSX_DEPLOYMENT_TARGET: 10.15
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: ibmdb-wheelsx86-${{ matrix.os }}
           path: wheelhouse/*.whl
@@ -155,7 +155,7 @@ jobs:
           rm -rf "$DIRNAME"
 
       - name: Upload sdist
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ibmdb-sdist
           path: dist/*.tar.gz
@@ -173,7 +173,7 @@ jobs:
     #upload to PyPI on every tag starting with 'v'
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     steps:
-    - uses: actions/download-artifact@v5
+    - uses: actions/download-artifact@v7
       with:
         path: dist
         pattern: ibmdb-*
@@ -181,7 +181,7 @@ jobs:
 
     - name: Publish distribution to PyPI
       if: startsWith(github.ref, 'refs/tags')
-      uses: pypa/gh-action-pypi-publish@release/v1.12
+      uses: pypa/gh-action-pypi-publish@release/v1.13
 
   upload_testpypi:
     needs: [build_wheels_windows_64, build_wheels_windows_32, build_wheels_linux, build_wheels_macos_arm64, build_wheels_macos_x86, build_sdist]
@@ -189,17 +189,17 @@ jobs:
     permissions:
       id-token: write
 
-    #upload to TestPyPI on push to test_dll_issue branch
-    if: github.event_name == 'push' && github.ref == 'refs/heads/test_dll_issue'
+    #upload to TestPyPI on push to fix_dll_error_issue branch
+    if: github.event_name == 'push' && github.ref == 'refs/heads/fix_dll_error_issue'
     steps:
-    - uses: actions/download-artifact@v5
+    - uses: actions/download-artifact@v7
       with:
         path: dist
         pattern: ibmdb-*
         merge-multiple: true
 
     - name: Publish distribution to TestPyPI
-      uses: pypa/gh-action-pypi-publish@release/v1.12
+      uses: pypa/gh-action-pypi-publish@release/v1.13
       with:
         repository-url: https://test.pypi.org/legacy/
         verbose: true
