@@ -28,10 +28,11 @@ else:
     from distutils.sysconfig import get_python_lib
 from setuptools import setup, find_packages, Extension
 from setuptools.command.build_ext import build_ext
+from setuptools.command.build_py import build_py
 from setuptools.command.install import install
 
 PACKAGE = 'ibm_db'
-VERSION = '3.2.8'
+VERSION = '3.2.6.10'
 LICENSE = 'Apache License 2.0'
 readme = os.path.join(os.path.dirname(__file__),'README.md')
 
@@ -501,7 +502,7 @@ data_files = [ (get_python_lib(), ['./README.md']),
                (get_python_lib(), ['./LICENSE']),
                (get_python_lib(), ['./config.py.sample'])]
 
-modules = ['ibm_db_dbi', 'testfunctions', 'ibmdb_tests', 'ibm_db_ctx']
+modules = ['ibm_db_dbi', 'testfunctions', 'ibmdb_tests', 'ibm_db_ctx', '_ibm_db_register_dll']
 
 if 'zos' == sys.platform:
     ext_modules = _ext_modules(os.path.join(os.getcwd(), include_dir), library, ibm_db_lib, ibm_db_lib_runtime)
@@ -524,6 +525,18 @@ if('win32' not in sys.platform):
         if (sys.platform != 'zos'):
            _checkGcc()
            _checkPythonHeaderFile()
+
+# Custom build_py to include ibm_db_dll.pth at the wheel root
+# so it lands in site-packages and triggers DLL registration on startup.
+class _build_py_with_pth(build_py):
+    def run(self):
+        super().run()
+        pth_src = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'ibm_db_dll.pth')
+        if os.path.isfile(pth_src):
+            pth_dst = os.path.join(self.build_lib, 'ibm_db_dll.pth')
+            self.copy_file(pth_src, pth_dst)
+
+cmd_class['build_py'] = _build_py_with_pth
 
 #'Operating System :: z/OS', pypi upload fails with error - Not a valid classifier
 setup( name    = PACKAGE,
