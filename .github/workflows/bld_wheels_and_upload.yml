@@ -44,7 +44,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - name: Build wheels
-        uses: pypa/cibuildwheel@v3.4.1
+        uses: pypa/cibuildwheel@v3.1.4
         env:
           CIBW_BUILD: "*-win32"
           CIBW_SKIP: "cp38-*"
