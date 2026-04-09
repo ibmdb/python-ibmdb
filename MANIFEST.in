@@ -1,6 +1,8 @@
 include ibm_db.h ibm_db.c
 include CHANGES.md LICENSE README.md
 include config.py.sample
+include ibm_db_dll.pth
+include _ibm_db_register_dll.py
 recursive-include ibm_db_tests *.py *.png *.jpg
 include MANIFEST.in
 recursive-include clidriver *

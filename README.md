@@ -119,31 +119,38 @@ pip install ibm_db --no-binary :all: --no-cache-dir
 
 - When ibm_db get installed from wheel package, you can find clidriver under site_packages directory of Python. You need to copy license file under `site_packages/clidriver/license` to be effective, if any.
 
-**Note:** For windows after installing ibm_db, recieves the below error when we try to import ibm_db :
+**Windows DLL resolution (Python 3.8+):**
 
-```>python
-Python 3.11.4 (tags/v3.11.4:d2340ef, Jun  7 2023, 05:45:37) [MSC v.1934 64 bit (AMD64)] on win32
-Type "help", "copyright", "credits" or "license" for more information.
->>> import ibm_db
-Traceback (most recent call last):
-  File "<stdin>", line 1, in <module>
-ImportError: DLL load failed while importing ibm_db: The specified module could not be found.
->>>
-```
+Since Python 3.8, the `PATH` environment variable is no longer used for DLL resolution on Windows (see https://bugs.python.org/issue36085). The `ibm_db` package now handles this **automatically** by installing an `ibm_db_dll.pth` file into `site-packages`. This file runs at Python startup and registers the clidriver `bin` directory via `os.add_dll_directory()`, so `import ibm_db` works out of the box.
 
-We need to make sure to set dll path of dependent library of clidriver before importing the module as:
+If `IBM_DB_HOME` is set, the `.pth` file uses `%IBM_DB_HOME%\bin`; otherwise it uses the bundled `site-packages\clidriver\bin`.
+
+**If you still see `ImportError: DLL load failed` after a fresh install**, verify that the `.pth` file exists:
 
 ```
+python -c "import os, sysconfig; print(os.path.isfile(os.path.join(sysconfig.get_path('purelib'), 'ibm_db_dll.pth')))"
+```
+
+If it prints `False`, reinstall ibm_db:
+
+```
+pip uninstall ibm_db
+pip install ibm_db
+```
+
+**Manual fallback:** If the automatic fix does not work in your environment, you can set the DLL path directly in your code before importing the module:
+
+```python
 import os
 os.add_dll_directory('path to clidriver installation until bin')
 import ibm_db
-
-e.g:
-os.add_dll_directory('C:\\Program Files\\IBM\\CLIDRIVER\\bin')
-import ibm_db
 ```
 
-Refer https://bugs.python.org/issue36085 for more details.
+To find your clidriver `bin` path, run:
+
+```
+python -c "import os, site, sysconfig; paths=[os.path.join(site.getusersitepackages(),'clidriver','bin'), os.path.join(sysconfig.get_path('purelib'),'clidriver','bin')]; print(next((p for p in paths if os.path.isdir(p)), 'clidriver not found - reinstall ibm_db'))"
+```
 
 - <a name="docker"></a>For installing ibm_db on docker Linux container, you can refer as below:
 
