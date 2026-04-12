@@ -8771,20 +8771,23 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
 
             if (isNewBuffer == 0)
             {
-                /* actually make a copy, since this will uvalue will be freed explicitly */
-                SQLWCHAR *tmp = (SQLWCHAR *)ALLOC_N(SQLWCHAR, curr->ivalue + 1);
-                memcpy(tmp, curr->uvalue, (param_length + sizeof(SQLWCHAR)));
+                int col_wchars = curr->param_size;
+                SQLWCHAR *tmp = (SQLWCHAR *)ALLOC_N(SQLWCHAR, col_wchars + 1);
+                memset(tmp, 0, (col_wchars + 1) * sizeof(SQLWCHAR));
+                memcpy(tmp, curr->uvalue, param_length);
                 curr->uvalue = tmp;
-                snprintf(messageStr, sizeof(messageStr), "Copied uvalue to new buffer, tmp=%p", (void *)tmp);
+                snprintf(messageStr, sizeof(messageStr), "Copied uvalue to new buffer, tmp=%p, param_length=%d, col_wchars=%d", (void *)tmp, param_length, col_wchars);
                 LogMsg(DEBUG, messageStr);
             }
             else if (param_length <= curr->param_size)
             {
-                SQLWCHAR *tmp = (SQLWCHAR *)ALLOC_N(SQLWCHAR, curr->ivalue + 1);
-                memcpy(tmp, curr->uvalue, (param_length + sizeof(SQLWCHAR)));
+                int col_wchars = curr->param_size;
+                SQLWCHAR *tmp = (SQLWCHAR *)ALLOC_N(SQLWCHAR, col_wchars + 1);
+                memset(tmp, 0, (col_wchars + 1) * sizeof(SQLWCHAR));
+                memcpy(tmp, curr->uvalue, param_length);
                 PyMem_Del(curr->uvalue);
                 curr->uvalue = tmp;
-                snprintf(messageStr, sizeof(messageStr), "Copied uvalue to new buffer with size adjustment, tmp=%p", (void *)tmp);
+                snprintf(messageStr, sizeof(messageStr), "Copied uvalue to new buffer with size adjustment, tmp=%p, param_length=%d, col_wchars=%d", (void *)tmp, param_length, col_wchars);
                 LogMsg(DEBUG, messageStr);
             }
 
@@ -8870,8 +8873,7 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
                 break;
             case SQL_TYPE_TIMESTAMP:
             case SQL_TYPE_TIMESTAMP_WITH_TIMEZONE:
-                snprintf(messageStr, sizeof(messageStr), "Handling SQL_TYPE_TIMESTAMP or SQL_TYPE_TIMESTAMP_WITH_TIMEZONE: param_length=%d, uvalue[10]=%c", param_length, curr->uvalue[10]);
-                LogMsg(DEBUG, messageStr);
+                LogMsg(INFO, "Handling SQL_TYPE_TIMESTAMP or SQL_TYPE_TIMESTAMP_WITH_TIMEZONE");
                 valueType = SQL_C_WCHAR;
                 if (param_length == 0)
                 {
@@ -8882,12 +8884,13 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
                 else
                 {
                     curr->bind_indicator = param_length;
-                    snprintf(messageStr, sizeof(messageStr), "SQL_TYPE_TIMESTAMP: bind_indicator=%d", curr->bind_indicator);
+                    snprintf(messageStr, sizeof(messageStr), "SQL_TYPE_TIMESTAMP: param_length=%d, bind_indicator=%d", param_length, curr->bind_indicator);
                     LogMsg(DEBUG, messageStr);
-                }
-                if (curr->uvalue[10] == 'T')
-                {
-                    curr->uvalue[10] = ' ';
+                    if (param_length > 10 * (int)sizeof(SQLWCHAR) && curr->uvalue[10] == (SQLWCHAR)'T')
+                    {
+                        curr->uvalue[10] = (SQLWCHAR)' ';
+                        LogMsg(DEBUG, "Replaced ISO 8601 'T' separator with space at uvalue[10]");
+                    }
                 }
                 paramValuePtr = (SQLPOINTER)(curr->uvalue);
                 snprintf(messageStr, sizeof(messageStr), "SQL_TYPE_TIMESTAMP: paramValuePtr=%p", (void *)paramValuePtr);
