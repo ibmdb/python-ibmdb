@@ -88,6 +88,9 @@ class IbmDbTestCase(unittest.TestCase):
             ibm_db.exec_immediate(conn, "DROP PROCEDURE array_decflt1622")
             ibm_db.exec_immediate(conn, "DROP PROCEDURE array_decflt1631")
             ibm_db.exec_immediate(conn, "DROP PROCEDURE array_decflt1641")
+            ibm_db.exec_immediate(conn, "DROP PROCEDURE array_decfloat3422")
+            ibm_db.exec_immediate(conn, "DROP PROCEDURE array_decfloat3431")
+            ibm_db.exec_immediate(conn, "DROP PROCEDURE array_decfloat3441")
             ibm_db.exec_immediate(conn, "DROP PROCEDURE array_char22")
             ibm_db.exec_immediate(conn, "DROP PROCEDURE array_char31")
             ibm_db.exec_immediate(conn, "DROP PROCEDURE array_char41")
@@ -338,6 +341,35 @@ class IbmDbTestCase(unittest.TestCase):
         END""")
 
         ibm_db.exec_immediate(conn, """CREATE PROCEDURE array_decflt1641(IN var1 decfloat16_array, OUT var2 decfloat16_array)
+        LANGUAGE SQL
+        BEGIN
+        FOR v AS SELECT val, idx FROM UNNEST(var1) WITH ORDINALITY AS T(val, idx)
+        DO
+        SET var2[idx] = val - 1.67;
+        END FOR;
+        END""")
+
+        ibm_db.exec_immediate(conn, """CREATE PROCEDURE array_decfloat3422(IN var1 DECFLOAT(34), OUT var2 decfloat34_array)
+        LANGUAGE SQL
+        BEGIN
+        SET var2[1] = var1 * var1;
+        SET var2[2] = var1 * var1 * var1;
+        SET var2[3] = var1 * 4;
+        SET var2[4] = var1 - 5;
+        END""")
+
+        ibm_db.exec_immediate(conn, """CREATE PROCEDURE array_decfloat3431(INOUT var1 decfloat34_array)
+        LANGUAGE SQL
+        BEGIN
+        DECLARE var2 decfloat34_array;
+        FOR v AS SELECT val, idx FROM UNNEST(var1) WITH ORDINALITY AS T(val, idx)
+        DO
+        SET var2[idx] = val + 1.33;
+        END FOR;
+        SET var1 = var2;
+        END""")
+
+        ibm_db.exec_immediate(conn, """CREATE PROCEDURE array_decfloat3441(IN var1 decfloat34_array, OUT var2 decfloat34_array)
         LANGUAGE SQL
         BEGIN
         FOR v AS SELECT val, idx FROM UNNEST(var1) WITH ORDINALITY AS T(val, idx)

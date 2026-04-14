@@ -8437,12 +8437,21 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
             Py_ssize_t n = PyList_Size(bind_data);
             snprintf(messageStr, sizeof(messageStr), "PYTHON_LIST detected with size: %zd", n);
             LogMsg(DEBUG, messageStr);
-            //For Null terminator
-            if (curr->data_type == SQL_TYPE_TIMESTAMP)
-               curr->param_size = curr->param_size + sizeof(SQLWCHAR);
-            curr->uvalue = (SQLWCHAR *)ALLOC_N(SQLWCHAR, curr->param_size * (n));
+            /* Convert param_size from SQL precision (characters) to byte stride
+             * for all types bound as SQL_C_WCHAR.  Binary types (SQL_C_BINARY)
+             * keep param_size in raw-byte units. */
+            if (curr->data_type != SQL_BLOB && curr->data_type != SQL_BINARY &&
+                curr->data_type != SQL_VARBINARY
+#ifndef PASE
+                && curr->data_type != SQL_LONGVARBINARY
+#endif
+                )
+            {
+                curr->param_size = (curr->param_size + 1) * sizeof(SQLWCHAR);
+            }
+            curr->uvalue = (SQLWCHAR *)ALLOC_N(char, curr->param_size * (n));
             curr->bind_indicator_array = (SQLINTEGER *)ALLOC_N(SQLINTEGER, n);
-            memset(curr->uvalue, 0, sizeof(SQLWCHAR) * curr->param_size * n);
+            memset(curr->uvalue, 0, curr->param_size * n);
 
             for (i = 0; i < n; i++)
             {
@@ -8457,6 +8466,7 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
                 }
                 else
                 {
+                    PyObject *unicode_item = NULL;
                     if (PyObject_CheckBuffer(item) && (curr->data_type == SQL_BLOB ||
                                                        curr->data_type == SQL_BINARY ||
                                                        curr->data_type == SQL_VARBINARY))
@@ -8473,8 +8483,45 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
                         snprintf(messageStr, sizeof(messageStr), "Buffer check: tmp_uvalue=%p, buffer length=%d", (void *)tmp_uvalue, curr->ivalue);
                         LogMsg(DEBUG, messageStr);
                     }
+                    else if (PyUnicode_Check(item) && (curr->data_type == SQL_BLOB ||
+                                                        curr->data_type == SQL_BINARY ||
+                                                        curr->data_type == SQL_VARBINARY
+#ifndef PASE
+                                                        || curr->data_type == SQL_LONGVARBINARY
+#endif
+                                                        ))
+                    {
+                        /* Encode string as UTF-8 bytes for binary array types */
+                        LogMsg(DEBUG, "Encoding string item as UTF-8 for binary array type");
+                        PyObject *utf8_bytes = PyUnicode_AsEncodedString(item, "utf-8", "strict");
+                        if (utf8_bytes) {
+                            Py_ssize_t utf8_len = PyBytes_Size(utf8_bytes);
+                            SQLWCHAR *utf8_copy = (SQLWCHAR *)PyMem_Malloc(utf8_len + 1);
+                            memcpy(utf8_copy, PyBytes_AsString(utf8_bytes), utf8_len);
+                            ((char *)utf8_copy)[utf8_len] = '\0';
+                            Py_DECREF(utf8_bytes);
+                            tmp_uvalue = utf8_copy;
+                            curr->ivalue = utf8_len;
+                            isNewBuffer = 1;
+                            snprintf(messageStr, sizeof(messageStr), "UTF-8 encoded: tmp_uvalue=%p, ivalue=%d", (void *)tmp_uvalue, curr->ivalue);
+                            LogMsg(DEBUG, messageStr);
+                        } else {
+                            LogMsg(ERROR, "Failed to encode string as UTF-8 for binary array element");
+                            return SQL_ERROR;
+                        }
+                    }
                     else
                     {
+                        if (PyBytes_Check(item)) {
+                            /* Decode bytes to str (UTF-8) before converting to SQLWCHAR */
+                            LogMsg(DEBUG, "Converting bytes item to Unicode string for non-binary type");
+                            unicode_item = PyUnicode_FromEncodedObject(item, "utf-8", "strict");
+                            if (!unicode_item) {
+                                LogMsg(ERROR, "Failed to decode bytes item as UTF-8");
+                                return SQL_ERROR;
+                            }
+                            item = unicode_item;
+                        }
                         tmp_uvalue = getUnicodeDataAsSQLWCHAR(item, &isNewBuffer);
                         curr->ivalue = PyUnicode_GetLength(item);
                         curr->ivalue = curr->ivalue * sizeof(SQLWCHAR);
@@ -8492,42 +8539,51 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
                     {
                         if (curr->size == 0)
                         {
-                            if ((curr->data_type == SQL_BLOB) || (curr->data_type == SQL_CLOB) || (curr->data_type == SQL_BINARY)
-#ifndef PASE /* i5/OS SQL_LONGVARBINARY is SQL_VARBINARY */
-                                || (curr->data_type == SQL_LONGVARBINARY)
-#endif /* PASE */
-                                || (curr->data_type == SQL_VARBINARY) || (curr->data_type == SQL_XML))
+                            /* param_size is already in bytes (converted
+                             * above for WCHAR types).  Just ensure the
+                             * output buffer (ivalue) is at least as large
+                             * as one element slot. */
+                            if (curr->ivalue <= curr->param_size)
                             {
-                                if (curr->ivalue <= curr->param_size)
-                                {
-                                    curr->ivalue = curr->param_size + sizeof(SQLWCHAR);
-                                }
-                            }
-                            else
-                            {
-                                if (curr->ivalue <= (curr->param_size * sizeof(SQLWCHAR)))
-                                {
-                                    curr->ivalue = (curr->param_size + 1) * sizeof(SQLWCHAR);
-                                }
+                                curr->ivalue = curr->param_size;
                             }
                             snprintf(messageStr, sizeof(messageStr), "Adjusted ivalue based on SQL_PARAM_OUTPUT/SQL_PARAM_INPUT_OUTPUT: curr->ivalue=%d", curr->ivalue);
                             LogMsg(DEBUG, messageStr);
                         }
                     }
 
-                    if (isNewBuffer == 0 || param_length <= curr->param_size)
+                    if (curr->data_type == SQL_TYPE_TIMESTAMP || curr->data_type == SQL_TYPE_TIMESTAMP_WITH_TIMEZONE)
+                    {
+                        /* param_size is in bytes for TIMESTAMP (set above).
+                         * Write each input element at byte stride = curr->param_size. */
+                        dest_uvalue = (SQLWCHAR *)((char *)curr->uvalue + curr->param_size * i);
+                        size_t copy_len = (param_length <= curr->param_size)
+                                          ? param_length : curr->param_size;
+                        memcpy(dest_uvalue, tmp_uvalue, copy_len);
+                        param_size = curr->param_size;
+                    }
+                    else if ((curr->data_type == SQL_BLOB || curr->data_type == SQL_BINARY ||
+                              curr->data_type == SQL_VARBINARY
+#ifndef PASE
+                              || curr->data_type == SQL_LONGVARBINARY
+#endif
+                             ) && tmp_uvalue != NULL)
+                    {
+                        /* Binary types: byte-based stride (data is raw bytes, not SQLWCHAR) */
+                        dest_uvalue = (SQLWCHAR *)((char *)curr->uvalue + curr->param_size * i);
+                        size_t copy_len = ((size_t)param_length <= (size_t)curr->param_size)
+                                          ? param_length : curr->param_size;
+                        memcpy(dest_uvalue, tmp_uvalue, copy_len);
+                        param_size = curr->param_size;
+                    }
+                    else if (isNewBuffer == 0 || param_length <= curr->param_size)
                     {
                         dest_uvalue = &curr->uvalue[(curr->param_size / sizeof(SQLWCHAR)) * i];
                         memcpy(dest_uvalue, tmp_uvalue, param_length);
                         param_size = curr->param_size;
                     }
-                    else if (curr->data_type == SQL_TYPE_TIMESTAMP || curr->data_type == SQL_TYPE_TIMESTAMP_WITH_TIMEZONE)
-                    {
-                        dest_uvalue = &curr->uvalue[(param_length / sizeof(SQLWCHAR)) * i];
-                        memcpy(dest_uvalue, tmp_uvalue, param_length);
-                        param_size = param_length;
-                    }
                     PyMem_Del(tmp_uvalue);
+                    Py_XDECREF(unicode_item);
                     snprintf(messageStr, sizeof(messageStr), "Memory copy results: dest_uvalue=%p, param_size=%d", (void *)dest_uvalue, param_size);
                     LogMsg(DEBUG, messageStr);
                     switch (curr->data_type)
@@ -8557,6 +8613,7 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
                             LogMsg(DEBUG, messageStr);
                         }
                         valueType = SQL_C_WCHAR;
+                        param_size = curr->param_size;
                         LogMsg(DEBUG, "Set valueType to SQL_C_WCHAR");
                         break;
 
@@ -8584,6 +8641,7 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
                             LogMsg(DEBUG, messageStr);
                         }
                         valueType = SQL_C_BINARY;
+                        param_size = curr->param_size;
                         LogMsg(DEBUG, "Set valueType to SQL_C_BINARY");
                         break;
 
@@ -8597,6 +8655,7 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
                         /* account for bin_mode settings as well */
                         curr->bind_indicator_array[i] = param_length;
                         valueType = SQL_C_BINARY;
+                        param_size = curr->param_size;
                         paramValuePtr = (SQLPOINTER)curr->uvalue;
                         snprintf(messageStr, sizeof(messageStr), "Set bind_indicator_array[%d]=%d, valueType=%d, paramValuePtr=%p",
                                  i, curr->bind_indicator_array[i], valueType, (void *)paramValuePtr);
@@ -8609,6 +8668,7 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
                         curr->bind_indicator_array[i] = param_length;
                         paramValuePtr = (SQLPOINTER)curr->uvalue;
                         valueType = SQL_C_WCHAR;
+                        param_size = curr->param_size;
                         snprintf(messageStr, sizeof(messageStr), "Set bind_indicator_array[%d]=%d, valueType=%d, paramValuePtr=%p",
                                  i, curr->bind_indicator_array[i], valueType, (void *)paramValuePtr);
                         LogMsg(DEBUG, messageStr);
@@ -8676,6 +8736,18 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
                      stmt_res->hstmt, curr->param_num, curr->param_type, valueType, curr->data_type, curr->param_size, curr->scale, paramValuePtr, param_size, curr->bind_indicator_array, rc);
             LogMsg(DEBUG, messageStr);
 
+            /* Update param_size to the actual buffer stride (in bytes) used for
+             * element layout.  SQLBindParameter has already consumed the SQL
+             * ColumnSize value; from here on param_size must reflect the byte
+             * stride so that fetch_callproc reads elements at the right offsets. */
+            if (param_size != curr->param_size) {
+                snprintf(messageStr, sizeof(messageStr),
+                    "Updating curr->param_size from %d to %d (actual buffer stride)",
+                    curr->param_size, param_size);
+                LogMsg(DEBUG, messageStr);
+                curr->param_size = param_size;
+            }
+
 #ifndef __MVS__
             if (stmt_res->is_stored_procedure) {
                 snprintf(messageStr, sizeof(messageStr),"Before set_array_param_cardinality: param_num=%d, param_type=%d,"
@@ -8717,6 +8789,35 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
                 LogMsg(DEBUG, messageStr);
 #endif
             }
+            else if (PyUnicode_Check(bind_data) && (curr->data_type == SQL_BLOB || curr->data_type == SQL_BINARY || curr->data_type == SQL_VARBINARY
+#ifndef PASE
+                     || curr->data_type == SQL_LONGVARBINARY
+#endif
+                     ))
+            {
+                /* Encode Python string as UTF-8 bytes for binary types */
+                LogMsg(DEBUG, "Encoding Python string as UTF-8 for binary data type");
+                PyObject *utf8_bytes = PyUnicode_AsEncodedString(bind_data, "utf-8", "strict");
+                if (utf8_bytes) {
+                    Py_ssize_t utf8_len = PyBytes_Size(utf8_bytes);
+                    if (curr->uvalue != NULL) {
+                        PyMem_Del(curr->uvalue);
+                        curr->uvalue = NULL;
+                    }
+                    curr->uvalue = (SQLWCHAR *)ALLOC_N(char, utf8_len + 1);
+                    memcpy(curr->uvalue, PyBytes_AsString(utf8_bytes), utf8_len);
+                    ((char *)curr->uvalue)[utf8_len] = '\0';
+                    curr->ivalue = utf8_len;
+                    isNewBuffer = 1;
+                    Py_DECREF(utf8_bytes);
+                    snprintf(messageStr, sizeof(messageStr), "UTF-8 encoded: uvalue=%p, ivalue=%d", (void *)curr->uvalue, curr->ivalue);
+                    LogMsg(DEBUG, messageStr);
+                } else {
+                    LogMsg(ERROR, "Failed to encode Python string as UTF-8");
+                    PyErr_SetString(PyExc_ValueError, "Failed to encode string as UTF-8 for binary parameter");
+                    return SQL_ERROR;
+                }
+            }
             else
             {
                 if (curr->uvalue != NULL)
@@ -8724,11 +8825,23 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
                     PyMem_Del(curr->uvalue);
                     curr->uvalue = NULL;
                 }
+                PyObject *unicode_bind = NULL;
+                if (PyBytes_Check(bind_data)) {
+                    /* Decode bytes to str (UTF-8) before converting to SQLWCHAR */
+                    LogMsg(DEBUG, "Converting scalar bytes to Unicode string for non-binary type");
+                    unicode_bind = PyUnicode_FromEncodedObject(bind_data, "utf-8", "strict");
+                    if (!unicode_bind) {
+                        LogMsg(ERROR, "Failed to decode scalar bytes as UTF-8");
+                        return SQL_ERROR;
+                    }
+                    bind_data = unicode_bind;
+                }
                 curr->uvalue = getUnicodeDataAsSQLWCHAR(bind_data, &isNewBuffer);
                 curr->ivalue = PyUnicode_GetLength(bind_data);
                 curr->ivalue = curr->ivalue * sizeof(SQLWCHAR);
                 snprintf(messageStr, sizeof(messageStr), "New uvalue=%p, ivalue=%d", (void *)curr->uvalue, curr->ivalue);
                 LogMsg(DEBUG, messageStr);
+                Py_XDECREF(unicode_bind);
             }
             param_length = curr->ivalue;
             snprintf(messageStr, sizeof(messageStr), "Calculated param_length=%d", param_length);
@@ -8774,7 +8887,17 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
                 int col_wchars = curr->param_size;
                 SQLWCHAR *tmp = (SQLWCHAR *)ALLOC_N(SQLWCHAR, col_wchars + 1);
                 memset(tmp, 0, (col_wchars + 1) * sizeof(SQLWCHAR));
-                memcpy(tmp, curr->uvalue, param_length);
+                size_t copy_bytes = param_length;
+                if (curr->data_type != SQL_BLOB && curr->data_type != SQL_BINARY &&
+                    curr->data_type != SQL_VARBINARY
+#ifndef PASE
+                    && curr->data_type != SQL_LONGVARBINARY
+#endif
+                    )
+                {
+                    copy_bytes += sizeof(SQLWCHAR);
+                }
+                memcpy(tmp, curr->uvalue, copy_bytes);
                 curr->uvalue = tmp;
                 snprintf(messageStr, sizeof(messageStr), "Copied uvalue to new buffer, tmp=%p, param_length=%d, col_wchars=%d", (void *)tmp, param_length, col_wchars);
                 LogMsg(DEBUG, messageStr);
@@ -8784,7 +8907,17 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
                 int col_wchars = curr->param_size;
                 SQLWCHAR *tmp = (SQLWCHAR *)ALLOC_N(SQLWCHAR, col_wchars + 1);
                 memset(tmp, 0, (col_wchars + 1) * sizeof(SQLWCHAR));
-                memcpy(tmp, curr->uvalue, param_length);
+                size_t copy_bytes = param_length;
+                if (curr->data_type != SQL_BLOB && curr->data_type != SQL_BINARY &&
+                    curr->data_type != SQL_VARBINARY
+#ifndef PASE
+                    && curr->data_type != SQL_LONGVARBINARY
+#endif
+                    )
+                {
+                    copy_bytes += sizeof(SQLWCHAR);
+                }
+                memcpy(tmp, curr->uvalue, copy_bytes);
                 PyMem_Del(curr->uvalue);
                 curr->uvalue = tmp;
                 snprintf(messageStr, sizeof(messageStr), "Copied uvalue to new buffer with size adjustment, tmp=%p, param_length=%d, col_wchars=%d", (void *)tmp, param_length, col_wchars);
@@ -8826,7 +8959,7 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
                 if (curr->param_type == SQL_PARAM_OUTPUT || curr->param_type == SQL_PARAM_INPUT_OUTPUT)
                 {
                     curr->bind_indicator = param_length;
-                    paramValuePtr = (SQLPOINTER)curr;
+                    paramValuePtr = (SQLPOINTER)curr->uvalue;
                     snprintf(messageStr, sizeof(messageStr), "SQL_PARAM_OUTPUT/SQL_PARAM_INPUT_OUTPUT: bind_indicator=%d, paramValuePtr=%p",
                              curr->bind_indicator, (void *)paramValuePtr);
                     LogMsg(DEBUG, messageStr);
@@ -9160,8 +9293,7 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
                 _python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT,
                                                 rc, 1, NULL, -1, 1);
             }
-            curr->data_type = valueType;
-            snprintf(messageStr, sizeof(messageStr), "Updated curr->data_type: valueType=%d", valueType);
+            snprintf(messageStr, sizeof(messageStr), "Array bind complete: data_type=%d, valueType=%d", curr->data_type, valueType);
             LogMsg(DEBUG, messageStr);
         }
         else /* To bind scalar values */
@@ -9365,8 +9497,7 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
                 _python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT,
                                                 rc, 1, NULL, -1, 1);
             }
-            curr->data_type = valueType;
-            snprintf(messageStr, sizeof(messageStr), "Updated curr->data_type to valueType. New data_type=%d", curr->data_type);
+            snprintf(messageStr, sizeof(messageStr), "Scalar bind complete: data_type=%d, valueType=%d", curr->data_type, valueType);
             LogMsg(DEBUG, messageStr);
         }
     }
@@ -9462,7 +9593,6 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
                 {
                     _python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
                 }
-                curr->data_type = valueType;
             }
             else /* To bind scalar values */
             {
@@ -9483,26 +9613,38 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
 #endif
                 curr->svalue = PyBytes_AsString(tempobj);
                 curr->ivalue = strlen(curr->svalue);
-                curr->svalue = estrdup(curr->svalue);
-                curr->svalue[curr->ivalue] = '\0';
+
+                /* For OUTPUT/INOUT params, ensure buffer is large enough for the result */
+                int buf_len = curr->ivalue;
+                if (curr->param_type == SQL_PARAM_OUTPUT || curr->param_type == SQL_PARAM_INPUT_OUTPUT) {
+                    int min_buf = curr->param_size + 3; /* precision + sign + dot + null */
+                    if (buf_len < min_buf) {
+                        buf_len = min_buf;
+                    }
+                }
+
+                char *tmp_svalue = (char *)ALLOC_N(char, buf_len + 1);
+                memset(tmp_svalue, 0, buf_len + 1);
+                memcpy(tmp_svalue, curr->svalue, curr->ivalue);
+                curr->svalue = tmp_svalue;
+
                 valueType = SQL_C_CHAR;
                 paramValuePtr = (SQLPOINTER)(curr->svalue);
                 curr->bind_indicator = curr->ivalue;
-                snprintf(messageStr, sizeof(messageStr), "Binding scalar value: svalue=%s, ivalue=%d, bind_indicator=%d", curr->svalue, curr->ivalue, curr->bind_indicator);
+                snprintf(messageStr, sizeof(messageStr), "Binding scalar value: svalue=%s, ivalue=%d, bind_indicator=%d, buf_len=%d", curr->svalue, curr->ivalue, curr->bind_indicator, buf_len);
                 LogMsg(DEBUG, messageStr);
                 Py_BEGIN_ALLOW_THREADS;
                 rc = SQLBindParameter(stmt_res->hstmt, curr->param_num, curr->param_type, valueType,
                                       curr->data_type, curr->param_size, curr->scale,
-                                      paramValuePtr, curr->ivalue, &(curr->bind_indicator));
+                                      paramValuePtr, buf_len + 1, &(curr->bind_indicator));
                 Py_END_ALLOW_THREADS;
-                snprintf(messageStr, sizeof(messageStr), "Called SQLBindParameter for scalar value with parameters: hstmt=%p, param_num=%d, param_type=%d, valueType=%d, data_type=%d, param_size=%d, scale=%d, paramValuePtr=%p, ivalue=%d, bind_indicator=%p, and returned rc=%d",
-                         stmt_res->hstmt, curr->param_num, curr->param_type, valueType, curr->data_type, curr->param_size, curr->scale, paramValuePtr, curr->ivalue, &(curr->bind_indicator), rc);
+                snprintf(messageStr, sizeof(messageStr), "Called SQLBindParameter for scalar value with parameters: hstmt=%p, param_num=%d, param_type=%d, valueType=%d, data_type=%d, param_size=%d, scale=%d, paramValuePtr=%p, buf_len=%d, bind_indicator=%p, and returned rc=%d",
+                         stmt_res->hstmt, curr->param_num, curr->param_type, valueType, curr->data_type, curr->param_size, curr->scale, paramValuePtr, buf_len + 1, &(curr->bind_indicator), rc);
                 LogMsg(DEBUG, messageStr);
                 if (rc == SQL_ERROR || rc == SQL_SUCCESS_WITH_INFO)
                 {
                     _python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
                 }
-                curr->data_type = valueType;
                 Py_XDECREF(tempobj);
             }
         }
@@ -9978,17 +10120,96 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
         }
         else
         {
-            curr->ivalue = SQL_NULL_DATA;
-            snprintf(messageStr, sizeof(messageStr), "Binding scalar value as SQL_NULL_DATA");
-            LogMsg(DEBUG, messageStr);
-            Py_BEGIN_ALLOW_THREADS;
-            rc = SQLBindParameter(stmt_res->hstmt, curr->param_num,
-                                  curr->param_type, SQL_C_DEFAULT, curr->data_type, curr->param_size,
-                                  curr->scale, &curr->ivalue, 0, (SQLLEN *)&(curr->ivalue));
-            Py_END_ALLOW_THREADS;
-            snprintf(messageStr, sizeof(messageStr), "Called SQLBindParameter for scalar PYTHON_NIL with parameters: hstmt=%p, param_num=%d, param_type=%d, SQL_C_DEFAULT, data_type=%d, param_size=%d, scale=%d, ivalue=%d and returned rc=%d",
-                     (void *)stmt_res->hstmt, curr->param_num, curr->param_type, curr->data_type, curr->param_size, curr->scale, curr->ivalue, rc);
-            LogMsg(DEBUG, messageStr);
+            if (curr->param_type == SQL_PARAM_OUTPUT || curr->param_type == SQL_PARAM_INPUT_OUTPUT)
+            {
+                /* Allocate an output buffer so the driver can write the result */
+                SQLLEN buf_len = curr->param_size + 1;
+                snprintf(messageStr, sizeof(messageStr),
+                    "PYTHON_NIL with OUTPUT param: allocating buffer of size %ld for data_type=%d",
+                    (long)buf_len, curr->data_type);
+                LogMsg(DEBUG, messageStr);
+
+                if (curr->data_type == SQL_BLOB || curr->data_type == SQL_BINARY ||
+                    curr->data_type == SQL_VARBINARY
+#ifndef PASE
+                    || curr->data_type == SQL_LONGVARBINARY
+#endif
+                    )
+                {
+                    curr->uvalue = (SQLWCHAR *)ALLOC_N(char, buf_len);
+                    memset(curr->uvalue, 0, buf_len);
+                    curr->ivalue = buf_len;
+                    curr->bind_indicator = SQL_NULL_DATA;
+                    Py_BEGIN_ALLOW_THREADS;
+                    rc = SQLBindParameter(stmt_res->hstmt, curr->param_num,
+                                          curr->param_type, SQL_C_BINARY, curr->data_type, curr->param_size,
+                                          curr->scale, (SQLPOINTER)curr->uvalue, buf_len, (SQLLEN *)&(curr->bind_indicator));
+                    Py_END_ALLOW_THREADS;
+                }
+                else if (curr->data_type == SQL_INTEGER || curr->data_type == SQL_SMALLINT)
+                {
+                    curr->ivalue = 0;
+                    curr->bind_indicator = 0;
+                    Py_BEGIN_ALLOW_THREADS;
+                    rc = SQLBindParameter(stmt_res->hstmt, curr->param_num,
+                                          curr->param_type, SQL_C_LONG, curr->data_type, curr->param_size,
+                                          curr->scale, &curr->ivalue, sizeof(curr->ivalue), (SQLLEN *)&(curr->bind_indicator));
+                    Py_END_ALLOW_THREADS;
+                }
+                else if (curr->data_type == SQL_BIGINT)
+                {
+                    curr->svalue = (char *)ALLOC_N(char, MAX_PRECISION + 1);
+                    memset(curr->svalue, 0, MAX_PRECISION + 1);
+                    curr->bind_indicator = 0;
+                    Py_BEGIN_ALLOW_THREADS;
+                    rc = SQLBindParameter(stmt_res->hstmt, curr->param_num,
+                                          curr->param_type, SQL_C_CHAR, curr->data_type, curr->param_size,
+                                          curr->scale, curr->svalue, MAX_PRECISION + 1, (SQLLEN *)&(curr->bind_indicator));
+                    Py_END_ALLOW_THREADS;
+                }
+                else if (curr->data_type == SQL_DOUBLE || curr->data_type == SQL_FLOAT || curr->data_type == SQL_REAL)
+                {
+                    curr->fvalue = 0.0;
+                    curr->bind_indicator = 0;
+                    Py_BEGIN_ALLOW_THREADS;
+                    rc = SQLBindParameter(stmt_res->hstmt, curr->param_num,
+                                          curr->param_type, SQL_C_DOUBLE, curr->data_type, curr->param_size,
+                                          curr->scale, &curr->fvalue, sizeof(curr->fvalue), (SQLLEN *)&(curr->bind_indicator));
+                    Py_END_ALLOW_THREADS;
+                }
+                else
+                {
+                    /* Default: allocate WCHAR buffer for character-like types */
+                    SQLLEN wbuf_len = (curr->param_size + 1) * sizeof(SQLWCHAR);
+                    curr->uvalue = (SQLWCHAR *)ALLOC_N(char, wbuf_len);
+                    memset(curr->uvalue, 0, wbuf_len);
+                    curr->ivalue = wbuf_len;
+                    curr->bind_indicator = SQL_NULL_DATA;
+                    Py_BEGIN_ALLOW_THREADS;
+                    rc = SQLBindParameter(stmt_res->hstmt, curr->param_num,
+                                          curr->param_type, SQL_C_WCHAR, curr->data_type, curr->param_size,
+                                          curr->scale, (SQLPOINTER)curr->uvalue, wbuf_len, (SQLLEN *)&(curr->bind_indicator));
+                    Py_END_ALLOW_THREADS;
+                }
+                snprintf(messageStr, sizeof(messageStr),
+                    "Called SQLBindParameter for PYTHON_NIL OUTPUT with param_num=%d, rc=%d",
+                    curr->param_num, rc);
+                LogMsg(DEBUG, messageStr);
+            }
+            else
+            {
+                curr->ivalue = SQL_NULL_DATA;
+                snprintf(messageStr, sizeof(messageStr), "Binding scalar value as SQL_NULL_DATA");
+                LogMsg(DEBUG, messageStr);
+                Py_BEGIN_ALLOW_THREADS;
+                rc = SQLBindParameter(stmt_res->hstmt, curr->param_num,
+                                      curr->param_type, SQL_C_DEFAULT, curr->data_type, curr->param_size,
+                                      curr->scale, &curr->ivalue, 0, (SQLLEN *)&(curr->ivalue));
+                Py_END_ALLOW_THREADS;
+                snprintf(messageStr, sizeof(messageStr), "Called SQLBindParameter for scalar PYTHON_NIL with parameters: hstmt=%p, param_num=%d, param_type=%d, SQL_C_DEFAULT, data_type=%d, param_size=%d, scale=%d, ivalue=%d and returned rc=%d",
+                         (void *)stmt_res->hstmt, curr->param_num, curr->param_type, curr->data_type, curr->param_size, curr->scale, curr->ivalue, rc);
+                LogMsg(DEBUG, messageStr);
+            }
         }
 
         if (rc == SQL_ERROR || rc == SQL_SUCCESS_WITH_INFO)
@@ -17057,6 +17278,8 @@ static PyObject *ibm_db_execute_many(PyObject *self, PyObject *args)
         {
             LogMsg(DEBUG, "No rows in parameters. Returning 0.");
             LogMsg(INFO, "exit execute_many()");
+            PyMem_Del(data_type);
+            PyMem_Del(ref_data_type);
             return PyInt_FromLong(0);
         }
 
@@ -17084,6 +17307,8 @@ static PyObject *ibm_db_execute_many(PyObject *self, PyObject *args)
         if (rc != SQL_SUCCESS || err_count != 0)
         {
             LogMsg(ERROR, "Errors encountered during execution");
+            PyMem_Del(data_type);
+            PyMem_Del(ref_data_type);
             return NULL;
         }
     }
@@ -17105,6 +17330,8 @@ static PyObject *ibm_db_execute_many(PyObject *self, PyObject *args)
         sprintf(error, "SQLRowCount failed: %s", IBM_DB_G(__python_stmt_err_msg));
         LogMsg(ERROR, error);
         PyErr_SetString(PyExc_Exception, error);
+        PyMem_Del(data_type);
+        PyMem_Del(ref_data_type);
         return NULL;
     }
     PyMem_Del(data_type);
@@ -17913,11 +18140,15 @@ static PyObject* ibm_db_fetch_callproc(PyObject* self, PyObject* args)
 {
     LogMsg(INFO, "entry ibm_db_fetch_callproc");
     PyObject *py_stmt_res;
-	int len_terChar = 0;
-    SQLSMALLINT targetCType = SQL_C_CHAR;
 
     if (!PyArg_ParseTuple(args, "O", &py_stmt_res)) {
         LogMsg(ERROR, "ibm_db_fetch_callproc: failed to parse arguments");
+        return NULL;
+    }
+
+    if (!PyObject_TypeCheck(py_stmt_res, &stmt_handleType)) {
+        LogMsg(ERROR, "ibm_db_fetch_callproc: supplied parameter is not a valid stmt handle");
+        PyErr_SetString(PyExc_Exception, "Supplied parameter is not a valid stmt handle");
         return NULL;
     }
 
@@ -17927,12 +18158,15 @@ static PyObject* ibm_db_fetch_callproc(PyObject* self, PyObject* args)
         if (numOfParam == 0) {
         Py_INCREF(py_stmt_res);
         LogMsg(DEBUG, "ibm_db_fetch_callproc: no parameters to process");
-        Py_INCREF(py_stmt_res);
         return py_stmt_res;
     }
 
     param_node *curr = stmt_res->head_cache_list;
-    curr->cardinality = curr->actual_cardinality;
+    if (!curr) {
+        LogMsg(ERROR, "ibm_db_fetch_callproc: head_cache_list is NULL despite num_params > 0");
+        Py_INCREF(py_stmt_res);
+        return py_stmt_res;
+    }
     snprintf(messageStr, sizeof(messageStr), "ibm_db_fetch_callproc: num_params=%d", numOfParam);
     LogMsg(DEBUG, messageStr);
 
@@ -17947,23 +18181,50 @@ static PyObject* ibm_db_fetch_callproc(PyObject* self, PyObject* args)
 
     int idx = 1;
     while (curr && idx <= numOfParam) {
-        snprintf(messageStr, sizeof(messageStr), "Processing parameter %d (param_type=%d, data_type=%d, cardinality=%d)",
-                curr->param_num, curr->param_type, curr->data_type, curr->cardinality);
+        curr->cardinality = curr->actual_cardinality;
+        snprintf(messageStr, sizeof(messageStr), "Processing parameter %d (param_type=%d, data_type=%d, cardinality=%d, bind_indicator=%d)",
+                curr->param_num, curr->param_type, curr->data_type, curr->cardinality, curr->bind_indicator);
         LogMsg(DEBUG, messageStr);
         PyObject *pyVal = Py_None;
         Py_INCREF(pyVal);
 
-        if (curr->bind_indicator != SQL_NULL_DATA &&
-            curr->bind_indicator != SQL_NO_TOTAL) {
+        /* For INPUT params, always try to return the bound value.
+         * For OUTPUT/INOUT params, skip only if bind_indicator is SQL_NULL_DATA. */
+        int skip_param = 0;
+        if (curr->param_type == SQL_PARAM_INPUT) {
+            /* For pure INPUT params, return the original Python object
+             * that was passed to bind_param — reconstructing from the
+             * C buffer would lose type fidelity (e.g. bytes→str). */
+            Py_DECREF(pyVal);
+            if (curr->var_pyvalue) {
+                pyVal = curr->var_pyvalue;
+                Py_INCREF(pyVal);
+            } else {
+                pyVal = Py_None;
+                Py_INCREF(pyVal);
+            }
+            PyTuple_SET_ITEM(outTuple, idx++, pyVal);
+            curr = curr->next;
+            continue;
+        }
+        if (curr->param_type == SQL_PARAM_OUTPUT || curr->param_type == SQL_PARAM_INPUT_OUTPUT) {
+            if (curr->bind_indicator == SQL_NULL_DATA || curr->bind_indicator == SQL_NO_TOTAL) {
+                skip_param = 1;
+            }
+        }
+
+        if (!skip_param) {
 
             if (curr->cardinality > 1 && curr->actual_cardinality > 0) {
                 int len = curr->actual_cardinality;
                 PyObject *pyList = PyList_New(len);
                 if (!pyList) {
+                    Py_DECREF(pyVal);
                     Py_DECREF(outTuple);
                     LogMsg(ERROR, "ibm_db_fetch_callproc: failed to allocate PyList for array output");
                     return NULL;
                 }
+                Py_DECREF(pyVal); /* Release the Py_None that was pre-allocated for pyVal */
 
                 for (int i = 0; i < len; i++) {
                     PyObject *elem = Py_None;
@@ -17991,26 +18252,16 @@ static PyObject* ibm_db_fetch_callproc(PyObject* self, PyObject* args)
                                         PyErr_Clear();
                                         elem = PyBytes_FromStringAndSize((const char *)elem_ptr, ind_len);
                                     } else {
-                                        LogMsg(DEBUG, "Conversion succeeded, attempting to clean output");
+                                        LogMsg(DEBUG, "Conversion succeeded, stripping CHAR padding");
                                         if (PyUnicode_Check(elem)) {
-                                            PyObject *parts = PyObject_CallMethod(elem, "split", "s", "\x00");
-                                            if (parts && PyList_Check(parts) && PyList_Size(parts) > 0) {
-                                                PyObject *first = PyList_GetItem(parts, 0);  // borrowed ref
-                                                Py_INCREF(first);
-                                                Py_DECREF(parts);
-                                                PyObject *trimmed = PyObject_CallMethod(first, "rstrip", "s", " ");
-                                                Py_DECREF(first);
-                                                if (trimmed) {
-                                                    Py_DECREF(elem);
-                                                    elem = trimmed;
-                                                    LogMsg(DEBUG, "split+rstrip succeeded, updated elem");
-                                                } else {
-                                                    PyErr_Clear();
-                                                    LogMsg(DEBUG, "rstrip failed, keeping original elem");
-                                                }
+                                            PyObject *trimmed = PyObject_CallMethod(elem, "rstrip", "s", " \x00");
+                                            if (trimmed) {
+                                                Py_DECREF(elem);
+                                                elem = trimmed;
+                                                LogMsg(DEBUG, "rstrip succeeded, updated elem");
                                             } else {
                                                 PyErr_Clear();
-                                                LogMsg(DEBUG, "split failed, keeping original elem");
+                                                LogMsg(DEBUG, "rstrip failed, keeping original elem");
                                             }
                                         }
                                     }
@@ -18018,14 +18269,19 @@ static PyObject* ibm_db_fetch_callproc(PyObject* self, PyObject* args)
                                     LogMsg(DEBUG, messageStr);
                                 }
 
-                                if (curr->svalue) {
+                                else if (curr->svalue) {
                                     LogMsg(DEBUG, "Processing SQL_CHAR array element using svalue");
                                     char *elem_ptr = curr->svalue + i * curr->param_size;
                                     size_t max_len = curr->param_size;
                                     size_t actual_len;
 #ifndef __MVS__
                                     actual_len = strnlen(elem_ptr, max_len);
-#endif	
+#endif
+                                    /* svalue path means data was bound as bytes (PYTHON_STRING).
+                                     * For CHAR type, preserve space padding (only strip NULLs). */
+                                    while (actual_len > 0 && elem_ptr[actual_len - 1] == '\0') {
+                                        actual_len--;
+                                    }
                                     elem = PyBytes_FromStringAndSize(elem_ptr, actual_len);
                                     if (!elem) {
                                         LogMsg(DEBUG, "Failed to create PyBytes object");
@@ -18035,7 +18291,7 @@ static PyObject* ibm_db_fetch_callproc(PyObject* self, PyObject* args)
                                         LogMsg(DEBUG, messageStr);
                                     }
                                 }
-                                if (curr->ts_value) {
+                                else if (curr->ts_value) {
                                     LogMsg(DEBUG, "Processing SQL_CHAR timestamp  array element using ts_value");
                                     elem = PyDateTime_FromDateAndTime(
                                         curr->ts_value[i].year,
@@ -18046,7 +18302,7 @@ static PyObject* ibm_db_fetch_callproc(PyObject* self, PyObject* args)
                                         curr->ts_value[i].second,
                                         curr->ts_value[i].fraction / 1000);
                                 }
-                                if (curr->tstz_value){
+                                else if (curr->tstz_value){
                                     LogMsg(DEBUG,"Processing SQL_CHAR timestamp with timezone  array element using tstz_value");
                                     elem = format_timestamp_pystr(curr->tstz_value);
                                 }
@@ -18089,9 +18345,10 @@ static PyObject* ibm_db_fetch_callproc(PyObject* self, PyObject* args)
 #ifndef __MVS__
                                      actual_len = strnlen(elem_ptr, max_len);
 #endif
+                                     /* svalue path means data was bound as bytes (PYTHON_STRING) — return bytes */
                                      elem = PyBytes_FromStringAndSize(elem_ptr, actual_len);
                                 } else if (curr->ts_value) {
-                                    LogMsg(DEBUG, "Processing SQLVARCHAR array element using ts_value");
+                                    LogMsg(DEBUG, "Processing SQL_VARCHAR array element using ts_value");
                                     elem = PyDateTime_FromDateAndTime(
                                         curr->ts_value[i].year,
                                         curr->ts_value[i].month,
@@ -18100,14 +18357,13 @@ static PyObject* ibm_db_fetch_callproc(PyObject* self, PyObject* args)
                                         curr->ts_value[i].minute,
                                         curr->ts_value[i].second,
                                         curr->ts_value[i].fraction / 1000);
-                                } else if (curr->tstz_value){
-                                    LogMsg(DEBUG,"Processing SQLVARCHAR array element using tstz_value");
-                                    elem = format_timestamp_pystr(curr->tstz_value);
+                                } else if (curr->tstz_value) {
+                                    LogMsg(DEBUG, "Processing SQL_VARCHAR array element using tstz_value");
+                                    elem = format_timestamp_pystr(&curr->tstz_value[i]);
                                 } else {
                                     Py_INCREF(Py_None);
                                     elem = Py_None;
                                 }
-                                Py_XINCREF(elem);
                                 break;
                             }
 
@@ -18116,7 +18372,7 @@ static PyObject* ibm_db_fetch_callproc(PyObject* self, PyObject* args)
                             case SQL_LONGVARBINARY:{
                                 if (curr->uvalue) {
                                     LogMsg(DEBUG, "Processing SQL_BINARY/SQL_VARBINARY/SQL_LONGVARBINARY array element using uvalue");
-                                    char *elem_ptr = curr->uvalue + i * curr->param_size;
+                                    char *elem_ptr = (char *)curr->uvalue + i * curr->param_size;
                                     SQLLEN actual_len = (curr->bind_indicator_array && curr->bind_indicator_array[i] > 0) 
                                     ? curr->bind_indicator_array[i] : curr->param_size;
                                     elem = PyBytes_FromStringAndSize(elem_ptr, actual_len);
@@ -18150,19 +18406,49 @@ static PyObject* ibm_db_fetch_callproc(PyObject* self, PyObject* args)
                                     Py_INCREF(Py_None);
                                     elem = Py_None;
                                 }
-                                Py_XINCREF(elem);
                                 break;
                             }
 
-                            case SQL_CLOB:
                             case SQL_BLOB:{
                                 SQLLEN ind_len = (curr->bind_indicator_array && curr->bind_indicator_array[i] > 0) ? curr->bind_indicator_array[i] : curr->param_size;
+                                if ((size_t)ind_len > (size_t)curr->param_size)
+                                    ind_len = curr->param_size;
                                 if (curr->uvalue) {
-                                    LogMsg(DEBUG, " Processing SQL_BLOB/SQL_CLOB array element using uvalue");
+                                    LogMsg(DEBUG, "Processing SQL_BLOB array element using uvalue (raw bytes)");
+                                    char *elem_ptr = (char *)curr->uvalue + i * curr->param_size;
+                                    elem = PyBytes_FromStringAndSize(elem_ptr, (Py_ssize_t)ind_len);
+                                } else if (curr->svalue) {
+                                    LogMsg(DEBUG, "Processing SQL_BLOB array element using svalue");
+                                    char *ptr = curr->svalue + i * curr->param_size;
+                                    elem = PyBytes_FromStringAndSize(ptr, (Py_ssize_t)ind_len);
+                                } else {
+                                    Py_INCREF(Py_None);
+                                    elem = Py_None;
+                                }
+                                break;
+                            }
+
+                            case SQL_DBCLOB:
+                            case SQL_CLOB:{
+                                SQLLEN ind_len = (curr->bind_indicator_array && curr->bind_indicator_array[i] > 0) ? curr->bind_indicator_array[i] : curr->param_size;
+                                if ((size_t)ind_len > (size_t)curr->param_size)
+                                    ind_len = curr->param_size;
+                                if (curr->uvalue) {
+                                    LogMsg(DEBUG, "Processing SQL_CLOB array element using uvalue");
                                     SQLWCHAR *elem_ptr = (SQLWCHAR *)((char*)curr->uvalue + i * curr->param_size);
-                                    int num_wchars = ind_len / sizeof(SQLWCHAR);
-                                    elem = getSQLWCharAsPyUnicodeObject(elem_ptr, num_wchars);
-                                    if (!elem) {
+                                    /* ind_len is in bytes; pass directly to getSQLWCharAsPyUnicodeObject which expects byte length */
+                                    PyObject *tmp_str = getSQLWCharAsPyUnicodeObject(elem_ptr, ind_len);
+                                    if (tmp_str) {
+                                        /* CLOB should return str — strip trailing nulls from padding */
+                                        PyObject *trimmed = PyObject_CallMethod(tmp_str, "rstrip", "s", "\x00");
+                                        if (trimmed) {
+                                            Py_DECREF(tmp_str);
+                                            elem = trimmed;
+                                        } else {
+                                            PyErr_Clear();
+                                            elem = tmp_str;
+                                        }
+                                    } else {
                                         LogMsg(DEBUG, "getSQLWCharAsPyUnicodeObject failed, trying UTF16 decode");
                                         PyErr_Clear();
                                         elem = PyUnicode_DecodeUTF16((const char *)elem_ptr, ind_len, "strict", NULL);
@@ -18173,8 +18459,9 @@ static PyObject* ibm_db_fetch_callproc(PyObject* self, PyObject* args)
                                         }
                                     }
                                 } else if (curr->svalue) {
-                                    LogMsg(DEBUG, "Processing SQL_BLOB/SQL_CLOB array element using svalue");
+                                    LogMsg(DEBUG, "Processing SQL_CLOB array element using svalue");
                                     char *ptr = curr->svalue + i * curr->param_size;
+                                    /* svalue path means data was bound as bytes (PYTHON_STRING) — return bytes */
                                     elem = PyBytes_FromStringAndSize(ptr, ind_len);
                                     snprintf(messageStr, sizeof(messageStr), "Array fetch exit: index=%d, elem=%p", i, (void*)elem);
                                      LogMsg(DEBUG, messageStr);
@@ -18183,7 +18470,6 @@ static PyObject* ibm_db_fetch_callproc(PyObject* self, PyObject* args)
                                      Py_INCREF(Py_None);
                                      elem = Py_None;
                                }
-                               Py_XINCREF(elem);
                                break;
                             }
 
@@ -18314,13 +18600,51 @@ static PyObject* ibm_db_fetch_callproc(PyObject* self, PyObject* args)
                                 LogMsg(DEBUG, "Processing SQL_TYPE_TIMESTAMP array element using svalue");
                                 char *elem_ptr = curr->svalue + i * curr->param_size;
                                 size_t max_len = curr->param_size;
-                                SQLLEN ind_len = (curr->bind_indicator_array && curr->bind_indicator_array[0] > 0) ? curr->bind_indicator_array[0] : curr->param_size;
-                                elem = PyBytes_FromStringAndSize(curr->svalue, ind_len);
+                                size_t actual_len;
+#ifndef __MVS__
+                                actual_len = strnlen(elem_ptr, max_len);
+#endif
+                                snprintf(messageStr, sizeof(messageStr),
+                                    "SQL_TYPE_TIMESTAMP svalue element %d: actual_len=%zu, max_len=%zu", i, actual_len, max_len);
+                                LogMsg(DEBUG, messageStr);
+                                elem = PyUnicode_Decode(elem_ptr, actual_len, "utf-8", "strict");
+                                if (!elem) {
+                                    PyErr_Clear();
+                                    elem = PyBytes_FromStringAndSize(elem_ptr, actual_len);
+                                }
+                                /* Parse string into datetime for SQL_TYPE_TIMESTAMP */
+                                if (elem && PyUnicode_Check(elem) &&
+                                    curr->data_type == SQL_TYPE_TIMESTAMP) {
+                                    const char *ts_str = PyUnicode_AsUTF8(elem);
+                                    if (ts_str) {
+                                        int year, month, day, hour, minute, second, micro = 0;
+                                        sscanf(ts_str, "%4d-%2d-%2d %2d:%2d:%2d.%6d",
+                                               &year, &month, &day, &hour, &minute, &second, &micro);
+                                        PyObject *dt = PyDateTime_FromDateAndTime(
+                                            year, month, day, hour % 24, minute, second, micro);
+                                        if (dt) {
+                                            Py_DECREF(elem);
+                                            elem = dt;
+                                        }
+                                    }
+                                }
                             }
-                            if (curr->uvalue) {
+                            else if (curr->uvalue) {
                                 LogMsg(DEBUG, "Processing SQL_TYPE_TIMESTAMP/SQL_TIMESTAMP_WITH_TIMEZONE array element using uvalue");
-                                SQLWCHAR *elem_ptr = curr->uvalue;
-                                SQLLEN actual_len = (curr->bind_indicator > 0) ? curr->bind_indicator : curr->param_size * sizeof(SQLWCHAR);
+                                SQLWCHAR *elem_ptr = (SQLWCHAR *)((char *)curr->uvalue + i * curr->param_size);
+                                /* bind_indicator_array[i] holds the byte length of the output data;
+                                 * cap it to param_size (the buffer stride) to avoid over-read. */
+                                SQLLEN actual_len = curr->param_size;
+                                if (curr->bind_indicator_array && curr->bind_indicator_array[i] > 0
+                                    && curr->bind_indicator_array[i] <= curr->param_size) {
+                                    actual_len = curr->bind_indicator_array[i];
+                                }
+                                snprintf(messageStr, sizeof(messageStr),
+                                    "TIMESTAMP uvalue element %d: param_size=%d, bind_ind=%ld, actual_len=%ld",
+                                    i, curr->param_size,
+                                    (long)(curr->bind_indicator_array ? curr->bind_indicator_array[i] : -1),
+                                    (long)actual_len);
+                                LogMsg(DEBUG, messageStr);
                                 elem = getSQLWCharAsPyUnicodeObject(elem_ptr, actual_len);
                                 if (!elem) {
                                     LogMsg(ERROR, "getSQLWCharAsPyUnicodeObject returned NULL");
@@ -18335,14 +18659,30 @@ static PyObject* ibm_db_fetch_callproc(PyObject* self, PyObject* args)
                                     LogMsg(DEBUG, "Successfully created PyUnicode object from SQLWCHAR");
                                     PyObject *trimmed = PyObject_CallMethod(elem, "rstrip", "s", "\x00");
                                     if (trimmed) {
-                                         Py_DECREF(elem);
-                                            elem = trimmed;
-                                        } else {
-                                            LogMsg(ERROR, "PyObject_CallMethod rstrip failed");
+                                        Py_DECREF(elem);
+                                        elem = trimmed;
+                                    } else {
+                                        LogMsg(ERROR, "PyObject_CallMethod rstrip failed");
+                                    }
+                                }
+                                /* Parse decoded string into datetime for SQL_TYPE_TIMESTAMP */
+                                if (elem && PyUnicode_Check(elem) &&
+                                    curr->data_type == SQL_TYPE_TIMESTAMP) {
+                                    const char *ts_str = PyUnicode_AsUTF8(elem);
+                                    if (ts_str) {
+                                        int year, month, day, hour, minute, second, micro = 0;
+                                        sscanf(ts_str, "%4d-%2d-%2d %2d:%2d:%2d.%6d",
+                                               &year, &month, &day, &hour, &minute, &second, &micro);
+                                        PyObject *dt = PyDateTime_FromDateAndTime(
+                                            year, month, day, hour % 24, minute, second, micro);
+                                        if (dt) {
+                                            Py_DECREF(elem);
+                                            elem = dt;
                                         }
                                     }
                                 }
-                                if (curr->ts_value) {
+                                }
+                                else if (curr->ts_value) {
                                    LogMsg(DEBUG, "Processing SQL_TYPE_TIMESTAMP array element using ts_value");
                                     snprintf(messageStr, sizeof(messageStr),
                                        "Timestamp values for index %d: year=%d, month=%d, day=%d, hour=%d, minute=%d, second=%d, fraction=%d",i,
@@ -18367,7 +18707,7 @@ static PyObject* ibm_db_fetch_callproc(PyObject* self, PyObject* args)
                                        LogMsg(ERROR, "PyDateTime_FromDateAndTime failed");
                                     }
                                 }
-                                if (curr->tstz_value) {
+                                else if (curr->tstz_value) {
                                     LogMsg(DEBUG, "Processing SQL_TYPE_TIMESTAMP_WITH_TIMEZONE array element");
                                     elem = format_timestamp_pystr(&curr->tstz_value[i]);
                                     snprintf(messageStr, sizeof(messageStr),
@@ -18389,8 +18729,7 @@ static PyObject* ibm_db_fetch_callproc(PyObject* self, PyObject* args)
                             default:
                             snprintf(messageStr, sizeof(messageStr),"Handling array parameter: unknown data_type=%d", curr->data_type);
                             LogMsg(WARNING, messageStr);
-                            Py_INCREF(Py_None);
-                            pyVal = Py_None;
+                            /* elem already set to Py_None with INCREF at top of loop */
                             snprintf(messageStr, sizeof(messageStr),"Returning Py_None for unsupported data_type=%d", curr->data_type);
                             LogMsg(DEBUG, messageStr);
                             break;
@@ -18406,7 +18745,7 @@ static PyObject* ibm_db_fetch_callproc(PyObject* self, PyObject* args)
                 case SQL_CHAR: {
                     if (curr->uvalue) {
                         LogMsg(DEBUG, "Processing SQL_CHAR scalar parameter using uvalue");
-                        SQLLEN ind_len = curr->bind_indicator;
+                        SQLLEN ind_len = (curr->bind_indicator > 0) ? curr->bind_indicator : curr->ivalue;
                         snprintf(messageStr, sizeof(messageStr),"Scalar fetch: ind_len=%ld, curr->uvalue=%p, param_size=%d",
                             (long)ind_len, (void*)curr->uvalue, curr->param_size);
                         LogMsg(DEBUG, messageStr);
@@ -18420,6 +18759,7 @@ static PyObject* ibm_db_fetch_callproc(PyObject* self, PyObject* args)
                             LogMsg(DEBUG, "Conversion succeeded, attempting to rstrip spaces");
                             PyObject *trimmed = PyObject_CallMethod(pyVal, "rstrip", "s", " ");
                             if (trimmed) {
+                                Py_DECREF(pyVal);
                                 pyVal = trimmed;
                                 LogMsg(DEBUG, "rstrip succeeded, updated pyVal");
                             } else {
@@ -18431,13 +18771,11 @@ static PyObject* ibm_db_fetch_callproc(PyObject* self, PyObject* args)
                         LogMsg(DEBUG, messageStr);
                     }
 
-                    if (curr->svalue) {
+                    else if (curr->svalue) {
                         LogMsg(DEBUG, "Processing SQL_CHAR scalar parameter using svalue");
-                        pyVal = PyUnicode_Decode(curr->svalue, curr->param_size, "utf-8", "strict");
-                        if (!pyVal) {
-                            PyErr_Clear();
-                            pyVal = PyBytes_FromStringAndSize(curr->svalue, curr->param_size);
-                        }
+                        SQLLEN sval_len = (curr->bind_indicator > 0) ? curr->bind_indicator : curr->ivalue;
+                        /* svalue path means data was bound as bytes (PYTHON_STRING) — return bytes */
+                        pyVal = PyBytes_FromStringAndSize(curr->svalue, sval_len);
                     }
                     snprintf(messageStr, sizeof(messageStr), "SQL_CHAR scalar fetch exit: pyVal=%p", (void*)pyVal);
                     LogMsg(DEBUG, messageStr);
@@ -18468,11 +18806,8 @@ static PyObject* ibm_db_fetch_callproc(PyObject* self, PyObject* args)
 #ifndef __MVS__
                         actual_len = strnlen(curr->svalue, curr->param_size);
 #endif
-                        pyVal = PyUnicode_Decode(curr->svalue, actual_len, "utf-8", "strict");
-                        if (!pyVal) {
-                            PyErr_Clear();
-                            pyVal = PyBytes_FromStringAndSize(curr->svalue, actual_len);
-                        }
+                        /* svalue path means data was bound as bytes (PYTHON_STRING) — return bytes */
+                        pyVal = PyBytes_FromStringAndSize(curr->svalue, actual_len);
                     }
                     snprintf(messageStr, sizeof(messageStr), "SQL_VARCHAR scalar fetch exit: pyVal=%p", (void*)pyVal);
                     LogMsg(DEBUG, messageStr);
@@ -18482,38 +18817,54 @@ static PyObject* ibm_db_fetch_callproc(PyObject* self, PyObject* args)
                 case SQL_LONGVARBINARY:
                 case SQL_BINARY:
                 case SQL_VARBINARY:{
+                    SQLLEN bin_len = (curr->bind_indicator > 0) ? curr->bind_indicator : curr->ivalue;
                     if (curr->uvalue) {
                         LogMsg(DEBUG, "Processing SQL_LONGVARBINARY/SQL_BINARY/SQL_VARBINARY scalar parameter using uvalue");
-                        int num_wchars = curr->param_size / sizeof(SQLWCHAR);
-                        pyVal = getSQLWCharAsPyUnicodeObject(curr->uvalue, num_wchars);
-                        if (!pyVal) {
-                            LogMsg(DEBUG, "getSQLWCharAsPyUnicodeObject failed, trying UTF16 decode");
-                            PyErr_Clear();
-                            pyVal = PyUnicode_DecodeUTF16((const char *)curr->uvalue, curr->param_size, "strict", NULL);
-                            if (!pyVal) {
-                                LogMsg(DEBUG, "UTF16 decode failed, falling back to raw bytes");
-                                PyErr_Clear();
-                                pyVal = PyBytes_FromStringAndSize((char *)curr->uvalue, curr->param_size);
-                            }
-                        }
+                        pyVal = PyBytes_FromStringAndSize((char *)curr->uvalue, bin_len);
                     } else if (curr->svalue) {
                         LogMsg(DEBUG, "Processing SQL_LONGVARBINARY/SQL_BINARY/SQL_VARBINARY scalar parameter using svalue");
-                        pyVal = PyBytes_FromStringAndSize(curr->svalue, curr->param_size);
+                        pyVal = PyBytes_FromStringAndSize(curr->svalue, bin_len);
                     }
                     snprintf(messageStr, sizeof(messageStr), "SQL_LONGVARBINARY/SQL_BINARY/SQL_VARBINARY scalar fetch exit: pyVal=%p", (void*)pyVal);
                     LogMsg(DEBUG, messageStr);
                     break;
                 }
 
-                case SQL_BLOB:
-                case SQL_CLOB: {
-                    SQLLEN ind_len = (curr->bind_indicator_array && curr->bind_indicator_array[0] > 0)
-                    ? curr->bind_indicator_array[0] : curr->param_size;
+                case SQL_BLOB: {
+                    SQLLEN ind_len;
+                    if (curr->bind_indicator_array && curr->bind_indicator_array[0] > 0)
+                        ind_len = curr->bind_indicator_array[0];
+                    else if (curr->bind_indicator > 0)
+                        ind_len = curr->bind_indicator;
+                    else
+                        ind_len = curr->ivalue;
                     if (curr->uvalue) {
-                        LogMsg(DEBUG, "Processing SQL_BLOB/SQL_CLOB scalar parameter using uvalue");
+                        LogMsg(DEBUG, "Processing SQL_BLOB scalar parameter using uvalue (raw bytes)");
+                        char *elem_ptr = (char *)curr->uvalue;
+                        pyVal = PyBytes_FromStringAndSize(elem_ptr, (Py_ssize_t)ind_len);
+                    } else if (curr->svalue) {
+                        LogMsg(DEBUG, "Processing SQL_BLOB scalar parameter using svalue");
+                        pyVal = PyBytes_FromStringAndSize(curr->svalue, ind_len);
+                    }
+                    snprintf(messageStr, sizeof(messageStr),"SQL_BLOB scalar fetch exit: pyVal=%p", (void*)pyVal);
+                    LogMsg(DEBUG, messageStr);
+                    break;
+                }
+
+                case SQL_DBCLOB:
+                case SQL_CLOB: {
+                    SQLLEN ind_len;
+                    if (curr->bind_indicator_array && curr->bind_indicator_array[0] > 0)
+                        ind_len = curr->bind_indicator_array[0];
+                    else if (curr->bind_indicator > 0)
+                        ind_len = curr->bind_indicator;
+                    else
+                        ind_len = curr->ivalue;
+                    if (curr->uvalue) {
+                        LogMsg(DEBUG, "Processing SQL_CLOB scalar parameter using uvalue");
                         SQLWCHAR *elem_ptr = curr->uvalue;
-                        int num_wchars = ind_len / sizeof(SQLWCHAR);
-                        pyVal = getSQLWCharAsPyUnicodeObject(elem_ptr, num_wchars);
+                        /* ind_len is in bytes; pass directly to getSQLWCharAsPyUnicodeObject */
+                        pyVal = getSQLWCharAsPyUnicodeObject(elem_ptr, ind_len);
                         if (!pyVal) {
                             LogMsg(DEBUG, "getSQLWCharAsPyUnicodeObject failed, trying UTF16 decode");
                             PyErr_Clear();
@@ -18525,25 +18876,21 @@ static PyObject* ibm_db_fetch_callproc(PyObject* self, PyObject* args)
                             }
                         }
                     } else if (curr->svalue) {
-                        LogMsg(DEBUG, "Processing SQL_BLOB/SQL_CLOB scalar parameter using svalue");
-                        pyVal = PyUnicode_Decode(curr->svalue, ind_len, "utf-8", "strict");
-                        if (!pyVal) {
-                            LogMsg(DEBUG, "UTF-8 decode failed, falling back to raw bytes");
-                            PyErr_Clear();
-                            pyVal = PyBytes_FromStringAndSize(curr->svalue, ind_len);
-                        }
+                        LogMsg(DEBUG, "Processing SQL_CLOB scalar parameter using svalue");
+                        /* svalue path means data was bound as bytes (PYTHON_STRING) — return bytes */
+                        pyVal = PyBytes_FromStringAndSize(curr->svalue, ind_len);
                     }
                     if (pyVal && PyUnicode_Check(pyVal)) {
                         PyObject *trimmed = PyObject_CallMethod(pyVal, "rstrip", "s", " \x00");
                         if (trimmed) {
                             Py_DECREF(pyVal);
                             pyVal = trimmed;
-                            LogMsg(DEBUG, "SQL_BLOB/SQL_CLOB trimming succeeded");
+                            LogMsg(DEBUG, "SQL_CLOB trimming succeeded");
                         } else {
                             PyErr_Clear();
                         }
                     }
-                    snprintf(messageStr, sizeof(messageStr),"SQL_BLOB/SQL_CLOB scalar fetch exit: pyVal=%p", (void*)pyVal);
+                    snprintf(messageStr, sizeof(messageStr),"SQL_CLOB scalar fetch exit: pyVal=%p", (void*)pyVal);
                     LogMsg(DEBUG, messageStr);
                     break;
                 }
@@ -18564,15 +18911,36 @@ static PyObject* ibm_db_fetch_callproc(PyObject* self, PyObject* args)
                 case SQL_NUMERIC:
                 case SQL_DECFLOAT:{
                 LogMsg(DEBUG, "Processing SQL_DECIMAL/SQL_NUMERIC/SQL_DECFLOAT scalar parameter");
+                    char tempStr[128] = {0};
+                    int have_value = 0;
+
                     if (curr->svalue != NULL) {
-                        char tempStr[128] = {0};
 #ifndef __MVS__
                         strncpy(tempStr, curr->svalue, sizeof(tempStr) - 1);
 #endif
                         tempStr[sizeof(tempStr) - 1] = '\0';
+                        have_value = 1;
+                    } else if (curr->uvalue != NULL) {
+                        /* Data was bound through UNICODE/WCHAR path — decode to UTF-8 string */
+                        LogMsg(DEBUG, "Processing SQL_DECIMAL scalar using uvalue (WCHAR path)");
+                        SQLLEN ind_len = (curr->bind_indicator > 0) ? curr->bind_indicator : curr->ivalue;
+                        PyObject *pyStr = getSQLWCharAsPyUnicodeObject(curr->uvalue, ind_len);
+                        if (pyStr) {
+                            const char *utf8 = PyUnicode_AsUTF8(pyStr);
+                            if (utf8) {
+                                strncpy(tempStr, utf8, sizeof(tempStr) - 1);
+                                tempStr[sizeof(tempStr) - 1] = '\0';
+                                have_value = 1;
+                            }
+                            Py_DECREF(pyStr);
+                        } else {
+                            PyErr_Clear();
+                        }
+                    }
 
+                    if (have_value) {
                         int len = strlen(tempStr);
-                        while (len > 0 && tempStr[len - 1] == ' ') {
+                        while (len > 0 && (tempStr[len - 1] == ' ' || tempStr[len - 1] == '\0')) {
                             tempStr[--len] = '\0';
                         }
                         char *dot = strchr(tempStr, '.');
@@ -18647,7 +19015,6 @@ static PyObject* ibm_db_fetch_callproc(PyObject* self, PyObject* args)
                 case SQL_TYPE_TIMESTAMP:
                 case SQL_TYPE_TIMESTAMP_WITH_TIMEZONE:
                 if (curr->uvalue) {
-                    LogMsg(DEBUG, "Processing SQL_TYPE_TIMESTAMP scalar parameter using uvalue");
                     SQLWCHAR *ts_wstr = curr->uvalue;
                     SQLLEN ind_len = curr->bind_indicator;
                     PyObject *pyStr = getSQLWCharAsPyUnicodeObject(ts_wstr, ind_len);
@@ -18657,14 +19024,41 @@ static PyObject* ibm_db_fetch_callproc(PyObject* self, PyObject* args)
                     }
                     snprintf(messageStr, sizeof(messageStr),"Scalar TIMESTAMP parameter using uvalue, length=%ld",(long)ind_len);
                     LogMsg(DEBUG, messageStr);
-                    const char *ts_str = PyUnicode_AsUTF8(pyStr);
-                    if (ts_str) {
-                        int year, month, day, hour, minute, second, micro = 0;
-                        sscanf(ts_str, "%4d-%2d-%2d %2d:%2d:%2d.%6d",&year, &month, &day,&hour, &minute, &second, &micro);
-                        pyVal = PyDateTime_FromDateAndTime(year, month, day,hour, minute, second, micro);
-                        Py_DECREF(pyStr);
-                    } else {
+                    if (curr->data_type == SQL_TYPE_TIMESTAMP_WITH_TIMEZONE) {
+                        /* Return as string to preserve timezone information */
+                        LogMsg(DEBUG, "Returning TIMESTAMP WITH TIME ZONE as string to preserve timezone");
                         pyVal = pyStr;
+                    } else {
+                        const char *ts_str = PyUnicode_AsUTF8(pyStr);
+                        if (ts_str) {
+                            int year, month, day, hour, minute, second, micro = 0;
+                            sscanf(ts_str, "%4d-%2d-%2d %2d:%2d:%2d.%6d",&year, &month, &day,&hour, &minute, &second, &micro);
+                            pyVal = PyDateTime_FromDateAndTime(year, month, day,hour, minute, second, micro);
+                            Py_DECREF(pyStr);
+                        } else {
+                            pyVal = pyStr;
+                        }
+                    }
+                }
+                else if (curr->svalue) {
+                    if (curr->data_type == SQL_TYPE_TIMESTAMP_WITH_TIMEZONE) {
+                        LogMsg(DEBUG, "Processing SQL_TYPE_TIMESTAMP_WITH_TIMEZONE scalar parameter using svalue as string");
+                        SQLLEN sval_len = (curr->bind_indicator > 0) ? curr->bind_indicator : curr->ivalue;
+                        pyVal = PyUnicode_Decode(curr->svalue, sval_len, "utf-8", "strict");
+                        if (!pyVal) {
+                            PyErr_Clear();
+                            pyVal = PyBytes_FromStringAndSize(curr->svalue, sval_len);
+                        }
+                    } else {
+                        LogMsg(DEBUG, "Processing SQL_TYPE_TIMESTAMP scalar parameter using svalue");
+                        int year, month, day, hour, minute, second, micro = 0;
+                        sscanf(curr->svalue, "%4d-%2d-%2d %2d:%2d:%2d.%6d",
+                               &year, &month, &day, &hour, &minute, &second, &micro);
+                        snprintf(messageStr, sizeof(messageStr),
+                            "Scalar TIMESTAMP svalue='%s' parsed=%04d-%02d-%02d %02d:%02d:%02d.%06d",
+                            curr->svalue, year, month, day, hour, minute, second, micro);
+                        LogMsg(DEBUG, messageStr);
+                        pyVal = PyDateTime_FromDateAndTime(year, month, day, hour, minute, second, micro);
                     }
                 }
                 if (curr->ts_value) {
@@ -18707,7 +19101,7 @@ static PyObject* ibm_db_fetch_callproc(PyObject* self, PyObject* args)
                 PyTuple_SET_ITEM(outTuple, idx++, pyVal);
             }
         } else {
-            snprintf(messageStr, sizeof(messageStr), "Parameter %d is NULL or no total", idx);
+            snprintf(messageStr, sizeof(messageStr), "Parameter %d is NULL or no total (bind_indicator=%d)", idx, curr->bind_indicator);
             LogMsg(DEBUG, messageStr);
             PyTuple_SET_ITEM(outTuple, idx++, pyVal);
         }

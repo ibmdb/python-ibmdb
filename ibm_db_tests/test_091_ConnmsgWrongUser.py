@@ -15,7 +15,7 @@ class IbmDbTestCase(unittest.TestCase):
 
     def test_091_ConnmsgWrongUser(self):
         obj = IbmDbTestFunctions()
-        obj.assert_expect(self.run_test_091)
+        obj.assert_expectf(self.run_test_091)
 
     def run_test_091(self):
         try:
@@ -27,12 +27,12 @@ class IbmDbTestCase(unittest.TestCase):
 
 #__END__
 #__LUW_EXPECTED__
-#[IBM][CLI Driver] SQL30082N  Security processing failed with reason "24" ("USERNAME AND/OR PASSWORD INVALID").  SQLSTATE=08001 SQLCODE=-30082
+#[IBM][CLI Driver] SQL30082N  Security processing failed with reason "24" ("USERNAME AND/OR PASSWORD INVALID").  SQLSTATE=08001%sSQLCODE=-30082
 #__ZOS_EXPECTED__
-#[IBM][CLI Driver] SQL30082N  Security processing failed with reason "24" ("USERNAME AND/OR PASSWORD INVALID").  SQLSTATE=08001 SQLCODE=-30082
+#[IBM][CLI Driver] SQL30082N  Security processing failed with reason "24" ("USERNAME AND/OR PASSWORD INVALID").  SQLSTATE=08001%sSQLCODE=-30082
 #__SYSTEMI_EXPECTED__
-#[IBM][CLI Driver] SQL30082N  Security processing failed with reason "24" ("USERNAME AND/OR PASSWORD INVALID").  SQLSTATE=08001 SQLCODE=-30082
+#[IBM][CLI Driver] SQL30082N  Security processing failed with reason "24" ("USERNAME AND/OR PASSWORD INVALID").  SQLSTATE=08001%sSQLCODE=-30082
 #__IDS_EXPECTED__
-#[IBM][CLI Driver] SQL30082N  Security processing failed with reason "24" ("USERNAME AND/OR PASSWORD INVALID").  SQLSTATE=08001 SQLCODE=-30082
+#[IBM][CLI Driver] SQL30082N  Security processing failed with reason "24" ("USERNAME AND/OR PASSWORD INVALID").  SQLSTATE=08001%sSQLCODE=-30082
 #__ZOS_ODBC_EXPECTED__
 #??? No way.

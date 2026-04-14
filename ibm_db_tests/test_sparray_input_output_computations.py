@@ -74,7 +74,7 @@ class IbmDbTestCase(unittest.TestCase):
 #decfloat16_array output array: [0.23, None, 3.56, None]
 #Procedure: array_decfloat3441
 #array_decfloat3441 input array: [12345678.1234, None]
-#decfloat34_array output array: [12345677.1234, None]
+#decfloat34_array output array: [12345676.4534, None]
 #Procedure: array_decimal41
 #array_decimal41 input array: [12.34, None, 56.78]
 #decimal_array output array: [11.34, None, 55.78]

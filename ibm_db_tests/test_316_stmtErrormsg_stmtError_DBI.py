@@ -17,7 +17,7 @@ class IbmDbTestCase(unittest.TestCase):
 
     def test_316_stmtErrormsg_stmtError_DBI(self):
         obj = IbmDbTestFunctions()
-        obj.assert_expect(self.run_test_316)
+        obj.assert_expectf(self.run_test_316)
 
     def run_test_316(self):
         conn = ibm_db_dbi.connect(config.database, config.user, config.password)
@@ -34,14 +34,14 @@ class IbmDbTestCase(unittest.TestCase):
 
 #__END__
 #__LUW_EXPECTED__
-#[IBM][CLI Driver][DB2/LINUXX8664] SQL0104N  An unexpected token "END-OF-STATEMENT" was found following "INVALID SQL".  Expected tokens may include:  "JOIN <joined_table>".  SQLSTATE=42601  SQLCODE=-104
+#[IBM][CLI Driver][DB2/%s] SQL0104N  An unexpected token "END-OF-STATEMENT" was found following "INVALID SQL".  Expected tokens may include:  "JOIN <joined_table>".  SQLSTATE=42601%sSQLCODE=-104
 #42601
 #__ZOS_EXPECTED__
-#[IBM][CLI Driver][DB2/LINUXX8664] SQL0104N  An unexpected token "END-OF-STATEMENT" was found following "INVALID SQL".  Expected tokens may include:  "JOIN <joined_table>".  SQLSTATE=42601  SQLCODE=-104
+#[IBM][CLI Driver][DB2/%s] SQL0104N  An unexpected token "END-OF-STATEMENT" was found following "INVALID SQL".  Expected tokens may include:  "JOIN <joined_table>".  SQLSTATE=42601%sSQLCODE=-104
 #42601
 #__SYSTEMI_EXPECTED__
-#[IBM][CLI Driver][AS] SQL0104N  An unexpected token "END-OF-STATEMENT" was found following "INVALID SQL".  Expected tokens may include:  "JOIN <joined_table>".  SQLSTATE=42601  SQLCODE=-104
+#[IBM][CLI Driver][AS] SQL0104N  An unexpected token "END-OF-STATEMENT" was found following "INVALID SQL".  Expected tokens may include:  "JOIN <joined_table>".  SQLSTATE=42601%sSQLCODE=-104
 #42601
 #__IDS_EXPECTED__
-#[IBM][CLI Driver][IDS/LINUXX8664] SQL0104N  An unexpected token "END-OF-STATEMENT" was found following "INVALID SQL".  Expected tokens may include:  "JOIN <joined_table>".  SQLSTATE=42601  SQLCODE=-104
+#[IBM][CLI Driver][IDS/%s] SQL0104N  An unexpected token "END-OF-STATEMENT" was found following "INVALID SQL".  Expected tokens may include:  "JOIN <joined_table>".  SQLSTATE=42601%sSQLCODE=-104
 #42601

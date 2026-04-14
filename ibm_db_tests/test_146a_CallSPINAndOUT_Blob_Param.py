@@ -44,7 +44,7 @@ class IbmDbTestCase(unittest.TestCase):
 #  1: 1234
 #
 #Values of bound parameters _after_ CALL:
-#  1: 1234567801234567890 
+#  1: b'1234567801234567890' 
 #
 #__ZOS_EXPECTED__
 #SKIPPED

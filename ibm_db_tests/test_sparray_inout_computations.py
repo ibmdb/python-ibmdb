@@ -73,7 +73,7 @@ class IbmDbTestCase(unittest.TestCase):
 #decfloat16_array output array: [2.23, None, 5.56, None]
 #Procedure: array_decfloat3431
 #decfloat34_array input: [12345678.1234, None]
-#decfloat34_array output array: [12345679.1234, None]
+#decfloat34_array output array: [12345679.4534, None]
 #Procedure: array_decimal31
 #decimal_array input: [12.34, None, 56.78]
 #decimal_array output array: [13.34, None, 57.78]
@@ -100,7 +100,7 @@ class IbmDbTestCase(unittest.TestCase):
 #clob_array output array: [b'another clob', b'long text here']
 #Procedure: array_blob31
 #blob_array input: [b'binarydata', b'morebytes', b'abc']
-#blob_array output array: [b'abcarydata', b'morebytes', b'binarydata']
+#blob_array output array: [b'abc', b'morebytes', b'binarydata']
 #Procedure: array_char31
 #char_array input: [b'abc', None, b'defg']
 #char_array output array: [b'abc - a                                ', None, b'defg - d                               ']
