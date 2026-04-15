@@ -69,43 +69,43 @@ class IbmDbTestCase(unittest.TestCase):
 #Starting test ...
 #
 #SQLSTATE: 22001
-#Message: [IBM][CLI Driver] CLI0109E  String data right truncation. SQLSTATE=22001 SQLCODE=-99999
+#Message: [IBM][CLI Driver] CLI0109E  String data right truncation. SQLSTATE=22001%sSQLCODE=-99999
 #True
 #SQLSTATE: 02000
-#Message: [IBM][CLI Driver][DB2/%s] SQL0100W  No row was found for FETCH, UPDATE or DELETE; or the result of a query is an empty table.  SQLSTATE=02000 SQLCODE=100
+#Message: [IBM][CLI Driver][DB2/%s] SQL0100W  No row was found for FETCH, UPDATE or DELETE; or the result of a query is an empty table.  SQLSTATE=02000%sSQLCODE=100
 #Done
 #__ZOS_EXPECTED__
 #Starting test ...
 #
 #SQLSTATE: 22001
-#Message: [IBM][CLI Driver] CLI0109E  String data right truncation. SQLSTATE=22001 SQLCODE=-99999
+#Message: [IBM][CLI Driver] CLI0109E  String data right truncation. SQLSTATE=22001%sSQLCODE=-99999
 #True
 #SQLSTATE: 02000
-#Message: [IBM][CLI Driver][DB2] SQL0100W  No row was found for FETCH, UPDATE or DELETE; or the result of a query is an empty table.  SQLSTATE=02000 SQLCODE=100
+#Message: [IBM][CLI Driver][DB2] SQL0100W  No row was found for FETCH, UPDATE or DELETE; or the result of a query is an empty table.  SQLSTATE=02000%sSQLCODE=100
 #Done
 #__SYSTEMI_EXPECTED__
 #Starting test ...
 #
 #SQLSTATE: 22001
-#Message: [IBM][CLI Driver] CLI0109E  String data right truncation. SQLSTATE=22001 SQLCODE=-99999
+#Message: [IBM][CLI Driver] CLI0109E  String data right truncation. SQLSTATE=22001%sSQLCODE=-99999
 #True
 #SQLSTATE: 02000
-#Message: [IBM][CLI Driver][AS] SQL0100W  No row was found for FETCH, UPDATE or DELETE; or the result of a query is an empty table.  SQLSTATE=02000 SQLCODE=100
+#Message: [IBM][CLI Driver][AS] SQL0100W  No row was found for FETCH, UPDATE or DELETE; or the result of a query is an empty table.  SQLSTATE=02000%sSQLCODE=100
 #Done
 #__IDS_EXPECTED__
 #Starting test ...
 #
 #SQLSTATE: 22001
-#Message: [IBM][CLI Driver][IDS%s] Value exceeds string column length. SQLCODE=-1279
+#Message: [IBM][CLI Driver][IDS%s] Value exceeds string column length.%sSQLCODE=-1279
 #True
 #SQLSTATE: 02000
-#Message: [IBM][CLI Driver][IDS%s] SQL0100W  No row was found for FETCH, UPDATE or DELETE; or the result of a query is an empty table.  SQLSTATE=02000 SQLCODE=100
+#Message: [IBM][CLI Driver][IDS%s] SQL0100W  No row was found for FETCH, UPDATE or DELETE; or the result of a query is an empty table.  SQLSTATE=02000%sSQLCODE=100
 #Done
 #__ZOS_ODBC_EXPECTED__
 #Starting test ...
 #
 #SQLSTATE: 22001
-#Message: {DB2 FOR OS/390}{ODBC DRIVER}  SQLSTATE=22001  ERRLOC=12:9:1 SQLCODE=-99999
+#Message: {DB2 FOR OS/390}{ODBC DRIVER}  SQLSTATE=22001  ERRLOC=12:9:1%sSQLCODE=-99999
 #True
 #SQLSTATE: 
 #Message: 

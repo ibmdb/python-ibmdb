@@ -73,13 +73,13 @@ class IbmDbTestCase(unittest.TestCase):
             arr18 = [b'To Test VARChar1', b'To Test VARChar2', b'To Test VARChar3', b'To Test VARChar4', b'To Test VARChar5', b'To Test VARChar6', b'To Test VARChar7', b'To Test VARChar8', b'To Test VARChar9', b'To Test VARChar10']
             arr19 = [time(12, 20, 30), time(13, 30, 45), time(14, 2, 12), time(15, 42, 33), time(5, 29, 59), time(8, 2, 12), time(9, 52, 12), time(7, 2, 12), time(23, 2, 12), time(19, 59, 59)]
             arr20 = [datetime(1981, 2, 12, 23, 55, 59, 342380), datetime(1982, 2, 12, 23, 55, 59, 342380), datetime(1983, 2, 12, 23, 55, 59, 342380), datetime(1984, 2, 12, 23, 55, 59, 342380), datetime(1985, 2, 12, 23, 55, 59, 342380), datetime(1986, 2, 12, 23, 55, 59, 342380), datetime(1987, 2, 12, 23, 55, 59, 342380), datetime(1988, 2, 12, 23, 55, 59, 342380), datetime(1989, 2, 12, 23, 55, 59, 342380), datetime(1990, 2, 12, 23, 55, 59, 342380)]
-            arr21 = ['To Test Binary1', 'To Test Binary2', 'To Test Binary3', 'To Test Binary4', 'To Test Binary5', 'To Test Binary6', 'To Test Binary7', 'To Test Binary8', 'To Test Binary9', 'To Test Binary10']
-            arr22 = ['To Test Blob1', 'To Test Blob2', 'To Test Blob3', 'To Test Blob4', 'To Test Blob5', 'To Test Blob6', 'To Test Blob7', 'To Test Blob8', 'To Test Blob9', 'To Test Blob10']
+            arr21 = [b'To Test Binary1', b'To Test Binary2', b'To Test Binary3', b'To Test Binary4', b'To Test Binary5', b'To Test Binary6', b'To Test Binary7', b'To Test Binary8', b'To Test Binary9', b'To Test Binary10']
+            arr22 = [b'To Test Blob1', b'To Test Blob2', b'To Test Blob3', b'To Test Blob4', b'To Test Blob5', b'To Test Blob6', b'To Test Blob7', b'To Test Blob8', b'To Test Blob9', b'To Test Blob10']
             arr23 = ['To Test Char1', 'To Test Char2', 'To Test Char3', 'To Test Char4', 'To Test Char5', 'To Test Char6', 'To Test Char7', 'To Test Char8', 'To Test Char9', 'To Test Char10']
             arr24 = ['To Test Clob1', 'To Test Clob2', 'To Test Clob3', 'To Test Clob4', 'To Test Clob5', 'To Test Clob6', 'To Test Clob7', 'To Test Clob8', 'To Test Clob9', 'To Test Clob10']
             arr25 = ['To Test DBClob1', 'To Test DBClob2', 'To Test DBClob3', 'To Test DBClob4', 'To Test DBClob5', 'To Test DBClob6', 'To Test DBClob7', 'To Test DBClob8', 'To Test DBClob9', 'To Test DBClob10']
             arr26 = ['1981-07-08 10:42:34.000010', '1982-07-08 10:42:34.000010', '1983-07-08 10:42:34.000010', '1984-07-08 10:42:34.000010', '1985-07-08 10:42:34.000010', '1986-07-08 10:42:34.000010', '1987-07-08 10:42:34.000010', '1988-07-08 10:42:34.000010', '1989-07-08 10:42:34.000010', '1990-07-08 10:42:34.000010']
-            arr27 = ['To Test VarBinary1', 'To Test VarBinary2', 'To Test VarBinary3', 'To Test VarBinary4', 'To Test VarBinary5', 'To Test VarBinary6', 'To Test VarBinary7', 'To Test VarBinary8', 'To Test VarBinary9', 'To Test VarBinary10']
+            arr27 = [b'To Test VarBinary1', b'To Test VarBinary2', b'To Test VarBinary3', b'To Test VarBinary4', b'To Test VarBinary5', b'To Test VarBinary6', b'To Test VarBinary7', b'To Test VarBinary8', b'To Test VarBinary9', b'To Test VarBinary10']
             arr28 = ['To Test VARChar1', 'To Test VARChar2', 'To Test VARChar3', 'To Test VARChar4', 'To Test VARChar5', 'To Test VARChar6', 'To Test VARChar7', 'To Test VARChar8', 'To Test VARChar9', 'To Test VARChar10']
             arr29 = ['1991-03-13 09:28:56+02:30', '1992-03-13 09:28:56+03:45', '1993-03-13 09:28:56-00:30', '1994-03-13 09:28:56+03:30',
  '1996-03-13 09:28:56+04:45', '1997-03-13 09:28:56-01:30', '1998-03-13 09:28:56+07:30', '1999-03-13 09:28:56+09:45', '2000-03-13 09:28:56-00:30',
@@ -188,13 +188,13 @@ class IbmDbTestCase(unittest.TestCase):
 #Column:18 To Test VARChar1
 #Column:19 12:20:30
 #Column:20 1981-02-12 23:55:59.342380
-#Column:21 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00B\x00i\x00n\x00a\x00r\x00y\x001\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
-#Column:22 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00B\x00l\x00o\x00b\x001\x00'
+#Column:21 b'To Test Binary1\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+#Column:22 b'To Test Blob1'
 #Column:23 To Test Char1                           
 #Column:24 To Test Clob1
 #Column:25 To Test DBClob1
 #Column:26 1981-07-08 10:42:34.000010
-#Column:27 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00V\x00a\x00r\x00B\x00i\x00n\x00a\x00r\x00y\x001\x00'
+#Column:27 b'To Test VarBinary1'
 #Column:28 To Test VARChar1
 #-------------------
 #ROW:2
@@ -218,13 +218,13 @@ class IbmDbTestCase(unittest.TestCase):
 #Column:18 To Test VARChar2
 #Column:19 13:30:45
 #Column:20 1982-02-12 23:55:59.342380
-#Column:21 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00B\x00i\x00n\x00a\x00r\x00y\x002\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
-#Column:22 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00B\x00l\x00o\x00b\x002\x00'
+#Column:21 b'To Test Binary2\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+#Column:22 b'To Test Blob2'
 #Column:23 To Test Char2                           
 #Column:24 To Test Clob2
 #Column:25 To Test DBClob2
 #Column:26 1982-07-08 10:42:34.000010
-#Column:27 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00V\x00a\x00r\x00B\x00i\x00n\x00a\x00r\x00y\x002\x00'
+#Column:27 b'To Test VarBinary2'
 #Column:28 To Test VARChar2
 #-------------------
 #ROW:3
@@ -248,13 +248,13 @@ class IbmDbTestCase(unittest.TestCase):
 #Column:18 To Test VARChar3
 #Column:19 14:02:12
 #Column:20 1983-02-12 23:55:59.342380
-#Column:21 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00B\x00i\x00n\x00a\x00r\x00y\x003\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
-#Column:22 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00B\x00l\x00o\x00b\x003\x00'
+#Column:21 b'To Test Binary3\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+#Column:22 b'To Test Blob3'
 #Column:23 To Test Char3                           
 #Column:24 To Test Clob3
 #Column:25 To Test DBClob3
 #Column:26 1983-07-08 10:42:34.000010
-#Column:27 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00V\x00a\x00r\x00B\x00i\x00n\x00a\x00r\x00y\x003\x00'
+#Column:27 b'To Test VarBinary3'
 #Column:28 To Test VARChar3
 #-------------------
 #ROW:4
@@ -278,13 +278,13 @@ class IbmDbTestCase(unittest.TestCase):
 #Column:18 To Test VARChar4
 #Column:19 15:42:33
 #Column:20 1984-02-12 23:55:59.342380
-#Column:21 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00B\x00i\x00n\x00a\x00r\x00y\x004\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
-#Column:22 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00B\x00l\x00o\x00b\x004\x00'
+#Column:21 b'To Test Binary4\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+#Column:22 b'To Test Blob4'
 #Column:23 To Test Char4                           
 #Column:24 To Test Clob4
 #Column:25 To Test DBClob4
 #Column:26 1984-07-08 10:42:34.000010
-#Column:27 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00V\x00a\x00r\x00B\x00i\x00n\x00a\x00r\x00y\x004\x00'
+#Column:27 b'To Test VarBinary4'
 #Column:28 To Test VARChar4
 #-------------------
 #ROW:5
@@ -308,13 +308,13 @@ class IbmDbTestCase(unittest.TestCase):
 #Column:18 To Test VARChar5
 #Column:19 05:29:59
 #Column:20 1985-02-12 23:55:59.342380
-#Column:21 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00B\x00i\x00n\x00a\x00r\x00y\x005\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
-#Column:22 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00B\x00l\x00o\x00b\x005\x00'
+#Column:21 b'To Test Binary5\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+#Column:22 b'To Test Blob5'
 #Column:23 To Test Char5                           
 #Column:24 To Test Clob5
 #Column:25 To Test DBClob5
 #Column:26 1985-07-08 10:42:34.000010
-#Column:27 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00V\x00a\x00r\x00B\x00i\x00n\x00a\x00r\x00y\x005\x00'
+#Column:27 b'To Test VarBinary5'
 #Column:28 To Test VARChar5
 #-------------------
 #ROW:6
@@ -338,13 +338,13 @@ class IbmDbTestCase(unittest.TestCase):
 #Column:18 To Test VARChar6
 #Column:19 08:02:12
 #Column:20 1986-02-12 23:55:59.342380
-#Column:21 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00B\x00i\x00n\x00a\x00r\x00y\x006\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
-#Column:22 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00B\x00l\x00o\x00b\x006\x00'
+#Column:21 b'To Test Binary6\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+#Column:22 b'To Test Blob6'
 #Column:23 To Test Char6                           
 #Column:24 To Test Clob6
 #Column:25 To Test DBClob6
 #Column:26 1986-07-08 10:42:34.000010
-#Column:27 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00V\x00a\x00r\x00B\x00i\x00n\x00a\x00r\x00y\x006\x00'
+#Column:27 b'To Test VarBinary6'
 #Column:28 To Test VARChar6
 #-------------------
 #ROW:7
@@ -368,13 +368,13 @@ class IbmDbTestCase(unittest.TestCase):
 #Column:18 To Test VARChar7
 #Column:19 09:52:12
 #Column:20 1987-02-12 23:55:59.342380
-#Column:21 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00B\x00i\x00n\x00a\x00r\x00y\x007\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
-#Column:22 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00B\x00l\x00o\x00b\x007\x00'
+#Column:21 b'To Test Binary7\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+#Column:22 b'To Test Blob7'
 #Column:23 To Test Char7                           
 #Column:24 To Test Clob7
 #Column:25 To Test DBClob7
 #Column:26 1987-07-08 10:42:34.000010
-#Column:27 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00V\x00a\x00r\x00B\x00i\x00n\x00a\x00r\x00y\x007\x00'
+#Column:27 b'To Test VarBinary7'
 #Column:28 To Test VARChar7
 #-------------------
 #ROW:8
@@ -398,13 +398,13 @@ class IbmDbTestCase(unittest.TestCase):
 #Column:18 To Test VARChar8
 #Column:19 07:02:12
 #Column:20 1988-02-12 23:55:59.342380
-#Column:21 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00B\x00i\x00n\x00a\x00r\x00y\x008\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
-#Column:22 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00B\x00l\x00o\x00b\x008\x00'
+#Column:21 b'To Test Binary8\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+#Column:22 b'To Test Blob8'
 #Column:23 To Test Char8                           
 #Column:24 To Test Clob8
 #Column:25 To Test DBClob8
 #Column:26 1988-07-08 10:42:34.000010
-#Column:27 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00V\x00a\x00r\x00B\x00i\x00n\x00a\x00r\x00y\x008\x00'
+#Column:27 b'To Test VarBinary8'
 #Column:28 To Test VARChar8
 #-------------------
 #ROW:9
@@ -428,13 +428,13 @@ class IbmDbTestCase(unittest.TestCase):
 #Column:18 To Test VARChar9
 #Column:19 23:02:12
 #Column:20 1989-02-12 23:55:59.342380
-#Column:21 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00B\x00i\x00n\x00a\x00r\x00y\x009\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
-#Column:22 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00B\x00l\x00o\x00b\x009\x00'
+#Column:21 b'To Test Binary9\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+#Column:22 b'To Test Blob9'
 #Column:23 To Test Char9                           
 #Column:24 To Test Clob9
 #Column:25 To Test DBClob9
 #Column:26 1989-07-08 10:42:34.000010
-#Column:27 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00V\x00a\x00r\x00B\x00i\x00n\x00a\x00r\x00y\x009\x00'
+#Column:27 b'To Test VarBinary9'
 #Column:28 To Test VARChar9
 #-------------------
 #ROW:10
@@ -458,13 +458,13 @@ class IbmDbTestCase(unittest.TestCase):
 #Column:18 To Test VARChar10
 #Column:19 19:59:59
 #Column:20 1990-02-12 23:55:59.342380
-#Column:21 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00B\x00i\x00n\x00a\x00r\x00y\x001\x000\x00\x00\x00\x00\x00\x00\x00\x00\x00'
-#Column:22 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00B\x00l\x00o\x00b\x001\x000\x00'
+#Column:21 b'To Test Binary10\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+#Column:22 b'To Test Blob10'
 #Column:23 To Test Char10                          
 #Column:24 To Test Clob10
 #Column:25 To Test DBClob10
 #Column:26 1990-07-08 10:42:34.000010
-#Column:27 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00V\x00a\x00r\x00B\x00i\x00n\x00a\x00r\x00y\x001\x000\x00'
+#Column:27 b'To Test VarBinary10'
 #Column:28 To Test VARChar10
 #-------------------
 #__ZOS_EXPECTED__
@@ -485,12 +485,12 @@ class IbmDbTestCase(unittest.TestCase):
 #Column:14 To Test VARChar1
 #Column:15 12:20:30
 #Column:16 1981-02-12 23:55:59.342380
-#Column:17 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00B\x00i\x00n\x00a\x00r\x00y\x001\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
-#Column:18 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00B\x00l\x00o\x00b\x001\x00'
+#Column:17 b'To Test Binary1\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+#Column:18 b'To Test Blob1'
 #Column:19 To Test Char1                           
 #Column:20 To Test Clob1
 #Column:21 1981-07-08 10:42:34.000010
-#Column:22 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00V\x00a\x00r\x00B\x00i\x00n\x00a\x00r\x00y\x001\x00'
+#Column:22 b'To Test VarBinary1'
 #Column:23 To Test VARChar1
 #Column:24 1991-03-13-09.28.56.000000000000 +02:30
 #-------------------
@@ -511,12 +511,12 @@ class IbmDbTestCase(unittest.TestCase):
 #Column:14 To Test VARChar2
 #Column:15 13:30:45
 #Column:16 1982-02-12 23:55:59.342380
-#Column:17 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00B\x00i\x00n\x00a\x00r\x00y\x002\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
-#Column:18 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00B\x00l\x00o\x00b\x002\x00'
+#Column:17 b'To Test Binary2\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+#Column:18 b'To Test Blob2'
 #Column:19 To Test Char2                           
 #Column:20 To Test Clob2
 #Column:21 1982-07-08 10:42:34.000010
-#Column:22 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00V\x00a\x00r\x00B\x00i\x00n\x00a\x00r\x00y\x002\x00'
+#Column:22 b'To Test VarBinary2'
 #Column:23 To Test VARChar2
 #Column:24 1992-03-13-09.28.56.000000000000 +03:45
 #-------------------
@@ -537,12 +537,12 @@ class IbmDbTestCase(unittest.TestCase):
 #Column:14 To Test VARChar3
 #Column:15 14:02:12
 #Column:16 1983-02-12 23:55:59.342380
-#Column:17 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00B\x00i\x00n\x00a\x00r\x00y\x003\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
-#Column:18 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00B\x00l\x00o\x00b\x003\x00'
+#Column:17 b'To Test Binary3\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+#Column:18 b'To Test Blob3'
 #Column:19 To Test Char3                           
 #Column:20 To Test Clob3
 #Column:21 1983-07-08 10:42:34.000010
-#Column:22 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00V\x00a\x00r\x00B\x00i\x00n\x00a\x00r\x00y\x003\x00'
+#Column:22 b'To Test VarBinary3'
 #Column:23 To Test VARChar3
 #Column:24 1993-03-13-09.28.56.000000000000 +00:30
 #-------------------
@@ -563,12 +563,12 @@ class IbmDbTestCase(unittest.TestCase):
 #Column:14 To Test VARChar4
 #Column:15 15:42:33
 #Column:16 1984-02-12 23:55:59.342380
-#Column:17 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00B\x00i\x00n\x00a\x00r\x00y\x004\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
-#Column:18 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00B\x00l\x00o\x00b\x004\x00'
+#Column:17 b'To Test Binary4\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+#Column:18 b'To Test Blob4'
 #Column:19 To Test Char4                           
 #Column:20 To Test Clob4
 #Column:21 1984-07-08 10:42:34.000010
-#Column:22 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00V\x00a\x00r\x00B\x00i\x00n\x00a\x00r\x00y\x004\x00'
+#Column:22 b'To Test VarBinary4'
 #Column:23 To Test VARChar4
 #Column:24 1994-03-13-09.28.56.000000000000 +03:30
 #-------------------
@@ -589,12 +589,12 @@ class IbmDbTestCase(unittest.TestCase):
 #Column:14 To Test VARChar5
 #Column:15 05:29:59
 #Column:16 1985-02-12 23:55:59.342380
-#Column:17 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00B\x00i\x00n\x00a\x00r\x00y\x005\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
-#Column:18 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00B\x00l\x00o\x00b\x005\x00'
+#Column:17 b'To Test Binary5\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+#Column:18 b'To Test Blob5'
 #Column:19 To Test Char5                           
 #Column:20 To Test Clob5
 #Column:21 1985-07-08 10:42:34.000010
-#Column:22 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00V\x00a\x00r\x00B\x00i\x00n\x00a\x00r\x00y\x005\x00'
+#Column:22 b'To Test VarBinary5'
 #Column:23 To Test VARChar5
 #Column:24 1996-03-13-09.28.56.000000000000 +04:45
 #-------------------

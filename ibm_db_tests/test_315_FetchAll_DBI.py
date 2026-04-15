@@ -17,7 +17,7 @@ class IbmDbTestCase(unittest.TestCase):
 
     def test_315_FetchAll_DBI(self):
         obj = IbmDbTestFunctions()
-        obj.assert_expect(self.run_test_315)
+        obj.assert_expectf(self.run_test_315)
 
     def run_test_315(self):
         conn = ibm_db.connect(config.database, config.user, config.password)
@@ -64,10 +64,10 @@ class IbmDbTestCase(unittest.TestCase):
 
 #__END__
 #__LUW_EXPECTED__
-#[IBM][CLI Driver][DB2/LINUXX8664] SQL0137N  The length resulting from "CONCAT" is greater than "0000016350 ".  SQLSTATE=54006  SQLCODE=-137
+#[IBM][CLI Driver][DB2/%s] SQL0137N  The length resulting from "CONCAT" is greater than "%d ".  SQLSTATE=54006%sSQLCODE=-137
 #__ZOS_EXPECTED__
-#[IBM][CLI Driver][DB2/LINUXX8664] SQL0137N  The length resulting from "CONCAT" is greater than "0000016350 ".  SQLSTATE=54006  SQLCODE=-137
+#[IBM][CLI Driver][DB2/%s] SQL0137N  The length resulting from "CONCAT" is greater than "%d ".  SQLSTATE=54006%sSQLCODE=-137
 #__SYSTEMI_EXPECTED__
-#[IBM][CLI Driver][AS] SQL0137N  The length resulting from "CONCAT" is greater than "0000016350 ".  SQLSTATE=54006  SQLCODE=-137
+#[IBM][CLI Driver][AS] SQL0137N  The length resulting from "CONCAT" is greater than "%d ".  SQLSTATE=54006%sSQLCODE=-137
 #__IDS_EXPECTED__
-#[IBM][CLI Driver][IDS/LINUXX8664] SQL0137N  The length resulting from "CONCAT" is greater than "0000016350 ".  SQLSTATE=54006  SQLCODE=-137
+#[IBM][CLI Driver][IDS/%s] SQL0137N  The length resulting from "CONCAT" is greater than "%d ".  SQLSTATE=54006%sSQLCODE=-137

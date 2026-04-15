@@ -98,13 +98,13 @@ class IbmDbTestCase(unittest.TestCase):
                     ibm_db.bind_param(stmt, 18, b'To Test VARChar', 	ibm_db.SQL_PARAM_INPUT)
                     ibm_db.bind_param(stmt, 19, time(12, 35, 45), 		ibm_db.SQL_PARAM_INPUT)
                     ibm_db.bind_param(stmt, 20, datetime(2017, 11, 28, 23, 55, 59, 342380), ibm_db.SQL_PARAM_INPUT)
-                    ibm_db.bind_param(stmt, 21, 'To Test UniBINARY', 	ibm_db.SQL_PARAM_INPUT)
-                    ibm_db.bind_param(stmt, 22, 'To Test UniBlob', 		ibm_db.SQL_PARAM_INPUT)
+                    ibm_db.bind_param(stmt, 21, b'To Test UniBINARY', 	ibm_db.SQL_PARAM_INPUT)
+                    ibm_db.bind_param(stmt, 22, b'To Test UniBlob', 		ibm_db.SQL_PARAM_INPUT)
                     ibm_db.bind_param(stmt, 23, 'To Test UniChar', 		ibm_db.SQL_PARAM_INPUT)
                     ibm_db.bind_param(stmt, 24, 'To Test UniClob', 		ibm_db.SQL_PARAM_INPUT)
                     ibm_db.bind_param(stmt, 25, 'To Test UniDBClob', 	ibm_db.SQL_PARAM_INPUT)
                     ibm_db.bind_param(stmt, 26, '1981-07-08 10:42:34.000010', ibm_db.SQL_PARAM_INPUT)	#Unicode Timestamp
-                    ibm_db.bind_param(stmt, 27, 'To Test UniVARBINARY', ibm_db.SQL_PARAM_INPUT)
+                    ibm_db.bind_param(stmt, 27, b'To Test UniVARBINARY', ibm_db.SQL_PARAM_INPUT)
                     ibm_db.bind_param(stmt, 28, 'To Test UniVARChar', 	ibm_db.SQL_PARAM_INPUT)
                 error = ibm_db.execute(stmt)
             except:
@@ -152,13 +152,13 @@ class IbmDbTestCase(unittest.TestCase):
 #Column:18 To Test VARChar
 #Column:19 12:35:45
 #Column:20 2017-11-28 23:55:59.342380
-#Column:21 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00U\x00n\x00i\x00B\x00I\x00N\x00A\x00R\x00Y\x00\x00\x00\x00\x00\x00\x00'
-#Column:22 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00U\x00n\x00i\x00B\x00l\x00o\x00b\x00'
+#Column:21 b'To Test UniBINARY\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+#Column:22 b'To Test UniBlob'
 #Column:23 To Test UniChar                         
 #Column:24 To Test UniClob
 #Column:25 To Test UniDBClob
 #Column:26 1981-07-08 10:42:34.000010
-#Column:27 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00U\x00n\x00i\x00V\x00A\x00R\x00B\x00I\x00N\x00A\x00R\x00Y\x00'
+#Column:27 b'To Test UniVARBINARY'
 #Column:28 To Test UniVARChar
 #-------------------
 #__ZOS_EXPECTED__
@@ -178,12 +178,12 @@ class IbmDbTestCase(unittest.TestCase):
 #Column:14 To Test VARChar
 #Column:15 12:35:45
 #Column:16 2017-11-28 23:55:59.342380
-#Column:17 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00U\x00n\x00i\x00B\x00I\x00N\x00A\x00R\x00Y\x00\x00\x00\x00\x00\x00\x00'
-#Column:18 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00U\x00n\x00i\x00B\x00l\x00o\x00b\x00'
+#Column:17 b'To Test UniBINARY\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+#Column:18 b'To Test UniBlob'
 #Column:19 To Test UniChar                         
 #Column:20 To Test UniClob
 #Column:21 1981-07-08 10:42:34.000010
-#Column:22 b'T\x00o\x00 \x00T\x00e\x00s\x00t\x00 \x00U\x00n\x00i\x00V\x00A\x00R\x00B\x00I\x00N\x00A\x00R\x00Y\x00'
+#Column:22 b'To Test UniVARBINARY'
 #Column:23 To Test UniVARChar
 #Column:24 1981-07-08-10.42.34.000010000000 -05:45
 #-------------------
