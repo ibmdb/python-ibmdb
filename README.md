@@ -121,7 +121,16 @@ pip install ibm_db --no-binary :all: --no-cache-dir
 
 **Windows DLL resolution (Python 3.8+):**
 
-Since Python 3.8, the `PATH` environment variable is no longer used for DLL resolution on Windows (see https://bugs.python.org/issue36085). The `ibm_db` package now handles this **automatically** by installing an `ibm_db_dll.pth` file into `site-packages`. This file runs at Python startup and registers the clidriver `bin` directory via `os.add_dll_directory()`, so `import ibm_db` works out of the box.
+Since Python 3.8, the `PATH` environment variable is no longer used for DLL resolution on Windows (see https://bugs.python.org/issue36085). You may see the following error when importing `ibm_db`:
+
+```
+>>> import ibm_db
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+ImportError: DLL load failed while importing ibm_db: The specified module could not be found.
+```
+
+The `ibm_db` package now handles this **automatically** by installing an `ibm_db_dll.pth` file into `site-packages`. This file runs at Python startup and registers the clidriver `bin` directory via `os.add_dll_directory()`, so `import ibm_db` works out of the box.
 
 If `IBM_DB_HOME` is set, the `.pth` file uses `%IBM_DB_HOME%\bin`; otherwise it uses the bundled `site-packages\clidriver\bin`.
 

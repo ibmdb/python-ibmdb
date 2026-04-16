@@ -16616,6 +16616,7 @@ static PyObject *ibm_db_get_option(PyObject *self, PyObject *args)
                 case SQL_ATTR_ROWCOUNT_PREFETCH:
                 case SQL_ATTR_QUERY_TIMEOUT:
 #ifndef __MVS__
+                case SQL_ATTR_DEFERRED_PREPARE:
                 case SQL_ATTR_CALL_RETURN:
 #endif
                     isInteger = 1;
@@ -19343,6 +19344,9 @@ INIT_ibm_db(void)
     PyModule_AddIntConstant(m, "SQL_ATTR_PARAMSET_SIZE", SQL_ATTR_PARAMSET_SIZE);
     PyModule_AddIntConstant(m, "SQL_ATTR_PARAM_BIND_TYPE", SQL_ATTR_PARAM_BIND_TYPE);
     PyModule_AddIntConstant(m, "SQL_PARAM_BIND_BY_COLUMN", SQL_PARAM_BIND_BY_COLUMN);
+#ifndef __MVS__
+    PyModule_AddIntConstant(m, "SQL_ATTR_DEFERRED_PREPARE", SQL_ATTR_DEFERRED_PREPARE);
+#endif
     PyModule_AddIntConstant(m, "SQL_ATTR_XML_DECLARATION", SQL_ATTR_XML_DECLARATION);
 #ifndef __MVS__
     PyModule_AddIntConstant(m, "SQL_ATTR_CLIENT_APPLCOMPAT", SQL_ATTR_CLIENT_APPLCOMPAT);
