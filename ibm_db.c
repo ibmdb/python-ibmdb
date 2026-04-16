@@ -436,9 +436,7 @@ static void _python_ibm_db_set_array_param_cardinality(stmt_handle *stmt_res,
     SQLRETURN rc;
     curr->cardinality = cardinality;
     curr->actual_cardinality = cardinality;
-
     LogMsg(INFO, "entry _python_ibm_db_set_array_param_cardinality()");
-
     snprintf(messageStr, sizeof(messageStr),
              "Setting array param descriptor fields: param_num=%d, param_type=%d, cardinality=%d",
              curr->param_num, curr->param_type, cardinality);
