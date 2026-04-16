@@ -566,8 +566,8 @@ int sp_starts_with_call(SQLWCHAR *sql)
         return 1;
     }
     LogMsg(DEBUG, "sp_starts_with_call: no match");
-    return 0;
     LogMsg(INFO, "exit sp_starts_with_call()");
+    return 0;
 }
 
 PyObject* format_timestamp_pystr(const TIMESTAMP_STRUCT_EXT_TZ* ts) {
@@ -8576,7 +8576,7 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
                         memcpy(dest_uvalue, tmp_uvalue, copy_len);
                         param_size = curr->param_size;
                     }
-                    else if (isNewBuffer == 0 || param_length <= curr->param_size)
+                    else if (tmp_uvalue != NULL && (isNewBuffer == 0 || param_length <= curr->param_size))
                     {
                         dest_uvalue = &curr->uvalue[(curr->param_size / sizeof(SQLWCHAR)) * i];
                         memcpy(dest_uvalue, tmp_uvalue, param_length);
@@ -8800,11 +8800,23 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
                 PyObject *utf8_bytes = PyUnicode_AsEncodedString(bind_data, "utf-8", "strict");
                 if (utf8_bytes) {
                     Py_ssize_t utf8_len = PyBytes_Size(utf8_bytes);
+                    if (utf8_len < 0 || (size_t)utf8_len >= PY_SSIZE_T_MAX) {
+                        Py_DECREF(utf8_bytes);
+                        LogMsg(ERROR, "Invalid UTF-8 encoded length for binary parameter");
+                        PyErr_SetString(PyExc_ValueError, "Invalid UTF-8 encoded length for binary parameter");
+                        return SQL_ERROR;
+                    }
                     if (curr->uvalue != NULL) {
                         PyMem_Del(curr->uvalue);
                         curr->uvalue = NULL;
                     }
                     curr->uvalue = (SQLWCHAR *)ALLOC_N(char, utf8_len + 1);
+                    if (curr->uvalue == NULL) {
+                        Py_DECREF(utf8_bytes);
+                        LogMsg(ERROR, "Failed to allocate memory for UTF-8 binary parameter");
+                        PyErr_SetString(PyExc_MemoryError, "Failed to allocate memory for UTF-8 binary parameter");
+                        return SQL_ERROR;
+                    }
                     memcpy(curr->uvalue, PyBytes_AsString(utf8_bytes), utf8_len);
                     ((char *)curr->uvalue)[utf8_len] = '\0';
                     curr->ivalue = utf8_len;
