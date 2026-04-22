@@ -1,3 +1,35 @@
+2026-04-22, Version 3.2.9
+=========================
+
+ * Add SQL_ATTR_DEFERRED_PREPARE attribute support, updated README.md and INSTALL.md for ibm_db DLL loading on Windows (#1058) (Earammak)
+
+ * Fix Polaris scan issues: null checks, copy-paste error, bounds validation (#1057) (bchoudhary6415)
+
+ * Fix array/binary parameter binding, refactor fetch_callproc and updated (#1055) (Earammak)
+
+ * Fix buffer over-read corruption when short strings bound to CHAR(N) columns (DBC-18059) (#1054) (bchoudhary6415)
+
+ * Fix DLL load failure on Windows , update workflow and simplify sdist packaging (#1053) (Earammak)
+
+ * Fix compile error for zos (#1049) (Earammak)
+
+ * Support for calling stored prcoedure with array parameter (#1048) (Earammak)
+
+ * Preserve s_bin_mode behavior in BLOB retrieval (#1047) (bchoudhary6415)
+
+ * Fix BLOB retrieval in ibm_db.result() (#1046) (bchoudhary6415)
+
+ * Make close() idempotent for already-closed connections (#1044) (Matthew Francis Brunetti)
+
+ * Make pconnect cache keys thread-specific (#1045) (Matthew Francis Brunetti)
+
+ * doc: update install instructions (Bimal Jha)
+
+ * update clone links and install instructions (Bimal Jha)
+
+ * Polaris scan fixes (Balram Choudhary)
+
+
 # 2025-12-07, Version 3.2.8
 
 - Add support for Python 3.14 (#1039) (Earammak)
