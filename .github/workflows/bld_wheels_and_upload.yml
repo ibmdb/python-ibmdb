@@ -24,7 +24,7 @@ jobs:
         uses: pypa/cibuildwheel@v3.4.1
         env:
           CIBW_BUILD: "*-win_amd64"
-          CIBW_SKIP: "cp38-*"
+          CIBW_SKIP: "cp38-* *t-*"
 
       - name: Inject ibm_db_dll.pth into wheels
         run: python scripts/inject_pth_into_wheel.py wheelhouse
@@ -47,7 +47,7 @@ jobs:
         uses: pypa/cibuildwheel@v3.1.4
         env:
           CIBW_BUILD: "*-win32"
-          CIBW_SKIP: "cp38-*"
+          CIBW_SKIP: "cp38-* *t-*"
 
       - name: Inject ibm_db_dll.pth into wheels
         run: python scripts/inject_pth_into_wheel.py wheelhouse
@@ -72,7 +72,7 @@ jobs:
          CIBW_ARCHS_LINUX: "x86_64 i686"
          CIBW_MANYLINUX_I686_IMAGE: manylinux2014
          CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
-         CIBW_SKIP: "cp38-* *-musllinux_* *-*linux_{aarch64,ppc64le}"
+         CIBW_SKIP: "cp38-* *t-* *-musllinux_* *-*linux_{aarch64,ppc64le}"
          CIBW_REPAIR_WHEEL_COMMAND_LINUX:
             auditwheel repair
               --exclude libdb2.so.1
@@ -104,7 +104,7 @@ jobs:
       - name: Build wheels
         uses: pypa/cibuildwheel@v3.4.1
         env:
-          CIBW_SKIP: "cp38-*"
+          CIBW_SKIP: "cp38-* *t-*"
           MACOSX_DEPLOYMENT_TARGET: 14.0
 
       - uses: actions/upload-artifact@v6
@@ -125,7 +125,7 @@ jobs:
         uses: pypa/cibuildwheel@v3.4.1
         env:
           CIBW_ARCHS: "x86_64"
-          CIBW_SKIP: "cp38-*"
+          CIBW_SKIP: "cp38-* *t-*"
           MACOSX_DEPLOYMENT_TARGET: 10.15
 
       - uses: actions/upload-artifact@v6
@@ -181,3 +181,7 @@ jobs:
     - name: Publish distribution to PyPI
       if: startsWith(github.ref, 'refs/tags')
       uses: pypa/gh-action-pypi-publish@release/v1.13
+      with:
+        verbose: true
+        skip-existing: true
+        attestations: false
