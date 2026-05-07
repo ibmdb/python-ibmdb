@@ -8,7 +8,10 @@ import config
 import importlib
 # To log while testing
 import ibm_db
-ibm_db.debug("log.txt")
+# ibm_db.debug("log.txt")
+
+# Ensure test directory is on sys.path so importlib can find test modules
+sys.path.insert(0, config.test_dir)
 
 _HTML_RUNNER = False
 
@@ -37,7 +40,7 @@ def load_tests(loader, tests, pattern):
     suite = unittest.TestSuite()
 
     test_glob_default = "test_*.py"
-    test_glob = os.environ.get("SINGLE_PYTHON_TEST", test_glob_default)
+    test_glob = os.environ.get("SINGLE_PYTHON_TEST", "").strip() or test_glob_default
     # We need files of a given size for some of the test units, so create them
     # here.
     with open("ibm_db_tests/spook.png", "wb") as f:
@@ -47,6 +50,7 @@ def load_tests(loader, tests, pattern):
 
     files = glob.glob(join(config.test_dir, test_glob))
     tests = [ basename(_).replace('.py', '') for _ in files ]
+    tests = [ t for t in tests if t ]  # Filter out any empty module names
     tests.sort()
 
     for test in tests:
@@ -67,7 +71,6 @@ def load_tests(loader, tests, pattern):
     return suite
 
 if __name__ == '__main__':
-    sys.path.insert(0, config.test_dir)
     if(_HTML_RUNNER):
         unittest.main(testRunner=HtmlTestRunner.HTMLTestRunner(report_name='result',combine_reports=True))
     else:
