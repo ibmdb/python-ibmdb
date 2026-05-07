@@ -45,6 +45,10 @@
 /* MAX length for DECFLOAT */
 #define MAX_DECFLOAT_LENGTH 44
 
+/* Rowset fetch constants */
+#define DEFAULT_ROWSET_SIZE 1000
+#define MAX_ROWSET_BUFFER_BYTES (64 * 1024 * 1024)  /* 64 MB cap for total rowset buffers */
+
 /* True global resources - no need for thread safety here */
 static struct _ibm_db_globals *ibm_db_globals;
 
@@ -291,6 +295,11 @@ typedef struct _stmt_handle_struct
     ibm_db_result_set_info *column_info;
     ibm_db_row_type *row_data;
     int is_stored_procedure;
+
+    /* Rowset fetching fields (used by fetchall/fetchmany) */
+    SQLULEN rowset_size;
+    SQLULEN rows_fetched;
+    SQLUSMALLINT *row_status_array;
 } stmt_handle;
 
 static void _python_ibm_db_free_stmt_struct(stmt_handle *handle);
@@ -340,6 +349,11 @@ static PyTypeObject stmt_handleType = {
 #else
 #define STRCASECMP strcasecmp
 #endif
+
+/* Forward declarations for functions used by rowset fetch helper */
+static RETCODE _python_ibm_db_get_data(stmt_handle *stmt_res, int col_num, short ctype, void *buff, int in_length, SQLINTEGER *out_length);
+static void _python_ibm_db_init_error_info(stmt_handle *stmt_res);
+static int _python_ibm_db_get_result_set_info(stmt_handle *stmt_res);
 
 static void python_ibm_db_init_globals(struct _ibm_db_globals *ibm_db_globals)
 {
@@ -811,6 +825,15 @@ static void _python_ibm_db_free_result_struct(stmt_handle *handle)
             handle->column_info = NULL;
             handle->num_columns = 0;
         }
+
+        /* free rowset status array */
+        if (handle->row_status_array)
+        {
+            PyMem_Del(handle->row_status_array);
+            handle->row_status_array = NULL;
+        }
+        handle->rowset_size = 0;
+        handle->rows_fetched = 0;
     }
     LogMsg(INFO, "exit _python_ibm_db_free_result_struct()");
 }
@@ -849,6 +872,12 @@ static stmt_handle *_ibm_db_new_stmt_struct(conn_handle *conn_res)
     stmt_res->errormsg_recno_tracker = 1;
 
     stmt_res->row_data = NULL;
+
+    /* Initialize rowset fields */
+    stmt_res->rowset_size = 0;
+    stmt_res->rows_fetched = 0;
+    stmt_res->row_status_array = NULL;
+
     snprintf(messageStr, sizeof(messageStr), "Final stmt_handle state: head_cache_list=%p, current_node=%p, num_params=%d, file_param=%d, column_info=%p, num_columns=%d, error_recno_tracker=%d, errormsg_recno_tracker=%d, row_data=%p",
              stmt_res->head_cache_list, stmt_res->current_node, stmt_res->num_params, stmt_res->file_param, stmt_res->column_info, stmt_res->num_columns, stmt_res->error_recno_tracker, stmt_res->errormsg_recno_tracker, stmt_res->row_data);
     LogMsg(DEBUG, messageStr);
@@ -1255,6 +1284,20 @@ static int _python_ibm_db_assign_options(void *handle, int type, long opt_key, P
             if (rc == SQL_ERROR)
             {
                 _python_ibm_db_check_sql_errors((SQLHSTMT)((stmt_handle *)handle)->hstmt, SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
+            }
+            if (opt_key == SQL_ATTR_ROW_ARRAY_SIZE)
+            {
+                if (option_num < 1)
+                {
+                    LogMsg(EXCEPTION, "SQL_ATTR_ROW_ARRAY_SIZE must be >= 1");
+                    PyErr_SetString(PyExc_Exception, "SQL_ATTR_ROW_ARRAY_SIZE must be >= 1");
+                    return -1;
+                }
+                ((stmt_handle *)handle)->rowset_size = (SQLULEN)option_num;
+                snprintf(messageStr, sizeof(messageStr), "SQL_ATTR_ROW_ARRAY_SIZE stored as rowset_size: %ld", option_num);
+                LogMsg(INFO, messageStr);
+                LogMsg(INFO, "exit _python_ibm_db_assign_options()");
+                return SQL_SUCCESS;
             }
             if (opt_key == SQL_ATTR_CURSOR_TYPE)
             {
@@ -2053,6 +2096,937 @@ static int _python_ibm_db_bind_column_helper(stmt_handle *stmt_res)
     }
     LogMsg(INFO, "exit _python_ibm_db_bind_column_helper()");
     return rc;
+}
+
+typedef struct _rowset_col_buffer {
+    void *data;
+    SQLLEN *out_lengths;       /* Must be SQLLEN for 64-bit ODBC compliance */
+    SQLLEN elem_size;
+    SQLSMALLINT ctype;
+    int is_lob;
+} rowset_col_buffer;
+
+static void _python_ibm_db_free_rowset_buffers(rowset_col_buffer *bufs, int num_cols)
+{
+    int i;
+    LogMsg(DEBUG, "entry _python_ibm_db_free_rowset_buffers()");
+    if (bufs == NULL) {
+        LogMsg(DEBUG, "bufs is NULL, nothing to free");
+        return;
+    }
+    for (i = 0; i < num_cols; i++)
+    {
+        if (bufs[i].data != NULL) { PyMem_Del(bufs[i].data); bufs[i].data = NULL; }
+        if (bufs[i].out_lengths != NULL) { PyMem_Del(bufs[i].out_lengths); bufs[i].out_lengths = NULL; }
+    }
+    PyMem_Del(bufs);
+    snprintf(messageStr, sizeof(messageStr), "Freed rowset buffers for %d columns", num_cols);
+    LogMsg(DEBUG, messageStr);
+}
+
+static rowset_col_buffer *_python_ibm_db_bind_rowset_columns(
+    stmt_handle *stmt_res, SQLULEN row_array_size)
+{
+    LogMsg(INFO, "entry _python_ibm_db_bind_rowset_columns()");
+    int i, rc;
+    SQLSMALLINT column_type;
+    SQLLEN in_length;
+
+    snprintf(messageStr, sizeof(messageStr),
+        "Binding rowset columns: num_columns=%d, row_array_size=%llu",
+        stmt_res->num_columns, (unsigned long long)row_array_size);
+    LogMsg(DEBUG, messageStr);
+
+    rowset_col_buffer *bufs = (rowset_col_buffer *)ALLOC_N(rowset_col_buffer, stmt_res->num_columns);
+    if (bufs == NULL) {
+        LogMsg(ERROR, "Failed to Allocate Memory for rowset buffers");
+        PyErr_SetString(PyExc_Exception, "Failed to Allocate Memory for rowset buffers");
+        return NULL;
+    }
+    memset(bufs, 0, sizeof(rowset_col_buffer) * stmt_res->num_columns);
+
+    for (i = 0; i < stmt_res->num_columns; i++)
+    {
+        column_type = stmt_res->column_info[i].type;
+        bufs[i].is_lob = 0;
+
+        snprintf(messageStr, sizeof(messageStr),
+            "Rowset col %d: SQL type=%d, size=%d, scale=%d",
+            i, column_type, (int)stmt_res->column_info[i].size, (int)stmt_res->column_info[i].scale);
+        LogMsg(DEBUG, messageStr);
+
+        switch (column_type)
+        {
+        case SQL_CHAR:
+        case SQL_VARCHAR:
+        case SQL_LONGVARCHAR:
+#ifdef __MVS__
+            /* z/OS: always bind as SQL_C_CHAR to get EBCDIC data,
+             * then convert to ASCII. SQL_C_WCHAR on z/OS can produce
+             * encoding issues with rowset buffers. */
+            in_length = stmt_res->column_info[i].size + 1;
+            bufs[i].elem_size = in_length;
+            bufs[i].ctype = SQL_C_CHAR;
+            bufs[i].data = (void *)ALLOC_N(char, in_length * row_array_size);
+            if (bufs[i].data == NULL) goto alloc_error;
+            memset(bufs[i].data, 0, in_length * row_array_size);
+#else
+            if (stmt_res->s_use_wchar == WCHAR_NO)
+            {
+                in_length = stmt_res->column_info[i].size + 1;
+                bufs[i].elem_size = in_length;
+                bufs[i].ctype = SQL_C_CHAR;
+                bufs[i].data = (void *)ALLOC_N(char, in_length * row_array_size);
+                if (bufs[i].data == NULL) goto alloc_error;
+                memset(bufs[i].data, 0, in_length * row_array_size);
+            }
+            else
+            {
+                in_length = stmt_res->column_info[i].size + 1;
+                bufs[i].elem_size = in_length * sizeof(SQLWCHAR);
+                bufs[i].ctype = SQL_C_WCHAR;
+                bufs[i].data = (void *)ALLOC_N(SQLWCHAR, in_length * row_array_size);
+                if (bufs[i].data == NULL) goto alloc_error;
+                memset(bufs[i].data, 0, in_length * sizeof(SQLWCHAR) * row_array_size);
+            }
+#endif
+            break;
+        case SQL_WCHAR:
+        case SQL_WVARCHAR:
+        case SQL_GRAPHIC:
+        case SQL_VARGRAPHIC:
+        case SQL_LONGVARGRAPHIC:
+            in_length = stmt_res->column_info[i].size + 1;
+            bufs[i].elem_size = in_length * sizeof(SQLWCHAR);
+            bufs[i].ctype = SQL_C_WCHAR;
+            bufs[i].data = (void *)ALLOC_N(SQLWCHAR, in_length * row_array_size);
+            if (bufs[i].data == NULL) goto alloc_error;
+            memset(bufs[i].data, 0, in_length * sizeof(SQLWCHAR) * row_array_size);
+            break;
+        case SQL_BINARY:
+        case SQL_LONGVARBINARY:
+        case SQL_VARBINARY:
+            if (stmt_res->s_bin_mode == CONVERT)
+            { in_length = 2 * stmt_res->column_info[i].size + 1; bufs[i].ctype = SQL_C_CHAR; }
+            else
+            { in_length = stmt_res->column_info[i].size + 1; bufs[i].ctype = SQL_C_DEFAULT; }
+            bufs[i].elem_size = in_length;
+            bufs[i].data = (void *)ALLOC_N(char, in_length * row_array_size);
+            if (bufs[i].data == NULL) goto alloc_error;
+            memset(bufs[i].data, 0, in_length * row_array_size);
+            break;
+        case SQL_BIGINT:
+        case SQL_DECFLOAT:
+            in_length = stmt_res->column_info[i].size + 3;
+            bufs[i].elem_size = in_length; bufs[i].ctype = SQL_C_CHAR;
+            bufs[i].data = (void *)ALLOC_N(char, in_length * row_array_size);
+            if (bufs[i].data == NULL) goto alloc_error;
+            memset(bufs[i].data, 0, in_length * row_array_size);
+            break;
+        case SQL_DECIMAL:
+        case SQL_NUMERIC:
+            in_length = stmt_res->column_info[i].size + stmt_res->column_info[i].scale + 2 + 1;
+            bufs[i].elem_size = in_length; bufs[i].ctype = SQL_C_CHAR;
+            bufs[i].data = (void *)ALLOC_N(char, in_length * row_array_size);
+            if (bufs[i].data == NULL) goto alloc_error;
+            memset(bufs[i].data, 0, in_length * row_array_size);
+            break;
+        case SQL_TYPE_DATE:
+            bufs[i].elem_size = sizeof(DATE_STRUCT); bufs[i].ctype = SQL_C_TYPE_DATE;
+            bufs[i].data = (void *)ALLOC_N(DATE_STRUCT, row_array_size);
+            if (bufs[i].data == NULL) goto alloc_error;
+            memset(bufs[i].data, 0, sizeof(DATE_STRUCT) * row_array_size);
+            break;
+        case SQL_TYPE_TIME:
+            bufs[i].elem_size = sizeof(TIME_STRUCT); bufs[i].ctype = SQL_C_TYPE_TIME;
+            bufs[i].data = (void *)ALLOC_N(TIME_STRUCT, row_array_size);
+            if (bufs[i].data == NULL) goto alloc_error;
+            memset(bufs[i].data, 0, sizeof(TIME_STRUCT) * row_array_size);
+            break;
+        case SQL_TYPE_TIMESTAMP:
+            bufs[i].elem_size = sizeof(TIMESTAMP_STRUCT); bufs[i].ctype = SQL_C_TYPE_TIMESTAMP;
+            bufs[i].data = (void *)ALLOC_N(TIMESTAMP_STRUCT, row_array_size);
+            if (bufs[i].data == NULL) goto alloc_error;
+            memset(bufs[i].data, 0, sizeof(TIMESTAMP_STRUCT) * row_array_size);
+            break;
+        case SQL_TYPE_TIMESTAMP_WITH_TIMEZONE:
+            bufs[i].elem_size = sizeof(TIMESTAMP_STRUCT_EXT_TZ); bufs[i].ctype = SQL_C_TYPE_TIMESTAMP_EXT_TZ;
+            bufs[i].data = (void *)ALLOC_N(TIMESTAMP_STRUCT_EXT_TZ, row_array_size);
+            if (bufs[i].data == NULL) goto alloc_error;
+            memset(bufs[i].data, 0, sizeof(TIMESTAMP_STRUCT_EXT_TZ) * row_array_size);
+            break;
+#ifdef __MVS__
+        case SQL_SMALLINT:
+#else
+        case SQL_SMALLINT:
+        case SQL_BOOLEAN:
+#endif
+            bufs[i].elem_size = sizeof(SQLSMALLINT); bufs[i].ctype = SQL_C_DEFAULT;
+            bufs[i].data = (void *)ALLOC_N(SQLSMALLINT, row_array_size);
+            if (bufs[i].data == NULL) goto alloc_error;
+            memset(bufs[i].data, 0, sizeof(SQLSMALLINT) * row_array_size);
+            break;
+        case SQL_INTEGER:
+            bufs[i].elem_size = sizeof(SQLINTEGER); bufs[i].ctype = SQL_C_DEFAULT;
+            bufs[i].data = (void *)ALLOC_N(SQLINTEGER, row_array_size);
+            if (bufs[i].data == NULL) goto alloc_error;
+            memset(bufs[i].data, 0, sizeof(SQLINTEGER) * row_array_size);
+            break;
+        case SQL_BIT:
+            bufs[i].elem_size = sizeof(SQLINTEGER); bufs[i].ctype = SQL_C_LONG;
+            bufs[i].data = (void *)ALLOC_N(SQLINTEGER, row_array_size);
+            if (bufs[i].data == NULL) goto alloc_error;
+            memset(bufs[i].data, 0, sizeof(SQLINTEGER) * row_array_size);
+            break;
+        case SQL_REAL:
+            bufs[i].elem_size = sizeof(SQLREAL); bufs[i].ctype = SQL_C_FLOAT;
+            bufs[i].data = (void *)ALLOC_N(SQLREAL, row_array_size);
+            if (bufs[i].data == NULL) goto alloc_error;
+            memset(bufs[i].data, 0, sizeof(SQLREAL) * row_array_size);
+            break;
+        case SQL_FLOAT:
+            bufs[i].elem_size = sizeof(SQLFLOAT); bufs[i].ctype = SQL_C_DEFAULT;
+            bufs[i].data = (void *)ALLOC_N(SQLFLOAT, row_array_size);
+            if (bufs[i].data == NULL) goto alloc_error;
+            memset(bufs[i].data, 0, sizeof(SQLFLOAT) * row_array_size);
+            break;
+        case SQL_DOUBLE:
+            bufs[i].elem_size = sizeof(SQLDOUBLE); bufs[i].ctype = SQL_C_DEFAULT;
+            bufs[i].data = (void *)ALLOC_N(SQLDOUBLE, row_array_size);
+            if (bufs[i].data == NULL) goto alloc_error;
+            memset(bufs[i].data, 0, sizeof(SQLDOUBLE) * row_array_size);
+            break;
+        case SQL_BLOB:
+        case SQL_CLOB:
+        case SQL_DBCLOB:
+        case SQL_XML:
+            bufs[i].is_lob = 1;
+            bufs[i].data = NULL; bufs[i].elem_size = 0; bufs[i].ctype = 0;
+            bufs[i].out_lengths = NULL;
+            snprintf(messageStr, sizeof(messageStr),
+                "Rowset col %d: LOB type %d, will use SQLGetData per row", i, column_type);
+            LogMsg(DEBUG, messageStr);
+            break;
+        default:
+            bufs[i].data = NULL; bufs[i].elem_size = 0; bufs[i].ctype = 0;
+            bufs[i].out_lengths = NULL;
+            snprintf(messageStr, sizeof(messageStr),
+                "Rowset col %d: unhandled column type %d, skipping binding", i, column_type);
+            LogMsg(INFO, messageStr);
+            break;
+        }
+
+        /* Allocate out_length array and bind for non-LOB columns only */
+        if (!bufs[i].is_lob && bufs[i].data != NULL)
+        {
+            bufs[i].out_lengths = ALLOC_N(SQLLEN, row_array_size);
+            if (bufs[i].out_lengths == NULL) goto alloc_error;
+            memset(bufs[i].out_lengths, 0, sizeof(SQLLEN) * row_array_size);
+
+            snprintf(messageStr, sizeof(messageStr),
+                "Calling SQLBindCol for rowset col %d: ctype=%d, elem_size=%lld",
+                i + 1, bufs[i].ctype, (long long)bufs[i].elem_size);
+            LogMsg(DEBUG, messageStr);
+
+            Py_BEGIN_ALLOW_THREADS;
+            rc = SQLBindCol((SQLHSTMT)stmt_res->hstmt, (SQLUSMALLINT)(i + 1),
+                            bufs[i].ctype, bufs[i].data, bufs[i].elem_size,
+                            bufs[i].out_lengths);
+            Py_END_ALLOW_THREADS;
+            if (rc == SQL_ERROR)
+            {
+                _python_ibm_db_check_sql_errors((SQLHSTMT)stmt_res->hstmt,
+                    SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
+                snprintf(messageStr, sizeof(messageStr),
+                    "SQLBindCol failed for rowset column %d, rc=%d", i, rc);
+                LogMsg(ERROR, messageStr);
+                goto bind_error;
+            }
+            if (rc == SQL_SUCCESS_WITH_INFO)
+            {
+                _python_ibm_db_check_sql_errors((SQLHSTMT)stmt_res->hstmt,
+                    SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
+                snprintf(messageStr, sizeof(messageStr),
+                    "SQLBindCol warning for rowset column %d, rc=%d", i, rc);
+                LogMsg(INFO, messageStr);
+            }
+        }
+    }
+
+    snprintf(messageStr, sizeof(messageStr),
+        "Successfully bound all %d columns for rowset fetching", stmt_res->num_columns);
+    LogMsg(INFO, messageStr);
+
+    LogMsg(INFO, "exit _python_ibm_db_bind_rowset_columns()");
+    return bufs;
+alloc_error:
+    snprintf(messageStr, sizeof(messageStr),
+        "Memory allocation failed at rowset column %d", i);
+    LogMsg(ERROR, messageStr);
+    PyErr_SetString(PyExc_Exception, "Failed to Allocate Memory for rowset column buffer");
+    LogMsg(ERROR, "Failed to Allocate Memory for rowset column buffer");
+bind_error:
+    _python_ibm_db_free_rowset_buffers(bufs, stmt_res->num_columns);
+    return NULL;
+}
+
+static PyObject *_python_ibm_db_build_row_from_rowset(
+    stmt_handle *stmt_res, rowset_col_buffer *bufs, SQLULEN row_idx)
+{
+    int col;
+    SQLSMALLINT column_type;
+    SQLLEN out_length;
+    PyObject *value = NULL;
+    char *base_ptr;
+    char error[DB2_MAX_ERR_MSG_LEN + 50];
+
+    snprintf(messageStr, sizeof(messageStr),
+        "entry _python_ibm_db_build_row_from_rowset(): row_idx=%llu, num_columns=%d",
+        (unsigned long long)row_idx, stmt_res->num_columns);
+    LogMsg(DEBUG, messageStr);
+
+    PyObject *row_tuple = PyTuple_New(stmt_res->num_columns);
+    if (row_tuple == NULL) {
+        LogMsg(ERROR, "Failed to allocate row tuple in _python_ibm_db_build_row_from_rowset()");
+        return NULL;
+    }
+
+    for (col = 0; col < stmt_res->num_columns; col++)
+    {
+        column_type = stmt_res->column_info[col].type;
+
+        /* LOB columns have out_lengths=NULL; NULL detection handled via SQLGetData */
+        if (bufs[col].out_lengths != NULL)
+            out_length = bufs[col].out_lengths[row_idx];
+        else
+            out_length = 0;
+
+        if (!bufs[col].is_lob && out_length == SQL_NULL_DATA)
+        {
+            Py_INCREF(Py_None);
+            value = Py_None;
+        }
+        else if (bufs[col].is_lob)
+        {
+            int rc;
+            int len_terChar = 0;
+            SQLSMALLINT targetCType = SQL_C_CHAR;
+            void *out_ptr = NULL;
+            SQLINTEGER lob_length = 0;
+
+            snprintf(messageStr, sizeof(messageStr),
+                "Rowset row %llu col %d: LOB column (type=%d), using SQLGetData",
+                (unsigned long long)row_idx, col, column_type);
+            LogMsg(DEBUG, messageStr);
+
+            /* Call SQLSetPos to position cursor to the correct row
+             * in the rowset before SQLGetData for LOB columns.
+             * Skip for row_idx==0: cursor is already on the first row
+             * after SQLFetchScroll, and SQLSetPos fails on forward-only cursors. */
+            if (row_idx > 0)
+            {
+                snprintf(messageStr, sizeof(messageStr),
+                    "Calling SQLSetPos to position to row %llu for LOB col %d",
+                    (unsigned long long)(row_idx + 1), col);
+                LogMsg(DEBUG, messageStr);
+
+                Py_BEGIN_ALLOW_THREADS;
+                rc = SQLSetPos(stmt_res->hstmt, (SQLUSMALLINT)(row_idx + 1),
+                               SQL_POSITION, SQL_LOCK_NO_CHANGE);
+                Py_END_ALLOW_THREADS;
+                if (rc == SQL_ERROR)
+                {
+                    _python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
+                    sprintf(error, "SQLSetPos failed: %s", IBM_DB_G(__python_stmt_err_msg));
+                    LogMsg(ERROR, error);
+                    PyErr_SetString(PyExc_Exception, error);
+                    Py_DECREF(row_tuple);
+                    return NULL;
+                }
+                if (rc == SQL_SUCCESS_WITH_INFO)
+                {
+                    _python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
+                }
+            }
+
+            if (column_type == SQL_BLOB)
+            {
+                switch (stmt_res->s_bin_mode)
+                {
+                case PASSTHRU:
+                    Py_INCREF(Py_None); value = Py_None;
+                    PyTuple_SetItem(row_tuple, col, value); continue;
+                case CONVERT:
+                    len_terChar = sizeof(char); targetCType = SQL_C_CHAR; break;
+                case BINARY:
+                    len_terChar = 0; targetCType = SQL_C_BINARY; break;
+                default:
+                    Py_INCREF(Py_None); value = Py_None;
+                    PyTuple_SetItem(row_tuple, col, value); continue;
+                }
+            }
+            else
+            {
+#ifdef __MVS__
+                /* z/OS: SQL_C_WCHAR via SQLGetData crashes (segfault in
+                 * getSQLWCharAsPyUnicodeObject). Use SQL_C_CHAR instead,
+                 * which returns EBCDIC data, then convert to ASCII. */
+                len_terChar = sizeof(char); targetCType = SQL_C_CHAR;
+#else
+                len_terChar = sizeof(SQLWCHAR); targetCType = SQL_C_WCHAR;
+#endif
+            }
+
+            out_ptr = (void *)ALLOC_N(char, INIT_BUFSIZ + len_terChar);
+            if (out_ptr == NULL)
+            {
+                LogMsg(ERROR, "Failed to Allocate Memory for LOB Data");
+                PyErr_SetString(PyExc_Exception, "Failed to Allocate Memory for LOB Data");
+                Py_DECREF(row_tuple); return NULL;
+            }
+
+            rc = _python_ibm_db_get_data(stmt_res, col + 1, targetCType,
+                                         out_ptr, INIT_BUFSIZ + len_terChar, &lob_length);
+
+            snprintf(messageStr, sizeof(messageStr),
+                "SQLGetData for LOB col %d: rc=%d, lob_length=%d", col, rc, (int)lob_length);
+            LogMsg(DEBUG, messageStr);
+
+            if (rc == SQL_SUCCESS_WITH_INFO)
+            {
+                void *tmp = (void *)ALLOC_N(char, lob_length + INIT_BUFSIZ + len_terChar);
+                if (tmp == NULL) { PyMem_Del(out_ptr); PyErr_SetString(PyExc_Exception, "Failed to Allocate Memory for LOB Data"); Py_DECREF(row_tuple); return NULL; }
+                memcpy(tmp, out_ptr, INIT_BUFSIZ);
+                PyMem_Del(out_ptr); out_ptr = tmp;
+                rc = _python_ibm_db_get_data(stmt_res, col + 1, targetCType,
+                    (char *)out_ptr + INIT_BUFSIZ, lob_length + len_terChar, &lob_length);
+                if (rc == SQL_ERROR)
+                {
+                    PyMem_Del(out_ptr);
+                    sprintf(error, "Failed to fetch LOB Data: %s", IBM_DB_G(__python_stmt_err_msg));
+                    LogMsg(ERROR, error);
+                    PyErr_SetString(PyExc_Exception, error);
+                    Py_DECREF(row_tuple); return NULL;
+                }
+#ifdef __MVS__
+                if (targetCType == SQL_C_BINARY)
+                    value = PyBytes_FromStringAndSize((char *)out_ptr, INIT_BUFSIZ + lob_length);
+                else
+                {
+                    value = PyUnicode_DecodeLatin1((char *)out_ptr, INIT_BUFSIZ + lob_length, NULL);
+                }
+#else
+                if (len_terChar == sizeof(SQLWCHAR))
+                    value = getSQLWCharAsPyUnicodeObject(out_ptr, INIT_BUFSIZ + lob_length);
+                else
+                    value = PyBytes_FromStringAndSize((char *)out_ptr, INIT_BUFSIZ + lob_length);
+#endif
+            }
+            else if (rc == SQL_ERROR)
+            {
+                PyMem_Del(out_ptr);
+                sprintf(error, "Failed to fetch LOB Data: %s", IBM_DB_G(__python_stmt_err_msg));
+                LogMsg(ERROR, error);
+                PyErr_SetString(PyExc_Exception, error);
+                Py_DECREF(row_tuple); return NULL;
+            }
+            else
+            {
+                if (lob_length == SQL_NULL_DATA) { Py_INCREF(Py_None); value = Py_None; }
+#ifdef __MVS__
+                else if (targetCType == SQL_C_BINARY)
+                    value = PyBytes_FromStringAndSize((char *)out_ptr, lob_length);
+                else
+                {
+                    value = PyUnicode_DecodeLatin1((char *)out_ptr, lob_length, NULL);
+                }
+#else
+                else if (len_terChar == sizeof(SQLWCHAR))
+                    value = getSQLWCharAsPyUnicodeObject(out_ptr, lob_length);
+                else
+                    value = PyBytes_FromStringAndSize((char *)out_ptr, lob_length);
+#endif
+            }
+            if (out_ptr != NULL) { PyMem_Del(out_ptr); out_ptr = NULL; }
+            if (value == NULL)
+            {
+                snprintf(messageStr, sizeof(messageStr),
+                    "LOB col %d (type=%d) conversion failed, returning error", col, column_type);
+                LogMsg(ERROR, messageStr);
+                Py_DECREF(row_tuple);
+                return NULL;
+            }
+        }
+        else
+        {
+            base_ptr = (char *)bufs[col].data + (row_idx * bufs[col].elem_size);
+            switch (column_type)
+            {
+            case SQL_CHAR:
+            case SQL_VARCHAR:
+#ifdef __MVS__
+                value = PyUnicode_DecodeLatin1(base_ptr, out_length, NULL);
+#else
+                if (stmt_res->s_use_wchar == WCHAR_NO)
+                {
+                    value = PyBytes_FromStringAndSize(base_ptr, out_length);
+                }
+                else
+                {
+                    value = getSQLWCharAsPyUnicodeObject((SQLWCHAR *)base_ptr, out_length);
+                }
+#endif
+                break;
+            case SQL_WCHAR:
+            case SQL_WVARCHAR:
+            case SQL_GRAPHIC:
+            case SQL_VARGRAPHIC:
+            case SQL_LONGVARGRAPHIC:
+                value = getSQLWCharAsPyUnicodeObject((SQLWCHAR *)base_ptr, out_length);
+                break;
+#ifndef PASE
+            case SQL_LONGVARCHAR:
+            case SQL_WLONGVARCHAR:
+#ifdef __MVS__
+                value = PyUnicode_DecodeLatin1(base_ptr, out_length, NULL);
+#else
+                value = getSQLWCharAsPyUnicodeObject((SQLWCHAR *)base_ptr, out_length);
+#endif
+                break;
+#endif
+            case SQL_DECIMAL:
+            case SQL_NUMERIC:
+            case SQL_DECFLOAT:
+                value = StringOBJ_FromASCIIAndSize(base_ptr, out_length);
+                break;
+            case SQL_TYPE_DATE:
+            {
+                DATE_STRUCT *dv = (DATE_STRUCT *)base_ptr;
+                value = PyDate_FromDate(dv->year, dv->month, dv->day);
+                break;
+            }
+            case SQL_TYPE_TIME:
+            {
+                TIME_STRUCT *tv = (TIME_STRUCT *)base_ptr;
+                value = PyTime_FromTime(tv->hour % 24, tv->minute, tv->second, 0);
+                break;
+            }
+            case SQL_TYPE_TIMESTAMP:
+            {
+                TIMESTAMP_STRUCT *tsv = (TIMESTAMP_STRUCT *)base_ptr;
+                value = PyDateTime_FromDateAndTime(tsv->year, tsv->month, tsv->day,
+                    tsv->hour % 24, tsv->minute, tsv->second, tsv->fraction / 1000);
+                break;
+            }
+            case SQL_TYPE_TIMESTAMP_WITH_TIMEZONE:
+            {
+                TIMESTAMP_STRUCT_EXT_TZ *tstzv = (TIMESTAMP_STRUCT_EXT_TZ *)base_ptr;
+                value = format_timestamp_pystr(tstzv);
+                break;
+            }
+            case SQL_BIGINT:
+                value = PyLong_FromString(base_ptr, NULL, 10);
+                break;
+#ifdef __MVS__
+            case SQL_SMALLINT:
+#else
+            case SQL_SMALLINT:
+            case SQL_BOOLEAN:
+#endif
+                value = PyInt_FromLong(((SQLSMALLINT *)bufs[col].data)[row_idx]);
+                break;
+            case SQL_INTEGER:
+                value = PyInt_FromLong(((SQLINTEGER *)bufs[col].data)[row_idx]);
+                break;
+            case SQL_BIT:
+                value = PyBool_FromLong(((SQLINTEGER *)bufs[col].data)[row_idx]);
+                break;
+            case SQL_REAL:
+                value = PyFloat_FromDouble(((SQLREAL *)bufs[col].data)[row_idx]);
+                break;
+            case SQL_FLOAT:
+                value = PyFloat_FromDouble(((SQLFLOAT *)bufs[col].data)[row_idx]);
+                break;
+            case SQL_DOUBLE:
+                value = PyFloat_FromDouble(((SQLDOUBLE *)bufs[col].data)[row_idx]);
+                break;
+            case SQL_BINARY:
+#ifndef PASE
+            case SQL_LONGVARBINARY:
+#endif
+            case SQL_VARBINARY:
+                if (stmt_res->s_bin_mode == PASSTHRU)
+                    value = PyBytes_FromStringAndSize("", 0);
+                else
+                    value = PyBytes_FromStringAndSize(base_ptr, out_length);
+                break;
+            default:
+                snprintf(messageStr, sizeof(messageStr),
+                    "Rowset row builder: unhandled column type %d for col %d, returning None",
+                    column_type, col);
+                LogMsg(INFO, messageStr);
+                Py_INCREF(Py_None); value = Py_None;
+                break;
+            }
+        }
+        if (value == NULL)
+        {
+            snprintf(messageStr, sizeof(messageStr),
+                "Rowset row %llu col %d: value conversion returned NULL",
+                (unsigned long long)row_idx, col);
+            LogMsg(ERROR, messageStr);
+            Py_DECREF(row_tuple);
+            return NULL;
+        }
+        PyTuple_SetItem(row_tuple, col, value);
+    }
+
+    snprintf(messageStr, sizeof(messageStr),
+        "exit _python_ibm_db_build_row_from_rowset(): row_idx=%llu built successfully",
+        (unsigned long long)row_idx);
+    LogMsg(DEBUG, messageStr);
+
+    return row_tuple;
+}
+
+static PyObject *_python_ibm_db_bind_fetch_rowset_helper(
+    stmt_handle *stmt_res, int max_rows)
+{
+    LogMsg(INFO, "entry _python_ibm_db_bind_fetch_rowset_helper()");
+    int rc;
+    SQLULEN row_array_size, r;
+    int total_fetched = 0;
+    int has_lob = 0;
+    rowset_col_buffer *bufs = NULL;
+    PyObject *result_list = NULL;
+    PyObject *row_tuple = NULL;
+    char error[DB2_MAX_ERR_MSG_LEN + 50];
+
+    snprintf(messageStr, sizeof(messageStr), "max_rows=%d", max_rows);
+    LogMsg(DEBUG, messageStr);
+
+    row_array_size = (stmt_res->rowset_size > 0) ? stmt_res->rowset_size : DEFAULT_ROWSET_SIZE;
+    if (max_rows > 0 && (SQLULEN)max_rows < row_array_size)
+        row_array_size = (SQLULEN)max_rows;
+
+    snprintf(messageStr, sizeof(messageStr), "row_array_size=%llu", (unsigned long long)row_array_size);
+    LogMsg(DEBUG, messageStr);
+
+    _python_ibm_db_init_error_info(stmt_res);
+
+    if (stmt_res->column_info == NULL)
+    {
+        LogMsg(DEBUG, "Column info is NULL, retrieving result set info");
+        if (_python_ibm_db_get_result_set_info(stmt_res) < 0)
+        {
+            sprintf(error, "Column information cannot be retrieved: %s", IBM_DB_G(__python_stmt_err_msg));
+            LogMsg(ERROR, error);
+            PyErr_SetString(PyExc_Exception, error);
+            return NULL;
+        }
+    }
+    /* Check for LOB columns */
+    {
+        int col_idx;
+        for (col_idx = 0; col_idx < stmt_res->num_columns; col_idx++)
+        {
+            SQLSMALLINT ctype = stmt_res->column_info[col_idx].type;
+            if (ctype == SQL_BLOB || ctype == SQL_CLOB || ctype == SQL_DBCLOB || ctype == SQL_XML)
+                has_lob = 1;
+        }
+    }
+    /* If LOB columns present, reduce row_array_size to 1.
+     * LOB columns require SQLGetData after fetch. With row_array_size > 1,
+     * SQLSetPos would be needed to position to each row, but SQLSetPos
+     * requires keyset-driven cursors which are not reliably available
+     * across all platforms (LUW, z/OS, etc.). */
+    if (has_lob && row_array_size > 1)
+    {
+        snprintf(messageStr, sizeof(messageStr),
+            "LOB columns detected: reducing row_array_size from %llu to 1 (SQLGetData requires single-row fetch)",
+            (unsigned long long)row_array_size);
+        LogMsg(INFO, messageStr);
+        row_array_size = 1;
+    }
+    if (row_array_size > 1)
+    {
+        int col_idx;
+        size_t est_row_bytes = 0;
+
+        for (col_idx = 0; col_idx < stmt_res->num_columns; col_idx++)
+        {
+            SQLUINTEGER col_size = stmt_res->column_info[col_idx].size;
+            SQLSMALLINT ctype = stmt_res->column_info[col_idx].type;
+            if (ctype == SQL_WCHAR || ctype == SQL_WVARCHAR || ctype == SQL_GRAPHIC ||
+                ctype == SQL_VARGRAPHIC || ctype == SQL_LONGVARGRAPHIC)
+                est_row_bytes += (col_size + 1) * sizeof(SQLWCHAR);
+            else if (ctype == SQL_BLOB || ctype == SQL_CLOB || ctype == SQL_DBCLOB || ctype == SQL_XML)
+                est_row_bytes += 0; /* LOBs use SQLGetData, not buffered */
+            else
+                est_row_bytes += col_size + 4;
+        }
+        if (est_row_bytes > 0)
+        {
+            SQLULEN safe_max = (SQLULEN)(MAX_ROWSET_BUFFER_BYTES / est_row_bytes);
+            if (safe_max < 1) safe_max = 1;
+            if (row_array_size > safe_max)
+            {
+                snprintf(messageStr, sizeof(messageStr),
+                    "Auto-reducing row_array_size from %llu to %llu (est %zu bytes/row, cap %d bytes)",
+                    (unsigned long long)row_array_size, (unsigned long long)safe_max,
+                    est_row_bytes, MAX_ROWSET_BUFFER_BYTES);
+                LogMsg(INFO, messageStr);
+                row_array_size = safe_max;
+            }
+        }
+    }
+    /* Unbind any existing single-row column bindings */
+    LogMsg(DEBUG, "Unbinding existing column bindings with SQLFreeStmt(SQL_UNBIND)");
+    Py_BEGIN_ALLOW_THREADS;
+    SQLFreeStmt(stmt_res->hstmt, SQL_UNBIND);
+    Py_END_ALLOW_THREADS;
+
+    /* When LOB columns are present, use SQLFetch (single-row) instead of
+     * SQLFetchScroll. On z/OS, SQLGetData fails after SQLFetchScroll even
+     * with row_array_size=1, because the CLI treats it as a rowset fetch.
+     * SQLFetch + SQLGetData is the proven working path for LOBs. */
+    if (!has_lob)
+    {
+        /* Set rowset attributes */
+        snprintf(messageStr, sizeof(messageStr),
+            "Setting SQL_ATTR_ROW_ARRAY_SIZE to %llu", (unsigned long long)row_array_size);
+        LogMsg(DEBUG, messageStr);
+        Py_BEGIN_ALLOW_THREADS;
+        rc = SQLSetStmtAttr(stmt_res->hstmt, SQL_ATTR_ROW_ARRAY_SIZE,
+                            (SQLPOINTER)(uintptr_t)row_array_size, 0);
+        Py_END_ALLOW_THREADS;
+        if (rc == SQL_ERROR)
+        {
+            _python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
+            sprintf(error, "Failed to set SQL_ATTR_ROW_ARRAY_SIZE: %s", IBM_DB_G(__python_stmt_err_msg));
+            PyErr_SetString(PyExc_Exception, error);
+            goto cleanup_attrs;
+        }
+        if (rc == SQL_SUCCESS_WITH_INFO)
+        {
+            _python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
+            LogMsg(INFO, "SQL_ATTR_ROW_ARRAY_SIZE set with warning");
+        }
+
+        stmt_res->rows_fetched = 0;
+        Py_BEGIN_ALLOW_THREADS;
+        rc = SQLSetStmtAttr(stmt_res->hstmt, SQL_ATTR_ROWS_FETCHED_PTR,
+                            &stmt_res->rows_fetched, 0);
+        Py_END_ALLOW_THREADS;
+        if (rc == SQL_ERROR)
+        {
+            _python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
+            LogMsg(ERROR, "Failed to set SQL_ATTR_ROWS_FETCHED_PTR");
+            goto cleanup_attrs;
+        }
+        if (rc == SQL_SUCCESS_WITH_INFO)
+        {
+            _python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
+            LogMsg(INFO, "SQL_ATTR_ROWS_FETCHED_PTR set with warning");
+        }
+
+        if (stmt_res->row_status_array != NULL) { PyMem_Del(stmt_res->row_status_array); }
+        stmt_res->row_status_array = ALLOC_N(SQLUSMALLINT, row_array_size);
+        if (stmt_res->row_status_array == NULL)
+        {
+            LogMsg(ERROR, "Failed to Allocate row status array");
+            PyErr_SetString(PyExc_Exception, "Failed to Allocate row status array");
+            goto cleanup_attrs;
+        }
+        memset(stmt_res->row_status_array, 0, sizeof(SQLUSMALLINT) * row_array_size);
+
+        Py_BEGIN_ALLOW_THREADS;
+        rc = SQLSetStmtAttr(stmt_res->hstmt, SQL_ATTR_ROW_STATUS_PTR,
+                            stmt_res->row_status_array, 0);
+        Py_END_ALLOW_THREADS;
+        if (rc == SQL_ERROR)
+        {
+            _python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
+            LogMsg(ERROR, "Failed to set SQL_ATTR_ROW_STATUS_PTR");
+            goto cleanup_attrs;
+        }
+        if (rc == SQL_SUCCESS_WITH_INFO)
+        {
+            _python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
+            LogMsg(INFO, "SQL_ATTR_ROW_STATUS_PTR set with warning");
+        }
+    }
+    else
+    {
+        LogMsg(INFO, "LOB columns present: using SQLFetch (skipping rowset attributes)");
+        row_array_size = 1;
+    }
+
+    bufs = _python_ibm_db_bind_rowset_columns(stmt_res, row_array_size);
+    if (bufs == NULL) goto cleanup_attrs;
+
+    result_list = PyList_New(0);
+    if (result_list == NULL) { LogMsg(ERROR, "Memory allocation failed for result list"); goto cleanup_all; }
+
+    /* Fetch loop */
+    while (1)
+    {
+        if (has_lob)
+        {
+            /* Use SQLFetch for LOB tables - SQLGetData works reliably after SQLFetch
+             * on all platforms including z/OS */
+            Py_BEGIN_ALLOW_THREADS;
+            rc = SQLFetch((SQLHSTMT)stmt_res->hstmt);
+            Py_END_ALLOW_THREADS;
+            stmt_res->rows_fetched = (rc == SQL_SUCCESS || rc == SQL_SUCCESS_WITH_INFO) ? 1 : 0;
+
+            snprintf(messageStr, sizeof(messageStr), "SQLFetch (LOB) rc=%d, rows_fetched=%llu",
+                     rc, (unsigned long long)stmt_res->rows_fetched);
+            LogMsg(DEBUG, messageStr);
+        }
+        else
+        {
+        /* Dynamically adjust row_array_size to avoid fetching more rows
+         * than needed. Without this, the last SQLFetchScroll in a fetchmany()
+         * call may consume rows from the cursor that are never returned,
+         * causing subsequent fetchmany() calls to miss rows. */
+        if (max_rows > 0)
+        {
+            SQLULEN remaining = (SQLULEN)(max_rows - total_fetched);
+            SQLULEN effective_size = (remaining < row_array_size) ? remaining : row_array_size;
+            if (effective_size != row_array_size)
+            {
+                snprintf(messageStr, sizeof(messageStr),
+                    "Adjusting effective row_array_size from %llu to %llu (remaining=%llu)",
+                    (unsigned long long)row_array_size, (unsigned long long)effective_size,
+                    (unsigned long long)remaining);
+                LogMsg(DEBUG, messageStr);
+
+                Py_BEGIN_ALLOW_THREADS;
+                SQLSetStmtAttr(stmt_res->hstmt, SQL_ATTR_ROW_ARRAY_SIZE,
+                               (SQLPOINTER)(uintptr_t)effective_size, 0);
+                Py_END_ALLOW_THREADS;
+            }
+        }
+
+        Py_BEGIN_ALLOW_THREADS;
+        rc = SQLFetchScroll((SQLHSTMT)stmt_res->hstmt, SQL_FETCH_NEXT, 0);
+        Py_END_ALLOW_THREADS;
+
+        snprintf(messageStr, sizeof(messageStr), "SQLFetchScroll rc=%d, rows_fetched=%llu",
+                 rc, (unsigned long long)stmt_res->rows_fetched);
+        LogMsg(DEBUG, messageStr);
+        } /* end else (non-LOB SQLFetchScroll path) */
+
+        if (rc == SQL_NO_DATA_FOUND) {
+            LogMsg(DEBUG, "SQLFetchScroll returned SQL_NO_DATA_FOUND, ending fetch loop");
+            break;
+        }
+        if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO)
+        {
+            _python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
+            sprintf(error, "Fetch Failure: %s", IBM_DB_G(__python_stmt_err_msg));
+            LogMsg(ERROR, error);
+            PyErr_SetString(PyExc_Exception, error);
+            Py_XDECREF(result_list); result_list = NULL;
+            goto cleanup_all;
+        }
+        if (rc == SQL_SUCCESS_WITH_INFO)
+            _python_ibm_db_check_sql_errors(stmt_res->hstmt, SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
+
+        for (r = 0; r < stmt_res->rows_fetched; r++)
+        {
+            if (!has_lob && stmt_res->row_status_array != NULL &&
+                (stmt_res->row_status_array[r] == SQL_ROW_DELETED ||
+                 stmt_res->row_status_array[r] == SQL_ROW_ERROR ||
+                 stmt_res->row_status_array[r] == SQL_ROW_NOROW))
+            {
+                snprintf(messageStr, sizeof(messageStr),
+                    "Skipping row %llu: status=%d (deleted, error, or norow)",
+                    (unsigned long long)r, stmt_res->row_status_array[r]);
+                LogMsg(DEBUG, messageStr);
+                continue;
+            }
+
+            row_tuple = _python_ibm_db_build_row_from_rowset(stmt_res, bufs, r);
+            if (row_tuple == NULL)
+            {
+                LogMsg(ERROR, "Failed to build row from rowset, aborting fetch");
+                Py_XDECREF(result_list); result_list = NULL;
+                goto cleanup_all;
+            }
+            if (PyList_Append(result_list, row_tuple) == -1)
+            {
+                Py_DECREF(row_tuple);
+                Py_XDECREF(result_list); result_list = NULL;
+                goto cleanup_all;
+            }
+            Py_DECREF(row_tuple);
+            total_fetched++;
+            if (max_rows > 0 && total_fetched >= max_rows) break;
+        }
+        if (max_rows > 0 && total_fetched >= max_rows) break;
+    }
+
+    snprintf(messageStr, sizeof(messageStr), "Rowset fetch complete: total_fetched=%d", total_fetched);
+    LogMsg(INFO, messageStr);
+
+cleanup_all:
+    LogMsg(DEBUG, "Cleanup: freeing rowset buffers");
+    if (bufs != NULL) { _python_ibm_db_free_rowset_buffers(bufs, stmt_res->num_columns); bufs = NULL; }
+
+cleanup_attrs:
+    /* Unbind columns and restore single-row mode */
+    LogMsg(DEBUG, "Cleanup: restoring single-row fetch mode and unbinding columns");
+    Py_BEGIN_ALLOW_THREADS;
+    SQLFreeStmt(stmt_res->hstmt, SQL_UNBIND);
+    if (!has_lob)
+    {
+        SQLSetStmtAttr(stmt_res->hstmt, SQL_ATTR_ROW_ARRAY_SIZE, (SQLPOINTER)1, 0);
+        SQLSetStmtAttr(stmt_res->hstmt, SQL_ATTR_ROWS_FETCHED_PTR, NULL, 0);
+        SQLSetStmtAttr(stmt_res->hstmt, SQL_ATTR_ROW_STATUS_PTR, NULL, 0);
+    }
+    Py_END_ALLOW_THREADS;
+
+    /* Invalidate single-row bindings so they re-bind on next single fetch */
+    if (stmt_res->row_data != NULL)
+    {
+        LogMsg(DEBUG, "Invalidating single-row bindings for re-bind on next single fetch");
+        int i;
+        for (i = 0; i < stmt_res->num_columns; i++)
+        {
+            switch (stmt_res->column_info[i].type)
+            {
+            case SQL_CHAR: case SQL_VARCHAR: case SQL_LONGVARCHAR:
+            case SQL_WCHAR: case SQL_WVARCHAR: case SQL_GRAPHIC:
+            case SQL_VARGRAPHIC: case SQL_LONGVARGRAPHIC:
+            case SQL_BIGINT: case SQL_DECIMAL: case SQL_NUMERIC:
+            case SQL_XML: case SQL_DECFLOAT:
+                if (stmt_res->row_data[i].data.str_val != NULL) { PyMem_Del(stmt_res->row_data[i].data.str_val); stmt_res->row_data[i].data.str_val = NULL; }
+                if (stmt_res->row_data[i].data.w_val != NULL) { PyMem_Del(stmt_res->row_data[i].data.w_val); stmt_res->row_data[i].data.w_val = NULL; }
+                break;
+            case SQL_TYPE_TIMESTAMP_WITH_TIMEZONE:
+                if (stmt_res->row_data[i].data.tstz_val != NULL) { PyMem_Del(stmt_res->row_data[i].data.tstz_val); stmt_res->row_data[i].data.tstz_val = NULL; }
+                break;
+            case SQL_TYPE_TIMESTAMP:
+                if (stmt_res->row_data[i].data.ts_val != NULL) { PyMem_Del(stmt_res->row_data[i].data.ts_val); stmt_res->row_data[i].data.ts_val = NULL; }
+                break;
+            case SQL_TYPE_DATE:
+                if (stmt_res->row_data[i].data.date_val != NULL) { PyMem_Del(stmt_res->row_data[i].data.date_val); stmt_res->row_data[i].data.date_val = NULL; }
+                break;
+            case SQL_TYPE_TIME:
+                if (stmt_res->row_data[i].data.time_val != NULL) { PyMem_Del(stmt_res->row_data[i].data.time_val); stmt_res->row_data[i].data.time_val = NULL; }
+                break;
+            default:
+                break;
+            }
+        }
+        PyMem_Del(stmt_res->row_data);
+        stmt_res->row_data = NULL;
+    }
+
+    LogMsg(INFO, "exit _python_ibm_db_bind_fetch_rowset_helper()");
+    return result_list;
 }
 
 /*    static void _python_ibm_db_clear_stmt_err_cache () */
@@ -11515,6 +12489,12 @@ static PyObject *ibm_db_next_result(PyObject *self, PyObject *args)
         stmt_res->errormsg_recno_tracker = 1;
 
         new_stmt_res->row_data = NULL;
+
+        /* Initialize rowset fields */
+        new_stmt_res->rowset_size = 0;
+        new_stmt_res->rows_fetched = 0;
+        new_stmt_res->row_status_array = NULL;
+
         LogMsg(INFO, "exit next_result()");
         return (PyObject *)new_stmt_res;
     }
@@ -11848,6 +12828,22 @@ static int _python_ibm_db_get_column_by_name(stmt_handle *stmt_res, char *col_na
     {
         snprintf(messageStr, sizeof(messageStr), "Checking column %d: name=%s", i, stmt_res->column_info[i].name);
         LogMsg(DEBUG, messageStr);
+#ifdef __MVS__
+        {
+            char col_name_ascii[256];
+            int name_len = strlen((char *)stmt_res->column_info[i].name);
+            if (name_len >= 256) name_len = 255;
+            memcpy(col_name_ascii, (char *)stmt_res->column_info[i].name, name_len);
+            col_name_ascii[name_len] = '\0';
+            if (strcmp(col_name_ascii, col_name) == 0)
+            {
+                snprintf(messageStr, sizeof(messageStr), "Found column: index=%d", i);
+                LogMsg(DEBUG, messageStr);
+                LogMsg(INFO, "exit _python_ibm_db_get_column_by_name()");
+                return i;
+            }
+        }
+#else
         if (strcmp((char *)stmt_res->column_info[i].name, col_name) == 0)
         {
             snprintf(messageStr, sizeof(messageStr), "Found column: index=%d", i);
@@ -11855,6 +12851,7 @@ static int _python_ibm_db_get_column_by_name(stmt_handle *stmt_res, char *col_na
             LogMsg(INFO, "exit _python_ibm_db_get_column_by_name()");
             return i;
         }
+#endif
         i++;
     }
     LogMsg(DEBUG, "Column not found");
@@ -11963,6 +12960,15 @@ static PyObject *ibm_db_field_name(PyObject *self, PyObject *args)
     }
 #ifdef _WIN32
     result = PyUnicode_DecodeLocale((char *)stmt_res->column_info[col].name, "surrogateescape");
+#elif defined(__MVS__)
+    {
+        char col_name_ascii[256];
+        int name_len = strlen((char *)stmt_res->column_info[col].name);
+        if (name_len >= 256) name_len = 255;
+        memcpy(col_name_ascii, (char *)stmt_res->column_info[col].name, name_len);
+        col_name_ascii[name_len] = '\0';
+        result = PyUnicode_FromString(col_name_ascii);
+    }
 #else
     result = PyUnicode_FromString((char *)stmt_res->column_info[col].name);
 #endif
@@ -11993,6 +12999,15 @@ static PyObject *ibm_db_field_name(PyObject *self, PyObject *args)
     LogMsg(INFO, "exit field_name()");
 #ifdef _WIN32
     return PyUnicode_DecodeLocale((char *)stmt_res->column_info[col].name, "surrogateescape");
+#elif defined(__MVS__)
+    {
+        char col_name_ascii[256];
+        int name_len = strlen((char *)stmt_res->column_info[col].name);
+        if (name_len >= 256) name_len = 255;
+        memcpy(col_name_ascii, (char *)stmt_res->column_info[col].name, name_len);
+        col_name_ascii[name_len] = '\0';
+        return PyUnicode_FromString(col_name_ascii);
+    }
 #else
     return PyUnicode_FromString((char *)stmt_res->column_info[col].name);
 #endif
@@ -14348,6 +15363,15 @@ static PyObject *_python_ibm_db_bind_fetch_helper(PyObject *args, int op)
         {
 #ifdef _WIN32
             key = PyUnicode_DecodeLocale((char *)stmt_res->column_info[column_number].name, "surrogateescape");
+#elif defined(__MVS__)
+            {
+                char col_name_ascii[256];
+                int name_len = strlen((char *)stmt_res->column_info[column_number].name);
+                if (name_len >= 256) name_len = 255;
+                memcpy(col_name_ascii, (char *)stmt_res->column_info[column_number].name, name_len);
+                col_name_ascii[name_len] = '\0';
+                key = PyUnicode_FromString(col_name_ascii);
+            }
 #else
             key = PyUnicode_FromString((char *)stmt_res->column_info[column_number].name);
 #endif
@@ -16615,6 +17639,7 @@ static PyObject *ibm_db_get_option(PyObject *self, PyObject *args)
                 case SQL_ATTR_CURSOR_TYPE:
                 case SQL_ATTR_ROWCOUNT_PREFETCH:
                 case SQL_ATTR_QUERY_TIMEOUT:
+                case SQL_ATTR_ROW_ARRAY_SIZE:
 #ifndef __MVS__
                 case SQL_ATTR_DEFERRED_PREPARE:
                 case SQL_ATTR_CALL_RETURN:
@@ -16672,6 +17697,14 @@ static PyObject *ibm_db_get_option(PyObject *self, PyObject *args)
                 }
                 else
                 {
+                    if (op_integer == SQL_ATTR_ROW_ARRAY_SIZE)
+                    {
+                        SQLULEN rs = (stmt_res->rowset_size > 0) ? stmt_res->rowset_size : DEFAULT_ROWSET_SIZE;
+                        snprintf(messageStr, sizeof(messageStr), "Returning cached SQL_ATTR_ROW_ARRAY_SIZE: %lu", (unsigned long)rs);
+                        LogMsg(DEBUG, messageStr);
+                        LogMsg(INFO, "exit get_option()");
+                        return PyInt_FromLong((long)rs);
+                    }
                     // integer value
                     Py_BEGIN_ALLOW_THREADS;
                     rc = SQLGetStmtAttr((SQLHSTMT)stmt_res->hstmt, op_integer,
@@ -18034,66 +19067,43 @@ static PyObject *ibm_db_fetchone(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
-// Fetch many rows from the result set
+// Fetch many rows from the result set (uses rowset fetching via SQLFetchScroll)
 static PyObject *ibm_db_fetchmany(PyObject *self, PyObject *args)
 {
     LogMsg(INFO, "entry fetchmany()");
     LogUTF8Msg(args);
-    PyObject *return_value = NULL;
-    PyObject *result_list = NULL;
     int num_rows = 0;
-    PyObject *stmt = NULL;
-    if (!PyArg_ParseTuple(args, "Oi", &stmt, &num_rows))
+    PyObject *py_stmt_res = NULL;
+    stmt_handle *stmt_res = NULL;
+    PyObject *result_list = NULL;
+
+    if (!PyArg_ParseTuple(args, "Oi", &py_stmt_res, &num_rows))
     {
         LogMsg(ERROR, "Failed to parse arguments");
-        LogMsg(EXCEPTION, "fetchmany requires a statement handle and an integer argument for the number of rows");
         PyErr_SetString(PyExc_Exception, "fetchmany requires a statement handle and an integer argument for the number of rows");
         return NULL;
     }
-    snprintf(messageStr, sizeof(messageStr), "Parsed statement handle: %p, Number of rows to fetch: %d", stmt, num_rows);
+    snprintf(messageStr, sizeof(messageStr), "Parsed statement handle: %p, Number of rows to fetch: %d", py_stmt_res, num_rows);
     LogMsg(DEBUG, messageStr);
+
+    if (NIL_P(py_stmt_res) || (!PyObject_TypeCheck(py_stmt_res, &stmt_handleType)))
+    {
+        PyErr_SetString(PyExc_Exception, "Supplied statement object parameter is invalid");
+        LogMsg(ERROR, "Supplied statement object parameter is invalid");
+        return NULL;
+    }
+    stmt_res = (stmt_handle *)py_stmt_res;
     if (num_rows <= 0)
     {
         LogMsg(ERROR, "Number of rows must be greater than zero");
         PyErr_SetString(PyExc_Exception, "Number of rows must be greater than zero");
         return NULL;
     }
-    result_list = PyList_New(0);
+    result_list = _python_ibm_db_bind_fetch_rowset_helper(stmt_res, num_rows);
     if (result_list == NULL)
     {
-        LogMsg(ERROR, "Memory allocation failed for result list");
+        LogMsg(ERROR, "Rowset fetch failed in fetchmany");
         return NULL;
-    }
-    LogMsg(DEBUG, "Initialized result list");
-    int fetch_count = 0;
-    while (fetch_count < num_rows && (return_value = _python_ibm_db_bind_fetch_helper(args, FETCH_INDEX)) != NULL)
-    {
-        snprintf(messageStr, sizeof(messageStr), "Fetched row %d: %p", fetch_count + 1, return_value);
-        LogMsg(DEBUG, messageStr);
-        if (PyTuple_Check(return_value) || PyList_Check(return_value))
-        {
-            LogMsg(DEBUG, "Valid row fetched, appending to result list");
-            if (PyList_Append(result_list, return_value) == -1)
-            {
-                LogMsg(ERROR, "Failed to append row to result list");
-                Py_XDECREF(result_list);
-                return NULL;
-            }
-            Py_XDECREF(return_value);
-            fetch_count++;
-        }
-        else
-        {
-            LogMsg(DEBUG, "Fetched value is not a valid row, breaking loop");
-            Py_XDECREF(return_value);
-            break;
-        }
-    }
-    if (PyList_Size(result_list) == 0)
-    {
-        LogMsg(DEBUG, "No rows fetched, returning empty list");
-        LogMsg(INFO, "exit fetchmany()");
-        return result_list;
     }
     snprintf(messageStr, sizeof(messageStr), "Returning %zd rows", PyList_Size(result_list));
     LogMsg(DEBUG, messageStr);
@@ -18101,47 +19111,31 @@ static PyObject *ibm_db_fetchmany(PyObject *self, PyObject *args)
     return result_list;
 }
 
-// Fetch all rows from the result set
+// Fetch all rows from the result set (uses rowset fetching via SQLFetchScroll)
 static PyObject *ibm_db_fetchall(PyObject *self, PyObject *args)
 {
     LogMsg(INFO, "entry fetchall()");
     LogUTF8Msg(args);
-    PyObject *return_value = NULL;
+    PyObject *py_stmt_res = NULL;
+    stmt_handle *stmt_res = NULL;
     PyObject *result_list = NULL;
-    result_list = PyList_New(0);
-    if (result_list == NULL)
+    if (!PyArg_ParseTuple(args, "O", &py_stmt_res))
     {
-        LogMsg(ERROR, "Memory allocation failed for result list");
+        LogMsg(ERROR, "Failed to parse arguments");
         return NULL;
     }
-    LogMsg(DEBUG, "Initialized result list");
-    while ((return_value = _python_ibm_db_bind_fetch_helper(args, FETCH_INDEX)) != NULL)
+    if (NIL_P(py_stmt_res) || (!PyObject_TypeCheck(py_stmt_res, &stmt_handleType)))
     {
-        snprintf(messageStr, sizeof(messageStr), "Fetched return value: %p", return_value);
-        LogMsg(DEBUG, messageStr);
-        if (PyTuple_Check(return_value) || PyList_Check(return_value))
-        {
-            LogMsg(DEBUG, "Valid row fetched, appending to result list");
-            if (PyList_Append(result_list, return_value) == -1)
-            {
-                LogMsg(ERROR, "Failed to append row to result list");
-                Py_XDECREF(result_list);
-                return NULL;
-            }
-            Py_XDECREF(return_value);
-        }
-        else
-        {
-            LogMsg(DEBUG, "Fetched value is not a valid row, breaking loop");
-            Py_XDECREF(return_value);
-            break;
-        }
+        PyErr_SetString(PyExc_Exception, "Supplied statement object parameter is invalid");
+        LogMsg(ERROR, "Supplied statement object parameter is invalid");
+        return NULL;
     }
-    if (PyList_Size(result_list) == 0)
+    stmt_res = (stmt_handle *)py_stmt_res;
+    result_list = _python_ibm_db_bind_fetch_rowset_helper(stmt_res, -1);
+    if (result_list == NULL)
     {
-        LogMsg(DEBUG, "No rows fetched, returning empty list");
-        LogMsg(INFO, "exit fetchall()");
-        return result_list;
+        LogMsg(ERROR, "Rowset fetch failed in fetchall");
+        return NULL;
     }
     snprintf(messageStr, sizeof(messageStr), "Returning %zd rows", PyList_Size(result_list));
     LogMsg(DEBUG, messageStr);
@@ -19341,6 +20335,7 @@ INIT_ibm_db(void)
     Py_INCREF(&server_infoType);
     PyModule_AddObject(m, "IBM_DBServerInfo", (PyObject *)&server_infoType);
     PyModule_AddIntConstant(m, "SQL_ATTR_QUERY_TIMEOUT", SQL_ATTR_QUERY_TIMEOUT);
+    PyModule_AddIntConstant(m, "SQL_ATTR_ROW_ARRAY_SIZE", SQL_ATTR_ROW_ARRAY_SIZE);
     PyModule_AddIntConstant(m, "SQL_ATTR_PARAMSET_SIZE", SQL_ATTR_PARAMSET_SIZE);
     PyModule_AddIntConstant(m, "SQL_ATTR_PARAM_BIND_TYPE", SQL_ATTR_PARAM_BIND_TYPE);
     PyModule_AddIntConstant(m, "SQL_PARAM_BIND_BY_COLUMN", SQL_PARAM_BIND_BY_COLUMN);
