@@ -104,7 +104,7 @@ This will install ibm_db and ibm_db_dbi module.
 - If `db2cli validate` command works in your system and installed db2 client/server
   has `include` directory, ibm_db installation from souce distribution will not download clidriver, but it will use the existing client/server from the system.
 
-- To inforce auto downloading of clidriver _OR_ to make setting of environment variable `IBM_DB_HOME` or `IBM_DB_INSTALLER_URL` or `CLIDRIVER_VERSION` effective; install ibm_db from source distribution usin below command:
+- To enforce auto downloading of clidriver _OR_ to make setting of environment variable `IBM_DB_HOME` or `IBM_DB_INSTALLER_URL` or `CLIDRIVER_VERSION` effective; install ibm_db from source distribution using below command:
 
 ```
 pip install ibm_db --no-binary :all: --no-cache-dir
