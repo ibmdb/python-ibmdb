@@ -8,9 +8,10 @@ Provides Python interface for connecting to IBM Db2 for LUW and IBM Db2 for z/OS
 
 ## Components
 
-1. The **ibm_db** contains:
-   - **ibm_db** driver: Python driver for IBM Db2 for LUW and IBM Db2 for z/OS databases. Uses the IBM Data Server Driver for ODBC and CLI APIs to connect to IBM Db2 for LUW.
-   - **ibm_db_dbi**: Python driver for IBM Db2 for LUW that complies to the DB-API 2.0 specification.
+The **ibm_db** contains:
+
+- **ibm_db** driver: Python driver for IBM Db2 for LUW and IBM Db2 for z/OS databases. Uses the IBM Data Server Driver for ODBC and CLI APIs to connect to IBM Db2 for LUW.
+- **ibm_db_dbi**: Python driver for IBM Db2 for LUW that complies to the DB-API 2.0 specification.
 
 ## <a name="api"></a> API Documentation
 
@@ -24,6 +25,14 @@ https://github.com/ibmdb/python-ibmdb/wiki/APIs
 
 Install Python 3.9 <= 3.14. The minimum python version supported by driver is python 3.9 and the latest version supported is python 3.14.
 MacOS arm64 is supported Python 3.9 onwards.
+
+When using an external clidriver, **ibm_db_dbi** must be compiled against the headers and libraries of that clidriver to function properly.
+Therefore, it is not recommended to use the precompiled `ibm_db` wheel with an external clidriver.
+
+Compiling `ibm_db` for your clidriver requires:
+
+- A GCC compiler to compile the native C/C++ code used by `ibm_db`
+- ODBC header files from your clidriver (usually located in `clidriver/include`). Note that not all external clidrivers provide these files.
 
 ### To install ibm_db on z/OS system
 
@@ -95,7 +104,7 @@ This will install ibm_db and ibm_db_dbi module.
 - If `db2cli validate` command works in your system and installed db2 client/server
   has `include` directory, ibm_db installation from souce distribution will not download clidriver, but it will use the existing client/server from the system.
 
-- To inforce auto downloading of clidriver _OR_ to make setting of environment variable `IBM_DB_HOME` or `IBM_DB_INSTALLER_URL` or `CLIDRIVER_VERSION` effective; install ibm_db from source distribution usin below command:
+- To enforce auto downloading of clidriver _OR_ to make setting of environment variable `IBM_DB_HOME` or `IBM_DB_INSTALLER_URL` or `CLIDRIVER_VERSION` effective; install ibm_db from source distribution using below command:
 
 ```
 pip install ibm_db --no-binary :all: --no-cache-dir
