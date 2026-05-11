@@ -495,12 +495,11 @@ if 'zos' == sys.platform:
 else:
     library = ['db2']
     
-package_data = { 'ibm_db_tests': [ 'run_individual_tests', '*.png', '*.jpg', 'config.py.sample']}
+package_data = { 'ibm_db_tests': [ 'run_individual_tests', '*.png', '*.jpg']}
 
 data_files = [ (get_python_lib(), ['./README.md']),
                (get_python_lib(), ['./CHANGES.md']),
-               (get_python_lib(), ['./LICENSE']),
-               (get_python_lib(), ['./config.py.sample'])]
+               (get_python_lib(), ['./LICENSE'])]
 
 modules = ['ibm_db_dbi', 'testfunctions', 'ibmdb_tests', 'ibm_db_ctx', '_ibm_db_register_dll']
 

@@ -59,7 +59,7 @@ print('info=%r' % ibm_db.server_info(conn))
 
 Before running the test suite make sure to perform the following
 
-- rename the config.py.sample to config.py
+- Update config.json with your database connection details
 - Replace the following in run_all_tests
 ```
 export IBM_DB_HOME='XXXX.DSN'

@@ -3,7 +3,6 @@ build
 dist
 ibm_db.egg-info
 *.pyc
-config.py
 libdsnao64c.*
 *~
 *.out
