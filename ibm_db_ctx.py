@@ -14,7 +14,7 @@ class Db2connect:
 
     def __enter__(self) -> 'IBM_DBConnection':
         """Connect to DB2."""
-        self.__cxn = ibm_db.connect(self.__dsn, '', '')
+        self.__cxn = ibm_db.connect(self.__dsn, self.__username, self.__password)
         #print("enter method called")
         return self.__cxn
 

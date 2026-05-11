@@ -19,6 +19,8 @@ For more information on the APIs supported by ibm_db, please refer to below link
 
 https://github.com/ibmdb/python-ibmdb/wiki/APIs
 
+For the asyncio APIs, please refer to [ASYNC_APIs_WIKI.md](ASYNC_APIs_WIKI.md).
+
 <a name="prereq"></a>
 
 ## Pre-requisites
@@ -753,29 +755,38 @@ later of Db2. While Db2 v8.x is fully supported, two of the tests
 (test_195.py and test_52949.py) utilize XML functionality. These tests will
 fail on version 8.x of Db2.
 
-## Running the driver testsuite on Linux
+## Running the driver testsuite
 
-In order to run the entire python driver testsuite on Linux, run this
-command at the command prompt:
-
-```
-  python ibmdb_tests.py
-```
-
-To run a single test, set the environment variable, **SINGLE_PYTHON_TEST**, to
-the test filename you would like to run, followed by the previous command.
-
-## Running the driver testsuite on Windows
-
-In order to run the entire python driver testsuite on Windows, run this
-command at the command prompt:
+Run the entire testsuite (sync + async):
 
 ```
   python ibmdb_tests.py
 ```
 
-To run a single test, set the environment variable, **SINGLE_PYTHON_TEST**, to
-the test filename you would like to run, followed by the previous command.
+Run only sync or async tests, or a single test file:
+
+```
+  python ibmdb_tests.py --async                                # Run only async tests
+  python ibmdb_tests.py --sync                                 # Run only sync tests
+  python ibmdb_tests.py --async --test test_05_async_fetch.py   # Run a single async test
+  python ibmdb_tests.py --sync  --test test_006_ConnPassingOpts.py  # Run a single sync test
+```
+
+Legacy: To run a single test, set the environment variable **SINGLE_PYTHON_TEST**:
+
+```
+  Windows:
+  set SINGLE_PYTHON_TEST=test_006_ConnPassingOpts.py
+
+  Other platforms:
+  export SINGLE_PYTHON_TEST=test_006_ConnPassingOpts.py
+```
+
+Then run:
+
+```
+  python ibmdb_tests.py
+```
 
 ## Known Limitations for the Python driver
 

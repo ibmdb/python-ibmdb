@@ -28,7 +28,7 @@ run_test() {
     export SINGLE_PYTHON_TEST=$name
     touch $FILEPREFIX$base.out $FILEPREFIX$base.err
     chtag -t -c 819 $FILEPREFIX$base.out $FILEPREFIX$base.err
-    python tests.py 1> $FILEPREFIX$base.out 2> $FILEPREFIX$base.err <&-
+    python ibmdb_tests.py 1> $FILEPREFIX$base.out 2> $FILEPREFIX$base.err <&-
     show_file $FILEPREFIX$base.out
     show_file $FILEPREFIX$base.err
 }

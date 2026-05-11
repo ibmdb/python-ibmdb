@@ -22,6 +22,7 @@ This module implements the Python DB API Specification v2.0 for DB2 database.
 """
 
 import types, string, time, datetime, decimal, sys
+import asyncio
 import weakref
 import logging as log_ibmdb_dbi
 
@@ -1785,33 +1786,41 @@ class Cursor(object):
         LogMsg(INFO, "exit stmt_error()")
         return sqlstate
 
-    def execute(self, operation, parameters=None):
+    def execute(self, operation=None, parameters=None):
         """
         This method can be used to prepare and execute an SQL
         statement.  It takes the SQL statement(operation) and a
         sequence of values to substitute for the parameter markers in
         the SQL statement as arguments.
+
+        If called with no arguments after prepare() + bind_param(),
+        it executes the already-prepared statement.
         """
         LogMsg(INFO, "entry execute()")
-        LogMsg(DEBUG, f"Executing SQL operation: {operation}")
-        if parameters is not None:
-            LogMsg(DEBUG, f"SQL parameters: {parameters}")
-        self.messages = []
-        if not isinstance(operation, string_types):
-            err_msg = "execute expects the first argument [%s] to be of type String or Unicode." % operation
-            LogMsg(ERROR, err_msg)
-            self.messages.append(
-                InterfaceError("execute expects the first argument [%s] to be of type String or Unicode." % operation))
-            raise self.messages[len(self.messages) - 1]
-        if parameters is not None:
-            if not isinstance(parameters, (list, tuple, dict)):
-                LogMsg(ERROR, "execute parameters argument should be sequence.")
-                self.messages.append(InterfaceError("execute parameters argument should be sequence."))
+        if operation is not None:
+            LogMsg(DEBUG, f"Executing SQL operation: {operation}")
+            if parameters is not None:
+                LogMsg(DEBUG, f"SQL parameters: {parameters}")
+            self.messages = []
+            if not isinstance(operation, string_types):
+                err_msg = "execute expects the first argument [%s] to be of type String or Unicode." % operation
+                LogMsg(ERROR, err_msg)
+                self.messages.append(
+                    InterfaceError("execute expects the first argument [%s] to be of type String or Unicode." % operation))
                 raise self.messages[len(self.messages) - 1]
-        self.__description = None
-        self._all_stmt_handlers = []
-        self._prepare_helper(operation)
-        self._execute_helper(parameters)
+            if parameters is not None:
+                if not isinstance(parameters, (list, tuple, dict)):
+                    LogMsg(ERROR, "execute parameters argument should be sequence.")
+                    self.messages.append(InterfaceError("execute parameters argument should be sequence."))
+                    raise self.messages[len(self.messages) - 1]
+            self.__description = None
+            self._all_stmt_handlers = []
+            self._prepare_helper(operation)
+            self._execute_helper(parameters)
+        else:
+            # Execute already-prepared statement (after prepare + bind_param)
+            LogMsg(DEBUG, "Executing already-prepared statement")
+            self._execute_helper(parameters)
         self._set_cursor_helper()
         LogMsg(INFO, "SQL operation executed successfully.")
         LogMsg(INFO, "exit execute()")
@@ -2025,6 +2034,62 @@ class Cursor(object):
         LogMsg(INFO, "exit nextset()")
         return True
 
+    def prepare(self, operation):
+        """Prepare an SQL statement for later execution via bind_param + execute."""
+        LogMsg(INFO, "entry prepare()")
+        self.messages = []
+        self.__description = None
+        self._all_stmt_handlers = []
+        self._prepare_helper(operation)
+        LogMsg(INFO, "exit prepare()")
+
+    def bind_param(self, index, value, param_type=None, data_type=None):
+        """Bind a parameter value for the prepared statement.
+
+        ``index`` is 1-based.  ``param_type`` is an optional
+        ``ibm_db.SQL_PARAM_*`` constant (e.g. SQL_PARAM_INPUT).
+        ``data_type`` is an optional SQL data type constant
+        (e.g. ``ibm_db.SQL_INTEGER``).
+        """
+        LogMsg(INFO, "entry bind_param()")
+        try:
+            if param_type is not None and data_type is not None:
+                ibm_db.bind_param(self.stmt_handler, index, value, param_type, data_type)
+            elif param_type is not None:
+                ibm_db.bind_param(self.stmt_handler, index, value, param_type)
+            else:
+                ibm_db.bind_param(self.stmt_handler, index, value)
+        except Exception as inst:
+            LogMsg(ERROR, f"Error binding parameter at index {index}: {_get_exception(inst)}")
+            self.messages.append(_get_exception(inst))
+            raise self.messages[len(self.messages) - 1]
+        LogMsg(INFO, "exit bind_param()")
+
+    def fetch_callproc(self):
+        """Fetch the output parameters returned by a stored procedure
+        executed via the prepare/bind/execute path."""
+        LogMsg(INFO, "entry fetch_callproc()")
+        try:
+            result = ibm_db.fetch_callproc(self.stmt_handler)
+        except Exception as inst:
+            LogMsg(ERROR, f"Error in fetch_callproc: {_get_exception(inst)}")
+            self.messages.append(_get_exception(inst))
+            raise self.messages[len(self.messages) - 1]
+        LogMsg(INFO, "exit fetch_callproc()")
+        return result
+
+    def fetch_tuple(self):
+        """Fetch one row as a tuple from the current result set."""
+        LogMsg(INFO, "entry fetch_tuple()")
+        try:
+            result = ibm_db.fetch_tuple(self.stmt_handler)
+        except Exception as inst:
+            LogMsg(ERROR, f"Error in fetch_tuple: {_get_exception(inst)}")
+            self.messages.append(_get_exception(inst))
+            raise self.messages[len(self.messages) - 1]
+        LogMsg(INFO, "exit fetch_tuple()")
+        return result
+
     def setinputsizes(self, sizes):
         """This method currently does nothing."""
         pass
@@ -2080,3 +2145,314 @@ class Cursor(object):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
+
+
+# Module-level async functions 
+
+async def connect_async(dsn, user='', password='', host='', database='',
+                        conn_options=None):
+    """Async wrapper around :func:`connect`.  Returns a :class:`Connection`."""
+    LogMsg(INFO, "entry connect_async()")
+    conn_obj = await asyncio.to_thread(
+        connect, dsn, user, password, host, database, conn_options
+    )
+    LogMsg(INFO, "exit connect_async()")
+    return conn_obj
+
+
+async def pconnect_async(dsn, user='', password='', host='', database='',
+                         conn_options=None):
+    """Async wrapper around :func:`pconnect`.  Returns a :class:`Connection`."""
+    LogMsg(INFO, "entry pconnect_async()")
+    conn_obj = await asyncio.to_thread(
+        pconnect, dsn, user, password, host, database, conn_options
+    )
+    LogMsg(INFO, "exit pconnect_async()")
+    return conn_obj
+
+
+async def conn_errormsg_async(connection=None):
+    """Async wrapper around :func:`conn_errormsg`."""
+    return await asyncio.to_thread(conn_errormsg, connection)
+
+
+async def conn_error_async(connection=None):
+    """Async wrapper around :func:`conn_error`."""
+    return await asyncio.to_thread(conn_error, connection)
+
+
+async def get_sqlcode_async(handle=None):
+    """Async wrapper around :func:`get_sqlcode`."""
+    return await asyncio.to_thread(get_sqlcode, handle)
+
+
+async def createdb_async(database, dsn, user='', password='', host='',
+                         codeset='', mode=''):
+    """Async wrapper around :func:`createdb`."""
+    return await asyncio.to_thread(
+        createdb, database, dsn, user, password, host, codeset, mode
+    )
+
+
+async def dropdb_async(database, dsn, user='', password='', host=''):
+    """Async wrapper around :func:`dropdb`."""
+    return await asyncio.to_thread(
+        dropdb, database, dsn, user, password, host
+    )
+
+
+async def recreatedb_async(database, dsn, user='', password='', host='',
+                            codeset='', mode=''):
+    """Async wrapper around :func:`recreatedb`."""
+    return await asyncio.to_thread(
+        recreatedb, database, dsn, user, password, host, codeset, mode
+    )
+
+
+async def createdbNX_async(database, dsn, user='', password='', host='',
+                            codeset='', mode=''):
+    """Async wrapper around :func:`createdbNX`."""
+    return await asyncio.to_thread(
+        createdbNX, database, dsn, user, password, host, codeset, mode
+    )
+
+
+# AsyncCursor
+
+class AsyncCursor:
+    """Async wrapper around :class:`Cursor`.
+
+    Every public method of the sync Cursor that performs I/O is exposed as
+    a coroutine.  ``prepare``, ``bind_param`` and ``fetch_callproc`` are
+    added here for the prepare/bind/execute workflow.
+    """
+
+    def __init__(self, sync_cursor):
+        self._cursor = sync_cursor
+
+    #properties (sync, no I/O)
+
+    @property
+    def description(self):
+        return self._cursor.description
+
+    @property
+    def rowcount(self):
+        return self._cursor.rowcount
+
+    @property
+    def arraysize(self):
+        return self._cursor.arraysize
+
+    @arraysize.setter
+    def arraysize(self, value):
+        self._cursor.arraysize = value
+
+    @property
+    def stmt_handler(self):
+        return self._cursor.stmt_handler
+
+    @property
+    def conn_handler(self):
+        return self._cursor.conn_handler
+
+    @property
+    def messages(self):
+        return self._cursor.messages
+
+    # async I/O methods 
+
+    async def execute(self, operation=None, parameters=None):
+        """Execute SQL.  Supports three calling conventions:
+
+        * ``await cursor.execute(sql)``
+        * ``await cursor.execute(sql, params)``
+        * ``await cursor.execute()``  (after prepare + bind_param)
+        """
+        return await asyncio.to_thread(
+            self._cursor.execute, operation, parameters
+        )
+
+    async def executemany(self, operation, seq_parameters):
+        return await asyncio.to_thread(
+            self._cursor.executemany, operation, seq_parameters
+        )
+
+    async def fetchone(self):
+        return await asyncio.to_thread(self._cursor.fetchone)
+
+    async def fetchmany(self, size=0):
+        return await asyncio.to_thread(self._cursor.fetchmany, size)
+
+    async def fetchall(self):
+        return await asyncio.to_thread(self._cursor.fetchall)
+
+    async def callproc(self, procname, parameters=None):
+        return await asyncio.to_thread(
+            self._cursor.callproc, procname, parameters
+        )
+
+    async def nextset(self):
+        return await asyncio.to_thread(self._cursor.nextset)
+
+    async def close(self):
+        return await asyncio.to_thread(self._cursor.close)
+
+    async def prepare(self, operation):
+        """Prepare an SQL statement for later execution."""
+        return await asyncio.to_thread(self._cursor.prepare, operation)
+
+    async def bind_param(self, index, value, param_type=None, data_type=None):
+        """Bind a parameter value for the prepared statement.
+
+        ``index`` is 1-based.  ``param_type`` is an optional
+        ``ibm_db.SQL_PARAM_*`` constant.  ``data_type`` is an optional
+        SQL data type constant (e.g. ``ibm_db.SQL_INTEGER``).
+        """
+        return await asyncio.to_thread(
+            self._cursor.bind_param, index, value, param_type, data_type
+        )
+
+    async def fetch_callproc(self):
+        """Fetch the output parameters returned by a CALL statement
+        executed via the prepare/bind/execute path."""
+        return await asyncio.to_thread(self._cursor.fetch_callproc)
+
+    async def fetch_tuple(self):
+        """Fetch one row as a tuple from the current result set."""
+        return await asyncio.to_thread(self._cursor.fetch_tuple)
+
+    async def stmt_errormsg(self):
+        return await asyncio.to_thread(self._cursor.stmt_errormsg)
+
+    async def stmt_error(self):
+        return await asyncio.to_thread(self._cursor.stmt_error)
+
+    #async iteration & context manager
+
+    def __aiter__(self):
+        return self
+
+    async def __anext__(self):
+        row = await self.fetchone()
+        if row is None:
+            raise StopAsyncIteration
+        return row
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.close()
+
+#AsyncConnection
+
+class AsyncConnection:
+    """Async wrapper around :class:`Connection`.
+
+    Obtain an instance via the :meth:`connect` class method::
+
+        conn = await AsyncConnection.connect(dsn, user, password)
+    """
+
+    def __init__(self, sync_conn):
+        self._conn = sync_conn
+
+    #properties (read-only, no I/O) 
+
+    @property
+    def conn_handler(self):
+        return self._conn.conn_handler
+
+    @property
+    def dbms_name(self):
+        return self._conn.dbms_name
+
+    @property
+    def dbms_ver(self):
+        return self._conn.dbms_ver
+
+    #class-level factory 
+
+    @classmethod
+    async def connect(cls, dsn, user='', password='', host='', database='',
+                      conn_options=None):
+        """Create a new async connection.  Returns an :class:`AsyncConnection`."""
+        sync_conn = await asyncio.to_thread(
+            connect, dsn, user, password, host, database, conn_options
+        )
+        return cls(sync_conn)
+
+    # async methods wrapping Connection
+
+    async def cursor(self):
+        sync_cursor = self._conn.cursor()
+        return AsyncCursor(sync_cursor)
+
+    async def close(self):
+        return await asyncio.to_thread(self._conn.close)
+
+    async def commit(self):
+        return await asyncio.to_thread(self._conn.commit)
+
+    async def rollback(self):
+        return await asyncio.to_thread(self._conn.rollback)
+
+    async def set_autocommit(self, is_on):
+        return await asyncio.to_thread(self._conn.set_autocommit, is_on)
+
+    async def set_option(self, attr_dict):
+        return await asyncio.to_thread(self._conn.set_option, attr_dict)
+
+    async def get_option(self, attr_key):
+        return await asyncio.to_thread(self._conn.get_option, attr_key)
+
+    async def set_current_schema(self, schema_name):
+        return await asyncio.to_thread(
+            self._conn.set_current_schema, schema_name
+        )
+
+    async def get_current_schema(self):
+        return await asyncio.to_thread(self._conn.get_current_schema)
+
+    async def server_info(self):
+        return await asyncio.to_thread(self._conn.server_info)
+
+    async def tables(self, schema_name=None, table_name=None):
+        return await asyncio.to_thread(
+            self._conn.tables, schema_name, table_name
+        )
+
+    async def columns(self, schema_name=None, table_name=None,
+                      column_names=None):
+        return await asyncio.to_thread(
+            self._conn.columns, schema_name, table_name, column_names
+        )
+
+    async def primary_keys(self, unique=True, schema_name=None,
+                           table_name=None):
+        return await asyncio.to_thread(
+            self._conn.primary_keys, unique, schema_name, table_name
+        )
+
+    async def indexes(self, unique=True, schema_name=None, table_name=None):
+        return await asyncio.to_thread(
+            self._conn.indexes, unique, schema_name, table_name
+        )
+
+    async def foreign_keys(self, unique=True, schema_name=None,
+                           table_name=None):
+        return await asyncio.to_thread(
+            self._conn.foreign_keys, unique, schema_name, table_name
+        )
+
+    async def set_fix_return_type(self, is_on):
+        return await asyncio.to_thread(self._conn.set_fix_return_type, is_on)
+
+    #async context manager
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.close()
