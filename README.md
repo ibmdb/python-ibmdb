@@ -684,9 +684,8 @@ pip3 install ibm_db --no-build-isolation
 # Testing
 
 Tests displaying Python ibm_db driver code examples are located in the ibm_db_tests
-directory. A valid config.py will need to be created to configure your Db2
-settings. A config.py.sample exists that can be copied and modified for your
-environment.
+directory. A valid config.py will need to be configured for your Db2
+settings. Update the config.json with your database connection details.
 
 - Set Environment Variables DB2_USER, DB2_PASSWD accordingly.
 
