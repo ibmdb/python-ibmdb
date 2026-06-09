@@ -193,7 +193,8 @@ typedef struct _conn_handle_struct
     int handle_active;
     SQLSMALLINT error_recno_tracker;
     SQLSMALLINT errormsg_recno_tracker;
-    int flag_pconnect; /* Indicates that this connection is persistent */
+    int flag_pconnect;    /* Indicates that this connection is persistent */
+    int flag_coordinated; /* Indicates coordinated connection (shared env) */
 } conn_handle;
 
 static void _python_ibm_db_free_conn_struct(conn_handle *handle);
@@ -251,6 +252,72 @@ typedef union
     DATE_STRUCT *date_val;
     TIME_STRUCT *time_val;
 } ibm_db_row_data_type;
+
+/* ------------------------------------------------------------------ */
+/*  Shared environment handle for two-phase commit (DUOW)          */
+/* ------------------------------------------------------------------ */
+typedef struct _env_handle_struct
+{
+    PyObject_HEAD
+    SQLHANDLE henv;
+    int handle_active;
+} env_handle;
+
+static void _python_ibm_db_free_env_struct(env_handle *handle);
+
+static PyTypeObject env_handleType = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    /* tp_name           */ "ibm_db.IBM_DBEnvHandle",
+    /* tp_basicsize      */ sizeof(env_handle),
+    /* tp_itemsize       */ 0,
+    /* tp_dealloc        */ (destructor)_python_ibm_db_free_env_struct,
+    /* tp_print          */ 0,
+    /* tp_getattr        */ 0,
+    /* tp_setattr        */ 0,
+    /* tp_compare        */ 0,
+    /* tp_repr           */ 0,
+    /* tp_as_number      */ 0,
+    /* tp_as_sequence    */ 0,
+    /* tp_as_mapping     */ 0,
+    /* tp_hash           */ 0,
+    /* tp_call           */ 0,
+    /* tp_str            */ 0,
+    /* tp_getattro       */ 0,
+    /* tp_setattro       */ 0,
+    /* tp_as_buffer      */ 0,
+    /* tp_flags          */ Py_TPFLAGS_DEFAULT,
+    /* tp_doc            */ "IBM DataServer shared environment handle for 2PC",
+    /* tp_traverse       */ 0,
+    /* tp_clear          */ 0,
+    /* tp_richcompare    */ 0,
+    /* tp_weaklistoffset */ 0,
+    /* tp_iter           */ 0,
+    /* tp_iternext       */ 0,
+    /* tp_methods        */ 0,
+    /* tp_members        */ 0,
+    /* tp_getset         */ 0,
+    /* tp_base           */ 0,
+    /* tp_dict           */ 0,
+    /* tp_descr_get      */ 0,
+    /* tp_descr_set      */ 0,
+    /* tp_dictoffset     */ 0,
+    /* tp_init           */ 0,
+};
+
+static void _python_ibm_db_free_env_struct(env_handle *handle)
+{
+    LogMsg(INFO, "entry _python_ibm_db_free_env_struct");
+    if (handle->handle_active && handle->henv)
+    {
+        Py_BEGIN_ALLOW_THREADS;
+        SQLFreeHandle(SQL_HANDLE_ENV, handle->henv);
+        Py_END_ALLOW_THREADS;
+        handle->henv = 0;
+        handle->handle_active = 0;
+    }
+    LogMsg(INFO, "exit _python_ibm_db_free_env_struct");
+    Py_TYPE(handle)->tp_free((PyObject *)handle);
+}
 
 typedef struct
 {
@@ -626,12 +693,12 @@ static void _python_ibm_db_free_conn_struct(conn_handle *handle)
 {
     LogMsg(INFO, "entry _python_ibm_db_free_conn_struct");
     /* Disconnect from DB. If stmt is allocated, it is freed automatically */
-    snprintf(messageStr, sizeof(messageStr), "Handle details: handle_active=%d, flag_pconnect=%d, auto_commit=%d",
-             handle->handle_active, handle->flag_pconnect, handle->auto_commit);
+    snprintf(messageStr, sizeof(messageStr), "Handle details: handle_active=%d, flag_pconnect=%d, auto_commit=%d, flag_coordinated=%d",
+             handle->handle_active, handle->flag_pconnect, handle->auto_commit, handle->flag_coordinated);
     LogMsg(DEBUG, messageStr);
     if (handle->handle_active && !handle->flag_pconnect)
     {
-        if (handle->auto_commit == 0)
+        if (handle->auto_commit == 0 && !handle->flag_coordinated)
         {
             Py_BEGIN_ALLOW_THREADS;
             SQLEndTran(SQL_HANDLE_DBC, (SQLHDBC)handle->hdbc, SQL_ROLLBACK);
@@ -647,9 +714,17 @@ static void _python_ibm_db_free_conn_struct(conn_handle *handle)
         SQLFreeHandle(SQL_HANDLE_DBC, handle->hdbc);
         snprintf(messageStr, sizeof(messageStr), "SQLFreeHandle called with SQL_HANDLE_DBC=%d, handle_hdbc=%p", SQL_HANDLE_DBC, (void *)handle->hdbc);
         LogMsg(DEBUG, messageStr);
-        SQLFreeHandle(SQL_HANDLE_ENV, handle->henv);
-        snprintf(messageStr, sizeof(messageStr), "SQLFreeHandle called with SQL_HANDLE_ENV=%d, handle->henv=%p", SQL_HANDLE_ENV, (void *)handle->henv);
-        LogMsg(DEBUG, messageStr);
+        /* Do NOT free the shared env handle for coordinated connections */
+        if (!handle->flag_coordinated)
+        {
+            SQLFreeHandle(SQL_HANDLE_ENV, handle->henv);
+            snprintf(messageStr, sizeof(messageStr), "SQLFreeHandle called with SQL_HANDLE_ENV=%d, handle->henv=%p", SQL_HANDLE_ENV, (void *)handle->henv);
+            LogMsg(DEBUG, messageStr);
+        }
+        else
+        {
+            LogMsg(INFO, "Coordinated connection: skipping SQLFreeHandle for shared env");
+        }
         Py_END_ALLOW_THREADS;
     }
     else
@@ -3277,6 +3352,7 @@ static PyObject *_python_ibm_db_connect_helper(PyObject *self, PyObject *args, i
         conn_res->c_case_mode = CASE_NATURAL;
         conn_res->c_use_wchar = WCHAR_YES;
         conn_res->c_cursor_type = SQL_SCROLL_FORWARD_ONLY;
+        conn_res->flag_coordinated = 0;
 
         conn_res->error_recno_tracker = 1;
         conn_res->errormsg_recno_tracker = 1;
@@ -5485,7 +5561,7 @@ static PyObject *ibm_db_close(PyObject *self, PyObject *args)
             /* Disconnect from DB. If stmt is allocated,
              * it is freed automatically
              */
-            if (conn_res->auto_commit == 0)
+            if (conn_res->auto_commit == 0 && !conn_res->flag_coordinated)
             {
                 Py_BEGIN_ALLOW_THREADS;
                 rc = SQLEndTran(SQL_HANDLE_DBC, (SQLHDBC)conn_res->hdbc,
@@ -5530,30 +5606,40 @@ static PyObject *ibm_db_close(PyObject *self, PyObject *args)
 
             if (rc == SQL_ERROR)
             {
+                if (!conn_res->flag_coordinated)
+                {
+                    Py_BEGIN_ALLOW_THREADS;
+                    rc = SQLFreeHandle(SQL_HANDLE_ENV, conn_res->henv);
+                    Py_END_ALLOW_THREADS;
+                    snprintf(messageStr, sizeof(messageStr), "SQL free handle (ENV) returned: rc=%d", rc);
+                    LogMsg(DEBUG, messageStr);
+                }
+                return NULL;
+            }
 
+            /* Do NOT free the shared env handle for coordinated connections */
+            if (!conn_res->flag_coordinated)
+            {
                 Py_BEGIN_ALLOW_THREADS;
                 rc = SQLFreeHandle(SQL_HANDLE_ENV, conn_res->henv);
                 Py_END_ALLOW_THREADS;
                 snprintf(messageStr, sizeof(messageStr), "SQL free handle (ENV) returned: rc=%d", rc);
                 LogMsg(DEBUG, messageStr);
-                return NULL;
-            }
+                if (rc == SQL_SUCCESS_WITH_INFO || rc == SQL_ERROR)
+                {
+                    _python_ibm_db_check_sql_errors(conn_res->henv,
+                                                    SQL_HANDLE_ENV, rc, 1,
+                                                    NULL, -1, 1);
+                }
 
-            Py_BEGIN_ALLOW_THREADS;
-            rc = SQLFreeHandle(SQL_HANDLE_ENV, conn_res->henv);
-            Py_END_ALLOW_THREADS;
-            snprintf(messageStr, sizeof(messageStr), "SQL free handle (ENV) returned: rc=%d", rc);
-            LogMsg(DEBUG, messageStr);
-            if (rc == SQL_SUCCESS_WITH_INFO || rc == SQL_ERROR)
-            {
-                _python_ibm_db_check_sql_errors(conn_res->henv,
-                                                SQL_HANDLE_ENV, rc, 1,
-                                                NULL, -1, 1);
+                if (rc == SQL_ERROR)
+                {
+                    return NULL;
+                }
             }
-
-            if (rc == SQL_ERROR)
+            else
             {
-                return NULL;
+                LogMsg(INFO, "Coordinated connection: skipping SQLFreeHandle for shared env");
             }
 
             conn_res->handle_active = 0;
@@ -20117,6 +20203,483 @@ static PyObject* ibm_db_fetch_callproc(PyObject* self, PyObject* args)
     LogMsg(INFO, "exit ibm_db_fetch_callproc: returning output tuple");
     return outTuple;
 }
+
+
+/*!# ibm_db.alloc_env_handle
+ *
+ * ===Description
+ * resource ibm_db.alloc_env_handle()
+ *
+ * Allocates a shared SQLHENV environment handle for use with coordinated
+ * (two-phase commit) connections.
+ *
+ * ===Return Values
+ * Returns an IBM_DBEnvHandle resource on success, or NULL on failure.
+ */
+static PyObject *ibm_db_alloc_env_handle(PyObject *self, PyObject *args)
+{
+    LogMsg(INFO, "entry alloc_env_handle()");
+    env_handle *env_res = NULL;
+    int rc;
+
+    env_res = PyObject_NEW(env_handle, &env_handleType);
+    if (env_res == NULL)
+    {
+        LogMsg(ERROR, "Failed to allocate memory for env_handle");
+        PyErr_SetString(PyExc_Exception, "Failed to allocate environment handle");
+        return NULL;
+    }
+
+    env_res->henv = 0;
+    env_res->handle_active = 0;
+
+    Py_BEGIN_ALLOW_THREADS;
+    rc = SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &(env_res->henv));
+    Py_END_ALLOW_THREADS;
+
+    snprintf(messageStr, sizeof(messageStr), "SQLAllocHandle(ENV) returned rc=%d, henv=%p",
+             rc, (void *)env_res->henv);
+    LogMsg(DEBUG, messageStr);
+
+    if (rc != SQL_SUCCESS)
+    {
+        LogMsg(ERROR, "Failed to allocate shared ENV handle");
+        _python_ibm_db_check_sql_errors(env_res->henv, SQL_HANDLE_ENV, rc, 1, NULL, -1, 1);
+        Py_DECREF(env_res);
+        return NULL;
+    }
+
+    Py_BEGIN_ALLOW_THREADS;
+    rc = SQLSetEnvAttr((SQLHENV)env_res->henv, SQL_ATTR_ODBC_VERSION,
+                       (void *)SQL_OV_ODBC3, 0);
+    Py_END_ALLOW_THREADS;
+
+    snprintf(messageStr, sizeof(messageStr), "SQLSetEnvAttr(ODBC_VERSION) returned rc=%d", rc);
+    LogMsg(DEBUG, messageStr);
+
+    /* Set SQL_ATTR_CONNECTTYPE on the shared environment; coordinated connections inherit this value. */
+    Py_BEGIN_ALLOW_THREADS;
+    rc = SQLSetEnvAttr((SQLHENV)env_res->henv, SQL_ATTR_CONNECTTYPE,
+                       (SQLPOINTER)SQL_COORDINATED_TRANS, 0);
+    Py_END_ALLOW_THREADS;
+
+    snprintf(messageStr, sizeof(messageStr), "SQLSetEnvAttr(CONNECTTYPE=COORDINATED) returned rc=%d", rc);
+    LogMsg(DEBUG, messageStr);
+
+    if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO)
+    {
+        _python_ibm_db_check_sql_errors(env_res->henv, SQL_HANDLE_ENV, rc, 1, NULL, -1, 1);
+        PyErr_SetString(PyExc_Exception, "Failed to set SQL_ATTR_CONNECTTYPE on environment");
+        SQLFreeHandle(SQL_HANDLE_ENV, env_res->henv);
+        Py_DECREF(env_res);
+        return NULL;
+    }
+
+    env_res->handle_active = 1;
+
+    LogMsg(INFO, "exit alloc_env_handle()");
+    return (PyObject *)env_res;
+}
+
+
+/*!# ibm_db.set_env_attr
+ *
+ * ===Description
+ * bool ibm_db.set_env_attr( resource env_handle, int attribute, int value )
+ *
+ * Sets an environment attribute on a shared environment handle.
+ * This allows overriding attributes set by alloc_env_handle().
+ *
+ * ===Parameters
+ * ====env_handle
+ *      A valid env_handle from alloc_env_handle().
+ * ====attribute
+ *      The environment attribute to set.
+ * ====value
+ *      The value to set for the attribute.
+ *
+ * ===Return Values
+ * Returns TRUE on success, raises an exception on failure.
+ */
+static PyObject *ibm_db_set_env_attr(PyObject *self, PyObject *args)
+{
+    LogMsg(INFO, "entry set_env_attr()");
+    PyObject *py_env_res = NULL;
+    int attr;
+    long value;
+    env_handle *env_res = NULL;
+    SQLRETURN rc;
+
+    if (!PyArg_ParseTuple(args, "Oil", &py_env_res, &attr, &value))
+    {
+        LogMsg(ERROR, "Failed to parse arguments");
+        return NULL;
+    }
+
+    if (NIL_P(py_env_res) || !PyObject_TypeCheck(py_env_res, &env_handleType))
+    {
+        PyErr_SetString(PyExc_Exception, "First argument must be a valid env_handle from alloc_env_handle()");
+        return NULL;
+    }
+
+    env_res = (env_handle *)py_env_res;
+    if (!env_res->handle_active)
+    {
+        PyErr_SetString(PyExc_Exception, "Environment handle is not active (already freed?)");
+        return NULL;
+    }
+
+    Py_BEGIN_ALLOW_THREADS;
+    rc = SQLSetEnvAttr((SQLHENV)env_res->henv, (SQLINTEGER)attr,
+                       (SQLPOINTER)(intptr_t)value, 0);
+    Py_END_ALLOW_THREADS;
+
+    snprintf(messageStr, sizeof(messageStr), "SQLSetEnvAttr(attr=%d, value=%ld) returned rc=%d",
+             attr, value, rc);
+    LogMsg(DEBUG, messageStr);
+
+    if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO)
+    {
+        _python_ibm_db_check_sql_errors(env_res->henv, SQL_HANDLE_ENV, rc, 1, NULL, -1, 1);
+        PyErr_SetString(PyExc_Exception, "Failed to set environment attribute");
+        return NULL;
+    }
+
+    LogMsg(INFO, "exit set_env_attr()");
+    Py_RETURN_TRUE;
+}
+
+
+/*!# ibm_db.free_env_handle
+ *
+ * ===Description
+ * bool ibm_db.free_env_handle( resource env_handle )
+ *
+ * Frees the shared environment handle allocated by alloc_env_handle().
+ *
+ * ===Return Values
+ * Returns TRUE on success, FALSE if already freed.
+ */
+static PyObject *ibm_db_free_env_handle(PyObject *self, PyObject *args)
+{
+    LogMsg(INFO, "entry free_env_handle()");
+    PyObject *py_env_res = NULL;
+    env_handle *env_res = NULL;
+    int rc;
+
+    if (!PyArg_ParseTuple(args, "O", &py_env_res))
+    {
+        LogMsg(ERROR, "Failed to parse arguments");
+        return NULL;
+    }
+
+    if (NIL_P(py_env_res))
+    {
+        PyErr_SetString(PyExc_Exception, "Supplied env_handle parameter is invalid");
+        return NULL;
+    }
+
+    if (!PyObject_TypeCheck(py_env_res, &env_handleType))
+    {
+        PyErr_SetString(PyExc_Exception, "Supplied parameter is not a valid env_handle");
+        return NULL;
+    }
+
+    env_res = (env_handle *)py_env_res;
+
+    if (!env_res->handle_active)
+    {
+        LogMsg(INFO, "Environment handle already freed (idempotent)");
+        Py_RETURN_TRUE;
+    }
+
+    Py_BEGIN_ALLOW_THREADS;
+    rc = SQLFreeHandle(SQL_HANDLE_ENV, env_res->henv);
+    Py_END_ALLOW_THREADS;
+
+    snprintf(messageStr, sizeof(messageStr), "SQLFreeHandle(ENV) returned rc=%d", rc);
+    LogMsg(DEBUG, messageStr);
+
+    if (rc == SQL_ERROR)
+    {
+        _python_ibm_db_check_sql_errors(env_res->henv, SQL_HANDLE_ENV, rc, 1, NULL, -1, 1);
+        PyErr_SetString(PyExc_Exception, "Failed to free environment handle");
+        return NULL;
+    }
+
+    env_res->henv = 0;
+    env_res->handle_active = 0;
+
+    LogMsg(INFO, "exit free_env_handle()");
+    Py_RETURN_TRUE;
+}
+
+
+/*!# ibm_db.connect_coordinated
+ *
+ * ===Description
+ * resource ibm_db.connect_coordinated( resource env_handle, string dsn,
+ *                                      string uid, string pwd )
+ *
+ * Creates a connection that participates in coordinated two-phase commit
+ * transactions. The connection uses a shared environment handle so that
+ * commit_two_phase / rollback_two_phase can commit/rollback all connections
+ * atomically.
+ *
+ * Sets SQL_ATTR_CONNECTTYPE = SQL_COORDINATED_TRANS
+ *
+ * ===Return Values
+ * Returns a connection resource on success, or raises an exception on failure.
+ */
+static PyObject *ibm_db_connect_coordinated(PyObject *self, PyObject *args)
+{
+    LogMsg(INFO, "entry connect_coordinated()");
+    PyObject *py_env_res = NULL;
+    PyObject *databaseObj = NULL;
+    PyObject *uidObj = NULL;
+    PyObject *passwordObj = NULL;
+    env_handle *env_res = NULL;
+    conn_handle *conn_res = NULL;
+    SQLRETURN rc;
+    SQLWCHAR *database = NULL;
+    SQLWCHAR *uid = NULL;
+    SQLWCHAR *password = NULL;
+    int isNewBuffer = 0;
+
+    if (!PyArg_ParseTuple(args, "OOOO", &py_env_res, &databaseObj, &uidObj, &passwordObj))
+    {
+        LogMsg(ERROR, "Failed to parse arguments");
+        return NULL;
+    }
+
+    /* Validate env_handle */
+    if (NIL_P(py_env_res) || !PyObject_TypeCheck(py_env_res, &env_handleType))
+    {
+        PyErr_SetString(PyExc_Exception, "First argument must be a valid env_handle from alloc_env_handle()");
+        return NULL;
+    }
+    env_res = (env_handle *)py_env_res;
+    if (!env_res->handle_active)
+    {
+        PyErr_SetString(PyExc_Exception, "Environment handle is not active (already freed?)");
+        return NULL;
+    }
+
+    databaseObj = PyUnicode_FromObject(databaseObj);
+    uidObj = PyUnicode_FromObject(uidObj);
+    passwordObj = PyUnicode_FromObject(passwordObj);
+
+    /* Allocate conn_handle */
+    conn_res = PyObject_NEW(conn_handle, &conn_handleType);
+    if (conn_res == NULL)
+    {
+        PyErr_SetString(PyExc_Exception, "Failed to allocate connection handle");
+        return NULL;
+    }
+
+    /* Use the shared environment handle */
+    conn_res->henv = env_res->henv;
+    conn_res->hdbc = 0;
+    conn_res->flag_pconnect = 0;
+    conn_res->flag_coordinated = 1;  /* Mark as coordinated */
+    conn_res->handle_active = 0;
+    conn_res->auto_commit = SQL_AUTOCOMMIT_OFF;
+    conn_res->c_bin_mode = IBM_DB_G(bin_mode);
+    conn_res->c_case_mode = CASE_NATURAL;
+    conn_res->c_use_wchar = WCHAR_YES;
+    conn_res->c_cursor_type = SQL_SCROLL_FORWARD_ONLY;
+    conn_res->error_recno_tracker = 1;
+    conn_res->errormsg_recno_tracker = 1;
+
+    /* Alloc DBC handle from shared env */
+    Py_BEGIN_ALLOW_THREADS;
+    rc = SQLAllocHandle(SQL_HANDLE_DBC, env_res->henv, &(conn_res->hdbc));
+    Py_END_ALLOW_THREADS;
+
+    snprintf(messageStr, sizeof(messageStr), "SQLAllocHandle(DBC) returned rc=%d, hdbc=%p",
+             rc, (void *)conn_res->hdbc);
+    LogMsg(DEBUG, messageStr);
+
+    if (rc != SQL_SUCCESS)
+    {
+        _python_ibm_db_check_sql_errors(env_res->henv, SQL_HANDLE_ENV, rc, 1, NULL, -1, 1);
+        PyErr_SetString(PyExc_Exception, "Failed to allocate connection handle from shared environment");
+        Py_DECREF(conn_res);
+        return NULL;
+    }
+
+    /* Set autocommit OFF (required for coordinated transactions) */
+    Py_BEGIN_ALLOW_THREADS;
+    rc = SQLSetConnectAttr(conn_res->hdbc, SQL_ATTR_AUTOCOMMIT,
+                           (SQLPOINTER)SQL_AUTOCOMMIT_OFF, SQL_NTS);
+    Py_END_ALLOW_THREADS;
+
+    snprintf(messageStr, sizeof(messageStr), "SQLSetConnectAttr(AUTOCOMMIT=OFF) returned rc=%d", rc);
+    LogMsg(DEBUG, messageStr);
+
+    /* Connect using SQLDriverConnect or SQLConnect */
+    if (NIL_P(databaseObj))
+    {
+        PyErr_SetString(PyExc_Exception, "Database parameter is required");
+        SQLFreeHandle(SQL_HANDLE_DBC, conn_res->hdbc);
+        Py_DECREF(conn_res);
+        return NULL;
+    }
+
+    database = getUnicodeDataAsSQLWCHAR(databaseObj, &isNewBuffer);
+    if (PyUnicode_Contains(databaseObj, PyUnicode_FromString("=")) > 0)
+    {
+        Py_BEGIN_ALLOW_THREADS;
+        rc = SQLDriverConnectW((SQLHDBC)conn_res->hdbc, (SQLHWND)NULL,
+                               database, SQL_NTS, NULL, 0, NULL,
+                               SQL_DRIVER_NOPROMPT);
+        Py_END_ALLOW_THREADS;
+    }
+    else
+    {
+        uid = getUnicodeDataAsSQLWCHAR(uidObj, &isNewBuffer);
+        password = getUnicodeDataAsSQLWCHAR(passwordObj, &isNewBuffer);
+        Py_BEGIN_ALLOW_THREADS;
+        rc = SQLConnectW((SQLHDBC)conn_res->hdbc,
+                         database, SQL_NTS,
+                         uid, SQL_NTS,
+                         password, SQL_NTS);
+        Py_END_ALLOW_THREADS;
+    }
+
+    snprintf(messageStr, sizeof(messageStr), "Connect returned rc=%d", rc);
+    LogMsg(DEBUG, messageStr);
+
+    if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO)
+    {
+        _python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC, rc, 1, NULL, -1, 1);
+        SQLFreeHandle(SQL_HANDLE_DBC, conn_res->hdbc);
+        Py_DECREF(conn_res);
+        return NULL;
+    }
+
+    conn_res->handle_active = 1;
+    LogMsg(INFO, "exit connect_coordinated()");
+    return (PyObject *)conn_res;
+}
+
+
+/*!# ibm_db.commit_two_phase
+ *
+ * ===Description
+ * bool ibm_db.commit_two_phase( resource env_handle )
+ *
+ * Commits a two-phase transaction across all connections that share
+ * the given environment handle.
+ *
+ * Uses SQLEndTran(SQL_HANDLE_ENV, ..., SQL_COMMIT) which instructs DB2
+ * to perform a coordinated two-phase commit across all connections.
+ *
+ * ===Return Values
+ * Returns TRUE on success, raises an exception on failure.
+ */
+static PyObject *ibm_db_commit_two_phase(PyObject *self, PyObject *args)
+{
+    LogMsg(INFO, "entry commit_two_phase()");
+    PyObject *py_env_res = NULL;
+    env_handle *env_res = NULL;
+    SQLRETURN rc;
+
+    if (!PyArg_ParseTuple(args, "O", &py_env_res))
+    {
+        LogMsg(ERROR, "Failed to parse arguments");
+        return NULL;
+    }
+
+    if (NIL_P(py_env_res) || !PyObject_TypeCheck(py_env_res, &env_handleType))
+    {
+        PyErr_SetString(PyExc_Exception, "Supplied parameter is not a valid env_handle");
+        return NULL;
+    }
+
+    env_res = (env_handle *)py_env_res;
+    if (!env_res->handle_active)
+    {
+        PyErr_SetString(PyExc_Exception, "Environment handle is not active");
+        return NULL;
+    }
+
+    Py_BEGIN_ALLOW_THREADS;
+    rc = SQLEndTran(SQL_HANDLE_ENV, env_res->henv, SQL_COMMIT);
+    Py_END_ALLOW_THREADS;
+
+    snprintf(messageStr, sizeof(messageStr), "SQLEndTran(ENV, COMMIT) returned rc=%d", rc);
+    LogMsg(DEBUG, messageStr);
+
+    if (rc == SQL_ERROR)
+    {
+        _python_ibm_db_check_sql_errors(env_res->henv, SQL_HANDLE_ENV, rc, 1, NULL, -1, 1);
+        PyErr_SetString(PyExc_Exception, "Two-phase commit failed");
+        return NULL;
+    }
+
+    LogMsg(INFO, "exit commit_two_phase()");
+    Py_RETURN_TRUE;
+}
+
+
+/*!# ibm_db.rollback_two_phase
+ *
+ * ===Description
+ * bool ibm_db.rollback_two_phase( resource env_handle )
+ *
+ * Rolls back a two-phase transaction across all connections that share
+ * the given environment handle.
+ *
+ * Uses SQLEndTran(SQL_HANDLE_ENV, ..., SQL_ROLLBACK).
+ *
+ * ===Return Values
+ * Returns TRUE on success, raises an exception on failure.
+ */
+static PyObject *ibm_db_rollback_two_phase(PyObject *self, PyObject *args)
+{
+    LogMsg(INFO, "entry rollback_two_phase()");
+    PyObject *py_env_res = NULL;
+    env_handle *env_res = NULL;
+    SQLRETURN rc;
+
+    if (!PyArg_ParseTuple(args, "O", &py_env_res))
+    {
+        LogMsg(ERROR, "Failed to parse arguments");
+        return NULL;
+    }
+
+    if (NIL_P(py_env_res) || !PyObject_TypeCheck(py_env_res, &env_handleType))
+    {
+        PyErr_SetString(PyExc_Exception, "Supplied parameter is not a valid env_handle");
+        return NULL;
+    }
+
+    env_res = (env_handle *)py_env_res;
+    if (!env_res->handle_active)
+    {
+        PyErr_SetString(PyExc_Exception, "Environment handle is not active");
+        return NULL;
+    }
+
+    Py_BEGIN_ALLOW_THREADS;
+    rc = SQLEndTran(SQL_HANDLE_ENV, env_res->henv, SQL_ROLLBACK);
+    Py_END_ALLOW_THREADS;
+
+    snprintf(messageStr, sizeof(messageStr), "SQLEndTran(ENV, ROLLBACK) returned rc=%d", rc);
+    LogMsg(DEBUG, messageStr);
+
+    if (rc == SQL_ERROR)
+    {
+        _python_ibm_db_check_sql_errors(env_res->henv, SQL_HANDLE_ENV, rc, 1, NULL, -1, 1);
+        PyErr_SetString(PyExc_Exception, "Two-phase rollback failed");
+        return NULL;
+    }
+
+    LogMsg(INFO, "exit rollback_two_phase()");
+    Py_RETURN_TRUE;
+}
+
 /* Listing of ibm_db module functions: */
 static PyMethodDef ibm_db_Methods[] = {
     /* name, function, argument type, docstring */
@@ -20186,6 +20749,13 @@ static PyMethodDef ibm_db_Methods[] = {
     {"fetchall", (PyCFunction)ibm_db_fetchall, METH_VARARGS, "Fetch all rows from the result set."},
     {"fetchmany", (PyCFunction)ibm_db_fetchmany, METH_VARARGS, "Fetch a specified number of rows from the result set."},
     {"fetch_callproc", (PyCFunction)ibm_db_fetch_callproc, METH_VARARGS, " Fetch the result set from stored procedure."},
+    /* Two-Phase Commit (DUOW) functions */
+    {"alloc_env_handle", (PyCFunction)ibm_db_alloc_env_handle, METH_NOARGS, "Allocates a shared environment handle for two-phase commit"},
+    {"set_env_attr", (PyCFunction)ibm_db_set_env_attr, METH_VARARGS, "Sets an attribute on a shared environment handle"},
+    {"free_env_handle", (PyCFunction)ibm_db_free_env_handle, METH_VARARGS, "Frees a shared environment handle"},
+    {"connect_coordinated", (PyCFunction)ibm_db_connect_coordinated, METH_VARARGS, "Creates a coordinated connection for two-phase commit"},
+    {"commit_two_phase", (PyCFunction)ibm_db_commit_two_phase, METH_VARARGS, "Two-phase commit across all connections on a shared env"},
+    {"rollback_two_phase", (PyCFunction)ibm_db_rollback_two_phase, METH_VARARGS, "Two-phase rollback across all connections on a shared env"},
     /* An end-of-listing sentinel: */
     {NULL, NULL, 0, NULL}};
 
@@ -20231,6 +20801,10 @@ INIT_ibm_db(void)
 
     server_infoType.tp_new = PyType_GenericNew;
     if (PyType_Ready(&server_infoType) < 0)
+        return MOD_RETURN_ERROR;
+
+    env_handleType.tp_new = PyType_GenericNew;
+    if (PyType_Ready(&env_handleType) < 0)
         return MOD_RETURN_ERROR;
 
 #if PY_MAJOR_VERSION < 3
@@ -20334,6 +20908,15 @@ INIT_ibm_db(void)
 
     Py_INCREF(&server_infoType);
     PyModule_AddObject(m, "IBM_DBServerInfo", (PyObject *)&server_infoType);
+
+    Py_INCREF(&env_handleType);
+    PyModule_AddObject(m, "IBM_DBEnvHandle", (PyObject *)&env_handleType);
+
+    /* Two-Phase Commit constants */
+    PyModule_AddIntConstant(m, "SQL_COORDINATED_TRANS", SQL_COORDINATED_TRANS);
+    PyModule_AddIntConstant(m, "SQL_CONCURRENT_TRANS", SQL_CONCURRENT_TRANS);
+    PyModule_AddIntConstant(m, "SQL_ATTR_CONNECTTYPE", SQL_ATTR_CONNECTTYPE);
+
     PyModule_AddIntConstant(m, "SQL_ATTR_QUERY_TIMEOUT", SQL_ATTR_QUERY_TIMEOUT);
     PyModule_AddIntConstant(m, "SQL_ATTR_ROW_ARRAY_SIZE", SQL_ATTR_ROW_ARRAY_SIZE);
     PyModule_AddIntConstant(m, "SQL_ATTR_PARAMSET_SIZE", SQL_ATTR_PARAMSET_SIZE);

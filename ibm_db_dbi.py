@@ -2456,3 +2456,131 @@ class AsyncConnection:
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         await self.close()
+
+
+#  Two-Phase Commit (DUOW) — CoordinatedConnection
+
+class CoordinatedConnection:
+
+
+    def __init__(self):
+        self._env = ibm_db.alloc_env_handle()
+        if self._env is None:
+            raise InterfaceError("Failed to allocate shared environment handle")
+        self._connections = []
+        self._closed = False
+
+    def connect(self, dsn, uid='', pwd=''):
+        """Create a coordinated connection on the shared environment.
+        Returns a :class:`Connection` object whose cursor can be used
+        for SQL operations within the coordinated transaction.
+        """
+        if self._closed:
+            raise InterfaceError("CoordinatedConnection is closed")
+        conn_handle = ibm_db.connect_coordinated(self._env, dsn, uid, pwd)
+        if conn_handle is None:
+            raise DatabaseError("Failed to create coordinated connection")
+        conn = Connection(conn_handle)
+        self._connections.append(conn)
+        return conn
+
+    def commit(self):
+        """Two-phase commit across all connections on this environment."""
+        if self._closed:
+            raise InterfaceError("CoordinatedConnection is closed")
+        result = ibm_db.commit_two_phase(self._env)
+        if not result:
+            raise DatabaseError("Two-phase commit failed")
+        return result
+
+    def rollback(self):
+        """Two-phase rollback across all connections on this environment."""
+        if self._closed:
+            raise InterfaceError("CoordinatedConnection is closed")
+        result = ibm_db.rollback_two_phase(self._env)
+        if not result:
+            raise DatabaseError("Two-phase rollback failed")
+        return result
+
+    def close(self):
+        """Close all connections and free the shared environment handle."""
+        if self._closed:
+            return
+        for conn in self._connections:
+            try:
+                conn.close()
+            except Exception:
+                pass
+        self._connections = []
+        try:
+            ibm_db.free_env_handle(self._env)
+        except Exception:
+            pass
+        self._closed = True
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if exc_type is None:
+            try:
+                self.commit()
+            except Exception:
+                self.rollback()
+                self.close()
+                raise
+        else:
+            try:
+                self.rollback()
+            except Exception:
+                pass
+        self.close()
+        return False
+
+
+#  Two-Phase Commit (DUOW) — AsyncCoordinatedConnection
+
+class AsyncCoordinatedConnection:
+
+    def __init__(self):
+        self._sync = CoordinatedConnection()
+
+    async def connect(self, dsn, uid='', pwd=''):
+        """Create a coordinated connection on the shared environment.
+        Returns an :class:`AsyncConnection` object.
+        """
+        sync_conn = await asyncio.to_thread(self._sync.connect, dsn, uid, pwd)
+        return AsyncConnection(sync_conn)
+
+    async def commit(self):
+        """Two-phase commit across all connections on this environment."""
+        return await asyncio.to_thread(self._sync.commit)
+
+    async def rollback(self):
+        """Two-phase rollback across all connections on this environment."""
+        return await asyncio.to_thread(self._sync.rollback)
+
+    async def close(self):
+        """Close all connections and free the shared environment handle."""
+        return await asyncio.to_thread(self._sync.close)
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        if exc_type is None:
+            try:
+                await self.commit()
+            except Exception:
+                await self.rollback()
+                await self.close()
+                raise
+        else:
+            try:
+                await self.rollback()
+            except Exception:
+                pass
+        await self.close()
+        return False
+
+

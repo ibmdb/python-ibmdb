@@ -23,7 +23,7 @@ class IbmDbTestCase(unittest.TestCase):
             ("float_array", "array_float41", [1.1, 2.2, 3.3]),
             ("double_array", "array_double41", [10.5, 20.25, 30.75]),
             ("real_array", "array_real41", [0.5, 1.5, 2.5]),
-            ("decfloat16_array", "array_decfloat1641", [1.23, None, 4.56, None]),
+            ("decfloat16_array", "array_decfloat1641", [3.23, None, 4.56, None]),
             ("decfloat34_array", "array_decfloat3441", [12345678.1234, None]),
             ("decimal_array", "array_decimal41", [12.34, None, 56.78]),
             ("time_array", "array_time41", [time(12, 20, 30), time(13, 30, 45)]),
@@ -70,14 +70,14 @@ class IbmDbTestCase(unittest.TestCase):
 #array_real41 input array: [0.5, 1.5, 2.5]
 #real_array output array: [-1.1699999570846558, -0.17000000178813934, 0.8299999833106995]
 #Procedure: array_decfloat1641
-#array_decfloat1641 input array: [1.23, None, 4.56, None]
-#decfloat16_array output array: [0.23, None, 3.56, None]
+#array_decfloat1641 input array: [3.23, None, 4.56, None]
+#decfloat16_array output array: [1.56, None, 2.89, None]
 #Procedure: array_decfloat3441
 #array_decfloat3441 input array: [12345678.1234, None]
 #decfloat34_array output array: [12345676.4534, None]
 #Procedure: array_decimal41
 #array_decimal41 input array: [12.34, None, 56.78]
-#decimal_array output array: [11.34, None, 55.78]
+#decimal_array output array: [10.67, None, 55.11]
 #Procedure: array_time41
 #array_time41 input array: [datetime.time(12, 20, 30), datetime.time(13, 30, 45)]
 #time_array output array: [datetime.time(13, 19, 31), datetime.time(14, 29, 46)]
