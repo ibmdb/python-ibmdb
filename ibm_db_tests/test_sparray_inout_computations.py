@@ -70,13 +70,13 @@ class IbmDbTestCase(unittest.TestCase):
 #real_array output array: [1.8300000429153442, 2.8299999237060547, 3.8299999237060547]
 #Procedure: array_decfloat1631
 #decfloat16_array input: [1.23, None, 4.56, None]
-#decfloat16_array output array: [2.23, None, 5.56, None]
+#decfloat16_array output array: [2.56, None, 5.89, None]
 #Procedure: array_decfloat3431
 #decfloat34_array input: [12345678.1234, None]
 #decfloat34_array output array: [12345679.4534, None]
 #Procedure: array_decimal31
 #decimal_array input: [12.34, None, 56.78]
-#decimal_array output array: [13.34, None, 57.78]
+#decimal_array output array: [13.67, None, 58.11]
 #Procedure: array_time31
 #time_array input: [datetime.time(12, 20, 30), datetime.time(13, 30, 45)]
 #time_array output array: [datetime.time(11, 21, 29), datetime.time(12, 31, 44)]

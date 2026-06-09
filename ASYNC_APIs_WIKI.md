@@ -47,6 +47,7 @@ The `ibm_db_dbi` module provides full `asyncio` support through `AsyncConnection
   - [AsyncCursor context manager](#asynccursor-context-manager)
 - [Stored Procedure Patterns](#stored-procedure-patterns)
 - [Concurrent Queries with asyncio.gather](#concurrent-queries-with-asynciogather)
+- [Two-Phase Commit (DUOW)](#two-phase-commit-duow)
 
 ## Module-Level Async Functions
 
@@ -1095,6 +1096,202 @@ async def main():
     await conn.close()
 
 asyncio.run(main())
+```
+
+## Two-Phase Commit (DUOW)
+
+The async two-phase commit support is provided by `AsyncCoordinatedConnection`. It uses a shared environment handle internally and allows multiple connections to be committed or rolled back atomically.
+
+### AsyncCoordinatedConnection
+
+`AsyncCoordinatedConnection await AsyncCoordinatedConnection()`
+
+**Description**
+
+High-level async wrapper for DB2 coordinated (two-phase commit) transactions. It manages a shared environment handle, creates coordinated connections on that environment, and lets you commit or roll back all related work atomically.
+
+**Return Values**
+
+Returns an `AsyncCoordinatedConnection` object.
+
+**Example**
+
+```python
+import asyncio
+from ibm_db_dbi import AsyncCoordinatedConnection
+
+async def main():
+    async with AsyncCoordinatedConnection() as cc:
+        conn1 = await cc.connect("DATABASE=db1;HOSTNAME=host1;PORT=50000;PROTOCOL=TCPIP", "user", "password")
+        conn2 = await cc.connect("DATABASE=db2;HOSTNAME=host2;PORT=50000;PROTOCOL=TCPIP", "user", "password")
+
+        cur1 = await conn1.cursor()
+        cur2 = await conn2.cursor()
+        await cur1.execute("INSERT INTO T1 VALUES (1)")
+        await cur2.execute("INSERT INTO T2 VALUES (2)")
+
+        await cc.commit()
+
+        await cur1.close()
+        await cur2.close()
+
+asyncio.run(main())
+```
+
+### AsyncCoordinatedConnection.connect
+
+`AsyncConnection await AsyncCoordinatedConnection.connect(string dsn, string user, string password)`
+
+**Description**
+
+Creates a coordinated async connection on the shared environment.
+
+**Parameters**
+
+- `dsn` - A connection string
+- `user` - Username
+- `password` - Password
+
+**Return Values**
+
+- On success, an `AsyncConnection` object
+- On failure, raises an exception
+
+**Example**
+
+```python
+from ibm_db_dbi import AsyncCoordinatedConnection
+
+async def main():
+    cc = AsyncCoordinatedConnection()
+    conn1 = await cc.connect("DATABASE=db1;HOSTNAME=host1;PORT=50000;PROTOCOL=TCPIP", "user", "password")
+    conn2 = await cc.connect("DATABASE=db2;HOSTNAME=host2;PORT=50000;PROTOCOL=TCPIP", "user", "password")
+    conn1 = await cc.connect("DATABASE=db1;HOSTNAME=host1;PORT=50000;PROTOCOL=TCPIP", "user", "password")
+    conn2 = await cc.connect("DATABASE=db2;HOSTNAME=host2;PORT=50000;PROTOCOL=TCPIP", "user", "password")
+    await cc.close()
+
+asyncio.run(main())
+```
+
+### AsyncCoordinatedConnection.commit
+
+`bool await AsyncCoordinatedConnection.commit()`
+
+**Description**
+
+Commits all work across connections that share the coordinated environment.
+
+**Return Values**
+
+- `True` on success
+- Raises an exception on failure
+
+**Example**
+
+```python
+from ibm_db_dbi import AsyncCoordinatedConnection
+
+async def main():
+    cc = AsyncCoordinatedConnection()
+    conn1 = await cc.connect("DATABASE=db1;HOSTNAME=host1;PORT=50000;PROTOCOL=TCPIP", "user", "password")
+    conn2 = await cc.connect("DATABASE=db2;HOSTNAME=host2;PORT=50000;PROTOCOL=TCPIP", "user", "password")
+    cur1 = await conn1.cursor()
+    cur2 = await conn2.cursor()
+    await cur1.execute("INSERT INTO users VALUES (1, 'Alice')")
+    await cur2.execute("INSERT INTO logs VALUES (1, 'User created')")
+    rc = await cc.commit()
+    print("Two-phase commit successful:", rc)
+    await cur1.close()
+    await cur2.close()
+    await cc.close()
+
+asyncio.run(main())
+```
+
+### AsyncCoordinatedConnection.rollback
+
+`bool await AsyncCoordinatedConnection.rollback()`
+
+**Description**
+
+Rolls back all work across connections that share the coordinated environment.
+
+**Return Values**
+
+- `True` on success
+- Raises an exception on failure
+
+**Example**
+
+```python
+from ibm_db_dbi import AsyncCoordinatedConnection
+
+async def main():
+    cc = AsyncCoordinatedConnection()
+    conn1 = await cc.connect("DATABASE=db1;HOSTNAME=host1;PORT=50000;PROTOCOL=TCPIP", "user", "password")
+    conn2 = await cc.connect("DATABASE=db2;HOSTNAME=host2;PORT=50000;PROTOCOL=TCPIP", "user", "password")
+    try:
+        cur1 = await conn1.cursor()
+        cur2 = await conn2.cursor()
+        await cur1.execute("INSERT INTO users VALUES (1, 'Alice')")
+        await cur2.execute("INSERT INTO logs VALUES (1, 'User created')")
+        raise Exception("Validation failed")
+    except Exception as e:
+        rc = await cc.rollback()
+        print("Two-phase rollback executed:", rc)
+    finally:
+        await cc.close()
+
+asyncio.run(main())
+```
+
+### AsyncCoordinatedConnection.close
+
+`await AsyncCoordinatedConnection.close()`
+
+**Description**
+
+Closes all coordinated connections and frees the shared environment handle.
+
+**Return Values**
+
+None.
+
+**Example**
+
+```python
+from ibm_db_dbi import AsyncCoordinatedConnection
+
+async def main():
+    cc = AsyncCoordinatedConnection()
+    conn1 = await cc.connect("DATABASE=db1;HOSTNAME=host1;PORT=50000;PROTOCOL=TCPIP", "user", "password")
+    conn2 = await cc.connect("DATABASE=db2;HOSTNAME=host2;PORT=50000;PROTOCOL=TCPIP", "user", "password")
+    cur1 = await conn1.cursor()
+    await cur1.execute("SELECT COUNT(*) FROM users")
+    count = await cur1.fetchone()
+    print("User count:", count)
+    await cc.close()
+    print("All coordinated connections closed")
+
+asyncio.run(main())
+```
+
+### AsyncCoordinatedConnection context manager
+
+**Description**
+
+`AsyncCoordinatedConnection` supports `async with`. If the block exits normally, pending work is committed. If an exception occurs, pending work is rolled back.
+
+**Example**
+
+```python
+from ibm_db_dbi import AsyncCoordinatedConnection
+
+async with AsyncCoordinatedConnection() as cc:
+    conn = await cc.connect(dsn, user, password)
+    cursor = await conn.cursor()
+    await cursor.execute("SELECT 1 FROM SYSIBM.SYSDUMMY1")
+    print(await cursor.fetchone())
 ```
 
 ## Complete Example Script
