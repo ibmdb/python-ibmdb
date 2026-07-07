@@ -50,11 +50,15 @@ sys.argv = [sys.argv[0]] + _remaining_argv  # pass remaining args to unittest
 if _args.single_test is None:
     _args.single_test = os.environ.get('SINGLE_PYTHON_TEST')
 
+# Treat empty string as None (e.g. env var set but empty)
+if not _args.single_test:
+    _args.single_test = None
+
 # Override standard test-loading behavior
 def _load_sync_tests(suite, test_glob=None):
     """Load sync tests from ibm_db_tests/."""
     test_glob_default = "test_*.py"
-    if test_glob is None:
+    if not test_glob:
         test_glob = test_glob_default
     # We need files of a given size for some of the test units, so create them
     # here.
@@ -86,14 +90,14 @@ def _load_sync_tests(suite, test_glob=None):
 
 def _load_async_tests(suite, test_glob=None):
     """Load async tests from asyncio_testsuite/."""
-    if test_glob is None:
+    if not test_glob:
         test_glob = "test_*.py"
     async_test_dir = 'asyncio_testsuite'
     if async_test_dir not in sys.path:
         sys.path.insert(0, async_test_dir)
     async_files = glob.glob(join(async_test_dir, test_glob))
     async_tests = [basename(_).replace('.py', '') for _ in async_files]
-    async_tests = [t for t in async_tests if t not in ('test_utils', 'run_all')]
+    async_tests = [t for t in async_tests if t and t not in ('test_utils', 'run_all')]
     async_tests.sort()
     for test in async_tests:
         mod = importlib.import_module(test)
