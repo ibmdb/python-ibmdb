@@ -60,12 +60,12 @@ If you face problems due to missing python header files while installing the dri
 
 If you have installed `DB2_RTC*` i.e. **DB2 Runtime Client** and want `ibm_db` to use it instead of clidriver, please read [this comment](https://github.com/ibmdb/python-ibmdb/issues/1023#issuecomment-3062805368) and take action.
 
-- clidriver v12.1 on Linux uses x86_64_v2 instruction set which is not supported by cibuildwheel and wheel image creation [fails](https://github.com/pypa/manylinux/issues/1725) using v12.1 clidriver. So, default version of clidriver on Linux platform is v11.5.9 only.
+- clidriver v12.1 on Linux requires glibc >= 2.34 and a CPU supporting the x86_64-v2 instruction set (e.g. Ubuntu 21.10+, RHEL 9+, Debian 12+, Fedora 35+ on hardware from 2009 onwards). Official Linux wheels on PyPI are now built with v12.1 clidriver using the `manylinux_2_34` image (see [pypa/manylinux#1725](https://github.com/pypa/manylinux/issues/1725) for background).
 
-- You can force installation of ibm_db on Linux with clidriver v12.1 using below commands:
+- If your system does not meet the glibc/CPU requirement above, install ibm_db from source with the older v11.5.9 clidriver instead:
 
 ```
-export CLIDRIVER_VERSION=v12.1.0
+export CLIDRIVER_VERSION=v11.5.9
 pip install ibm_db --no-binary :all: --no-cache-dir
 ```
 
@@ -477,7 +477,7 @@ conn = ibm_db.connect(connStr,'','')
 
 - For MacOSx64(Intel processor) and Linuxx64, **db2connect license of version 11.5** is required.
 
-- clidriver v12.1 on Linux uses x86_64_v2 instruction set which is not supported by `cibuildwheel` and wheel image creation [fails](https://github.com/pypa/manylinux/issues/1725) using v12.1 clidriver. So, default version of clidriver on Linux platform is v11.5.9 only.
+- clidriver v12.1 on Linux requires glibc >= 2.34 and a CPU supporting the x86_64-v2 instruction set (see [pypa/manylinux#1725](https://github.com/pypa/manylinux/issues/1725) for background). Official Linux wheels on PyPI are built with v12.1 clidriver using the `manylinux_2_34` image.
 
 - For activating server side license, you can purchase either `Db2 Connect Unlimited Edition for System z®` or `Db2 Connect Unlimited Edition for System i®` license from IBM.
 
