@@ -75,10 +75,10 @@ jobs:
          # so manylinux2014 (glibc 2.17) can no longer be used here.
          CIBW_MANYLINUX_I686_IMAGE: manylinux_2_34
          CIBW_MANYLINUX_X86_64_IMAGE: manylinux_2_34
-         CIBW_ENVIRONMENT_LINUX: "CLIDRIVER_VERSION=v12.1.0"
          CIBW_SKIP: "cp38-* *t-* *-musllinux_* *-*linux_{aarch64,ppc64le}"
          CIBW_REPAIR_WHEEL_COMMAND_LINUX:
             auditwheel repair
+              --disable-isa-ext-check
               --exclude libdb2.so.1
               --exclude libDB2xml4c.so.58
               --exclude libm.so.6
