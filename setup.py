@@ -288,12 +288,8 @@ if('win32' in sys.platform):
         prebuildIbmdbPYD = True
 
 # Get version of clidriver for autodownload from environment variable CLIDRIVER_VERSION
-# Default version is v12.1.0 for non-linux platform.
+# Default version is v12.1.0 for all platforms, including linux.
 clidriver_version = os.getenv("CLIDRIVER_VERSION", "v12.1.0")
-
-# Default version is v11.5.9 for linux. clidriver v12.1.0 for linux uses x86_64_V2 instruction set which is not supported by cibuildwheel
-if ('linux' == sys.platform):
-    clidriver_version = os.getenv("CLIDRIVER_VERSION", "v11.5.9")
 
 if ((ibm_db_home == '') and (ibm_db_dir == '') and (ibm_db_lib == '')):
     if('win32' not in sys.platform):
