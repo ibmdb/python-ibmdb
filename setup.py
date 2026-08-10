@@ -288,8 +288,7 @@ if('win32' in sys.platform):
         prebuildIbmdbPYD = True
 
 # Get version of clidriver for autodownload from environment variable CLIDRIVER_VERSION
-# Default version is v12.1.0 for all platforms, including linux.
-clidriver_version = os.getenv("CLIDRIVER_VERSION", "v12.1.0")
+clidriver_version = os.getenv("CLIDRIVER_VERSION", "")
 
 if ((ibm_db_home == '') and (ibm_db_dir == '') and (ibm_db_lib == '')):
     if('win32' not in sys.platform):
@@ -379,7 +378,8 @@ if ((ibm_db_home == '') and (ibm_db_dir == '') and (ibm_db_lib == '')):
     ibm_db_lib_runtime = os.path.join('$ORIGIN', 'clidriver', 'lib')
     ibm_db_dir = 'clidriver'
     ibm_db_lib = os.path.join(ibm_db_dir, 'lib')
-    clidriver_version = clidriver_version + "/"
+    if(clidriver_version and not clidriver_version.endswith("/")):
+        clidriver_version = clidriver_version + "/"
 
     if not os.path.isdir('clidriver'):
         if 'IBM_DB_INSTALLER_URL' in os.environ:

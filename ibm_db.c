@@ -28,6 +28,7 @@
 #include <datetime.h>
 #include "ibm_db.h"
 #include <ctype.h>
+#include <wctype.h>
 #ifdef _WIN32
 #include <windows.h>
 #else
