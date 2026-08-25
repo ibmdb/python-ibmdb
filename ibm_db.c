@@ -1310,9 +1310,14 @@ static int _python_ibm_db_assign_options(void *handle, int type, long opt_key, P
         SQLPOINTER attr_value = NULL;
         SQLINTEGER attr_len = SQL_NTS;
 
+        snprintf(messageStr, sizeof(messageStr), "Assigning zload statement attribute: hstmt=%p, opt_key=%ld, data=%p",
+                 ((stmt_handle *)handle)->hstmt, opt_key, data);
+        LogMsg(DEBUG, messageStr);
+
         if (data == Py_None)
         {
             attr_value = NULL;
+            LogMsg(DEBUG, "zload statement attribute value is None");
         }
         else if (PyString_Check(data) || PyUnicode_Check(data))
         {
@@ -1333,6 +1338,9 @@ static int _python_ibm_db_assign_options(void *handle, int type, long opt_key, P
                 return -1;
             }
             attr_value = (SQLPOINTER)option_str;
+            snprintf(messageStr, sizeof(messageStr), "Prepared zload attribute string buffer: attr_value=%p, isNewBuffer=%d",
+                     attr_value, isNewBuffer);
+            LogMsg(DEBUG, messageStr);
         }
         else
         {
@@ -1349,6 +1357,8 @@ static int _python_ibm_db_assign_options(void *handle, int type, long opt_key, P
                             attr_value,
                             attr_len);
         Py_END_ALLOW_THREADS;
+        snprintf(messageStr, sizeof(messageStr), "SQLSetStmtAttr zload attribute returned rc=%d", rc);
+        LogMsg(DEBUG, messageStr);
 #else
         Py_BEGIN_ALLOW_THREADS;
         rc = SQLSetStmtAttrW((SQLHSTMT)((stmt_handle *)handle)->hstmt,
@@ -1356,6 +1366,8 @@ static int _python_ibm_db_assign_options(void *handle, int type, long opt_key, P
                              attr_value,
                              attr_len);
         Py_END_ALLOW_THREADS;
+        snprintf(messageStr, sizeof(messageStr), "SQLSetStmtAttrW zload attribute returned rc=%d", rc);
+        LogMsg(DEBUG, messageStr);
 #endif
 
         if (isNewBuffer)
@@ -1363,6 +1375,7 @@ static int _python_ibm_db_assign_options(void *handle, int type, long opt_key, P
 
         if (rc == SQL_ERROR)
         {
+            LogMsg(ERROR, "Failed to set zload statement attribute");
             _python_ibm_db_check_sql_errors((SQLHSTMT)((stmt_handle *)handle)->hstmt,
                                             SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
             return -1;
@@ -16160,36 +16173,49 @@ static PyObject *ibm_db_zload_begin(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "OO|O", &py_stmt, &py_load_stmt, &py_utility_id))
     {
         LogMsg(ERROR, "Failed to parse arguments");
+        LogMsg(INFO, "exit zload_begin()");
         return NULL;
     }
 
     if (!PyObject_TypeCheck(py_stmt, &stmt_handleType))
     {
+        LogMsg(ERROR, "Supplied statement object parameter is invalid");
         PyErr_SetString(PyExc_Exception, "Supplied statement object parameter is invalid");
+        LogMsg(INFO, "exit zload_begin()");
         return NULL;
     }
 
     stmt_res = (stmt_handle *)py_stmt;
     if (!stmt_res->hstmt)
     {
+        LogMsg(ERROR, "Statement handle is not active");
         PyErr_SetString(PyExc_Exception, "Statement handle is not active");
+        LogMsg(INFO, "exit zload_begin()");
         return NULL;
     }
+    snprintf(messageStr, sizeof(messageStr), "zload_begin using stmt_res=%p, hstmt=%p", stmt_res, stmt_res->hstmt);
+    LogMsg(DEBUG, messageStr);
 
 #if !defined(SQL_ATTR_DB2ZLOAD_LOADSTMT) || !defined(SQL_ATTR_DB2ZLOAD_BEGIN)
+    LogMsg(ERROR, "zLOAD begin is not supported by this build");
     PyErr_SetString(PyExc_NotImplementedError,
                     "DRDA fast load (zLOAD) is not supported by the CLI driver headers used to build ibm_db");
+    LogMsg(INFO, "exit zload_begin()");
     return NULL;
 #else
     if (!(PyString_Check(py_load_stmt) || PyUnicode_Check(py_load_stmt)))
     {
+        LogMsg(ERROR, "load_stmt must be a string");
         PyErr_SetString(PyExc_TypeError, "load_stmt must be a string");
+        LogMsg(INFO, "exit zload_begin()");
         return NULL;
     }
 
     py_load_stmt_unicode = PyUnicode_FromObject(py_load_stmt);
     if (NIL_P(py_load_stmt_unicode))
     {
+        LogMsg(ERROR, "Failed to convert load_stmt to unicode");
+        LogMsg(INFO, "exit zload_begin()");
         return NULL;
     }
 
@@ -16201,6 +16227,8 @@ static PyObject *ibm_db_zload_begin(PyObject *self, PyObject *args)
                         (SQLPOINTER)load_stmt,
                         SQL_NTS);
     Py_END_ALLOW_THREADS;
+    snprintf(messageStr, sizeof(messageStr), "SQLSetStmtAttr SQL_ATTR_DB2ZLOAD_LOADSTMT returned rc=%d", rc);
+    LogMsg(DEBUG, messageStr);
 #else
     load_stmt = getUnicodeDataAsSQLWCHAR(py_load_stmt_unicode, &isNewBuffer, NULL);
     Py_BEGIN_ALLOW_THREADS;
@@ -16209,6 +16237,8 @@ static PyObject *ibm_db_zload_begin(PyObject *self, PyObject *args)
                          (SQLPOINTER)load_stmt,
                          SQL_NTS);
     Py_END_ALLOW_THREADS;
+    snprintf(messageStr, sizeof(messageStr), "SQLSetStmtAttrW SQL_ATTR_DB2ZLOAD_LOADSTMT returned rc=%d", rc);
+    LogMsg(DEBUG, messageStr);
 #endif
     Py_DECREF(py_load_stmt_unicode);
 
@@ -16219,9 +16249,11 @@ static PyObject *ibm_db_zload_begin(PyObject *self, PyObject *args)
 
     if (rc == SQL_ERROR)
     {
+        LogMsg(ERROR, "Failed to set SQL_ATTR_DB2ZLOAD_LOADSTMT");
         _python_ibm_db_check_sql_errors((SQLHSTMT)stmt_res->hstmt,
                                         SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
         PyErr_Clear();
+        LogMsg(INFO, "exit zload_begin()");
         Py_RETURN_FALSE;
     }
 
@@ -16229,13 +16261,18 @@ static PyObject *ibm_db_zload_begin(PyObject *self, PyObject *args)
     {
         if (!(PyString_Check(py_utility_id) || PyUnicode_Check(py_utility_id)))
         {
+            LogMsg(ERROR, "utility_id must be a string");
             PyErr_SetString(PyExc_TypeError, "utility_id must be a string");
+            LogMsg(INFO, "exit zload_begin()");
             return NULL;
         }
 #ifdef SQL_ATTR_DB2ZLOAD_UTILITYID
+        LogMsg(DEBUG, "Setting zload utility id");
         py_utility_id_unicode = PyUnicode_FromObject(py_utility_id);
         if (NIL_P(py_utility_id_unicode))
         {
+            LogMsg(ERROR, "Failed to convert utility_id to unicode");
+            LogMsg(INFO, "exit zload_begin()");
             return NULL;
         }
 #ifdef __MVS__
@@ -16246,6 +16283,8 @@ static PyObject *ibm_db_zload_begin(PyObject *self, PyObject *args)
                             (SQLPOINTER)utility_id,
                             SQL_NTS);
         Py_END_ALLOW_THREADS;
+        snprintf(messageStr, sizeof(messageStr), "SQLSetStmtAttr SQL_ATTR_DB2ZLOAD_UTILITYID returned rc=%d", rc);
+        LogMsg(DEBUG, messageStr);
 #else
         utility_id = getUnicodeDataAsSQLWCHAR(py_utility_id_unicode, &isUtilityNewBuffer, NULL);
         Py_BEGIN_ALLOW_THREADS;
@@ -16254,6 +16293,8 @@ static PyObject *ibm_db_zload_begin(PyObject *self, PyObject *args)
                              (SQLPOINTER)utility_id,
                              SQL_NTS);
         Py_END_ALLOW_THREADS;
+        snprintf(messageStr, sizeof(messageStr), "SQLSetStmtAttrW SQL_ATTR_DB2ZLOAD_UTILITYID returned rc=%d", rc);
+        LogMsg(DEBUG, messageStr);
 #endif
         Py_DECREF(py_utility_id_unicode);
 
@@ -16264,16 +16305,24 @@ static PyObject *ibm_db_zload_begin(PyObject *self, PyObject *args)
 
         if (rc == SQL_ERROR)
         {
+            LogMsg(ERROR, "Failed to set SQL_ATTR_DB2ZLOAD_UTILITYID");
             _python_ibm_db_check_sql_errors((SQLHSTMT)stmt_res->hstmt,
                                             SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
             PyErr_Clear();
+            LogMsg(INFO, "exit zload_begin()");
             Py_RETURN_FALSE;
         }
 #else
+        LogMsg(ERROR, "SQL_ATTR_DB2ZLOAD_UTILITYID is not available with this build");
         PyErr_SetString(PyExc_NotImplementedError,
                         "SQL_ATTR_DB2ZLOAD_UTILITYID is not available with the CLI driver headers used to build ibm_db");
+        LogMsg(INFO, "exit zload_begin()");
         return NULL;
 #endif
+    }
+    else
+    {
+        LogMsg(DEBUG, "zload_begin called without utility_id");
     }
 
     Py_BEGIN_ALLOW_THREADS;
@@ -16282,12 +16331,16 @@ static PyObject *ibm_db_zload_begin(PyObject *self, PyObject *args)
                         (SQLPOINTER)SQL_TRUE,
                         SQL_IS_INTEGER);
     Py_END_ALLOW_THREADS;
+    snprintf(messageStr, sizeof(messageStr), "SQLSetStmtAttr SQL_ATTR_DB2ZLOAD_BEGIN returned rc=%d", rc);
+    LogMsg(DEBUG, messageStr);
 
     if (rc == SQL_ERROR)
     {
+        LogMsg(ERROR, "Failed to set SQL_ATTR_DB2ZLOAD_BEGIN");
         _python_ibm_db_check_sql_errors((SQLHSTMT)stmt_res->hstmt,
                                         SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
         PyErr_Clear();
+        LogMsg(INFO, "exit zload_begin()");
         Py_RETURN_FALSE;
     }
 
@@ -16320,45 +16373,62 @@ static PyObject *ibm_db_zload_put_data(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "OO", &py_stmt, &py_data))
     {
         LogMsg(ERROR, "Failed to parse arguments");
+        LogMsg(INFO, "exit zload_put_data()");
         return NULL;
     }
 
     if (!PyObject_TypeCheck(py_stmt, &stmt_handleType))
     {
+        LogMsg(ERROR, "Supplied statement object parameter is invalid");
         PyErr_SetString(PyExc_Exception, "Supplied statement object parameter is invalid");
+        LogMsg(INFO, "exit zload_put_data()");
         return NULL;
     }
 
     stmt_res = (stmt_handle *)py_stmt;
     if (!stmt_res->hstmt)
     {
+        LogMsg(ERROR, "Statement handle is not active");
         PyErr_SetString(PyExc_Exception, "Statement handle is not active");
+        LogMsg(INFO, "exit zload_put_data()");
         return NULL;
     }
+    snprintf(messageStr, sizeof(messageStr), "zload_put_data using stmt_res=%p, hstmt=%p", stmt_res, stmt_res->hstmt);
+    LogMsg(DEBUG, messageStr);
 
     if (PyObject_GetBuffer(py_data, &view, PyBUF_CONTIG_RO) != 0)
     {
+        LogMsg(ERROR, "data must be a bytes-like object");
         PyErr_SetString(PyExc_TypeError,
                         "data must be a bytes-like object (bytes, bytearray, or memoryview)");
+        LogMsg(INFO, "exit zload_put_data()");
         return NULL;
     }
+
+    snprintf(messageStr, sizeof(messageStr), "zload_put_data buffer length=%lld", (long long)view.len);
+    LogMsg(DEBUG, messageStr);
 
     Py_BEGIN_ALLOW_THREADS;
     rc = SQLPutData((SQLHSTMT)stmt_res->hstmt, (SQLPOINTER)view.buf, (SQLLEN)view.len);
     Py_END_ALLOW_THREADS;
+    snprintf(messageStr, sizeof(messageStr), "SQLPutData zload returned rc=%d", rc);
+    LogMsg(DEBUG, messageStr);
 
     PyBuffer_Release(&view);
 
     if (rc == SQL_ERROR)
     {
+        LogMsg(ERROR, "SQLPutData failed during zload");
         _python_ibm_db_check_sql_errors((SQLHSTMT)stmt_res->hstmt,
                                         SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
         PyErr_Clear();
+        LogMsg(INFO, "exit zload_put_data()");
         Py_RETURN_FALSE;
     }
 
     if (rc == SQL_SUCCESS_WITH_INFO)
     {
+        LogMsg(WARNING, "SQLPutData zload returned SQL_SUCCESS_WITH_INFO");
         _python_ibm_db_check_sql_errors((SQLHSTMT)stmt_res->hstmt,
                                         SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
     }
@@ -16389,25 +16459,34 @@ static PyObject *ibm_db_zload_end(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "O", &py_stmt))
     {
         LogMsg(ERROR, "Failed to parse arguments");
+        LogMsg(INFO, "exit zload_end()");
         return NULL;
     }
 
     if (!PyObject_TypeCheck(py_stmt, &stmt_handleType))
     {
+        LogMsg(ERROR, "Supplied statement object parameter is invalid");
         PyErr_SetString(PyExc_Exception, "Supplied statement object parameter is invalid");
+        LogMsg(INFO, "exit zload_end()");
         return NULL;
     }
 
     stmt_res = (stmt_handle *)py_stmt;
     if (!stmt_res->hstmt)
     {
+        LogMsg(ERROR, "Statement handle is not active");
         PyErr_SetString(PyExc_Exception, "Statement handle is not active");
+        LogMsg(INFO, "exit zload_end()");
         return NULL;
     }
+    snprintf(messageStr, sizeof(messageStr), "zload_end using stmt_res=%p, hstmt=%p", stmt_res, stmt_res->hstmt);
+    LogMsg(DEBUG, messageStr);
 
 #ifndef SQL_ATTR_DB2ZLOAD_END
+    LogMsg(ERROR, "SQL_ATTR_DB2ZLOAD_END is not available with this build");
     PyErr_SetString(PyExc_NotImplementedError,
                     "SQL_ATTR_DB2ZLOAD_END is not available with the CLI driver headers used to build ibm_db");
+    LogMsg(INFO, "exit zload_end()");
     return NULL;
 #else
     Py_BEGIN_ALLOW_THREADS;
@@ -16416,12 +16495,16 @@ static PyObject *ibm_db_zload_end(PyObject *self, PyObject *args)
                         (SQLPOINTER)SQL_TRUE,
                         SQL_IS_INTEGER);
     Py_END_ALLOW_THREADS;
+    snprintf(messageStr, sizeof(messageStr), "SQLSetStmtAttr SQL_ATTR_DB2ZLOAD_END returned rc=%d", rc);
+    LogMsg(DEBUG, messageStr);
 
     if (rc == SQL_ERROR)
     {
+        LogMsg(ERROR, "Failed to set SQL_ATTR_DB2ZLOAD_END");
         _python_ibm_db_check_sql_errors((SQLHSTMT)stmt_res->hstmt,
                                         SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
         PyErr_Clear();
+        LogMsg(INFO, "exit zload_end()");
         Py_RETURN_FALSE;
     }
 
@@ -16452,25 +16535,34 @@ static PyObject *ibm_db_zload_get_diag(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "O", &py_stmt))
     {
         LogMsg(ERROR, "Failed to parse arguments");
+        LogMsg(INFO, "exit zload_get_diag()");
         return NULL;
     }
 
     if (!PyObject_TypeCheck(py_stmt, &stmt_handleType))
     {
+        LogMsg(ERROR, "Supplied statement object parameter is invalid");
         PyErr_SetString(PyExc_Exception, "Supplied statement object parameter is invalid");
+        LogMsg(INFO, "exit zload_get_diag()");
         return NULL;
     }
 
     stmt_res = (stmt_handle *)py_stmt;
     if (!stmt_res->hstmt)
     {
+        LogMsg(ERROR, "Statement handle is not active");
         PyErr_SetString(PyExc_Exception, "Statement handle is not active");
+        LogMsg(INFO, "exit zload_get_diag()");
         return NULL;
     }
+    snprintf(messageStr, sizeof(messageStr), "zload_get_diag using stmt_res=%p, hstmt=%p", stmt_res, stmt_res->hstmt);
+    LogMsg(DEBUG, messageStr);
 
 #if !defined(SQL_DIAG_DB2ZLOAD_RETCODE) || !defined(SQL_DIAG_DB2ZLOAD_LOAD_MSGS)
+    LogMsg(ERROR, "zLOAD diagnostic fields are not available with this build");
     PyErr_SetString(PyExc_NotImplementedError,
                     "zLOAD diagnostic fields are not available with the CLI driver headers used to build ibm_db");
+    LogMsg(INFO, "exit zload_get_diag()");
     return NULL;
 #else
     {
@@ -16491,13 +16583,18 @@ static PyObject *ibm_db_zload_get_diag(PyObject *self, PyObject *args)
                              SQL_IS_INTEGER,
                              NULL);
         Py_END_ALLOW_THREADS;
+        snprintf(messageStr, sizeof(messageStr), "SQLGetDiagField SQL_DIAG_DB2ZLOAD_RETCODE returned rc=%d, retcode=%ld",
+                 rc, (long)retcode);
+        LogMsg(DEBUG, messageStr);
 
         if (rc == SQL_SUCCESS || rc == SQL_SUCCESS_WITH_INFO)
         {
             PyObject *py_retcode = PyLong_FromLong((long)retcode);
             if (py_retcode == NULL)
             {
+                LogMsg(ERROR, "Failed to create zLOAD retcode object");
                 Py_DECREF(diag);
+                LogMsg(INFO, "exit zload_get_diag()");
                 return NULL;
             }
             PyDict_SetItemString(diag, "retcode", py_retcode);
@@ -16505,6 +16602,7 @@ static PyObject *ibm_db_zload_get_diag(PyObject *self, PyObject *args)
         }
         else
         {
+            LogMsg(WARNING, "SQL_DIAG_DB2ZLOAD_RETCODE was not available");
             PyDict_SetItemString(diag, "retcode", Py_None);
         }
 
@@ -16517,6 +16615,9 @@ static PyObject *ibm_db_zload_get_diag(PyObject *self, PyObject *args)
                              (SQLSMALLINT)sizeof(msgbuf),
                              &text_len);
         Py_END_ALLOW_THREADS;
+        snprintf(messageStr, sizeof(messageStr), "SQLGetDiagField SQL_DIAG_DB2ZLOAD_LOAD_MSGS returned rc=%d, text_len=%d",
+                 rc, text_len);
+        LogMsg(DEBUG, messageStr);
 
         if (rc == SQL_SUCCESS || rc == SQL_SUCCESS_WITH_INFO)
         {
@@ -16528,7 +16629,9 @@ static PyObject *ibm_db_zload_get_diag(PyObject *self, PyObject *args)
             py_messages = StringOBJ_FromASCIIAndSize((char *)msgbuf, text_len);
             if (py_messages == NULL)
             {
+                LogMsg(ERROR, "Failed to create zLOAD messages object");
                 Py_DECREF(diag);
+                LogMsg(INFO, "exit zload_get_diag()");
                 return NULL;
             }
             PyDict_SetItemString(diag, "messages", py_messages);
@@ -16536,6 +16639,7 @@ static PyObject *ibm_db_zload_get_diag(PyObject *self, PyObject *args)
         }
         else
         {
+            LogMsg(WARNING, "SQL_DIAG_DB2ZLOAD_LOAD_MSGS was not available");
             PyDict_SetItemString(diag, "messages", Py_None);
         }
 
@@ -19699,7 +19803,9 @@ static int _python_get_variable_type(PyObject *variable_value)
 
 static PyObject *ibm_db_debug(PyObject *self, PyObject *args)
 {
+    LogMsg(INFO, "entry debug()");
     _python_ibm_db_debug(self, args);
+    LogMsg(INFO, "exit debug()");
     Py_RETURN_NONE;
 }
 

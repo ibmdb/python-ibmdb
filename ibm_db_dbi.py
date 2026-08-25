@@ -66,6 +66,17 @@ def LogMsg(log_level, message):
         elif log_level == EXCEPTION:
             logger.exception(message)
 
+
+async def _async_to_thread_with_logging(name, func, *args):
+    LogMsg(INFO, "entry async %s()" % name)
+    try:
+        result = await asyncio.to_thread(func, *args)
+    except Exception as inst:
+        LogMsg(ERROR, "async %s failed: %s" % (name, _get_exception(inst)))
+        raise
+    LogMsg(INFO, "exit async %s()" % name)
+    return result
+
 PY2 = sys.version_info < (3, )
 
 if not PY2:
@@ -2116,18 +2127,24 @@ class Cursor(object):
         LogMsg(INFO, "entry zload_begin()")
         self._assert_zload_support()
         if not isinstance(load_statement, string_types):
+            LogMsg(ERROR, "zload_begin expects load_statement as string")
             raise InterfaceError("zload_begin expects load_statement as string")
         if utility_id is not None and not isinstance(utility_id, string_types):
+            LogMsg(ERROR, "zload_begin expects utility_id as string when provided")
             raise InterfaceError("zload_begin expects utility_id as string when provided")
         self._ensure_zload_stmt()
+        LogMsg(DEBUG, "zload_begin load_statement length: %d" % len(load_statement))
+        LogMsg(DEBUG, "zload_begin utility_id provided: %s" % (utility_id is not None))
         try:
             if utility_id is None:
                 rc = ibm_db.zload_begin(self.stmt_handler, load_statement)
             else:
                 rc = ibm_db.zload_begin(self.stmt_handler, load_statement, utility_id)
         except Exception as inst:
+            LogMsg(ERROR, "zload_begin failed: %s" % str(inst))
             self.messages.append(_get_exception(inst))
             raise self.messages[len(self.messages) - 1]
+        LogMsg(DEBUG, "zload_begin returned: %s" % rc)
         LogMsg(INFO, "exit zload_begin()")
         return rc
 
@@ -2136,14 +2153,19 @@ class Cursor(object):
         LogMsg(INFO, "entry zload_put_data()")
         self._assert_zload_support()
         if not isinstance(data, (bytes, bytearray, memoryview)):
+            LogMsg(ERROR, "zload_put_data expects bytes-like data")
             raise InterfaceError("zload_put_data expects bytes-like data")
         if self.stmt_handler is None:
+            LogMsg(ERROR, "zload_put_data called before zload_begin")
             raise ProgrammingError("zload_put_data called before zload_begin")
+        LogMsg(DEBUG, "zload_put_data chunk length: %d" % len(data))
         try:
             rc = ibm_db.zload_put_data(self.stmt_handler, data)
         except Exception as inst:
+            LogMsg(ERROR, "zload_put_data failed: %s" % str(inst))
             self.messages.append(_get_exception(inst))
             raise self.messages[len(self.messages) - 1]
+        LogMsg(DEBUG, "zload_put_data returned: %s" % rc)
         LogMsg(INFO, "exit zload_put_data()")
         return rc
 
@@ -2152,12 +2174,15 @@ class Cursor(object):
         LogMsg(INFO, "entry zload_end()")
         self._assert_zload_support()
         if self.stmt_handler is None:
+            LogMsg(ERROR, "zload_end called before zload_begin")
             raise ProgrammingError("zload_end called before zload_begin")
         try:
             rc = ibm_db.zload_end(self.stmt_handler)
         except Exception as inst:
+            LogMsg(ERROR, "zload_end failed: %s" % str(inst))
             self.messages.append(_get_exception(inst))
             raise self.messages[len(self.messages) - 1]
+        LogMsg(DEBUG, "zload_end returned: %s" % rc)
         LogMsg(INFO, "exit zload_end()")
         return rc
 
@@ -2166,12 +2191,15 @@ class Cursor(object):
         LogMsg(INFO, "entry zload_get_diag()")
         self._assert_zload_support()
         if self.stmt_handler is None:
+            LogMsg(ERROR, "zload_get_diag called before zload_begin")
             raise ProgrammingError("zload_get_diag called before zload_begin")
         try:
             diag = ibm_db.zload_get_diag(self.stmt_handler)
         except Exception as inst:
+            LogMsg(ERROR, "zload_get_diag failed: %s" % str(inst))
             self.messages.append(_get_exception(inst))
             raise self.messages[len(self.messages) - 1]
+        LogMsg(DEBUG, "zload_get_diag returned keys: %s" % sorted(diag.keys()))
         LogMsg(INFO, "exit zload_get_diag()")
         return diag
 
@@ -2179,28 +2207,44 @@ class Cursor(object):
         """Run DRDA fast load (zLOAD) for a local file using chunked SQLPutData calls."""
         LogMsg(INFO, "entry zload_from_file()")
         if not isinstance(file_path, string_types):
+            LogMsg(ERROR, "zload_from_file expects file_path as string")
             raise InterfaceError("zload_from_file expects file_path as string")
         if not isinstance(chunk_size, int_types) or chunk_size <= 0:
+            LogMsg(ERROR, "zload_from_file expects chunk_size as a positive integer")
             raise InterfaceError("zload_from_file expects chunk_size as a positive integer")
+        LogMsg(DEBUG, "zload_from_file path: %s" % file_path)
+        LogMsg(DEBUG, "zload_from_file chunk_size: %d" % chunk_size)
 
         if not self.zload_begin(load_statement, utility_id):
+            LogMsg(ERROR, "zload_begin returned False")
             raise ProgrammingError("zload_begin returned False")
         try:
+            chunk_count = 0
+            total_bytes = 0
             with open(file_path, 'rb') as load_file:
                 while True:
                     chunk = load_file.read(chunk_size)
                     if not chunk:
                         break
+                    chunk_count += 1
+                    total_bytes += len(chunk)
+                    LogMsg(DEBUG, "zload_from_file sending chunk %d length: %d" % (chunk_count, len(chunk)))
                     if not self.zload_put_data(chunk):
+                        LogMsg(ERROR, "zload_put_data returned False")
                         raise ProgrammingError("zload_put_data returned False")
             if not self.zload_end():
+                LogMsg(ERROR, "zload_end returned False")
                 raise ProgrammingError("zload_end returned False")
             diag = self.zload_get_diag()
+            LogMsg(DEBUG, "zload_from_file sent chunks: %d, bytes: %d" % (chunk_count, total_bytes))
         except Exception:
+            LogMsg(ERROR, "zload_from_file failed; attempting zload_end cleanup")
             # Try to end the zLOAD to leave the statement in a clean state.
             try:
                 self.zload_end()
+                LogMsg(DEBUG, "zload_from_file cleanup zload_end completed")
             except Exception:
+                LogMsg(ERROR, "zload_from_file cleanup zload_end failed")
                 pass
             raise
 
@@ -2269,68 +2313,62 @@ class Cursor(object):
 async def connect_async(dsn, user='', password='', host='', database='',
                         conn_options=None):
     """Async wrapper around :func:`connect`.  Returns a :class:`Connection`."""
-    LogMsg(INFO, "entry connect_async()")
-    conn_obj = await asyncio.to_thread(
-        connect, dsn, user, password, host, database, conn_options
+    return await _async_to_thread_with_logging(
+        "connect_async", connect, dsn, user, password, host, database, conn_options
     )
-    LogMsg(INFO, "exit connect_async()")
-    return conn_obj
 
 
 async def pconnect_async(dsn, user='', password='', host='', database='',
                          conn_options=None):
     """Async wrapper around :func:`pconnect`.  Returns a :class:`Connection`."""
-    LogMsg(INFO, "entry pconnect_async()")
-    conn_obj = await asyncio.to_thread(
-        pconnect, dsn, user, password, host, database, conn_options
+    return await _async_to_thread_with_logging(
+        "pconnect_async", pconnect, dsn, user, password, host, database, conn_options
     )
-    LogMsg(INFO, "exit pconnect_async()")
-    return conn_obj
 
 
 async def conn_errormsg_async(connection=None):
     """Async wrapper around :func:`conn_errormsg`."""
-    return await asyncio.to_thread(conn_errormsg, connection)
+    return await _async_to_thread_with_logging("conn_errormsg_async", conn_errormsg, connection)
 
 
 async def conn_error_async(connection=None):
     """Async wrapper around :func:`conn_error`."""
-    return await asyncio.to_thread(conn_error, connection)
+    return await _async_to_thread_with_logging("conn_error_async", conn_error, connection)
 
 
 async def get_sqlcode_async(handle=None):
     """Async wrapper around :func:`get_sqlcode`."""
-    return await asyncio.to_thread(get_sqlcode, handle)
+    return await _async_to_thread_with_logging("get_sqlcode_async", get_sqlcode, handle)
 
 
 async def createdb_async(database, dsn, user='', password='', host='',
                          codeset='', mode=''):
     """Async wrapper around :func:`createdb`."""
-    return await asyncio.to_thread(
-        createdb, database, dsn, user, password, host, codeset, mode
+    return await _async_to_thread_with_logging(
+        "createdb_async", createdb, database, dsn, user, password, host, codeset, mode
     )
 
 
 async def dropdb_async(database, dsn, user='', password='', host=''):
     """Async wrapper around :func:`dropdb`."""
-    return await asyncio.to_thread(
-        dropdb, database, dsn, user, password, host
+    return await _async_to_thread_with_logging(
+        "dropdb_async", dropdb, database, dsn, user, password, host
     )
 
 
 async def recreatedb_async(database, dsn, user='', password='', host='',
                             codeset='', mode=''):
     """Async wrapper around :func:`recreatedb`."""
-    return await asyncio.to_thread(
-        recreatedb, database, dsn, user, password, host, codeset, mode
+    return await _async_to_thread_with_logging(
+        "recreatedb_async", recreatedb, database, dsn, user, password, host, codeset, mode
     )
 
 
 async def createdbNX_async(database, dsn, user='', password='', host='',
                             codeset='', mode=''):
     """Async wrapper around :func:`createdbNX`."""
-    return await asyncio.to_thread(
-        createdbNX, database, dsn, user, password, host, codeset, mode
+    return await _async_to_thread_with_logging(
+        "createdbNX_async", createdbNX, database, dsn, user, password, host, codeset, mode
     )
 
 
@@ -2386,38 +2424,38 @@ class AsyncCursor:
         * ``await cursor.execute(sql, params)``
         * ``await cursor.execute()``  (after prepare + bind_param)
         """
-        return await asyncio.to_thread(
-            self._cursor.execute, operation, parameters
+        return await _async_to_thread_with_logging(
+            "execute", self._cursor.execute, operation, parameters
         )
 
     async def executemany(self, operation, seq_parameters):
-        return await asyncio.to_thread(
-            self._cursor.executemany, operation, seq_parameters
+        return await _async_to_thread_with_logging(
+            "executemany", self._cursor.executemany, operation, seq_parameters
         )
 
     async def fetchone(self):
-        return await asyncio.to_thread(self._cursor.fetchone)
+        return await _async_to_thread_with_logging("fetchone", self._cursor.fetchone)
 
     async def fetchmany(self, size=0):
-        return await asyncio.to_thread(self._cursor.fetchmany, size)
+        return await _async_to_thread_with_logging("fetchmany", self._cursor.fetchmany, size)
 
     async def fetchall(self):
-        return await asyncio.to_thread(self._cursor.fetchall)
+        return await _async_to_thread_with_logging("fetchall", self._cursor.fetchall)
 
     async def callproc(self, procname, parameters=None):
-        return await asyncio.to_thread(
-            self._cursor.callproc, procname, parameters
+        return await _async_to_thread_with_logging(
+            "callproc", self._cursor.callproc, procname, parameters
         )
 
     async def nextset(self):
-        return await asyncio.to_thread(self._cursor.nextset)
+        return await _async_to_thread_with_logging("nextset", self._cursor.nextset)
 
     async def close(self):
-        return await asyncio.to_thread(self._cursor.close)
+        return await _async_to_thread_with_logging("close", self._cursor.close)
 
     async def prepare(self, operation):
         """Prepare an SQL statement for later execution."""
-        return await asyncio.to_thread(self._cursor.prepare, operation)
+        return await _async_to_thread_with_logging("prepare", self._cursor.prepare, operation)
 
     async def bind_param(self, index, value, param_type=None, data_type=None):
         """Bind a parameter value for the prepared statement.
@@ -2426,48 +2464,88 @@ class AsyncCursor:
         ``ibm_db.SQL_PARAM_*`` constant.  ``data_type`` is an optional
         SQL data type constant (e.g. ``ibm_db.SQL_INTEGER``).
         """
-        return await asyncio.to_thread(
-            self._cursor.bind_param, index, value, param_type, data_type
+        return await _async_to_thread_with_logging(
+            "bind_param", self._cursor.bind_param, index, value, param_type, data_type
         )
 
     async def fetch_callproc(self):
         """Fetch the output parameters returned by a CALL statement
         executed via the prepare/bind/execute path."""
-        return await asyncio.to_thread(self._cursor.fetch_callproc)
+        return await _async_to_thread_with_logging("fetch_callproc", self._cursor.fetch_callproc)
 
     async def fetch_tuple(self):
         """Fetch one row as a tuple from the current result set."""
-        return await asyncio.to_thread(self._cursor.fetch_tuple)
+        return await _async_to_thread_with_logging("fetch_tuple", self._cursor.fetch_tuple)
 
     async def zload_begin(self, load_statement, utility_id=None):
-        return await asyncio.to_thread(
-            self._cursor.zload_begin, load_statement, utility_id
-        )
+        LogMsg(INFO, "entry async zload_begin()")
+        try:
+            result = await asyncio.to_thread(
+                self._cursor.zload_begin, load_statement, utility_id
+            )
+        except Exception as inst:
+            LogMsg(ERROR, "async zload_begin failed: %s" % _get_exception(inst))
+            raise
+        LogMsg(DEBUG, "async zload_begin returned: %s" % result)
+        LogMsg(INFO, "exit async zload_begin()")
+        return result
 
     async def zload_put_data(self, data):
-        return await asyncio.to_thread(self._cursor.zload_put_data, data)
+        LogMsg(INFO, "entry async zload_put_data()")
+        try:
+            result = await asyncio.to_thread(self._cursor.zload_put_data, data)
+        except Exception as inst:
+            LogMsg(ERROR, "async zload_put_data failed: %s" % _get_exception(inst))
+            raise
+        LogMsg(DEBUG, "async zload_put_data returned: %s" % result)
+        LogMsg(INFO, "exit async zload_put_data()")
+        return result
 
     async def zload_end(self):
-        return await asyncio.to_thread(self._cursor.zload_end)
+        LogMsg(INFO, "entry async zload_end()")
+        try:
+            result = await asyncio.to_thread(self._cursor.zload_end)
+        except Exception as inst:
+            LogMsg(ERROR, "async zload_end failed: %s" % _get_exception(inst))
+            raise
+        LogMsg(DEBUG, "async zload_end returned: %s" % result)
+        LogMsg(INFO, "exit async zload_end()")
+        return result
 
     async def zload_get_diag(self):
-        return await asyncio.to_thread(self._cursor.zload_get_diag)
+        LogMsg(INFO, "entry async zload_get_diag()")
+        try:
+            result = await asyncio.to_thread(self._cursor.zload_get_diag)
+        except Exception as inst:
+            LogMsg(ERROR, "async zload_get_diag failed: %s" % _get_exception(inst))
+            raise
+        LogMsg(DEBUG, "async zload_get_diag returned keys: %s" % sorted(result.keys()))
+        LogMsg(INFO, "exit async zload_get_diag()")
+        return result
 
     async def zload_from_file(self, load_statement, file_path, utility_id=None,
                               chunk_size=1024 * 1024):
-        return await asyncio.to_thread(
-            self._cursor.zload_from_file,
-            load_statement,
-            file_path,
-            utility_id,
-            chunk_size,
-        )
+        LogMsg(INFO, "entry async zload_from_file()")
+        try:
+            result = await asyncio.to_thread(
+                self._cursor.zload_from_file,
+                load_statement,
+                file_path,
+                utility_id,
+                chunk_size,
+            )
+        except Exception as inst:
+            LogMsg(ERROR, "async zload_from_file failed: %s" % _get_exception(inst))
+            raise
+        LogMsg(DEBUG, "async zload_from_file returned keys: %s" % sorted(result.keys()))
+        LogMsg(INFO, "exit async zload_from_file()")
+        return result
 
     async def stmt_errormsg(self):
-        return await asyncio.to_thread(self._cursor.stmt_errormsg)
+        return await _async_to_thread_with_logging("stmt_errormsg", self._cursor.stmt_errormsg)
 
     async def stmt_error(self):
-        return await asyncio.to_thread(self._cursor.stmt_error)
+        return await _async_to_thread_with_logging("stmt_error", self._cursor.stmt_error)
 
     #async iteration & context manager
 
@@ -2475,16 +2553,23 @@ class AsyncCursor:
         return self
 
     async def __anext__(self):
+        LogMsg(INFO, "entry async __anext__()")
         row = await self.fetchone()
         if row is None:
+            LogMsg(INFO, "exit async __anext__()")
             raise StopAsyncIteration
+        LogMsg(INFO, "exit async __anext__()")
         return row
 
     async def __aenter__(self):
+        LogMsg(INFO, "entry async __aenter__()")
+        LogMsg(INFO, "exit async __aenter__()")
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
+        LogMsg(INFO, "entry async __aexit__()")
         await self.close()
+        LogMsg(INFO, "exit async __aexit__()")
 
 #AsyncConnection
 
@@ -2519,84 +2604,90 @@ class AsyncConnection:
     async def connect(cls, dsn, user='', password='', host='', database='',
                       conn_options=None):
         """Create a new async connection.  Returns an :class:`AsyncConnection`."""
-        sync_conn = await asyncio.to_thread(
-            connect, dsn, user, password, host, database, conn_options
+        sync_conn = await _async_to_thread_with_logging(
+            "AsyncConnection.connect", connect, dsn, user, password, host, database, conn_options
         )
         return cls(sync_conn)
 
     # async methods wrapping Connection
 
     async def cursor(self):
+        LogMsg(INFO, "entry async cursor()")
         sync_cursor = self._conn.cursor()
+        LogMsg(INFO, "exit async cursor()")
         return AsyncCursor(sync_cursor)
 
     async def close(self):
-        return await asyncio.to_thread(self._conn.close)
+        return await _async_to_thread_with_logging("connection.close", self._conn.close)
 
     async def commit(self):
-        return await asyncio.to_thread(self._conn.commit)
+        return await _async_to_thread_with_logging("commit", self._conn.commit)
 
     async def rollback(self):
-        return await asyncio.to_thread(self._conn.rollback)
+        return await _async_to_thread_with_logging("rollback", self._conn.rollback)
 
     async def set_autocommit(self, is_on):
-        return await asyncio.to_thread(self._conn.set_autocommit, is_on)
+        return await _async_to_thread_with_logging("set_autocommit", self._conn.set_autocommit, is_on)
 
     async def set_option(self, attr_dict):
-        return await asyncio.to_thread(self._conn.set_option, attr_dict)
+        return await _async_to_thread_with_logging("set_option", self._conn.set_option, attr_dict)
 
     async def get_option(self, attr_key):
-        return await asyncio.to_thread(self._conn.get_option, attr_key)
+        return await _async_to_thread_with_logging("get_option", self._conn.get_option, attr_key)
 
     async def set_current_schema(self, schema_name):
-        return await asyncio.to_thread(
-            self._conn.set_current_schema, schema_name
+        return await _async_to_thread_with_logging(
+            "set_current_schema", self._conn.set_current_schema, schema_name
         )
 
     async def get_current_schema(self):
-        return await asyncio.to_thread(self._conn.get_current_schema)
+        return await _async_to_thread_with_logging("get_current_schema", self._conn.get_current_schema)
 
     async def server_info(self):
-        return await asyncio.to_thread(self._conn.server_info)
+        return await _async_to_thread_with_logging("server_info", self._conn.server_info)
 
     async def tables(self, schema_name=None, table_name=None):
-        return await asyncio.to_thread(
-            self._conn.tables, schema_name, table_name
+        return await _async_to_thread_with_logging(
+            "tables", self._conn.tables, schema_name, table_name
         )
 
     async def columns(self, schema_name=None, table_name=None,
                       column_names=None):
-        return await asyncio.to_thread(
-            self._conn.columns, schema_name, table_name, column_names
+        return await _async_to_thread_with_logging(
+            "columns", self._conn.columns, schema_name, table_name, column_names
         )
 
     async def primary_keys(self, unique=True, schema_name=None,
                            table_name=None):
-        return await asyncio.to_thread(
-            self._conn.primary_keys, unique, schema_name, table_name
+        return await _async_to_thread_with_logging(
+            "primary_keys", self._conn.primary_keys, unique, schema_name, table_name
         )
 
     async def indexes(self, unique=True, schema_name=None, table_name=None):
-        return await asyncio.to_thread(
-            self._conn.indexes, unique, schema_name, table_name
+        return await _async_to_thread_with_logging(
+            "indexes", self._conn.indexes, unique, schema_name, table_name
         )
 
     async def foreign_keys(self, unique=True, schema_name=None,
                            table_name=None):
-        return await asyncio.to_thread(
-            self._conn.foreign_keys, unique, schema_name, table_name
+        return await _async_to_thread_with_logging(
+            "foreign_keys", self._conn.foreign_keys, unique, schema_name, table_name
         )
 
     async def set_fix_return_type(self, is_on):
-        return await asyncio.to_thread(self._conn.set_fix_return_type, is_on)
+        return await _async_to_thread_with_logging("set_fix_return_type", self._conn.set_fix_return_type, is_on)
 
     #async context manager
 
     async def __aenter__(self):
+        LogMsg(INFO, "entry async connection __aenter__()")
+        LogMsg(INFO, "exit async connection __aenter__()")
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
+        LogMsg(INFO, "entry async connection __aexit__()")
         await self.close()
+        LogMsg(INFO, "exit async connection __aexit__()")
 
 
 #  Two-Phase Commit (DUOW) — CoordinatedConnection
@@ -2605,77 +2696,104 @@ class CoordinatedConnection:
 
 
     def __init__(self):
+        LogMsg(INFO, "entry CoordinatedConnection.__init__()")
         self._env = ibm_db.alloc_env_handle()
         if self._env is None:
+            LogMsg(ERROR, "Failed to allocate shared environment handle")
             raise InterfaceError("Failed to allocate shared environment handle")
         self._connections = []
         self._closed = False
+        LogMsg(INFO, "exit CoordinatedConnection.__init__()")
 
     def connect(self, dsn, uid='', pwd=''):
         """Create a coordinated connection on the shared environment.
         Returns a :class:`Connection` object whose cursor can be used
         for SQL operations within the coordinated transaction.
         """
+        LogMsg(INFO, "entry CoordinatedConnection.connect()")
         if self._closed:
+            LogMsg(ERROR, "CoordinatedConnection.connect called after close")
             raise InterfaceError("CoordinatedConnection is closed")
         conn_handle = ibm_db.connect_coordinated(self._env, dsn, uid, pwd)
         if conn_handle is None:
+            LogMsg(ERROR, "Failed to create coordinated connection")
             raise DatabaseError("Failed to create coordinated connection")
         conn = Connection(conn_handle)
         self._connections.append(conn)
+        LogMsg(DEBUG, "CoordinatedConnection connection count: %d" % len(self._connections))
+        LogMsg(INFO, "exit CoordinatedConnection.connect()")
         return conn
 
     def commit(self):
         """Two-phase commit across all connections on this environment."""
+        LogMsg(INFO, "entry CoordinatedConnection.commit()")
         if self._closed:
+            LogMsg(ERROR, "CoordinatedConnection.commit called after close")
             raise InterfaceError("CoordinatedConnection is closed")
         result = ibm_db.commit_two_phase(self._env)
         if not result:
+            LogMsg(ERROR, "Two-phase commit failed")
             raise DatabaseError("Two-phase commit failed")
+        LogMsg(INFO, "exit CoordinatedConnection.commit()")
         return result
 
     def rollback(self):
         """Two-phase rollback across all connections on this environment."""
+        LogMsg(INFO, "entry CoordinatedConnection.rollback()")
         if self._closed:
+            LogMsg(ERROR, "CoordinatedConnection.rollback called after close")
             raise InterfaceError("CoordinatedConnection is closed")
         result = ibm_db.rollback_two_phase(self._env)
         if not result:
+            LogMsg(ERROR, "Two-phase rollback failed")
             raise DatabaseError("Two-phase rollback failed")
+        LogMsg(INFO, "exit CoordinatedConnection.rollback()")
         return result
 
     def close(self):
         """Close all connections and free the shared environment handle."""
+        LogMsg(INFO, "entry CoordinatedConnection.close()")
         if self._closed:
+            LogMsg(INFO, "exit CoordinatedConnection.close()")
             return
         for conn in self._connections:
             try:
                 conn.close()
-            except Exception:
+            except Exception as inst:
+                LogMsg(ERROR, "Error closing coordinated connection: %s" % _get_exception(inst))
                 pass
         self._connections = []
         try:
             ibm_db.free_env_handle(self._env)
-        except Exception:
+        except Exception as inst:
+            LogMsg(ERROR, "Error freeing coordinated environment handle: %s" % _get_exception(inst))
             pass
         self._closed = True
+        LogMsg(INFO, "exit CoordinatedConnection.close()")
 
     def __enter__(self):
+        LogMsg(INFO, "entry CoordinatedConnection.__enter__()")
+        LogMsg(INFO, "exit CoordinatedConnection.__enter__()")
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        LogMsg(INFO, "entry CoordinatedConnection.__exit__()")
         if exc_type is None:
             try:
                 self.commit()
-            except Exception:
+            except Exception as inst:
+                LogMsg(ERROR, "CoordinatedConnection.__exit__ commit failed: %s" % _get_exception(inst))
                 self.rollback()
                 self.close()
                 raise
         else:
             try:
                 self.rollback()
-            except Exception:
+            except Exception as inst:
+                LogMsg(ERROR, "CoordinatedConnection.__exit__ rollback failed: %s" % _get_exception(inst))
                 pass
         self.close()
+        LogMsg(INFO, "exit CoordinatedConnection.__exit__()")
         return False
 
 
@@ -2684,44 +2802,54 @@ class CoordinatedConnection:
 class AsyncCoordinatedConnection:
 
     def __init__(self):
+        LogMsg(INFO, "entry AsyncCoordinatedConnection.__init__()")
         self._sync = CoordinatedConnection()
+        LogMsg(INFO, "exit AsyncCoordinatedConnection.__init__()")
 
     async def connect(self, dsn, uid='', pwd=''):
         """Create a coordinated connection on the shared environment.
         Returns an :class:`AsyncConnection` object.
         """
-        sync_conn = await asyncio.to_thread(self._sync.connect, dsn, uid, pwd)
+        sync_conn = await _async_to_thread_with_logging(
+            "AsyncCoordinatedConnection.connect", self._sync.connect, dsn, uid, pwd
+        )
         return AsyncConnection(sync_conn)
 
     async def commit(self):
         """Two-phase commit across all connections on this environment."""
-        return await asyncio.to_thread(self._sync.commit)
+        return await _async_to_thread_with_logging("AsyncCoordinatedConnection.commit", self._sync.commit)
 
     async def rollback(self):
         """Two-phase rollback across all connections on this environment."""
-        return await asyncio.to_thread(self._sync.rollback)
+        return await _async_to_thread_with_logging("AsyncCoordinatedConnection.rollback", self._sync.rollback)
 
     async def close(self):
         """Close all connections and free the shared environment handle."""
-        return await asyncio.to_thread(self._sync.close)
+        return await _async_to_thread_with_logging("AsyncCoordinatedConnection.close", self._sync.close)
 
     async def __aenter__(self):
+        LogMsg(INFO, "entry AsyncCoordinatedConnection.__aenter__()")
+        LogMsg(INFO, "exit AsyncCoordinatedConnection.__aenter__()")
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
+        LogMsg(INFO, "entry AsyncCoordinatedConnection.__aexit__()")
         if exc_type is None:
             try:
                 await self.commit()
-            except Exception:
+            except Exception as inst:
+                LogMsg(ERROR, "AsyncCoordinatedConnection.__aexit__ commit failed: %s" % _get_exception(inst))
                 await self.rollback()
                 await self.close()
                 raise
         else:
             try:
                 await self.rollback()
-            except Exception:
+            except Exception as inst:
+                LogMsg(ERROR, "AsyncCoordinatedConnection.__aexit__ rollback failed: %s" % _get_exception(inst))
                 pass
         await self.close()
+        LogMsg(INFO, "exit AsyncCoordinatedConnection.__aexit__()")
         return False
 
 
