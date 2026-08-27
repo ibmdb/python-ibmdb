@@ -45,6 +45,7 @@ The `ibm_db_dbi` module provides full `asyncio` support through `AsyncConnection
   - [AsyncCursor.stmt_errormsg / stmt_error](#asynccursorstmt_errormsg--stmt_error)
   - [AsyncCursor.description / rowcount](#asynccursordescription--rowcount)
   - [AsyncCursor context manager](#asynccursor-context-manager)
+  - [AsyncCursor zLOAD methods](#ibm_db_dbiasynccursor-zload-methods)
 - [Stored Procedure Patterns](#stored-procedure-patterns)
 - [Concurrent Queries with asyncio.gather](#concurrent-queries-with-asynciogather)
 - [Two-Phase Commit (DUOW)](#two-phase-commit-duow)
@@ -1002,6 +1003,47 @@ async with cursor:
         print(row)
 # cursor auto-closed on exit
 ```
+
+### ibm_db_dbi.AsyncCursor zLOAD methods
+
+**Description**
+
+`AsyncCursor` provides the same zLOAD workflow as `Cursor`, with each call wrapped in `asyncio.to_thread` so it can be awaited from async code:
+
+- `async zload_begin(load_statement, utility_id=None)`
+- `async zload_put_data(data)`
+- `async zload_end()`
+- `async zload_get_diag()`
+- `async zload_from_file(load_statement, file_path, utility_id=None, chunk_size=1024*1024)`
+
+**Example**
+
+```python
+import asyncio
+from ibm_db_dbi import AsyncConnection
+
+async def main():
+    conn = await AsyncConnection.connect(dsn, user, password)
+    cursor = await conn.cursor()
+
+    load_stmt = "LOAD DATA INDDN SYSCLIEN INTO TABLE SCHEMA.TARGET_TABLE"
+    diag = await cursor.zload_from_file(
+        load_stmt,
+        "./ibm_db_tests/data/block.cust.del",
+        utility_id="PYZLOAD001",
+        chunk_size=10_000_000,
+    )
+    print("retcode:", diag.get("retcode"))
+    print("messages:", diag.get("messages"))
+
+    await cursor.close()
+    await conn.close()
+
+asyncio.run(main())
+```
+
+Other examples:
+[Example1](https://github.com/ibmdb/python-ibmdb/blob/master/asyncio_testsuite/test_36_async_zload_integration.py)
 
 ## Stored Procedure Patterns
 
