@@ -138,4 +138,7 @@ class IbmDbTestCase(unittest.TestCase):
 #50 : Mailersoft : 134.22 : 1643.126
 #60 : Kaerci : 100.97 : 9876.765
 #70 : Nirvana : 100.12 : 100.567
+#0.005202572
+#0.00520257200000000
+#-0.001234567890123456
 #Requested row number must be a positive value
