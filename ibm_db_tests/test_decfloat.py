@@ -79,6 +79,10 @@ class IbmDbTestCase(unittest.TestCase):
             while ( data ):
                 print("%s : %s : %s : %s\n" % (data[0], data[1], data[2], data[3]))
                 data = ibm_db.fetch_both( stmt )
+            if (serverinfo.DBMS_NAME[0:3] != 'IDS'):
+                for value in ("0.005202572", "0.00520257200000000", "-0.001234567890123456"):
+                    stmt = ibm_db.exec_immediate(conn, "VALUES CAST('%s' AS DECFLOAT(16))" % value)
+                    print(ibm_db.fetch_tuple(stmt)[0])
             try:
                 stmt = ibm_db.prepare(conn, query, {ibm_db.SQL_ATTR_CURSOR_TYPE:  ibm_db.SQL_CURSOR_KEYSET_DRIVEN})
                 ibm_db.execute(stmt)
@@ -99,6 +103,9 @@ class IbmDbTestCase(unittest.TestCase):
 #50 : Mailersoft : 134.22 : 1643.126
 #60 : Kaerci : 100.97 : 9876.765
 #70 : Nirvana : 100.12 : 100.567
+#0.005202572
+#0.00520257200000000
+#-0.001234567890123456
 #Requested row number must be a positive value
 #__ZOS_EXPECTED__
 #10 : Megadeth : 100.00 : 990.3567364883884
@@ -108,6 +115,9 @@ class IbmDbTestCase(unittest.TestCase):
 #50 : Mailersoft : 134.22 : 1643.126
 #60 : Kaerci : 100.97 : 9876.765
 #70 : Nirvana : 100.12 : 100.567
+#0.005202572
+#0.00520257200000000
+#-0.001234567890123456
 #Requested row number must be a positive value
 #__SYSTEMI_EXPECTED__
 #NA
@@ -128,4 +138,7 @@ class IbmDbTestCase(unittest.TestCase):
 #50 : Mailersoft : 134.22 : 1643.126
 #60 : Kaerci : 100.97 : 9876.765
 #70 : Nirvana : 100.12 : 100.567
+#0.005202572
+#0.00520257200000000
+#-0.001234567890123456
 #Requested row number must be a positive value

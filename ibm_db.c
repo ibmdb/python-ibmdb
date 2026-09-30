@@ -1938,9 +1938,18 @@ static int _python_ibm_db_bind_column_helper(stmt_handle *stmt_res)
 
         case SQL_BIGINT:
         case SQL_DECFLOAT:
-            snprintf(messageStr, sizeof(messageStr), "Case SQL_BIGINT/SQL_DECFLOAT, i=%d", i);
-            LogMsg(DEBUG, messageStr);
-            in_length = stmt_res->column_info[i].size + 3;
+            if (column_type == SQL_BIGINT)
+            {
+                snprintf(messageStr, sizeof(messageStr), "Case SQL_BIGINT, i=%d", i);
+                LogMsg(DEBUG, messageStr);
+                in_length = stmt_res->column_info[i].size + 3;
+            }
+            else
+            {
+                snprintf(messageStr, sizeof(messageStr), "Case SQL_DECFLOAT, i=%d", i);
+                LogMsg(DEBUG, messageStr);
+                in_length = MAX_DECFLOAT_LENGTH;
+            }
             row_data->str_val = (SQLCHAR *)ALLOC_N(char, in_length);
             if (row_data->str_val == NULL)
             {
@@ -2393,8 +2402,14 @@ static rowset_col_buffer *_python_ibm_db_bind_rowset_columns(
             memset(bufs[i].data, 0, in_length * row_array_size);
             break;
         case SQL_BIGINT:
-        case SQL_DECFLOAT:
             in_length = stmt_res->column_info[i].size + 3;
+            bufs[i].elem_size = in_length; bufs[i].ctype = SQL_C_CHAR;
+            bufs[i].data = (void *)ALLOC_N(char, in_length * row_array_size);
+            if (bufs[i].data == NULL) goto alloc_error;
+            memset(bufs[i].data, 0, in_length * row_array_size);
+            break;
+        case SQL_DECFLOAT:
+            in_length = MAX_DECFLOAT_LENGTH;
             bufs[i].elem_size = in_length; bufs[i].ctype = SQL_C_CHAR;
             bufs[i].data = (void *)ALLOC_N(char, in_length * row_array_size);
             if (bufs[i].data == NULL) goto alloc_error;
