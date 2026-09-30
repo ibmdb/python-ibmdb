@@ -176,8 +176,8 @@ typedef struct _param_cache_node
     SQLINTEGER *ivalueArray;          /* Temp storage array of values */
     double *fvalueArray;              /* Temp storage array of values */
     SQLINTEGER *bind_indicator_array; /* Temp storage array of values */
-    SQLSMALLINT cardinality;
-    SQLSMALLINT actual_cardinality;
+    SQLLEN cardinality;
+    SQLLEN actual_cardinality;
     struct _param_cache_node *next;   /* Pointer to next node */
 } param_node;
 
@@ -510,7 +510,7 @@ char *strtoupper(char *data, int max)
 #ifndef __MVS__
 static void _python_ibm_db_set_array_param_cardinality(stmt_handle *stmt_res,
                                                        param_node *curr,
-                                                       SQLSMALLINT cardinality)
+                                                       SQLLEN cardinality)
 {
 
     SQLHDESC hIPD = (SQLHDESC)0;
@@ -522,8 +522,8 @@ static void _python_ibm_db_set_array_param_cardinality(stmt_handle *stmt_res,
     LogMsg(INFO, "entry _python_ibm_db_set_array_param_cardinality()");
 
     snprintf(messageStr, sizeof(messageStr),
-             "Setting array param descriptor fields: param_num=%d, param_type=%d, cardinality=%d",
-             curr->param_num, curr->param_type, cardinality);
+             "Setting array param descriptor fields: param_num=%d, param_type=%d, cardinality=%lld",
+             curr->param_num, curr->param_type, (long long)cardinality);
     LogMsg(DEBUG, messageStr);
 
     rc = SQLGetStmtAttr(stmt_res->hstmt, SQL_ATTR_IMP_PARAM_DESC, &hIPD, 0, NULL);
@@ -546,25 +546,43 @@ static void _python_ibm_db_set_array_param_cardinality(stmt_handle *stmt_res,
 
     if (curr->param_type == SQL_PARAM_INPUT && hIPD != NULL) {
         rc = SQLSetDescField(hIPD, curr->param_num, SQL_DESC_CARDINALITY,
-                             (SQLPOINTER)(intptr_t)cardinality, SQL_IS_SMALLINT);
+                             (SQLPOINTER)(intptr_t)cardinality, SQL_IS_INTEGER);
         if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
             LogMsg(ERROR, "Failed to set SQL_DESC_CARDINALITY on hIPD(INPUT)");
         } else {
             LogMsg(DEBUG, "Set SQL_DESC_CARDINALITY on hIPD(INPUT)");
         }
 
-        rc = SQLSetDescField(hAPD, curr->param_num, SQL_DESC_CARDINALITY_PTR,
+        rc = SQLSetDescField(hIPD, curr->param_num, SQL_DESC_CARDINALITY_PTR,
                              (SQLPOINTER)&curr->actual_cardinality, SQL_IS_POINTER);
         if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
-            LogMsg(ERROR, "Failed to set SQL_DESC_CARDINALITY_PTR on hAPD(INPUT)");
+            LogMsg(ERROR, "Failed to set SQL_DESC_CARDINALITY_PTR on hIPD(INPUT)");
         } else {
-            LogMsg(DEBUG, "Set SQL_DESC_CARDINALITY_PTR on hAPD(INPUT)");
+            LogMsg(DEBUG, "Set SQL_DESC_CARDINALITY_PTR on hIPD(INPUT)");
+        }
+
+        if (hAPD != NULL) {
+            rc = SQLSetDescField(hAPD, curr->param_num, SQL_DESC_CARDINALITY,
+                                 (SQLPOINTER)(intptr_t)cardinality, SQL_IS_INTEGER);
+            if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
+                LogMsg(ERROR, "Failed to set SQL_DESC_CARDINALITY on hAPD(INPUT)");
+            } else {
+                LogMsg(DEBUG, "Set SQL_DESC_CARDINALITY on hAPD(INPUT)");
+            }
+
+            rc = SQLSetDescField(hAPD, curr->param_num, SQL_DESC_CARDINALITY_PTR,
+                                 (SQLPOINTER)&curr->actual_cardinality, SQL_IS_POINTER);
+            if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
+                LogMsg(ERROR, "Failed to set SQL_DESC_CARDINALITY_PTR on hAPD(INPUT)");
+            } else {
+                LogMsg(DEBUG, "Set SQL_DESC_CARDINALITY_PTR on hAPD(INPUT)");
+            }
         }
     }
 
     else if (curr->param_type == SQL_PARAM_OUTPUT && hAPD != NULL) {
         rc = SQLSetDescField(hAPD, curr->param_num, SQL_DESC_CARDINALITY,
-                             (SQLPOINTER)(intptr_t)cardinality, SQL_IS_SMALLINT);
+                             (SQLPOINTER)(intptr_t)cardinality, SQL_IS_INTEGER);
         if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
             LogMsg(ERROR, "Failed to set SQL_DESC_CARDINALITY on hAPD(OUTPUT)");
         } else {
@@ -583,7 +601,7 @@ static void _python_ibm_db_set_array_param_cardinality(stmt_handle *stmt_res,
     else if (curr->param_type == SQL_PARAM_INPUT_OUTPUT) {
         if (hIPD != NULL) {
             rc = SQLSetDescField(hIPD, curr->param_num, SQL_DESC_CARDINALITY,
-                                 (SQLPOINTER)(intptr_t)cardinality, SQL_IS_SMALLINT);
+                                 (SQLPOINTER)(intptr_t)cardinality, SQL_IS_INTEGER);
             if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
                 LogMsg(ERROR, "Failed to set SQL_DESC_CARDINALITY on hIPD(INOUT)");
             } else {
@@ -601,7 +619,7 @@ static void _python_ibm_db_set_array_param_cardinality(stmt_handle *stmt_res,
 
         if (hAPD != NULL) {
             rc = SQLSetDescField(hAPD, curr->param_num, SQL_DESC_CARDINALITY,
-                                 (SQLPOINTER)(intptr_t)cardinality, SQL_IS_SMALLINT);
+                                 (SQLPOINTER)(intptr_t)cardinality, SQL_IS_INTEGER);
             if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
                 LogMsg(ERROR, "Failed to set SQL_DESC_CARDINALITY on hAPD(INOUT)");
             } else {
@@ -9235,13 +9253,13 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
 #ifndef __MVS__
                 if (stmt_res->is_stored_procedure) {
                     snprintf(messageStr, sizeof(messageStr),
-                        "Before set_array_param_cardinality: param_num=%d, param_type=%d, cardinality=%d, actual_cardinality=%d, n(array size)=%d",
-                         curr->param_num, curr->param_type, curr->cardinality, curr->actual_cardinality, (int)n);
+                        "Before set_array_param_cardinality: param_num=%d, param_type=%d, cardinality=%lld, actual_cardinality=%lld, n(array size)=%d",
+                         curr->param_num, curr->param_type, (long long)curr->cardinality, (long long)curr->actual_cardinality, (int)n);
                     LogMsg(DEBUG, messageStr);
-                    _python_ibm_db_set_array_param_cardinality(stmt_res, curr, (SQLSMALLINT)n);
+                    _python_ibm_db_set_array_param_cardinality(stmt_res, curr, (SQLLEN)n);
                     snprintf(messageStr, sizeof(messageStr),
-                        "After set_array_param_cardinality: param_num=%d, param_type=%d, cardinality=%d, actual_cardinality=%d",
-                         curr->param_num, curr->param_type, curr->cardinality, curr->actual_cardinality);
+                        "After set_array_param_cardinality: param_num=%d, param_type=%d, cardinality=%lld, actual_cardinality=%lld",
+                        curr->param_num, curr->param_type, (long long)curr->cardinality, (long long)curr->actual_cardinality);
                     LogMsg(DEBUG, messageStr);
                 }
 #endif
@@ -9320,13 +9338,13 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
 #ifndef __MVS__
                 if (stmt_res->is_stored_procedure) {
                     snprintf(messageStr, sizeof(messageStr),
-                        "Before set_array_param_cardinality: param_num=%d, param_type=%d, cardinality=%d, actual_cardinality=%d, n(array size)=%d",
-                         curr->param_num, curr->param_type, curr->cardinality, curr->actual_cardinality, (int)n);
+                        "Before set_array_param_cardinality: param_num=%d, param_type=%d, cardinality=%lld, actual_cardinality=%lld, n(array size)=%d",
+                         curr->param_num, curr->param_type, (long long)curr->cardinality, (long long)curr->actual_cardinality, (int)n);
                     LogMsg(DEBUG, messageStr);
-                    _python_ibm_db_set_array_param_cardinality(stmt_res, curr, (SQLSMALLINT)n);
+                    _python_ibm_db_set_array_param_cardinality(stmt_res, curr, (SQLLEN)n);
                     snprintf(messageStr, sizeof(messageStr),
-                        "After set_array_param_cardinality: param_num=%d, param_type=%d, cardinality=%d, actual_cardinality=%d",
-                         curr->param_num, curr->param_type, curr->cardinality, curr->actual_cardinality);
+                        "After set_array_param_cardinality: param_num=%d, param_type=%d, cardinality=%lld, actual_cardinality=%lld",
+                        curr->param_num, curr->param_type, (long long)curr->cardinality, (long long)curr->actual_cardinality);
                     LogMsg(DEBUG, messageStr);
                 }
 #endif
@@ -9399,13 +9417,13 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
 #ifndef __MVS__
             if (stmt_res->is_stored_procedure) {
                 snprintf(messageStr, sizeof(messageStr),"Before set_array_param_cardinality: param_num=%d, param_type=%d,"
-                    " cardinality=%d, actual_cardinality=%d, n(array size)=%d",
-                    curr->param_num, curr->param_type, curr->cardinality, curr->actual_cardinality, (int)n);
+                    " cardinality=%lld, actual_cardinality=%lld, n(array size)=%d",
+                    curr->param_num, curr->param_type, (long long)curr->cardinality, (long long)curr->actual_cardinality, (int)n);
                 LogMsg(DEBUG, messageStr);
-                _python_ibm_db_set_array_param_cardinality(stmt_res, curr, (SQLSMALLINT)n);
+                _python_ibm_db_set_array_param_cardinality(stmt_res, curr, (SQLLEN)n);
                 snprintf(messageStr, sizeof(messageStr),
-                    "After set_array_param_cardinality: param_num=%d, param_type=%d, cardinality=%d, actual_cardinality=%d",
-                    curr->param_num, curr->param_type, curr->cardinality, curr->actual_cardinality);
+                    "After set_array_param_cardinality: param_num=%d, param_type=%d, cardinality=%lld, actual_cardinality=%lld",
+                    curr->param_num, curr->param_type, (long long)curr->cardinality, (long long)curr->actual_cardinality);
                 LogMsg(DEBUG, messageStr);
             }
 #endif
@@ -9481,13 +9499,13 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
 #ifndef __MVS__
             if (stmt_res->is_stored_procedure) {
                 snprintf(messageStr, sizeof(messageStr),"Before set_array_param_cardinality: param_num=%d, param_type=%d,"
-                    " cardinality=%d, actual_cardinality=%d, n(array size)=%d",
-                    curr->param_num, curr->param_type, curr->cardinality, curr->actual_cardinality, (int)n);
+                    " cardinality=%lld, actual_cardinality=%lld, n(array size)=%d",
+                    curr->param_num, curr->param_type, (long long)curr->cardinality, (long long)curr->actual_cardinality, (int)n);
                 LogMsg(DEBUG, messageStr);
-                _python_ibm_db_set_array_param_cardinality(stmt_res, curr, (SQLSMALLINT)n);
+                _python_ibm_db_set_array_param_cardinality(stmt_res, curr, (SQLLEN)n);
                 snprintf(messageStr, sizeof(messageStr),
-                    "After set_array_param_cardinality: param_num=%d, param_type=%d, cardinality=%d, actual_cardinality=%d",
-                    curr->param_num, curr->param_type, curr->cardinality, curr->actual_cardinality);
+                    "After set_array_param_cardinality: param_num=%d, param_type=%d, cardinality=%lld, actual_cardinality=%lld",
+                    curr->param_num, curr->param_type, (long long)curr->cardinality, (long long)curr->actual_cardinality);
                 LogMsg(DEBUG, messageStr);
             }
 #endif
@@ -9560,13 +9578,13 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
 #ifndef __MVS__
             if (stmt_res->is_stored_procedure) {
                 snprintf(messageStr, sizeof(messageStr),"Before set_array_param_cardinality: param_num=%d, param_type=%d,"
-                    " cardinality=%d, actual_cardinality=%d, n(array size)=%d",
-                    curr->param_num, curr->param_type, curr->cardinality, curr->actual_cardinality, (int)n);
+                    " cardinality=%lld, actual_cardinality=%lld, n(array size)=%d",
+                    curr->param_num, curr->param_type, (long long)curr->cardinality, (long long)curr->actual_cardinality, (int)n);
                 LogMsg(DEBUG, messageStr);
-                _python_ibm_db_set_array_param_cardinality(stmt_res, curr, (SQLSMALLINT)n);
+                _python_ibm_db_set_array_param_cardinality(stmt_res, curr, (SQLLEN)n);
                 snprintf(messageStr, sizeof(messageStr),
-                    "After set_array_param_cardinality: param_num=%d, param_type=%d, cardinality=%d, actual_cardinality=%d",
-                    curr->param_num, curr->param_type, curr->cardinality, curr->actual_cardinality);
+                    "After set_array_param_cardinality: param_num=%d, param_type=%d, cardinality=%lld, actual_cardinality=%lld",
+                    curr->param_num, curr->param_type, (long long)curr->cardinality, (long long)curr->actual_cardinality);
                 LogMsg(DEBUG, messageStr);
             }
 #endif
@@ -9920,13 +9938,13 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
 #ifndef __MVS__
             if (stmt_res->is_stored_procedure) {
                 snprintf(messageStr, sizeof(messageStr),"Before set_array_param_cardinality: param_num=%d, param_type=%d,"
-                    " cardinality=%d, actual_cardinality=%d, n(array size)=%d",
-                    curr->param_num, curr->param_type, curr->cardinality, curr->actual_cardinality, (int)n);
+                    " cardinality=%lld, actual_cardinality=%lld, n(array size)=%d",
+                    curr->param_num, curr->param_type, (long long)curr->cardinality, (long long)curr->actual_cardinality, (int)n);
                 LogMsg(DEBUG, messageStr);
-                _python_ibm_db_set_array_param_cardinality(stmt_res, curr, (SQLSMALLINT)n);
+                _python_ibm_db_set_array_param_cardinality(stmt_res, curr, (SQLLEN)n);
                 snprintf(messageStr, sizeof(messageStr),
-                    "After set_array_param_cardinality: param_num=%d, param_type=%d, cardinality=%d, actual_cardinality=%d",
-                    curr->param_num, curr->param_type, curr->cardinality, curr->actual_cardinality);
+                    "After set_array_param_cardinality: param_num=%d, param_type=%d, cardinality=%lld, actual_cardinality=%lld",
+                    curr->param_num, curr->param_type, (long long)curr->cardinality, (long long)curr->actual_cardinality);
                 LogMsg(DEBUG, messageStr);
             }
 #endif
@@ -10500,13 +10518,13 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
 #ifndef __MVS__
             if (stmt_res->is_stored_procedure) {
                 snprintf(messageStr, sizeof(messageStr),"Before set_array_param_cardinality: param_num=%d, param_type=%d,"
-                    " cardinality=%d, actual_cardinality=%d, n(array size)=%d",
-                    curr->param_num, curr->param_type, curr->cardinality, curr->actual_cardinality, (int)n);
+                    " cardinality=%lld, actual_cardinality=%lld, n(array size)=%d",
+                    curr->param_num, curr->param_type, (long long)curr->cardinality, (long long)curr->actual_cardinality, (int)n);
                 LogMsg(DEBUG, messageStr);
-                _python_ibm_db_set_array_param_cardinality(stmt_res, curr, (SQLSMALLINT)n);
+                _python_ibm_db_set_array_param_cardinality(stmt_res, curr, (SQLLEN)n);
                 snprintf(messageStr, sizeof(messageStr),
-                    "After set_array_param_cardinality: param_num=%d, param_type=%d, cardinality=%d, actual_cardinality=%d",
-                    curr->param_num, curr->param_type, curr->cardinality, curr->actual_cardinality);
+                    "After set_array_param_cardinality: param_num=%d, param_type=%d, cardinality=%lld, actual_cardinality=%lld",
+                    curr->param_num, curr->param_type, (long long)curr->cardinality, (long long)curr->actual_cardinality);
                 LogMsg(DEBUG, messageStr);
             }
 #endif
@@ -10801,13 +10819,13 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
 #ifndef __MVS__
                 if (stmt_res->is_stored_procedure) {
                     snprintf(messageStr, sizeof(messageStr),"Before set_array_param_cardinality: param_num=%d, param_type=%d,"
-                        " cardinality=%d, actual_cardinality=%d, n(array size)=%d",
-                        curr->param_num, curr->param_type, curr->cardinality, curr->actual_cardinality, (int)n);
+                        " cardinality=%lld, actual_cardinality=%lld, n(array size)=%d",
+                        curr->param_num, curr->param_type, (long long)curr->cardinality, (long long)curr->actual_cardinality, (int)n);
                     LogMsg(DEBUG, messageStr);
-                    _python_ibm_db_set_array_param_cardinality(stmt_res, curr, (SQLSMALLINT)n);
+                    _python_ibm_db_set_array_param_cardinality(stmt_res, curr, (SQLLEN)n);
                     snprintf(messageStr, sizeof(messageStr),
-                        "After set_array_param_cardinality: param_num=%d, param_type=%d, cardinality=%d, actual_cardinality=%d",
-                        curr->param_num, curr->param_type, curr->cardinality, curr->actual_cardinality);
+                        "After set_array_param_cardinality: param_num=%d, param_type=%d, cardinality=%lld, actual_cardinality=%lld",
+                        curr->param_num, curr->param_type, (long long)curr->cardinality, (long long)curr->actual_cardinality);
                     LogMsg(DEBUG, messageStr);
                 }
 #endif
@@ -10918,13 +10936,13 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
 #ifndef __MVS__
             if (stmt_res->is_stored_procedure) {
                 snprintf(messageStr, sizeof(messageStr),"Before set_array_param_cardinality: param_num=%d, param_type=%d,"
-                    " cardinality=%d, actual_cardinality=%d, n(array size)=%d",
-                    curr->param_num, curr->param_type, curr->cardinality, curr->actual_cardinality, (int)n);
+                    " cardinality=%lld, actual_cardinality=%lld, n(array size)=%d",
+                    curr->param_num, curr->param_type, (long long)curr->cardinality, (long long)curr->actual_cardinality, (int)n);
                 LogMsg(DEBUG, messageStr);
-                _python_ibm_db_set_array_param_cardinality(stmt_res, curr, (SQLSMALLINT)n);
+                _python_ibm_db_set_array_param_cardinality(stmt_res, curr, (SQLLEN)n);
                 snprintf(messageStr, sizeof(messageStr),
-                    "After set_array_param_cardinality: param_num=%d, param_type=%d, cardinality=%d, actual_cardinality=%d",
-                    curr->param_num, curr->param_type, curr->cardinality, curr->actual_cardinality);
+                    "After set_array_param_cardinality: param_num=%d, param_type=%d, cardinality=%lld, actual_cardinality=%lld",
+                    curr->param_num, curr->param_type, (long long)curr->cardinality, (long long)curr->actual_cardinality);
                 LogMsg(DEBUG, messageStr);
             }
 #endif
@@ -10994,13 +11012,13 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
 #ifndef __MVS__
             if (stmt_res->is_stored_procedure) {
                 snprintf(messageStr, sizeof(messageStr),"Before set_array_param_cardinality: param_num=%d, param_type=%d,"
-                    " cardinality=%d, actual_cardinality=%d, n(array size)=%d",
-                    curr->param_num, curr->param_type, curr->cardinality, curr->actual_cardinality, (int)n);
+                    " cardinality=%lld, actual_cardinality=%lld, n(array size)=%d",
+                    curr->param_num, curr->param_type, (long long)curr->cardinality, (long long)curr->actual_cardinality, (int)n);
                 LogMsg(DEBUG, messageStr);
-                _python_ibm_db_set_array_param_cardinality(stmt_res, curr, (SQLSMALLINT)n);
+                _python_ibm_db_set_array_param_cardinality(stmt_res, curr, (SQLLEN)n);
                 snprintf(messageStr, sizeof(messageStr),
-                    "After set_array_param_cardinality: param_num=%d, param_type=%d, cardinality=%d, actual_cardinality=%d",
-                    curr->param_num, curr->param_type, curr->cardinality, curr->actual_cardinality);
+                    "After set_array_param_cardinality: param_num=%d, param_type=%d, cardinality=%lld, actual_cardinality=%lld",
+                    curr->param_num, curr->param_type, (long long)curr->cardinality, (long long)curr->actual_cardinality);
                 LogMsg(DEBUG, messageStr);
             }
 #endif
@@ -11078,13 +11096,13 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
 #ifndef __MVS__
             if (stmt_res->is_stored_procedure) {
                 snprintf(messageStr, sizeof(messageStr),"Before set_array_param_cardinality: param_num=%d, param_type=%d,"
-                    " cardinality=%d, actual_cardinality=%d, n(array size)=%d",
-                    curr->param_num, curr->param_type, curr->cardinality, curr->actual_cardinality, (int)n);
+                    " cardinality=%lld, actual_cardinality=%lld, n(array size)=%d",
+                    curr->param_num, curr->param_type, (long long)curr->cardinality, (long long)curr->actual_cardinality, (int)n);
                 LogMsg(DEBUG, messageStr);
-                _python_ibm_db_set_array_param_cardinality(stmt_res, curr, (SQLSMALLINT)n);
+                _python_ibm_db_set_array_param_cardinality(stmt_res, curr, (SQLLEN)n);
                 snprintf(messageStr, sizeof(messageStr),
-                    "After set_array_param_cardinality: param_num=%d, param_type=%d, cardinality=%d, actual_cardinality=%d",
-                    curr->param_num, curr->param_type, curr->cardinality, curr->actual_cardinality);
+                    "After set_array_param_cardinality: param_num=%d, param_type=%d, cardinality=%lld, actual_cardinality=%lld",
+                    curr->param_num, curr->param_type, (long long)curr->cardinality, (long long)curr->actual_cardinality);
                 LogMsg(DEBUG, messageStr);
             }
 #endif
@@ -11209,13 +11227,13 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
 #ifndef __MVS__
         if (stmt_res->is_stored_procedure) {
             snprintf(messageStr, sizeof(messageStr),"Before set_array_param_cardinality: param_num=%d, param_type=%d,"
-                " cardinality=%d, actual_cardinality=%d, n(array size)=%d",
-                curr->param_num, curr->param_type, curr->cardinality, curr->actual_cardinality, (int)n);
+                " cardinality=%lld, actual_cardinality=%lld, n(array size)=%d",
+                curr->param_num, curr->param_type, (long long)curr->cardinality, (long long)curr->actual_cardinality, (int)n);
             LogMsg(DEBUG, messageStr);
-            _python_ibm_db_set_array_param_cardinality(stmt_res, curr, (SQLSMALLINT)n);
+            _python_ibm_db_set_array_param_cardinality(stmt_res, curr, (SQLLEN)n);
             snprintf(messageStr, sizeof(messageStr),
-                "After set_array_param_cardinality: param_num=%d, param_type=%d, cardinality=%d, actual_cardinality=%d",
-                curr->param_num, curr->param_type, curr->cardinality, curr->actual_cardinality);
+                "After set_array_param_cardinality: param_num=%d, param_type=%d, cardinality=%lld, actual_cardinality=%lld",
+                curr->param_num, curr->param_type, (long long)curr->cardinality, (long long)curr->actual_cardinality);
             LogMsg(DEBUG, messageStr);
         }
 #endif
@@ -11329,13 +11347,13 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
 #ifndef __MVS__
             if (stmt_res->is_stored_procedure) {
                 snprintf(messageStr, sizeof(messageStr),"Before set_array_param_cardinality: param_num=%d, param_type=%d,"
-                    " cardinality=%d, actual_cardinality=%d, n(array size)=%d",
-                    curr->param_num, curr->param_type, curr->cardinality, curr->actual_cardinality, (int)n);
+                    " cardinality=%lld, actual_cardinality=%lld, n(array size)=%d",
+                    curr->param_num, curr->param_type, (long long)curr->cardinality, (long long)curr->actual_cardinality, (int)n);
                 LogMsg(DEBUG, messageStr);
-                _python_ibm_db_set_array_param_cardinality(stmt_res, curr, (SQLSMALLINT)n);
+                _python_ibm_db_set_array_param_cardinality(stmt_res, curr, (SQLLEN)n);
                 snprintf(messageStr, sizeof(messageStr),
-                    "After set_array_param_cardinality: param_num=%d, param_type=%d, cardinality=%d, actual_cardinality=%d",
-                    curr->param_num, curr->param_type, curr->cardinality, curr->actual_cardinality);
+                    "After set_array_param_cardinality: param_num=%d, param_type=%d, cardinality=%lld, actual_cardinality=%lld",
+                    curr->param_num, curr->param_type, (long long)curr->cardinality, (long long)curr->actual_cardinality);
                 LogMsg(DEBUG, messageStr);
             }
 #endif
@@ -19958,9 +19976,13 @@ static PyObject* ibm_db_fetch_callproc(PyObject* self, PyObject* args)
 
     int idx = 1;
     while (curr && idx <= numOfParam) {
-        curr->cardinality = curr->actual_cardinality;
-        snprintf(messageStr, sizeof(messageStr), "Processing parameter %d (param_type=%d, data_type=%d, cardinality=%d, bind_indicator=%d)",
-                curr->param_num, curr->param_type, curr->data_type, curr->cardinality, curr->bind_indicator);
+        /* Keep the bound cardinality for array detection, but use the driver's
+         * actual cardinality below so a shorter output is never padded. */
+        if (curr->actual_cardinality > 0 && curr->actual_cardinality > curr->cardinality) {
+            curr->cardinality = curr->actual_cardinality;
+        }
+        snprintf(messageStr, sizeof(messageStr), "Processing parameter %d (param_type=%d, data_type=%d, cardinality=%lld, bind_indicator=%d)",
+                curr->param_num, curr->param_type, curr->data_type, (long long)curr->cardinality, curr->bind_indicator);
         LogMsg(DEBUG, messageStr);
         PyObject *pyVal = Py_None;
         Py_INCREF(pyVal);
@@ -19992,8 +20014,28 @@ static PyObject* ibm_db_fetch_callproc(PyObject* self, PyObject* args)
 
         if (!skip_param) {
 
-            if (curr->cardinality > 1 && curr->actual_cardinality > 0) {
-                int len = curr->actual_cardinality;
+            int is_list_bound = curr->var_pyvalue && PyList_Check(curr->var_pyvalue);
+            if (curr->cardinality > 1 || is_list_bound) {
+                snprintf(messageStr, sizeof(messageStr),
+                    "Array output param %d: cardinality=%lld, actual_cardinality=%lld, is_list_bound=%d",
+                    curr->param_num, (long long)curr->cardinality, (long long)curr->actual_cardinality, is_list_bound);
+                LogMsg(DEBUG, messageStr);
+                if (curr->actual_cardinality < 0) {
+                    /* Negative actual_cardinality signals the whole array is NULL/unknown;
+                     * do not pad it out to the bound size with stale buffer contents. */
+                    LogMsg(DEBUG, "Array output param: actual_cardinality < 0, returning None");
+                    Py_DECREF(pyVal);
+                    pyVal = Py_None;
+                    Py_INCREF(pyVal);
+                    PyTuple_SET_ITEM(outTuple, idx++, pyVal);
+                    curr = curr->next;
+                    continue;
+                }
+                /* Zero is a valid driver-reported cardinality for an empty array. */
+                SQLLEN len = curr->actual_cardinality;
+                snprintf(messageStr, sizeof(messageStr),
+                    "Array output param %d: resolved output list length=%lld", curr->param_num, (long long)len);
+                LogMsg(DEBUG, messageStr);
                 PyObject *pyList = PyList_New(len);
                 if (!pyList) {
                     Py_DECREF(pyVal);
