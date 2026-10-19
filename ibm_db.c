@@ -249,6 +249,7 @@ typedef union
     SQLREAL r_val;
     SQLWCHAR *w_val;
     TIMESTAMP_STRUCT *ts_val;
+    TIMESTAMP_STRUCT_EXT *ts_ext_val;
     TIMESTAMP_STRUCT_EXT_TZ *tstz_val;
     DATE_STRUCT *date_val;
     TIME_STRUCT *time_val;
@@ -867,7 +868,15 @@ static void _python_ibm_db_free_result_struct(stmt_handle *handle)
                     }
                     break;
                 case SQL_TYPE_TIMESTAMP:
-                    if (handle->row_data[i].data.ts_val != NULL)
+                    if (handle->column_info[i].scale > 9)
+                    {
+                        if (handle->row_data[i].data.ts_ext_val != NULL)
+                        {
+                            PyMem_Del(handle->row_data[i].data.ts_ext_val);
+                            handle->row_data[i].data.ts_ext_val = NULL;
+                        }
+                    }
+                    else if (handle->row_data[i].data.ts_val != NULL)
                     {
                         snprintf(messageStr, sizeof(messageStr), "Freeing row_data[%d].data.ts_val=%p", i, handle->row_data[i].data.ts_val);
                         LogMsg(DEBUG, messageStr);
@@ -2038,21 +2047,37 @@ static int _python_ibm_db_bind_column_helper(stmt_handle *stmt_res)
         case SQL_TYPE_TIMESTAMP:
             snprintf(messageStr, sizeof(messageStr), "Case SQL_TYPE_TIMESTAMP for column index %d", i);
             LogMsg(DEBUG, messageStr);
-            row_data->ts_val = ALLOC(TIMESTAMP_STRUCT);
-            if (row_data->ts_val == NULL)
+            SQLPOINTER timestamp_buffer;
+            SQLSMALLINT timestamp_c_type;
+            SQLLEN timestamp_buffer_size;
+            if (stmt_res->column_info[i].scale > 9)
             {
-                LogMsg(EXCEPTION, "Failed to Allocate Memory for ts_val");
+                row_data->ts_ext_val = ALLOC(TIMESTAMP_STRUCT_EXT);
+                timestamp_buffer = row_data->ts_ext_val;
+                timestamp_c_type = SQL_C_TIMESTAMP_EXT;
+                timestamp_buffer_size = sizeof(TIMESTAMP_STRUCT_EXT);
+            }
+            else
+            {
+                row_data->ts_val = ALLOC(TIMESTAMP_STRUCT);
+                timestamp_buffer = row_data->ts_val;
+                timestamp_c_type = SQL_C_TYPE_TIMESTAMP;
+                timestamp_buffer_size = sizeof(TIMESTAMP_STRUCT);
+            }
+            if (timestamp_buffer == NULL)
+            {
+                LogMsg(EXCEPTION, "Failed to Allocate Memory for timestamp value");
                 PyErr_SetString(PyExc_Exception, "Failed to Allocate Memory");
                 return -1;
             }
-            snprintf(messageStr, sizeof(messageStr), "Allocated memory for ts_val with size %zu", sizeof(TIMESTAMP_STRUCT));
+            snprintf(messageStr, sizeof(messageStr), "Allocated memory for timestamp value with size %zu", (size_t)timestamp_buffer_size);
             LogMsg(DEBUG, messageStr);
-            snprintf(messageStr, sizeof(messageStr), "Calling SQLBindCol with parameters: hstmt=%p, col=%d, sql_type=SQL_C_TYPE_TIMESTAMP, buffer_size=%zu, out_length=%p",
-                     stmt_res->hstmt, i + 1, sizeof(TIMESTAMP_STRUCT), &stmt_res->row_data[i].out_length);
+            snprintf(messageStr, sizeof(messageStr), "Calling SQLBindCol with parameters: hstmt=%p, col=%d, sql_type=%d, buffer_size=%zu, out_length=%p",
+                     stmt_res->hstmt, i + 1, timestamp_c_type, (size_t)timestamp_buffer_size, &stmt_res->row_data[i].out_length);
             LogMsg(DEBUG, messageStr);
             Py_BEGIN_ALLOW_THREADS;
             rc = SQLBindCol((SQLHSTMT)stmt_res->hstmt, (SQLUSMALLINT)(i + 1),
-                            SQL_C_TYPE_TIMESTAMP, row_data->time_val, sizeof(TIMESTAMP_STRUCT),
+                            timestamp_c_type, timestamp_buffer, timestamp_buffer_size,
                             (SQLINTEGER *)(&stmt_res->row_data[i].out_length));
             Py_END_ALLOW_THREADS;
             snprintf(messageStr, sizeof(messageStr), "SQLBindCol returned %d for column %d", rc, i);
@@ -2436,10 +2461,20 @@ static rowset_col_buffer *_python_ibm_db_bind_rowset_columns(
             memset(bufs[i].data, 0, sizeof(TIME_STRUCT) * row_array_size);
             break;
         case SQL_TYPE_TIMESTAMP:
-            bufs[i].elem_size = sizeof(TIMESTAMP_STRUCT); bufs[i].ctype = SQL_C_TYPE_TIMESTAMP;
-            bufs[i].data = (void *)ALLOC_N(TIMESTAMP_STRUCT, row_array_size);
-            if (bufs[i].data == NULL) goto alloc_error;
-            memset(bufs[i].data, 0, sizeof(TIMESTAMP_STRUCT) * row_array_size);
+            if (stmt_res->column_info[i].scale > 9)
+            {
+                bufs[i].elem_size = sizeof(TIMESTAMP_STRUCT_EXT); bufs[i].ctype = SQL_C_TIMESTAMP_EXT;
+                bufs[i].data = (void *)ALLOC_N(TIMESTAMP_STRUCT_EXT, row_array_size);
+                if (bufs[i].data == NULL) goto alloc_error;
+                memset(bufs[i].data, 0, sizeof(TIMESTAMP_STRUCT_EXT) * row_array_size);
+            }
+            else
+            {
+                bufs[i].elem_size = sizeof(TIMESTAMP_STRUCT); bufs[i].ctype = SQL_C_TYPE_TIMESTAMP;
+                bufs[i].data = (void *)ALLOC_N(TIMESTAMP_STRUCT, row_array_size);
+                if (bufs[i].data == NULL) goto alloc_error;
+                memset(bufs[i].data, 0, sizeof(TIMESTAMP_STRUCT) * row_array_size);
+            }
             break;
         case SQL_TYPE_TIMESTAMP_WITH_TIMEZONE:
             bufs[i].elem_size = sizeof(TIMESTAMP_STRUCT_EXT_TZ); bufs[i].ctype = SQL_C_TYPE_TIMESTAMP_EXT_TZ;
@@ -2805,9 +2840,10 @@ static PyObject *_python_ibm_db_build_row_from_rowset(
             }
             case SQL_TYPE_TIMESTAMP:
             {
-                TIMESTAMP_STRUCT *tsv = (TIMESTAMP_STRUCT *)base_ptr;
-                value = PyDateTime_FromDateAndTime(tsv->year, tsv->month, tsv->day,
-                    tsv->hour % 24, tsv->minute, tsv->second, tsv->fraction / 1000);
+                TIMESTAMP_STRUCT timestamp_value;
+                memcpy(&timestamp_value, base_ptr, sizeof(timestamp_value));
+                value = PyDateTime_FromDateAndTime(timestamp_value.year, timestamp_value.month, timestamp_value.day,
+                    timestamp_value.hour % 24, timestamp_value.minute, timestamp_value.second, timestamp_value.fraction / 1000);
                 break;
             }
             case SQL_TYPE_TIMESTAMP_WITH_TIMEZONE:
@@ -3201,7 +3237,11 @@ cleanup_attrs:
                 if (stmt_res->row_data[i].data.tstz_val != NULL) { PyMem_Del(stmt_res->row_data[i].data.tstz_val); stmt_res->row_data[i].data.tstz_val = NULL; }
                 break;
             case SQL_TYPE_TIMESTAMP:
-                if (stmt_res->row_data[i].data.ts_val != NULL) { PyMem_Del(stmt_res->row_data[i].data.ts_val); stmt_res->row_data[i].data.ts_val = NULL; }
+                if (stmt_res->column_info[i].scale > 9)
+                {
+                    if (stmt_res->row_data[i].data.ts_ext_val != NULL) { PyMem_Del(stmt_res->row_data[i].data.ts_ext_val); stmt_res->row_data[i].data.ts_ext_val = NULL; }
+                }
+                else if (stmt_res->row_data[i].data.ts_val != NULL) { PyMem_Del(stmt_res->row_data[i].data.ts_val); stmt_res->row_data[i].data.ts_val = NULL; }
                 break;
             case SQL_TYPE_DATE:
                 if (stmt_res->row_data[i].data.date_val != NULL) { PyMem_Del(stmt_res->row_data[i].data.date_val); stmt_res->row_data[i].data.date_val = NULL; }
@@ -15404,16 +15444,23 @@ static PyObject *_python_ibm_db_bind_fetch_helper(PyObject *args, int op)
                 break;
 
             case SQL_TYPE_TIMESTAMP:
-                value = PyDateTime_FromDateAndTime(row_data->ts_val->year, row_data->ts_val->month, row_data->ts_val->day,
-                                                   row_data->ts_val->hour % 24, row_data->ts_val->minute, row_data->ts_val->second,
-                                                   row_data->ts_val->fraction / 1000);
+            {
+                TIMESTAMP_STRUCT timestamp_value;
+                if (stmt_res->column_info[column_number].scale > 9)
+                    memcpy(&timestamp_value, row_data->ts_ext_val, sizeof(timestamp_value));
+                else
+                    timestamp_value = *row_data->ts_val;
+                value = PyDateTime_FromDateAndTime(timestamp_value.year, timestamp_value.month, timestamp_value.day,
+                                                   timestamp_value.hour % 24, timestamp_value.minute, timestamp_value.second,
+                                                   timestamp_value.fraction / 1000);
                 snprintf(messageStr, sizeof(messageStr),
                          "Column data converted to timestamp: year=%d, month=%d, day=%d, hour=%d, minute=%d, second=%d, fraction=%d",
-                         row_data->ts_val->year, row_data->ts_val->month, row_data->ts_val->day,
-                         row_data->ts_val->hour % 24, row_data->ts_val->minute, row_data->ts_val->second,
-                         row_data->ts_val->fraction / 1000);
+                         timestamp_value.year, timestamp_value.month, timestamp_value.day,
+                         timestamp_value.hour % 24, timestamp_value.minute, timestamp_value.second,
+                         timestamp_value.fraction / 1000);
                 LogMsg(DEBUG, messageStr);
                 break;
+            }
 
             case SQL_TYPE_TIMESTAMP_WITH_TIMEZONE:
                 value = format_timestamp_pystr(row_data->tstz_val);
@@ -20430,8 +20477,11 @@ static PyObject* ibm_db_fetch_callproc(PyObject* self, PyObject* args)
 
                             case SQL_TYPE_TIMESTAMP:
                             case SQL_TYPE_TIMESTAMP_WITH_TIMEZONE:{
+                            const char *timestamp_type = curr->data_type == SQL_TYPE_TIMESTAMP_WITH_TIMEZONE
+                                ? "SQL_TYPE_TIMESTAMP_WITH_TIMEZONE" : "SQL_TYPE_TIMESTAMP";
                             if(curr->svalue){
-                                LogMsg(DEBUG, "Processing SQL_TYPE_TIMESTAMP array element using svalue");
+                                snprintf(messageStr, sizeof(messageStr), "Processing %s array element using svalue", timestamp_type);
+                                LogMsg(DEBUG, messageStr);
                                 char *elem_ptr = curr->svalue + i * curr->param_size;
                                 size_t max_len = curr->param_size;
                                 size_t actual_len;
@@ -20439,7 +20489,7 @@ static PyObject* ibm_db_fetch_callproc(PyObject* self, PyObject* args)
                                 actual_len = strnlen(elem_ptr, max_len);
 #endif
                                 snprintf(messageStr, sizeof(messageStr),
-                                    "SQL_TYPE_TIMESTAMP svalue element %d: actual_len=%zu, max_len=%zu", i, actual_len, max_len);
+                                    "%s svalue element %d: actual_len=%zu, max_len=%zu", timestamp_type, i, actual_len, max_len);
                                 LogMsg(DEBUG, messageStr);
                                 elem = PyUnicode_Decode(elem_ptr, actual_len, "utf-8", "strict");
                                 if (!elem) {
@@ -20464,7 +20514,8 @@ static PyObject* ibm_db_fetch_callproc(PyObject* self, PyObject* args)
                                 }
                             }
                             else if (curr->uvalue) {
-                                LogMsg(DEBUG, "Processing SQL_TYPE_TIMESTAMP/SQL_TIMESTAMP_WITH_TIMEZONE array element using uvalue");
+                                snprintf(messageStr, sizeof(messageStr), "Processing %s array element using uvalue", timestamp_type);
+                                LogMsg(DEBUG, messageStr);
                                 SQLWCHAR *elem_ptr = (SQLWCHAR *)((char *)curr->uvalue + i * curr->param_size);
                                 /* bind_indicator_array[i] holds the byte length of the output data;
                                  * cap it to param_size (the buffer stride) to avoid over-read. */
@@ -20856,7 +20907,9 @@ static PyObject* ibm_db_fetch_callproc(PyObject* self, PyObject* args)
                         PyErr_Clear();
                         pyStr = PyBytes_FromStringAndSize((const char *)ts_wstr,ind_len * sizeof(SQLWCHAR));
                     }
-                    snprintf(messageStr, sizeof(messageStr),"Scalar TIMESTAMP parameter using uvalue, length=%ld",(long)ind_len);
+                    snprintf(messageStr, sizeof(messageStr), "Scalar %s parameter using uvalue, length=%ld",
+                             curr->data_type == SQL_TYPE_TIMESTAMP_WITH_TIMEZONE ? "TIMESTAMP WITH TIME ZONE" : "TIMESTAMP",
+                             (long)ind_len);
                     LogMsg(DEBUG, messageStr);
                     if (curr->data_type == SQL_TYPE_TIMESTAMP_WITH_TIMEZONE) {
                         /* Return as string to preserve timezone information */
@@ -20896,7 +20949,8 @@ static PyObject* ibm_db_fetch_callproc(PyObject* self, PyObject* args)
                     }
                 }
                 if (curr->ts_value) {
-                    snprintf(messageStr, sizeof(messageStr), "Scalar timestamp_value = %04d-%02d-%02d %02d:%02d:%02d.%03d",
+                    snprintf(messageStr, sizeof(messageStr), "Scalar %s value = %04d-%02d-%02d %02d:%02d:%02d.%03d",
+                    curr->data_type == SQL_TYPE_TIMESTAMP_WITH_TIMEZONE ? "TIMESTAMP WITH TIME ZONE" : "TIMESTAMP",
                     curr->ts_value->year, curr->ts_value->month, curr->ts_value->day,
                     curr->ts_value->hour % 24, curr->ts_value->minute, curr->ts_value->second,
                     (int)(curr->ts_value->fraction / 1000));

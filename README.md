@@ -21,12 +21,18 @@ https://github.com/ibmdb/python-ibmdb/wiki/APIs
 
 For the asyncio APIs, please refer to [ASYNC_APIs_WIKI.md](ASYNC_APIs_WIKI.md).
 
+## Timestamp Precision Notes
+
+- Python `datetime` stores microseconds, so `ibm_db` returns timestamp values with up to 6 fractional digits in Python objects.
+- Fetching Db2 `TIMESTAMP(10..12)` values now uses an extended CLI timestamp bind path internally to avoid per-row `CLI0182W` (`SQLSTATE 01S07`) diagnostic overhead during fetch.
+- Application-visible behavior remains the same: timestamp values are returned as Python `datetime.datetime`, with fractional precision mapped to microseconds.
+
 <a name="prereq"></a>
 
 ## Pre-requisites
 
-Install Python 3.9 <= 3.14. The minimum python version supported by driver is python 3.9 and the latest version supported is python 3.14.
-MacOS arm64 is supported Python 3.9 onwards.
+Install Python 3.11 <= 3.15. The minimum python version supported by driver is python 3.11 and the latest version supported is python 3.15.
+MacOS arm64 is supported Python 3.11 onwards.
 
 When using an external clidriver, **ibm_db_dbi** must be compiled against the headers and libraries of that clidriver to function properly.
 Therefore, it is not recommended to use the precompiled `ibm_db` wheel with an external clidriver.
@@ -89,7 +95,7 @@ To install ibm_db from source code after clone from git, or to know the detialed
 
 ## Installation
 
-- Python **Wheels** are built for Linux, MacOS and Windows operating systems for multiple python versions (from python version 3.7 to 3.13). For other platforms, package gets installed from source distribution. For MaxOS arm64, python wheels are available from version 3.9 onwards.
+- Python **Wheels** are built for Linux, MacOS and Windows operating systems for multiple python versions (from python version 3.11 to 3.15). For other platforms, package gets installed from source distribution. For MaxOS arm64, python wheels are available from version 3.11 onwards.
 
 You can install the driver using pip as:
 
