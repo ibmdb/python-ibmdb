@@ -3907,7 +3907,30 @@ static SQLWCHAR *getUnicodeDataAsSQLWCHAR(PyObject *pyobj, int *isNewBuffer, Py_
      * (surrogate pairs) which require 2 SQLWCHAR units per code point */
     Py_ssize_t encodedByteLen = PyBytes_GET_SIZE(pyUTFobj);
     Py_ssize_t nWchars = encodedByteLen / sizeof(SQLWCHAR);
+    if (nWchars < 0 ||
+        (size_t)nWchars + 1 > (size_t)PY_SSIZE_T_MAX / sizeof(SQLWCHAR))
+    {
+        PyErr_SetString(PyExc_OverflowError, "UTF-16 string is too large to convert");
+        Py_DECREF(pyUTFobj);
+        Py_DECREF(maxuni);
+        Py_DECREF(sysmodule);
+        if (utf16ByteLen) {
+            *utf16ByteLen = 0;
+        }
+        return NULL;
+    }
     pNewBuffer = (SQLWCHAR *)ALLOC_N(SQLWCHAR, nWchars + 1);
+    if (pNewBuffer == NULL)
+    {
+        PyErr_NoMemory();
+        Py_DECREF(pyUTFobj);
+        Py_DECREF(maxuni);
+        Py_DECREF(sysmodule);
+        if (utf16ByteLen) {
+            *utf16ByteLen = 0;
+        }
+        return NULL;
+    }
     snprintf(messageStr, sizeof(messageStr), "Allocated new buffer: pNewBuffer=%p, nWchars=%zd (nCharLen was %d)", (void *)pNewBuffer, nWchars, nCharLen);
     LogMsg(DEBUG, messageStr);
     memset(pNewBuffer, 0, sizeof(SQLWCHAR) * (nWchars + 1));
@@ -9143,9 +9166,9 @@ static param_node *build_list(stmt_handle *stmt_res, int param_no, SQLSMALLINT d
 static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyObject *bind_data)
 {
     LogMsg(INFO, "entry _python_ibm_db_bind_data()");
-    int rc, i;
+    int rc = SQL_SUCCESS, i;
     SQLSMALLINT valueType = 0;
-    SQLPOINTER paramValuePtr;
+    SQLPOINTER paramValuePtr = NULL;
     SQLWCHAR *tmp_uvalue = NULL;
     SQLWCHAR *dest_uvalue = NULL;
     char *tmp_svalue = NULL;
@@ -9693,6 +9716,7 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
                 curr->param_size = (curr->param_size + 1) * sizeof(SQLWCHAR);
             }
             curr->uvalue = (SQLWCHAR *)ALLOC_N(char, curr->param_size * (n));
+            paramValuePtr = (SQLPOINTER)curr->uvalue;
             curr->bind_indicator_array = (SQLINTEGER *)ALLOC_N(SQLINTEGER, n);
             memset(curr->uvalue, 0, curr->param_size * n);
 
@@ -10363,6 +10387,7 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
             if (curr->data_type == SQL_TYPE_TIMESTAMP)
                curr->param_size = curr->param_size + 1;
             curr->svalue = (char *)ALLOC_N(char, curr->param_size *(n));
+            paramValuePtr = (SQLPOINTER)curr->svalue;
             curr->bind_indicator_array = (SQLINTEGER *)ALLOC_N(SQLINTEGER, n);
             memset(curr->svalue, 0, curr->param_size * n);
 
@@ -10824,6 +10849,7 @@ static int _python_ibm_db_bind_data(stmt_handle *stmt_res, param_node *curr, PyO
                 }
 
                 curr->svalue = (char *)ALLOC_N(char, max_precn *n);
+                paramValuePtr = (SQLPOINTER)curr->svalue;
                 curr->bind_indicator_array = (SQLINTEGER *)ALLOC_N(SQLINTEGER, n);
                 memset(curr->svalue, 0, max_precn * n);
 
