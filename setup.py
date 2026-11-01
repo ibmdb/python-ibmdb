@@ -497,7 +497,7 @@ data_files = [ (get_python_lib(), ['./README.md']),
                (get_python_lib(), ['./CHANGES.md']),
                (get_python_lib(), ['./LICENSE'])]
 
-modules = ['ibm_db_dbi', 'testfunctions', 'ibmdb_tests', 'ibm_db_ctx', '_ibm_db_register_dll']
+modules = ['ibm_db_dbi', 'ibm_db_otel', 'testfunctions', 'ibmdb_tests', 'ibm_db_ctx', '_ibm_db_register_dll']
 
 if 'zos' == sys.platform:
     ext_modules = _ext_modules(os.path.join(os.getcwd(), include_dir), library, ibm_db_lib, ibm_db_lib_runtime)

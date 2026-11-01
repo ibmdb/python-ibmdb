@@ -129,6 +129,11 @@ SQL_TXN_REPEATABLE_READ = ibm_db.SQL_TXN_REPEATABLE_READ
 SQL_TXN_SERIALIZABLE = ibm_db.SQL_TXN_SERIALIZABLE
 SQL_TXN_NO_COMMIT = ibm_db.SQL_TXN_NO_COMMIT
 
+# OpenTelemetry W3C connection attributes.
+SQL_ATTR_OTEL_TRACEPARENT = ibm_db.SQL_ATTR_OTEL_TRACEPARENT
+SQL_ATTR_OTEL_TRACESTATE = ibm_db.SQL_ATTR_OTEL_TRACESTATE
+SQL_ATTR_OTEL_BAGGAGE = ibm_db.SQL_ATTR_OTEL_BAGGAGE
+
 # DRDA fast load (zLOAD) constants are exported only when available in CLI headers.
 SQL_ATTR_DB2ZLOAD_LOADSTMT = getattr(ibm_db, 'SQL_ATTR_DB2ZLOAD_LOADSTMT', None)
 SQL_ATTR_DB2ZLOAD_UTILITYID = getattr(ibm_db, 'SQL_ATTR_DB2ZLOAD_UTILITYID', None)
@@ -2855,5 +2860,4 @@ class AsyncCoordinatedConnection:
         await self.close()
         LogMsg(INFO, "exit AsyncCoordinatedConnection.__aexit__()")
         return False
-
 

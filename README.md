@@ -21,6 +21,32 @@ https://github.com/ibmdb/python-ibmdb/wiki/APIs
 
 For the asyncio APIs, please refer to [ASYNC_APIs_WIKI.md](ASYNC_APIs_WIKI.md).
 
+## OpenTelemetry
+
+Install `opentelemetry-api` and an OpenTelemetry SDK to propagate the active
+W3C trace context from Python. The `ibm_db_otel` helper reads the current
+context and uses `ibm_db.set_option` to set the CLI connection attributes for
+`traceparent`, `tracestate`, and `baggage` before SQL execution. This applies to
+both `ibm_db` and `ibm_db_dbi` execution APIs, including connections opened
+before the span starts. Context attributes explicitly set by the application
+are not replaced.
+
+The connection attribute constants are available as
+`ibm_db.SQL_ATTR_OTEL_TRACEPARENT`, `ibm_db.SQL_ATTR_OTEL_TRACESTATE`, and
+`ibm_db.SQL_ATTR_OTEL_BAGGAGE`. For example:
+
+```python
+ibm_db.set_option(conn, {
+    ibm_db.SQL_ATTR_OTEL_TRACEPARENT: traceparent,
+    ibm_db.SQL_ATTR_OTEL_TRACESTATE: tracestate,
+    ibm_db.SQL_ATTR_OTEL_BAGGAGE: baggage,
+}, 1)
+```
+
+Automatic propagation is ignored when the installed CLI driver does not
+support these attributes. Explicitly setting an attribute with such a driver
+raises an exception.
+
 ## Timestamp Precision Notes
 
 - Python `datetime` stores microseconds, so `ibm_db` returns timestamp values with up to 6 fractional digits in Python objects.
