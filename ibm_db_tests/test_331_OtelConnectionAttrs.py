@@ -1,3 +1,4 @@
+import os
 import unittest
 from unittest.mock import patch
 
@@ -107,13 +108,31 @@ class IbmDbTestCase(unittest.TestCase):
             W3CBaggagePropagator = None
             TraceContextTextMapPropagator = None
 
-        import config
+        db2_connstr = os.environ.get("DB2_CONNSTR")
+        if not db2_connstr:
+            import config
+
+        def connect_ibm_db(options=None):
+            if db2_connstr:
+                args = (db2_connstr, "", "")
+            else:
+                args = (config.database, config.user, config.password)
+            if options is None:
+                return ibm_db.connect(*args)
+            return ibm_db.connect(*args, options)
+
+        def connect_ibm_db_dbi(conn_options=None):
+            if db2_connstr:
+                args = (db2_connstr, "", "")
+            else:
+                args = (config.database, config.user, config.password)
+            return ibm_db_dbi.connect(*args, conn_options=conn_options)
 
         try:
-            probe = ibm_db.connect(
-                config.database, config.user, config.password
-            )
+            probe = connect_ibm_db()
         except Exception:
+            if db2_connstr:
+                self.fail("Db2 connection failed using DB2_CONNSTR")
             self.skipTest("Db2 database connection is unavailable")
         else:
             ibm_db.close(probe)
@@ -121,9 +140,7 @@ class IbmDbTestCase(unittest.TestCase):
         otel_attrs_supported = False
         conn = None
         try:
-            conn = ibm_db.connect(
-                config.database, config.user, config.password, OTEL_ATTRS
-            )
+            conn = connect_ibm_db(OTEL_ATTRS)
         except Exception as error:
             self.assertIn(
                 "clidriver used with ibm_db does not support OpenTelemetry",
@@ -140,11 +157,8 @@ class IbmDbTestCase(unittest.TestCase):
                 ibm_db.close(conn)
 
         try:
-            dbi_manual_conn = ibm_db_dbi.connect(
-                config.database,
-                config.user,
-                config.password,
-                conn_options=OTEL_ATTRS.copy(),
+            dbi_manual_conn = connect_ibm_db_dbi(
+                conn_options=OTEL_ATTRS.copy()
             )
         except Exception as error:
             self.assertIn(
@@ -159,11 +173,9 @@ class IbmDbTestCase(unittest.TestCase):
             finally:
                 dbi_manual_conn.close()
 
-        conn = ibm_db.connect(config.database, config.user, config.password)
+        conn = connect_ibm_db()
         self.assertTrue(conn)
-        dbi_conn = ibm_db_dbi.connect(
-            config.database, config.user, config.password
-        )
+        dbi_conn = connect_ibm_db_dbi()
         self.assertTrue(dbi_conn)
         token = None
         cursor = None
@@ -179,6 +191,15 @@ class IbmDbTestCase(unittest.TestCase):
                     headers, otel_context
                 )
                 token = context.attach(otel_context)
+
+                context_conn = connect_ibm_db()
+                try:
+                    for attr, expected in OTEL_ATTRS.items():
+                        actual = ibm_db.get_option(context_conn, attr, 1)
+                        if otel_attrs_supported or actual is not False:
+                            self.assertEqual(actual, expected)
+                finally:
+                    ibm_db.close(context_conn)
 
             stmt = ibm_db.exec_immediate(
                 conn, "SELECT CURRENT_SCHEMA FROM SYSIBM.SYSDUMMY1"

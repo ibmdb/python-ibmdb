@@ -3802,6 +3802,19 @@ static PyObject *_python_ibm_db_connect_helper(PyObject *self, PyObject *args, i
 
         if (!reused)
         {
+            rc = _python_ibm_db_refresh_otel_context(conn_res);
+            if (rc == SQL_ERROR)
+            {
+                LogMsg(ERROR, "Failed to apply automatic OpenTelemetry context before connect");
+                Py_BEGIN_ALLOW_THREADS;
+                SQLFreeHandle(SQL_HANDLE_DBC, conn_res->hdbc);
+                SQLFreeHandle(SQL_HANDLE_ENV, conn_res->henv);
+                Py_END_ALLOW_THREADS;
+                conn_res->hdbc = 0;
+                conn_res->henv = 0;
+                break;
+            }
+
             /* Connect */
             /* If the string contains a =, use SQLDriverConnect */
             if (NIL_P(databaseObj))
