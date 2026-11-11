@@ -21,6 +21,53 @@ https://github.com/ibmdb/python-ibmdb/wiki/APIs
 
 For the asyncio APIs, please refer to [ASYNC_APIs_WIKI.md](ASYNC_APIs_WIKI.md).
 
+## OpenTelemetry
+
+Install `opentelemetry-api` and an OpenTelemetry SDK to propagate the active
+W3C trace context from Python. The `ibm_db_otel` helper reads the current
+context and uses `ibm_db.set_option` to set the CLI connection attributes for
+`traceparent`, `tracestate`, and `baggage` before a new connection is
+established and before SQL execution when no transaction is active. When
+autocommit is off, the context is held constant for the transaction and
+refreshed after `commit()` or `rollback()`. This applies to both `ibm_db` and
+`ibm_db_dbi` execution APIs, including connections opened before the span
+starts. Context attributes explicitly set by the application are not replaced.
+With autocommit off, transaction state is tracked from successful statement
+executions and the driver's `commit()`/`rollback()` calls; transaction
+boundaries performed inside SQL, through two-phase transaction APIs, or
+implicitly by the server cannot be observed by this per-connection tracker.
+
+The connection attribute constants are available as
+`ibm_db.SQL_ATTR_OTEL_TRACEPARENT`, `ibm_db.SQL_ATTR_OTEL_TRACESTATE`, and
+`ibm_db.SQL_ATTR_OTEL_BAGGAGE`. For example:
+
+```python
+ibm_db.set_option(conn, {
+    ibm_db.SQL_ATTR_OTEL_TRACEPARENT: traceparent,
+    ibm_db.SQL_ATTR_OTEL_TRACESTATE: tracestate,
+    ibm_db.SQL_ATTR_OTEL_BAGGAGE: baggage,
+}, 1)
+```
+
+Automatic propagation is ignored when the installed CLI driver does not
+support these attributes. Explicitly setting an attribute with such a driver
+raises an exception.
+
+Run the end-to-end demo from the repository root. If `DB2_CONNSTR` is set, it
+takes precedence; otherwise, the demo uses `config.database`, `config.user`,
+and `config.password` from the regular test configuration:
+
+```sh
+# Optional: override config.py/config.json for this demo
+export DB2_CONNSTR='DATABASE=...;HOSTNAME=...;PORT=...;UID=...;PWD=...'
+python ibm_db_tests/demo_otel_context.py
+```
+
+The demo shows automatic propagation at connect time and before direct and
+prepared SQL execution, propagation through `ibm_db_dbi`, context changes on
+an existing connection (including fixed W3C carriers), clearing stale values
+when no context is active, and explicit attributes taking precedence.
+
 ## Timestamp Precision Notes
 
 - Python `datetime` stores microseconds, so `ibm_db` returns timestamp values with up to 6 fractional digits in Python objects.
@@ -706,6 +753,10 @@ set DB2_USER=<Username>
 set DB2_PASSWD=<Password>
 
 ```
+
+The OpenTelemetry connection-attribute test also accepts a full CLI
+connection string through `DB2_CONNSTR`. When set, it takes precedence over
+the database and credential values above for that test.
 
 - OR
 

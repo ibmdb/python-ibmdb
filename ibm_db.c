@@ -27,6 +27,21 @@
 #include <Python.h>
 #include <datetime.h>
 #include "ibm_db.h"
+
+#ifndef SQL_ATTR_OTEL_TRACEPARENT
+#define SQL_ATTR_OTEL_TRACEPARENT 3056
+#endif
+#ifndef SQL_ATTR_OTEL_TRACESTATE
+#define SQL_ATTR_OTEL_TRACESTATE 3057
+#endif
+#ifndef SQL_ATTR_OTEL_BAGGAGE
+#define SQL_ATTR_OTEL_BAGGAGE 3058
+#endif
+
+#define IBM_DB_OTEL_TRACEPARENT_SET 0x01
+#define IBM_DB_OTEL_TRACESTATE_SET  0x02
+#define IBM_DB_OTEL_BAGGAGE_SET     0x04
+
 #include <ctype.h>
 #include <wctype.h>
 #ifdef _WIN32
@@ -196,6 +211,11 @@ typedef struct _conn_handle_struct
     SQLSMALLINT errormsg_recno_tracker;
     int flag_pconnect;    /* Indicates that this connection is persistent */
     int flag_coordinated; /* Indicates coordinated connection (shared env) */
+    unsigned int otel_explicit_attrs;
+    unsigned int otel_auto_attrs;
+    int otel_auto_update;
+    int otel_attrs_unsupported;
+    int transaction_active;
 } conn_handle;
 
 static void _python_ibm_db_free_conn_struct(conn_handle *handle);
@@ -369,6 +389,7 @@ typedef struct _stmt_handle_struct
     SQLULEN rowset_size;
     SQLULEN rows_fetched;
     SQLUSMALLINT *row_status_array;
+    conn_handle *conn_res;
 } stmt_handle;
 
 static void _python_ibm_db_free_stmt_struct(stmt_handle *handle);
@@ -955,6 +976,8 @@ static stmt_handle *_ibm_db_new_stmt_struct(conn_handle *conn_res)
 
     /* Initialize stmt resource so parsing assigns updated options if needed */
     stmt_res->hdbc = conn_res->hdbc;
+    stmt_res->conn_res = conn_res;
+    Py_INCREF(conn_res);
     stmt_res->s_bin_mode = conn_res->c_bin_mode;
     stmt_res->cursor_type = conn_res->c_cursor_type;
     stmt_res->s_case_mode = conn_res->c_case_mode;
@@ -1010,6 +1033,7 @@ static void _python_ibm_db_free_stmt_struct(stmt_handle *handle)
     LogMsg(DEBUG, messageStr);
     if (handle != NULL)
     {
+        Py_XDECREF((PyObject *)handle->conn_res);
         Py_TYPE(handle)->tp_free((PyObject *)handle);
     }
     LogMsg(INFO, "exit _python_ibm_db_free_stmt_struct()");
@@ -1202,6 +1226,229 @@ static void _python_ibm_db_check_sql_errors(SQLHANDLE handle, SQLSMALLINT hType,
     }
 }
 
+static unsigned int _python_ibm_db_otel_attr_bit(long opt_key)
+{
+    switch (opt_key)
+    {
+    case SQL_ATTR_OTEL_TRACEPARENT:
+        return IBM_DB_OTEL_TRACEPARENT_SET;
+    case SQL_ATTR_OTEL_TRACESTATE:
+        return IBM_DB_OTEL_TRACESTATE_SET;
+    case SQL_ATTR_OTEL_BAGGAGE:
+        return IBM_DB_OTEL_BAGGAGE_SET;
+    default:
+        return 0;
+    }
+}
+
+static int _python_ibm_db_otel_attr_is_unsupported(SQLHDBC hdbc)
+{
+    SQLCHAR sqlstate[SQL_SQLSTATE_SIZE + 1] = {0};
+    SQLINTEGER native_error = 0;
+    SQLCHAR message[SQL_MAX_MESSAGE_LENGTH + 1];
+    SQLSMALLINT message_length = 0;
+    SQLRETURN rc;
+
+    rc = SQLGetDiagRec(SQL_HANDLE_DBC, hdbc, 1, sqlstate, &native_error,
+                       message, SQL_MAX_MESSAGE_LENGTH, &message_length);
+    if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO)
+    {
+        return 0;
+    }
+
+    return strcmp((const char *)sqlstate, "HY092") == 0 ||
+           strcmp((const char *)sqlstate, "HYC00") == 0 ||
+           strcmp((const char *)sqlstate, "IM001") == 0;
+}
+
+static int _python_ibm_db_set_otel_attr(SQLHDBC hdbc, long opt_key,
+                                        PyObject *data)
+{
+    PyObject *unicode_value = NULL;
+    SQLRETURN rc;
+    int isNewBuffer = 0;
+#ifdef __MVS__
+    SQLCHAR *option_str;
+#else
+    SQLWCHAR *option_str;
+#endif
+
+    if (!(PyString_Check(data) || PyUnicode_Check(data)))
+    {
+        PyErr_SetString(PyExc_TypeError,
+                        "OpenTelemetry connection attributes must be strings");
+        return SQL_ERROR;
+    }
+
+    unicode_value = PyUnicode_FromObject(data);
+    if (unicode_value == NULL)
+    {
+        return SQL_ERROR;
+    }
+#ifdef __MVS__
+    option_str = getUnicodeDataAsSQLCHAR(unicode_value, &isNewBuffer);
+#else
+    option_str = getUnicodeDataAsSQLWCHAR(unicode_value, &isNewBuffer, NULL);
+#endif
+    Py_DECREF(unicode_value);
+    if (option_str == NULL)
+    {
+        return SQL_ERROR;
+    }
+
+#ifdef __MVS__
+    Py_BEGIN_ALLOW_THREADS;
+    rc = SQLSetConnectAttr(hdbc, (SQLINTEGER)opt_key,
+                           (SQLPOINTER)option_str, SQL_NTS);
+    Py_END_ALLOW_THREADS;
+#else
+    Py_BEGIN_ALLOW_THREADS;
+    rc = SQLSetConnectAttrW(hdbc, (SQLINTEGER)opt_key,
+                            (SQLPOINTER)option_str, SQL_NTS);
+    Py_END_ALLOW_THREADS;
+#endif
+    if (isNewBuffer)
+    {
+        PyMem_Del(option_str);
+    }
+
+    if (rc == SQL_ERROR)
+    {
+        if (_python_ibm_db_otel_attr_is_unsupported(hdbc))
+        {
+            PyErr_SetString(PyExc_Exception,
+                            "The clidriver used with ibm_db does not support OpenTelemetry connection attributes");
+            return SQL_ERROR;
+        }
+        _python_ibm_db_check_sql_errors(hdbc, SQL_HANDLE_DBC, rc, 1,
+                                        NULL, -1, 1);
+        return SQL_ERROR;
+    }
+
+    return SQL_SUCCESS;
+}
+
+static int _python_ibm_db_append_otel_attr(PyObject *attr_list, long attr_id)
+{
+    PyObject *attr_value = PyLong_FromLong(attr_id);
+    int rc;
+
+    if (attr_value == NULL)
+    {
+        return -1;
+    }
+    rc = PyList_Append(attr_list, attr_value);
+    Py_DECREF(attr_value);
+    return rc;
+}
+
+static void _python_ibm_db_mark_transaction_active(conn_handle *conn_res)
+{
+    if (conn_res != NULL && conn_res->auto_commit == SQL_AUTOCOMMIT_OFF)
+    {
+        conn_res->transaction_active = 1;
+    }
+}
+
+static int _python_ibm_db_refresh_otel_context(conn_handle *conn_res)
+{
+    static const long attr_ids[] = {
+        SQL_ATTR_OTEL_TRACEPARENT,
+        SQL_ATTR_OTEL_TRACESTATE,
+        SQL_ATTR_OTEL_BAGGAGE
+    };
+    static const unsigned int attr_bits[] = {
+        IBM_DB_OTEL_TRACEPARENT_SET,
+        IBM_DB_OTEL_TRACESTATE_SET,
+        IBM_DB_OTEL_BAGGAGE_SET
+    };
+    PyObject *module = NULL;
+    PyObject *apply_context = NULL;
+    PyObject *explicit_attrs = NULL;
+    PyObject *clear_attrs = NULL;
+    PyObject *result = NULL;
+    unsigned int auto_attrs;
+    int i;
+
+    if (conn_res == NULL || conn_res->otel_attrs_unsupported ||
+        conn_res->transaction_active)
+    {
+        return SQL_SUCCESS;
+    }
+
+    explicit_attrs = PyList_New(0);
+    clear_attrs = PyList_New(0);
+    if (explicit_attrs == NULL || clear_attrs == NULL)
+    {
+        Py_XDECREF(explicit_attrs);
+        Py_XDECREF(clear_attrs);
+        return SQL_ERROR;
+    }
+
+    for (i = 0; i < 3; i++)
+    {
+        if (conn_res->otel_explicit_attrs & attr_bits[i])
+        {
+            if (_python_ibm_db_append_otel_attr(explicit_attrs, attr_ids[i]) < 0)
+            {
+                Py_DECREF(explicit_attrs);
+                Py_DECREF(clear_attrs);
+                return SQL_ERROR;
+            }
+        }
+        else if (conn_res->otel_auto_attrs & attr_bits[i])
+        {
+            if (_python_ibm_db_append_otel_attr(clear_attrs, attr_ids[i]) < 0)
+            {
+                Py_DECREF(explicit_attrs);
+                Py_DECREF(clear_attrs);
+                return SQL_ERROR;
+            }
+        }
+    }
+
+    module = PyImport_ImportModule("ibm_db_otel");
+    if (module != NULL)
+    {
+        apply_context = PyObject_GetAttrString(module, "apply_otel_context");
+    }
+    if (apply_context != NULL)
+    {
+        conn_res->otel_auto_update = 1;
+        result = PyObject_CallFunctionObjArgs(
+            apply_context, (PyObject *)conn_res, explicit_attrs, clear_attrs,
+            NULL);
+        conn_res->otel_auto_update = 0;
+    }
+
+    Py_XDECREF(apply_context);
+    Py_XDECREF(module);
+    Py_DECREF(explicit_attrs);
+    Py_DECREF(clear_attrs);
+    if (result == NULL)
+    {
+        return SQL_ERROR;
+    }
+    if (result == Py_None)
+    {
+        conn_res->otel_attrs_unsupported = 1;
+        Py_DECREF(result);
+        return SQL_SUCCESS;
+    }
+
+    auto_attrs = (unsigned int)PyLong_AsUnsignedLong(result);
+    Py_DECREF(result);
+    if (PyErr_Occurred())
+    {
+        return SQL_ERROR;
+    }
+    conn_res->otel_auto_attrs = auto_attrs &
+        (IBM_DB_OTEL_TRACEPARENT_SET |
+         IBM_DB_OTEL_TRACESTATE_SET |
+         IBM_DB_OTEL_BAGGAGE_SET);
+    return SQL_SUCCESS;
+}
+
 /*    static int _python_ibm_db_assign_options( void *handle, int type, long opt_key, PyObject *data ) */
 static int _python_ibm_db_assign_options(void *handle, int type, long opt_key, PyObject *data)
 {
@@ -1217,6 +1464,23 @@ static int _python_ibm_db_assign_options(void *handle, int type, long opt_key, P
     int isNewBuffer = 0;
     snprintf(messageStr, sizeof(messageStr), "Parameters - Handle: %p, type: %d, opt_key: %ld, data: %p", handle, type, opt_key, data);
     LogMsg(DEBUG, messageStr);
+    if (type == SQL_HANDLE_DBC && _python_ibm_db_otel_attr_bit(opt_key) != 0)
+    {
+        unsigned int attr_bit = _python_ibm_db_otel_attr_bit(opt_key);
+        rc = _python_ibm_db_set_otel_attr(
+            (SQLHDBC)((conn_handle *)handle)->hdbc, opt_key, data);
+        if (rc == SQL_ERROR)
+        {
+            return -1;
+        }
+        if (!((conn_handle *)handle)->otel_auto_update)
+        {
+            ((conn_handle *)handle)->otel_explicit_attrs |= attr_bit;
+            ((conn_handle *)handle)->otel_auto_attrs &= ~attr_bit;
+            ((conn_handle *)handle)->otel_attrs_unsupported = 0;
+        }
+        return SQL_SUCCESS;
+    }
     /* First check to see if it is a non-cli attribut */
     if (opt_key == ATTR_CASE)
     {
@@ -1451,13 +1715,11 @@ static int _python_ibm_db_assign_options(void *handle, int type, long opt_key, P
             LogMsg(DEBUG, messageStr);
             if (opt_key == SQL_ATTR_AUTOCOMMIT && option_num == SQL_AUTOCOMMIT_OFF)
             {
-                ((conn_handle *)handle)->auto_commit = 0;
                 snprintf(messageStr, sizeof(messageStr), "Setting auto_commit to OFF");
                 LogMsg(DEBUG, messageStr);
             }
             else if (opt_key == SQL_ATTR_AUTOCOMMIT && option_num == SQL_AUTOCOMMIT_ON)
             {
-                ((conn_handle *)handle)->auto_commit = 1;
                 snprintf(messageStr, sizeof(messageStr), "Setting auto_commit to ON");
                 LogMsg(DEBUG, messageStr);
             }
@@ -1579,6 +1841,14 @@ static int _python_ibm_db_assign_options(void *handle, int type, long opt_key, P
             if (rc == SQL_ERROR)
             {
                 _python_ibm_db_check_sql_errors((SQLHSTMT)((stmt_handle *)handle)->hstmt, SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
+            }
+            else if (opt_key == SQL_ATTR_AUTOCOMMIT)
+            {
+                ((conn_handle *)handle)->auto_commit = option_num;
+                if (option_num == SQL_AUTOCOMMIT_ON)
+                {
+                    ((conn_handle *)handle)->transaction_active = 0;
+                }
             }
         }
     }
@@ -3428,6 +3698,11 @@ static PyObject *_python_ibm_db_connect_helper(PyObject *self, PyObject *args, i
             {
                 conn_res->henv = 0;
                 conn_res->hdbc = 0;
+                conn_res->otel_explicit_attrs = 0;
+                conn_res->otel_auto_attrs = 0;
+                conn_res->otel_auto_update = 0;
+                conn_res->otel_attrs_unsupported = 0;
+                conn_res->transaction_active = 0;
                 LogMsg(DEBUG, "Created a new connection handle");
             }
             else
@@ -3544,6 +3819,19 @@ static PyObject *_python_ibm_db_connect_helper(PyObject *self, PyObject *args, i
 
         if (!reused)
         {
+            rc = _python_ibm_db_refresh_otel_context(conn_res);
+            if (rc == SQL_ERROR)
+            {
+                LogMsg(ERROR, "Failed to apply automatic OpenTelemetry context before connect");
+                Py_BEGIN_ALLOW_THREADS;
+                SQLFreeHandle(SQL_HANDLE_DBC, conn_res->hdbc);
+                SQLFreeHandle(SQL_HANDLE_ENV, conn_res->henv);
+                Py_END_ALLOW_THREADS;
+                conn_res->hdbc = 0;
+                conn_res->henv = 0;
+                break;
+            }
+
             /* Connect */
             /* If the string contains a =, use SQLDriverConnect */
             if (NIL_P(databaseObj))
@@ -5202,7 +5490,14 @@ static PyObject *ibm_db_autocommit(PyObject *self, PyObject *args)
                     _python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC,
                                                     rc, 1, NULL, -1, 1);
                 }
-                conn_res->auto_commit = autocommit;
+                if (rc != SQL_ERROR)
+                {
+                    conn_res->auto_commit = autocommit;
+                    if (autocommit == SQL_AUTOCOMMIT_ON)
+                    {
+                        conn_res->transaction_active = 0;
+                    }
+                }
                 snprintf(messageStr, sizeof(messageStr), "Autocommit setting updated successfully. New value: %d", conn_res->auto_commit);
                 LogMsg(DEBUG, messageStr);
             }
@@ -8521,6 +8816,7 @@ static PyObject *ibm_db_commit(PyObject *self, PyObject *args)
         else
         {
             LogMsg(INFO, "Transaction committed successfully");
+            conn_res->transaction_active = 0;
             Py_INCREF(Py_True);
             LogMsg(INFO, "exit commit()");
             return Py_True;
@@ -8788,6 +9084,23 @@ static PyObject *ibm_db_exec(PyObject *self, PyObject *args)
             LogMsg(DEBUG, messageStr);
         }
 
+        rc = _python_ibm_db_refresh_otel_context(conn_res);
+        if (rc == SQL_ERROR)
+        {
+            Py_BEGIN_ALLOW_THREADS;
+            SQLFreeHandle(SQL_HANDLE_STMT, stmt_res->hstmt);
+            Py_END_ALLOW_THREADS;
+            stmt_res->hstmt = -1;
+            Py_DECREF((PyObject *)stmt_res);
+            if (isNewBuffer && stmt != NULL)
+            {
+                PyMem_Del(stmt);
+            }
+            Py_XDECREF(py_stmt);
+            PyMem_Del(return_str);
+            return NULL;
+        }
+
         Py_BEGIN_ALLOW_THREADS;
         rc = SQLExecDirectW((SQLHSTMT)stmt_res->hstmt, stmt, SQL_NTS);
         snprintf(messageStr, sizeof(messageStr), "SQLExecDirectW result: rc = %d", rc);
@@ -8820,6 +9133,7 @@ static PyObject *ibm_db_exec(PyObject *self, PyObject *args)
                                             1, return_str, DB2_WARNMSG,
                                             stmt_res->errormsg_recno_tracker);
         }
+        _python_ibm_db_mark_transaction_active(conn_res);
         if (isNewBuffer)
         {
             if (stmt)
@@ -11845,6 +12159,11 @@ static PyObject *_python_ibm_db_execute_helper1(stmt_handle *stmt_res, PyObject 
         /* No Parameters
          * We just execute the statement. No additional work needed.
          */
+        rc = _python_ibm_db_refresh_otel_context(stmt_res->conn_res);
+        if (rc == SQL_ERROR)
+        {
+            return NULL;
+        }
         Py_BEGIN_ALLOW_THREADS;
         rc = SQLExecute((SQLHSTMT)stmt_res->hstmt);
         Py_END_ALLOW_THREADS;
@@ -11863,12 +12182,18 @@ static PyObject *_python_ibm_db_execute_helper1(stmt_handle *stmt_res, PyObject 
             PyErr_SetString(PyExc_Exception, error);
             return NULL;
         }
+        _python_ibm_db_mark_transaction_active(stmt_res->conn_res);
         LogMsg(INFO, "exit _python_ibm_db_execute_helper1()");
         Py_INCREF(Py_True);
         return Py_True;
     }
 
     /* Execute Stmt -- All parameters bound */
+    rc = _python_ibm_db_refresh_otel_context(stmt_res->conn_res);
+    if (rc == SQL_ERROR)
+    {
+        return NULL;
+    }
     Py_BEGIN_ALLOW_THREADS;
     rc = SQLExecute((SQLHSTMT)stmt_res->hstmt);
     Py_END_ALLOW_THREADS;
@@ -11957,6 +12282,7 @@ static PyObject *_python_ibm_db_execute_helper1(stmt_handle *stmt_res, PyObject 
     }
     if (rc != SQL_ERROR)
     {
+        _python_ibm_db_mark_transaction_active(stmt_res->conn_res);
         LogMsg(INFO, "exit _python_ibm_db_execute_helper1()");
         Py_INCREF(Py_True);
         return Py_True;
@@ -12806,6 +13132,8 @@ static PyObject *ibm_db_next_result(PyObject *self, PyObject *args)
         new_stmt_res->hstmt = new_hstmt;
 #endif
         new_stmt_res->hdbc = stmt_res->hdbc;
+        new_stmt_res->conn_res = stmt_res->conn_res;
+        Py_XINCREF((PyObject *)new_stmt_res->conn_res);
 
         new_stmt_res->s_bin_mode = stmt_res->s_bin_mode;
         new_stmt_res->cursor_type = stmt_res->cursor_type;
@@ -14325,6 +14653,7 @@ static PyObject *ibm_db_rollback(PyObject *self, PyObject *args)
         else
         {
             LogMsg(INFO, "Successfully completed rollback operation");
+            conn_res->transaction_active = 0;
             LogMsg(INFO, "exit rollback()");
             Py_RETURN_TRUE;
         }
@@ -16195,8 +16524,11 @@ static PyObject *ibm_db_set_option(PyObject *self, PyObject *args)
                 if (rc == SQL_ERROR)
                 {
                     LogMsg(ERROR, "Options array must have string indexes");
-                    PyErr_SetString(PyExc_Exception,
-                                    "Options Array must have string indexes");
+                    if (!PyErr_Occurred())
+                    {
+                        PyErr_SetString(PyExc_Exception,
+                                        "Options Array must have string indexes");
+                    }
                     return NULL;
                 }
             }
@@ -16222,8 +16554,11 @@ static PyObject *ibm_db_set_option(PyObject *self, PyObject *args)
                 if (rc == SQL_ERROR)
                 {
                     LogMsg(ERROR, "Options array must have string indexes");
-                    PyErr_SetString(PyExc_Exception,
-                                    "Options Array must have string indexes");
+                    if (!PyErr_Occurred())
+                    {
+                        PyErr_SetString(PyExc_Exception,
+                                        "Options Array must have string indexes");
+                    }
                     return NULL;
                 }
             }
@@ -18945,6 +19280,11 @@ static PyObject *ibm_db_execute_many(PyObject *self, PyObject *args)
                             }
                             break;
                         }
+                        if (rc != SQL_ERROR)
+                        {
+                            _python_ibm_db_mark_transaction_active(
+                                stmt_res->conn_res);
+                        }
                     }
                     else
                     {
@@ -19103,6 +19443,11 @@ static PyObject *ibm_db_execute_many(PyObject *self, PyObject *args)
 
                 if (error[0] == '\0')
                 {
+                    rc = _python_ibm_db_refresh_otel_context(stmt_res->conn_res);
+                    if (rc == SQL_ERROR)
+                    {
+                        return NULL;
+                    }
                     Py_BEGIN_ALLOW_THREADS;
                     rc = SQLExecute((SQLHSTMT)stmt_res->hstmt);
                     Py_END_ALLOW_THREADS;
@@ -21303,6 +21648,11 @@ static PyObject *ibm_db_connect_coordinated(PyObject *self, PyObject *args)
     conn_res->hdbc = 0;
     conn_res->flag_pconnect = 0;
     conn_res->flag_coordinated = 1;  /* Mark as coordinated */
+    conn_res->otel_explicit_attrs = 0;
+    conn_res->otel_auto_attrs = 0;
+    conn_res->otel_auto_update = 0;
+    conn_res->otel_attrs_unsupported = 0;
+    conn_res->transaction_active = 0;
     conn_res->handle_active = 0;
     conn_res->auto_commit = SQL_AUTOCOMMIT_OFF;
     conn_res->c_bin_mode = IBM_DB_G(bin_mode);
@@ -21710,6 +22060,9 @@ INIT_ibm_db(void)
     PyModule_AddIntConstant(m, "SQL_ATTR_INFO_WRKSTNNAME", SQL_ATTR_INFO_WRKSTNNAME);
     PyModule_AddIntConstant(m, "SQL_ATTR_INFO_ACCTSTR", SQL_ATTR_INFO_ACCTSTR);
     PyModule_AddIntConstant(m, "SQL_ATTR_INFO_APPLNAME", SQL_ATTR_INFO_APPLNAME);
+    PyModule_AddIntConstant(m, "SQL_ATTR_OTEL_TRACEPARENT", SQL_ATTR_OTEL_TRACEPARENT);
+    PyModule_AddIntConstant(m, "SQL_ATTR_OTEL_TRACESTATE", SQL_ATTR_OTEL_TRACESTATE);
+    PyModule_AddIntConstant(m, "SQL_ATTR_OTEL_BAGGAGE", SQL_ATTR_OTEL_BAGGAGE);
     PyModule_AddIntConstant(m, "SQL_ATTR_USE_TRUSTED_CONTEXT", SQL_ATTR_USE_TRUSTED_CONTEXT);
     PyModule_AddIntConstant(m, "SQL_ATTR_TRUSTED_CONTEXT_USERID", SQL_ATTR_TRUSTED_CONTEXT_USERID);
     PyModule_AddIntConstant(m, "SQL_ATTR_TRUSTED_CONTEXT_PASSWORD", SQL_ATTR_TRUSTED_CONTEXT_PASSWORD);
