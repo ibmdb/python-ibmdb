@@ -27,10 +27,15 @@ Install `opentelemetry-api` and an OpenTelemetry SDK to propagate the active
 W3C trace context from Python. The `ibm_db_otel` helper reads the current
 context and uses `ibm_db.set_option` to set the CLI connection attributes for
 `traceparent`, `tracestate`, and `baggage` before a new connection is
-established and refreshes them before SQL execution. This applies to both
-`ibm_db` and `ibm_db_dbi` execution APIs, including connections opened before
-the span starts. Context attributes explicitly set by the application are not
-replaced.
+established and before SQL execution when no transaction is active. When
+autocommit is off, the context is held constant for the transaction and
+refreshed after `commit()` or `rollback()`. This applies to both `ibm_db` and
+`ibm_db_dbi` execution APIs, including connections opened before the span
+starts. Context attributes explicitly set by the application are not replaced.
+With autocommit off, transaction state is tracked from successful statement
+executions and the driver's `commit()`/`rollback()` calls; transaction
+boundaries performed inside SQL, through two-phase transaction APIs, or
+implicitly by the server cannot be observed by this per-connection tracker.
 
 The connection attribute constants are available as
 `ibm_db.SQL_ATTR_OTEL_TRACEPARENT`, `ibm_db.SQL_ATTR_OTEL_TRACESTATE`, and
@@ -48,9 +53,12 @@ Automatic propagation is ignored when the installed CLI driver does not
 support these attributes. Explicitly setting an attribute with such a driver
 raises an exception.
 
-Run the end-to-end demo with a Db2 connection string:
+Run the end-to-end demo from the repository root. If `DB2_CONNSTR` is set, it
+takes precedence; otherwise, the demo uses `config.database`, `config.user`,
+and `config.password` from the regular test configuration:
 
 ```sh
+# Optional: override config.py/config.json for this demo
 export DB2_CONNSTR='DATABASE=...;HOSTNAME=...;PORT=...;UID=...;PWD=...'
 python ibm_db_tests/demo_otel_context.py
 ```

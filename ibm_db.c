@@ -215,6 +215,7 @@ typedef struct _conn_handle_struct
     unsigned int otel_auto_attrs;
     int otel_auto_update;
     int otel_attrs_unsupported;
+    int transaction_active;
 } conn_handle;
 
 static void _python_ibm_db_free_conn_struct(conn_handle *handle);
@@ -1341,6 +1342,14 @@ static int _python_ibm_db_append_otel_attr(PyObject *attr_list, long attr_id)
     return rc;
 }
 
+static void _python_ibm_db_mark_transaction_active(conn_handle *conn_res)
+{
+    if (conn_res != NULL && conn_res->auto_commit == SQL_AUTOCOMMIT_OFF)
+    {
+        conn_res->transaction_active = 1;
+    }
+}
+
 static int _python_ibm_db_refresh_otel_context(conn_handle *conn_res)
 {
     static const long attr_ids[] = {
@@ -1361,7 +1370,8 @@ static int _python_ibm_db_refresh_otel_context(conn_handle *conn_res)
     unsigned int auto_attrs;
     int i;
 
-    if (conn_res == NULL || conn_res->otel_attrs_unsupported)
+    if (conn_res == NULL || conn_res->otel_attrs_unsupported ||
+        conn_res->transaction_active)
     {
         return SQL_SUCCESS;
     }
@@ -1705,13 +1715,11 @@ static int _python_ibm_db_assign_options(void *handle, int type, long opt_key, P
             LogMsg(DEBUG, messageStr);
             if (opt_key == SQL_ATTR_AUTOCOMMIT && option_num == SQL_AUTOCOMMIT_OFF)
             {
-                ((conn_handle *)handle)->auto_commit = 0;
                 snprintf(messageStr, sizeof(messageStr), "Setting auto_commit to OFF");
                 LogMsg(DEBUG, messageStr);
             }
             else if (opt_key == SQL_ATTR_AUTOCOMMIT && option_num == SQL_AUTOCOMMIT_ON)
             {
-                ((conn_handle *)handle)->auto_commit = 1;
                 snprintf(messageStr, sizeof(messageStr), "Setting auto_commit to ON");
                 LogMsg(DEBUG, messageStr);
             }
@@ -1833,6 +1841,14 @@ static int _python_ibm_db_assign_options(void *handle, int type, long opt_key, P
             if (rc == SQL_ERROR)
             {
                 _python_ibm_db_check_sql_errors((SQLHSTMT)((stmt_handle *)handle)->hstmt, SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
+            }
+            else if (opt_key == SQL_ATTR_AUTOCOMMIT)
+            {
+                ((conn_handle *)handle)->auto_commit = option_num;
+                if (option_num == SQL_AUTOCOMMIT_ON)
+                {
+                    ((conn_handle *)handle)->transaction_active = 0;
+                }
             }
         }
     }
@@ -3686,6 +3702,7 @@ static PyObject *_python_ibm_db_connect_helper(PyObject *self, PyObject *args, i
                 conn_res->otel_auto_attrs = 0;
                 conn_res->otel_auto_update = 0;
                 conn_res->otel_attrs_unsupported = 0;
+                conn_res->transaction_active = 0;
                 LogMsg(DEBUG, "Created a new connection handle");
             }
             else
@@ -5473,7 +5490,14 @@ static PyObject *ibm_db_autocommit(PyObject *self, PyObject *args)
                     _python_ibm_db_check_sql_errors(conn_res->hdbc, SQL_HANDLE_DBC,
                                                     rc, 1, NULL, -1, 1);
                 }
-                conn_res->auto_commit = autocommit;
+                if (rc != SQL_ERROR)
+                {
+                    conn_res->auto_commit = autocommit;
+                    if (autocommit == SQL_AUTOCOMMIT_ON)
+                    {
+                        conn_res->transaction_active = 0;
+                    }
+                }
                 snprintf(messageStr, sizeof(messageStr), "Autocommit setting updated successfully. New value: %d", conn_res->auto_commit);
                 LogMsg(DEBUG, messageStr);
             }
@@ -8792,6 +8816,7 @@ static PyObject *ibm_db_commit(PyObject *self, PyObject *args)
         else
         {
             LogMsg(INFO, "Transaction committed successfully");
+            conn_res->transaction_active = 0;
             Py_INCREF(Py_True);
             LogMsg(INFO, "exit commit()");
             return Py_True;
@@ -9108,6 +9133,7 @@ static PyObject *ibm_db_exec(PyObject *self, PyObject *args)
                                             1, return_str, DB2_WARNMSG,
                                             stmt_res->errormsg_recno_tracker);
         }
+        _python_ibm_db_mark_transaction_active(conn_res);
         if (isNewBuffer)
         {
             if (stmt)
@@ -12156,6 +12182,7 @@ static PyObject *_python_ibm_db_execute_helper1(stmt_handle *stmt_res, PyObject 
             PyErr_SetString(PyExc_Exception, error);
             return NULL;
         }
+        _python_ibm_db_mark_transaction_active(stmt_res->conn_res);
         LogMsg(INFO, "exit _python_ibm_db_execute_helper1()");
         Py_INCREF(Py_True);
         return Py_True;
@@ -12255,6 +12282,7 @@ static PyObject *_python_ibm_db_execute_helper1(stmt_handle *stmt_res, PyObject 
     }
     if (rc != SQL_ERROR)
     {
+        _python_ibm_db_mark_transaction_active(stmt_res->conn_res);
         LogMsg(INFO, "exit _python_ibm_db_execute_helper1()");
         Py_INCREF(Py_True);
         return Py_True;
@@ -14625,6 +14653,7 @@ static PyObject *ibm_db_rollback(PyObject *self, PyObject *args)
         else
         {
             LogMsg(INFO, "Successfully completed rollback operation");
+            conn_res->transaction_active = 0;
             LogMsg(INFO, "exit rollback()");
             Py_RETURN_TRUE;
         }
@@ -19251,6 +19280,11 @@ static PyObject *ibm_db_execute_many(PyObject *self, PyObject *args)
                             }
                             break;
                         }
+                        if (rc != SQL_ERROR)
+                        {
+                            _python_ibm_db_mark_transaction_active(
+                                stmt_res->conn_res);
+                        }
                     }
                     else
                     {
@@ -21618,6 +21652,7 @@ static PyObject *ibm_db_connect_coordinated(PyObject *self, PyObject *args)
     conn_res->otel_auto_attrs = 0;
     conn_res->otel_auto_update = 0;
     conn_res->otel_attrs_unsupported = 0;
+    conn_res->transaction_active = 0;
     conn_res->handle_active = 0;
     conn_res->auto_commit = SQL_AUTOCOMMIT_OFF;
     conn_res->c_bin_mode = IBM_DB_G(bin_mode);

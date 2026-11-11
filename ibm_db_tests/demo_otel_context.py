@@ -2,6 +2,7 @@
 
 import os
 import secrets
+import sys
 
 import ibm_db
 import ibm_db_dbi
@@ -20,11 +21,8 @@ from opentelemetry.trace.propagation.tracecontext import (
 )
 
 
-CONNECTION_STRING = os.environ.get(
-    "DB2_CONNSTR",
-    "DATABASE=YOUR_DB;HOSTNAME=YOUR_HOST;PORT=50000;"
-    "UID=YOUR_USER;PWD=YOUR_PASSWORD",
-)
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 
 FIXED_W3C_HEADERS = {
     "traceparent": "00-0123456789abcdef0123456789abcdef-0123456789abcdef-01",
@@ -43,6 +41,16 @@ OTEL_ATTRIBUTES = (
    ("tracestate", ibm_db.SQL_ATTR_OTEL_TRACESTATE),
    ("baggage", ibm_db.SQL_ATTR_OTEL_BAGGAGE),
 )
+
+
+def get_connection_args():
+    db2_connstr = os.environ.get("DB2_CONNSTR")
+    if db2_connstr:
+        return db2_connstr, "", ""
+
+    import config
+
+    return config.database, config.user, config.password
 
 
 def make_parent_context():
@@ -141,11 +149,7 @@ def run_carrier_case(conn, case_number, headers):
 
 
 def main():
-    if "YOUR_" in CONNECTION_STRING:
-        raise SystemExit(
-            "Set DB2_CONNSTR or edit CONNECTION_STRING with your Db2 connection."
-        )
-
+    connection_args = get_connection_args()
     trace.set_tracer_provider(TracerProvider())
     tracer = trace.get_tracer(__name__)
     parent_context_token = context.attach(make_parent_context())
@@ -163,7 +167,7 @@ def main():
             for header, _attribute in OTEL_ATTRIBUTES:
                 print(f"  {header}: {active_headers.get(header, '')}")
 
-            conn = ibm_db.connect(CONNECTION_STRING, "", "")
+            conn = ibm_db.connect(*connection_args)
             print("  attributes immediately after connect, before SQL:")
             show_connection_attributes(conn, active_headers)
 
@@ -193,7 +197,7 @@ def main():
         print("\nCase 6: automatically propagate through ibm_db_dbi:")
         with tracer.start_as_current_span("ibm_db_dbi.otel_demo"):
             dbi_headers = current_w3c_headers()
-            dbi_conn = ibm_db_dbi.connect(CONNECTION_STRING, "", "")
+            dbi_conn = ibm_db_dbi.connect(*connection_args)
             cursor = dbi_conn.cursor()
             cursor.execute("SELECT CURRENT_SCHEMA FROM SYSIBM.SYSDUMMY1")
             row = cursor.fetchone()
@@ -205,7 +209,7 @@ def main():
         )
         empty_token = context.attach(context.Context())
         try:
-            preexisting_conn = ibm_db.connect(CONNECTION_STRING, "", "")
+            preexisting_conn = ibm_db.connect(*connection_args)
         finally:
             context.detach(empty_token)
         with tracer.start_as_current_span("ibm_db.otel_existing_connection"):

@@ -177,6 +177,7 @@ class IbmDbTestCase(unittest.TestCase):
         self.assertTrue(conn)
         dbi_conn = connect_ibm_db_dbi()
         self.assertTrue(dbi_conn)
+        self.assertTrue(dbi_conn.set_autocommit(True))
         token = None
         cursor = None
         try:
@@ -250,6 +251,70 @@ class IbmDbTestCase(unittest.TestCase):
                     actual = dbi_conn.get_option(attr)
                     if otel_attrs_supported or actual is not False:
                         self.assertEqual(actual, expected)
+
+                transaction_conn = connect_ibm_db()
+                transaction_stmt = None
+                transaction_token = None
+                try:
+                    self.assertTrue(ibm_db.autocommit(transaction_conn, 0))
+                    transaction_stmt = ibm_db.prepare(
+                        transaction_conn,
+                        "SELECT CURRENT_SCHEMA FROM SYSIBM.SYSDUMMY1",
+                    )
+                    self.assertTrue(transaction_stmt)
+
+                    def assert_transaction_attrs(expected_attrs):
+                        for attr, expected in expected_attrs.items():
+                            actual = ibm_db.get_option(transaction_conn, attr, 1)
+                            if otel_attrs_supported or actual is not False:
+                                self.assertEqual(actual, expected)
+
+                    self.assertTrue(ibm_db.execute(transaction_stmt))
+                    assert_transaction_attrs(UPDATED_OTEL_ATTRS)
+
+                    transaction_context = TraceContextTextMapPropagator().extract(
+                        headers
+                    )
+                    transaction_context = W3CBaggagePropagator().extract(
+                        headers, transaction_context
+                    )
+                    transaction_token = context.attach(transaction_context)
+                    stmt = ibm_db.exec_immediate(
+                        transaction_conn,
+                        "SELECT CURRENT_SCHEMA FROM SYSIBM.SYSDUMMY1",
+                    )
+                    self.assertTrue(stmt)
+                    ibm_db.free_result(stmt)
+                    assert_transaction_attrs(UPDATED_OTEL_ATTRS)
+
+                    self.assertTrue(ibm_db.commit(transaction_conn))
+                    stmt = ibm_db.exec_immediate(
+                        transaction_conn,
+                        "SELECT CURRENT_SCHEMA FROM SYSIBM.SYSDUMMY1",
+                    )
+                    self.assertTrue(stmt)
+                    ibm_db.free_result(stmt)
+                    assert_transaction_attrs(OTEL_ATTRS)
+
+                    context.detach(transaction_token)
+                    transaction_token = None
+                    self.assertTrue(ibm_db.execute(transaction_stmt))
+                    assert_transaction_attrs(OTEL_ATTRS)
+
+                    self.assertTrue(ibm_db.rollback(transaction_conn))
+                    stmt = ibm_db.exec_immediate(
+                        transaction_conn,
+                        "SELECT CURRENT_SCHEMA FROM SYSIBM.SYSDUMMY1",
+                    )
+                    self.assertTrue(stmt)
+                    ibm_db.free_result(stmt)
+                    assert_transaction_attrs(UPDATED_OTEL_ATTRS)
+                finally:
+                    if transaction_token is not None:
+                        context.detach(transaction_token)
+                    if transaction_stmt is not None:
+                        ibm_db.free_result(transaction_stmt)
+                    ibm_db.close(transaction_conn)
         finally:
             if token is not None:
                 context.detach(token)
