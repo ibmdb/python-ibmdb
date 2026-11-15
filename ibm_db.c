@@ -1450,6 +1450,13 @@ static int _python_ibm_db_refresh_otel_context(conn_handle *conn_res)
     return SQL_SUCCESS;
 }
 
+/* Returned when the CLI driver rejects an attribute value. For a statement
+ * handle the driver's error is left set as a Python exception; for a
+ * connection handle it stays on the handle (conn_errormsg(conn)), so
+ * set_option() can return False. */
+#define OPTION_STMT_DRIVER_ERROR (-10)
+#define OPTION_CONN_DRIVER_ERROR (-11)
+
 /*    static int _python_ibm_db_assign_options( void *handle, int type, long opt_key, PyObject *data ) */
 static int _python_ibm_db_assign_options(void *handle, int type, long opt_key, PyObject *data)
 {
@@ -1713,6 +1720,10 @@ static int _python_ibm_db_assign_options(void *handle, int type, long opt_key, P
             if (isNewBuffer)
                 PyMem_Del(option_str);
             Py_DECREF(data);
+            if (rc == SQL_ERROR)
+            {
+                return OPTION_STMT_DRIVER_ERROR;
+            }
         }
         else
         {
@@ -1738,6 +1749,11 @@ static int _python_ibm_db_assign_options(void *handle, int type, long opt_key, P
             if (rc == SQL_ERROR)
             {
                 _python_ibm_db_check_sql_errors((SQLHSTMT)((stmt_handle *)handle)->hstmt, SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
+                /* The SQL_ATTR_ROW_ARRAY_SIZE range check below reports its own error */
+                if (opt_key != SQL_ATTR_ROW_ARRAY_SIZE || option_num >= 1)
+                {
+                    return OPTION_STMT_DRIVER_ERROR;
+                }
             }
             if (opt_key == SQL_ATTR_ROW_ARRAY_SIZE)
             {
@@ -1807,11 +1823,15 @@ static int _python_ibm_db_assign_options(void *handle, int type, long opt_key, P
 #endif
             if (rc == SQL_ERROR)
             {
-                _python_ibm_db_check_sql_errors((SQLHSTMT)((stmt_handle *)handle)->hstmt, SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
+                _python_ibm_db_check_sql_errors((SQLHDBC)((conn_handle *)handle)->hdbc, SQL_HANDLE_DBC, rc, 0, NULL, -1, 1);
             }
             if (isNewBuffer)
                 PyMem_Del(option_str);
             Py_DECREF(data);
+            if (rc == SQL_ERROR)
+            {
+                return OPTION_CONN_DRIVER_ERROR;
+            }
         }
         else
         {
@@ -1847,7 +1867,8 @@ static int _python_ibm_db_assign_options(void *handle, int type, long opt_key, P
 #endif
             if (rc == SQL_ERROR)
             {
-                _python_ibm_db_check_sql_errors((SQLHSTMT)((stmt_handle *)handle)->hstmt, SQL_HANDLE_STMT, rc, 1, NULL, -1, 1);
+                _python_ibm_db_check_sql_errors((SQLHDBC)((conn_handle *)handle)->hdbc, SQL_HANDLE_DBC, rc, 0, NULL, -1, 1);
+                return OPTION_CONN_DRIVER_ERROR;
             }
             else if (opt_key == SQL_ATTR_AUTOCOMMIT)
             {
@@ -1880,6 +1901,7 @@ static int _python_ibm_db_parse_options(PyObject *options, int type, void *handl
     PyObject *data = NULL;
     PyObject *tc_pass = NULL;
     int rc = 0;
+    int conn_rejected = 0;
     snprintf(messageStr, sizeof(messageStr), "Options parameter: %p, Type: %d, Handle: %p", options, type, handle);
     LogMsg(INFO, messageStr);
     if (!NIL_P(options))
@@ -1907,12 +1929,17 @@ static int _python_ibm_db_parse_options(PyObject *options, int type, void *handl
                 rc = _python_ibm_db_assign_options(handle, type, NUM2LONG(key), data);
                 snprintf(messageStr, sizeof(messageStr), "_python_ibm_db_assign_options returned: %d", rc);
                 LogMsg(INFO, messageStr);
+                if (rc == OPTION_CONN_DRIVER_ERROR)
+                {
+                    conn_rejected = 1;
+                    rc = 0;
+                }
             }
             if (rc)
             {
                 Py_XDECREF(keys);
                 LogMsg(INFO, "exit _python_ibm_db_parse_options()");
-                return SQL_ERROR;
+                return (rc == OPTION_STMT_DRIVER_ERROR) ? rc : SQL_ERROR;
             }
         }
         if (!NIL_P(tc_pass))
@@ -1922,16 +1949,21 @@ static int _python_ibm_db_parse_options(PyObject *options, int type, void *handl
             rc = _python_ibm_db_assign_options(handle, type, SQL_ATTR_TRUSTED_CONTEXT_PASSWORD, tc_pass);
             snprintf(messageStr, sizeof(messageStr), "_python_ibm_db_assign_options for tc_pass returned: %d", rc);
             LogMsg(INFO, messageStr);
+            if (rc == OPTION_CONN_DRIVER_ERROR)
+            {
+                conn_rejected = 1;
+                rc = 0;
+            }
         }
         Py_XDECREF(keys);
         if (rc)
         {
             LogMsg(INFO, "exit _python_ibm_db_parse_options()");
-            return SQL_ERROR;
+            return (rc == OPTION_STMT_DRIVER_ERROR) ? rc : SQL_ERROR;
         }
     }
     LogMsg(INFO, "exit _python_ibm_db_parse_options()");
-    return SQL_SUCCESS;
+    return conn_rejected ? OPTION_CONN_DRIVER_ERROR : SQL_SUCCESS;
 }
 
 /*    static int _python_ibm_db_get_result_set_info(stmt_handle *stmt_res)
@@ -3822,6 +3854,11 @@ static PyObject *_python_ibm_db_connect_helper(PyObject *self, PyObject *args, i
                 return NULL;
             }
             rc = _python_ibm_db_parse_options(options, SQL_HANDLE_DBC, conn_res);
+            /* An attribute rejected by the driver does not fail the connect */
+            if (rc == OPTION_CONN_DRIVER_ERROR)
+            {
+                rc = SQL_SUCCESS;
+            }
             if (rc != SQL_SUCCESS)
             {
                 LogMsg(ERROR, "Failed to parse options");
@@ -8888,7 +8925,7 @@ static int _python_ibm_db_do_prepare(SQLHANDLE hdbc, SQLWCHAR *stmt, int stmt_si
     if (!NIL_P(options))
     {
         rc = _python_ibm_db_parse_options(options, SQL_HANDLE_STMT, stmt_res);
-        if (rc == SQL_ERROR)
+        if (rc == SQL_ERROR || rc == OPTION_STMT_DRIVER_ERROR)
         {
             LogMsg(INFO, "exit _python_ibm_db_do_prepare()");
             return rc;
@@ -9091,9 +9128,11 @@ static PyObject *ibm_db_exec(PyObject *self, PyObject *args)
             rc = _python_ibm_db_parse_options(options, SQL_HANDLE_STMT, stmt_res);
             snprintf(messageStr, sizeof(messageStr), "Parsed options. rc = %d", rc);
             LogMsg(DEBUG, messageStr);
-            if (rc == SQL_ERROR)
+            if (rc == SQL_ERROR || rc == OPTION_STMT_DRIVER_ERROR)
             {
                 LogMsg(ERROR, "Error parsing options");
+                PyMem_Del(return_str);
+                Py_DECREF(stmt_res);
                 Py_XDECREF(py_stmt);
                 return NULL;
             }
@@ -9346,6 +9385,10 @@ static PyObject *_python_ibm_db_prepare_helper(conn_handle *conn_res, PyObject *
         sprintf(error, "Statement Prepare Failed: %s", IBM_DB_G(__python_stmt_err_msg));
         LogMsg(ERROR, error);
         Py_XDECREF(py_stmt);
+        if (rc == OPTION_STMT_DRIVER_ERROR)
+        {
+            Py_DECREF(stmt_res);
+        }
         return NULL;
     }
     Py_XDECREF(py_stmt);
@@ -16542,6 +16585,11 @@ static PyObject *ibm_db_set_option(PyObject *self, PyObject *args)
                 rc = _python_ibm_db_parse_options(options, SQL_HANDLE_DBC, conn_res);
                 snprintf(messageStr, sizeof(messageStr), "_python_ibm_db_parse_options returned rc=%d", rc);
                 LogMsg(DEBUG, messageStr);
+                if (rc == OPTION_CONN_DRIVER_ERROR)
+                {
+                    Py_INCREF(Py_False);
+                    return Py_False;
+                }
                 if (rc == SQL_ERROR)
                 {
                     LogMsg(ERROR, "Options array must have string indexes");
@@ -16572,6 +16620,10 @@ static PyObject *ibm_db_set_option(PyObject *self, PyObject *args)
                 rc = _python_ibm_db_parse_options(options, SQL_HANDLE_STMT, stmt_res);
                 snprintf(messageStr, sizeof(messageStr), "_python_ibm_db_parse_options returned rc=%d", rc);
                 LogMsg(DEBUG, messageStr);
+                if (rc == OPTION_STMT_DRIVER_ERROR)
+                {
+                    return NULL;
+                }
                 if (rc == SQL_ERROR)
                 {
                     LogMsg(ERROR, "Options array must have string indexes");
