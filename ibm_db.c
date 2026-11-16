@@ -43,6 +43,7 @@
 #define IBM_DB_OTEL_BAGGAGE_SET     0x04
 
 #include <ctype.h>
+#include <limits.h>
 #include <wctype.h>
 #ifdef _WIN32
 #include <windows.h>
@@ -3703,6 +3704,9 @@ static PyObject *_python_ibm_db_connect_helper(PyObject *self, PyObject *args, i
                 conn_res->otel_auto_update = 0;
                 conn_res->otel_attrs_unsupported = 0;
                 conn_res->transaction_active = 0;
+                conn_res->handle_active = 0;
+                conn_res->auto_commit = SQL_AUTOCOMMIT_ON;
+                conn_res->flag_coordinated = 0;
                 LogMsg(DEBUG, "Created a new connection handle");
             }
             else
@@ -3765,6 +3769,10 @@ static PyObject *_python_ibm_db_connect_helper(PyObject *self, PyObject *args, i
             else
             {
                 LogMsg(DEBUG, "Successfully allocated CONNECT Handle");
+                conn_res->otel_explicit_attrs = 0;
+                conn_res->otel_auto_attrs = 0;
+                conn_res->otel_auto_update = 0;
+                conn_res->otel_attrs_unsupported = 0;
             }
         }
 
@@ -3775,6 +3783,10 @@ static PyObject *_python_ibm_db_connect_helper(PyObject *self, PyObject *args, i
         rc = SQLSetConnectAttr((SQLHDBC)conn_res->hdbc, SQL_ATTR_AUTOCOMMIT,
                                (SQLPOINTER)(conn_res->auto_commit), SQL_NTS);
         Py_END_ALLOW_THREADS;
+        if (rc == SQL_SUCCESS || rc == SQL_SUCCESS_WITH_INFO)
+        {
+            conn_res->transaction_active = 0;
+        }
         snprintf(messageStr, sizeof(messageStr), "Set auto_commit to: %d", conn_res->auto_commit);
         LogMsg(DEBUG, messageStr);
         snprintf(messageStr, sizeof(messageStr), "SQLSetConnectAttr called with parameters: conn_res->hdbc=%p, SQL_ATTR_AUTOCOMMIT=%d, conn_res->auto_commit=%d, SQL_NTS=%d and returned rc=%d",
@@ -4029,10 +4041,11 @@ static PyObject *_python_ibm_db_connect_helper(PyObject *self, PyObject *args, i
             rc = SQLFreeHandle(SQL_HANDLE_DBC, conn_res->hdbc);
             rc = SQLFreeHandle(SQL_HANDLE_ENV, conn_res->henv);
             Py_END_ALLOW_THREADS;
+            conn_res->handle_active = 0;
         }
         if (conn_res != NULL)
         {
-            PyObject_Del(conn_res);
+            Py_DECREF(conn_res);
         }
         LogMsg(ERROR, "Failed to establish connection!");
         return NULL;
@@ -18642,6 +18655,79 @@ static PyObject *ibm_db_active(PyObject *self, PyObject *args)
  *
  * Returns the current setting of the resource attribute provided.
  */
+static PyObject *_python_ibm_db_get_otel_attr(SQLHDBC hdbc, SQLINTEGER attr)
+{
+    SQLINTEGER buffer_length = ACCTSTR_LEN + 1;
+    SQLINTEGER value_length;
+    SQLCHAR *value = PyMem_Malloc(buffer_length);
+    SQLRETURN rc;
+    PyObject *result;
+
+    if (value == NULL)
+    {
+        return PyErr_NoMemory();
+    }
+
+    for (;;)
+    {
+        int truncated = 0;
+        value_length = 0;
+        memset(value, 0, buffer_length);
+        Py_BEGIN_ALLOW_THREADS;
+        rc = SQLGetConnectAttr(hdbc, attr, value, buffer_length, &value_length);
+        Py_END_ALLOW_THREADS;
+
+        if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO)
+        {
+            _python_ibm_db_check_sql_errors(hdbc, SQL_HANDLE_DBC, rc, 1, NULL, -1, 1);
+            PyMem_Free(value);
+            PyErr_Clear();
+            Py_RETURN_FALSE;
+        }
+
+        if (value_length >= buffer_length)
+        {
+            truncated = 1;
+        }
+        else if (rc == SQL_SUCCESS_WITH_INFO)
+        {
+            SQLCHAR sqlstate[SQL_SQLSTATE_SIZE + 1] = {0};
+            SQLCHAR message[SQL_MAX_MESSAGE_LENGTH + 1] = {0};
+            SQLINTEGER native_error = 0;
+            SQLSMALLINT message_length = 0;
+            SQLRETURN diag_rc = SQLGetDiagRec(
+                SQL_HANDLE_DBC, hdbc, 1, sqlstate, &native_error,
+                message, SQL_MAX_MESSAGE_LENGTH, &message_length);
+            truncated = (diag_rc == SQL_SUCCESS || diag_rc == SQL_SUCCESS_WITH_INFO) &&
+                        strcmp((const char *)sqlstate, "01004") == 0;
+        }
+
+        if (!truncated)
+        {
+            result = StringOBJ_FromASCII((char *)value);
+            PyMem_Free(value);
+            return result;
+        }
+
+        if (value_length == INT_MAX || buffer_length > INT_MAX / 2)
+        {
+            PyMem_Free(value);
+            PyErr_SetString(PyExc_OverflowError, "OpenTelemetry attribute is too large");
+            return NULL;
+        }
+        buffer_length = value_length >= buffer_length ? value_length + 1 : buffer_length * 2;
+        {
+            SQLCHAR *new_value = PyMem_Realloc(value, buffer_length);
+            if (new_value == NULL)
+            {
+                PyMem_Free(value);
+                return PyErr_NoMemory();
+            }
+            value = new_value;
+        }
+    }
+}
+
 static PyObject *ibm_db_get_option(PyObject *self, PyObject *args)
 {
     LogMsg(INFO, "entry get_option()");
@@ -18724,6 +18810,10 @@ static PyObject *ibm_db_get_option(PyObject *self, PyObject *args)
             /* Check that the option given is not null */
             if (!NIL_P(py_op_integer))
             {
+                if (_python_ibm_db_otel_attr_bit(op_integer) != 0)
+                {
+                    return _python_ibm_db_get_otel_attr(conn_res->hdbc, op_integer);
+                }
                 /* ACCTSTR_LEN is the largest possible length of the options to
                  * retrieve
                  */
@@ -19280,11 +19370,6 @@ static PyObject *ibm_db_execute_many(PyObject *self, PyObject *args)
                             }
                             break;
                         }
-                        if (rc != SQL_ERROR)
-                        {
-                            _python_ibm_db_mark_transaction_active(
-                                stmt_res->conn_res);
-                        }
                     }
                     else
                     {
@@ -19517,6 +19602,10 @@ static PyObject *ibm_db_execute_many(PyObject *self, PyObject *args)
                             LogMsg(ERROR, "head_error_list is NULL, cannot build client error list");
                         }
                         break;
+                    }
+                    if (rc == SQL_SUCCESS || rc == SQL_SUCCESS_WITH_INFO)
+                    {
+                        _python_ibm_db_mark_transaction_active(stmt_res->conn_res);
                     }
                 }
             }

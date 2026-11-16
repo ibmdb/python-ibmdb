@@ -36,6 +36,8 @@ With autocommit off, transaction state is tracked from successful statement
 executions and the driver's `commit()`/`rollback()` calls; transaction
 boundaries performed inside SQL, through two-phase transaction APIs, or
 implicitly by the server cannot be observed by this per-connection tracker.
+When a persistent connection is reused, tracking starts a new interval after
+the autocommit reset; the context is refreshed before its next SQL execution.
 
 The connection attribute constants are available as
 `ibm_db.SQL_ATTR_OTEL_TRACEPARENT`, `ibm_db.SQL_ATTR_OTEL_TRACESTATE`, and
@@ -51,7 +53,8 @@ ibm_db.set_option(conn, {
 
 Automatic propagation is ignored when the installed CLI driver does not
 support these attributes. Explicitly setting an attribute with such a driver
-raises an exception.
+raises an exception. `ibm_db.get_option` retrieves the full supported attribute
+value, including tracestate and baggage values longer than 255 bytes.
 
 Run the end-to-end demo from the repository root. If `DB2_CONNSTR` is set, it
 takes precedence; otherwise, the demo uses `config.database`, `config.user`,
