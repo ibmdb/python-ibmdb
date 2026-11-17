@@ -1,15 +1,6 @@
 [build-system]
-requires = ["setuptools", "wheel"]
+requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
-
-[tool.cibuildwheel]
-# Skip build isolation for Linux to avoid network access issues in i686 container
-# Manylinux containers have setuptools and wheel pre-installed
-build-frontend = { name = "pip", args = ["--no-build-isolation"] }
-
-[tool.cibuildwheel.linux]
-# Apply pip frontend override to Linux builds
-build-frontend = { name = "pip", args = ["--no-build-isolation"] }
 
 [tool.cibuildwheel.macos]
 repair-wheel-command = "delocate-wheel --ignore-missing-dependencies --require-archs {delocate_archs} -w {dest_dir} -v {wheel}"
