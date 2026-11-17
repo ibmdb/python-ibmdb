@@ -1627,6 +1627,7 @@ static int _python_ibm_db_assign_options(void *handle, int type, long opt_key, P
             if (NIL_P(option_str))
             {
                 LogMsg(ERROR, "Failed to prepare zload attribute string buffer");
+                Py_DECREF(data);
                 return -1;
             }
             attr_value = (SQLPOINTER)option_str;
@@ -1664,6 +1665,9 @@ static int _python_ibm_db_assign_options(void *handle, int type, long opt_key, P
 
         if (isNewBuffer)
             PyMem_Del(option_str);
+        /* data was replaced by a new reference in the string case */
+        if (attr_value != NULL)
+            Py_DECREF(data);
 
         if (rc == SQL_ERROR)
         {
@@ -1708,6 +1712,7 @@ static int _python_ibm_db_assign_options(void *handle, int type, long opt_key, P
             }
             if (isNewBuffer)
                 PyMem_Del(option_str);
+            Py_DECREF(data);
         }
         else
         {
@@ -1806,6 +1811,7 @@ static int _python_ibm_db_assign_options(void *handle, int type, long opt_key, P
             }
             if (isNewBuffer)
                 PyMem_Del(option_str);
+            Py_DECREF(data);
         }
         else
         {
@@ -1904,6 +1910,7 @@ static int _python_ibm_db_parse_options(PyObject *options, int type, void *handl
             }
             if (rc)
             {
+                Py_XDECREF(keys);
                 LogMsg(INFO, "exit _python_ibm_db_parse_options()");
                 return SQL_ERROR;
             }
@@ -1916,6 +1923,7 @@ static int _python_ibm_db_parse_options(PyObject *options, int type, void *handl
             snprintf(messageStr, sizeof(messageStr), "_python_ibm_db_assign_options for tc_pass returned: %d", rc);
             LogMsg(INFO, messageStr);
         }
+        Py_XDECREF(keys);
         if (rc)
         {
             LogMsg(INFO, "exit _python_ibm_db_parse_options()");
