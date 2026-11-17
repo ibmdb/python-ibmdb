@@ -78,6 +78,9 @@ jobs:
          CIBW_MANYLINUX_I686_IMAGE: manylinux_2_34
          CIBW_MANYLINUX_X86_64_IMAGE: manylinux_2_34
          CIBW_SKIP: "*t-* cp39-* cp310-* pp39-* pp310-* *-musllinux_* *-*linux_{aarch64,ppc64le}"
+         # Use build backend directly without isolation since manylinux containers
+         # have setuptools and wheel pre-installed (some lack network access)
+         CIBW_BUILD_FRONTEND: "build; args: --no-isolation"
          CIBW_REPAIR_WHEEL_COMMAND_LINUX:
             auditwheel repair
               --disable-isa-ext-check
