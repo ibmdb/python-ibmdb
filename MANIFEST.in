@@ -1,4 +1,5 @@
 include ibm_db.h ibm_db.c
+include ibm_db_otel.py
 include CHANGES.md LICENSE README.md
 include ibm_db_dll.pth
 include _ibm_db_register_dll.py
