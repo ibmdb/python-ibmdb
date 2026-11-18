@@ -496,6 +496,10 @@ package_data = { 'ibm_db_tests': [ 'run_individual_tests', '*.png', '*.jpg']}
 data_files = [ (get_python_lib(), ['./README.md']),
                (get_python_lib(), ['./CHANGES.md']),
                (get_python_lib(), ['./LICENSE'])]
+# get_python_lib() is an absolute path in the build environment, which a
+# wheel would store as is; a wheel carries LICENSE in its metadata instead.
+if 'bdist_wheel' in sys.argv:
+    data_files = []
 
 modules = ['ibm_db_dbi', 'ibm_db_otel', 'testfunctions', 'ibmdb_tests', 'ibm_db_ctx', '_ibm_db_register_dll']
 
