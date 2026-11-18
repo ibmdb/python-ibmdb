@@ -14975,8 +14975,11 @@ static PyObject *ibm_db_result(PyObject *self, PyObject *args)
             else
             {
                 return_value = getSQLWCharAsPyUnicodeObject(out_ptr, out_length);
-                snprintf(messageStr, sizeof(messageStr), "Data content: %s", PyUnicode_AsUTF8(return_value));
-                LogMsg(DEBUG, messageStr);
+                if (return_value != NULL)
+                {
+                    snprintf(messageStr, sizeof(messageStr), "Data content: %s", PyUnicode_AsUTF8(return_value));
+                    LogMsg(DEBUG, messageStr);
+                }
             }
             PyMem_Del(out_ptr);
             out_ptr = NULL;
@@ -16083,6 +16086,12 @@ static PyObject *_python_ibm_db_bind_fetch_helper(PyObject *args, int op)
         }
         if (op == FETCH_INDEX)
         {
+            if (value == NULL)
+            {
+                LogMsg(ERROR, "Failed to convert column value for FETCH_INDEX");
+                Py_DECREF(return_value);
+                return NULL;
+            }
             /* No need to call Py_DECREF as PyTuple_SetItem steals the reference */
             snprintf(messageStr, sizeof(messageStr), "Fetching column %d as index for FETCH_INDEX", column_number);
             LogMsg(DEBUG, messageStr);
@@ -20369,6 +20378,10 @@ static PyObject *ibm_db_fetchone(PyObject *self, PyObject *args)
     LogMsg(DEBUG, messageStr);
     if (return_value == NULL)
     {
+        if (PyErr_Occurred())
+        {
+            return NULL;
+        }
         LogMsg(DEBUG, "No more rows, returning None");
         Py_RETURN_NONE;
     }
